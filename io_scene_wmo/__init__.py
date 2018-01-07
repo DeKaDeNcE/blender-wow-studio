@@ -69,6 +69,11 @@ class WMOPreferences(bpy.types.AddonPreferences):
         subtype='DIR_PATH'
     )
 
+    fileinfo_path = StringProperty(
+        name="Path to fileinfo.exe",
+        subtype='FILE_PATH'
+    )
+
     wmv_path = StringProperty(
         name="WoW Model Viewer Log Path",
         subtype='FILE_PATH'
@@ -118,6 +123,7 @@ class WMOPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "wow_path")
         self.layout.prop(self, "wmv_path")
         self.layout.prop(self, "blp_path")
+        self.layout.prop(self, "fileinfo_path")
         addon_updater_ops.update_settings_ui(self, context)
 
 class WMOImporter(bpy.types.Operator):
@@ -147,8 +153,14 @@ class WMOImporter(bpy.types.Operator):
         default=True,
         )
 
+    group_objects = BoolProperty(
+        name="Group objects",
+        description="Group all objects of this WMO on import",
+        default=False,
+        )
+
     def execute(self, context):
-        import_wmo.import_wmo_to_blender_scene(self.filepath, self.load_textures, self.import_doodads)
+        import_wmo.import_wmo_to_blender_scene(self.filepath, self.load_textures, self.import_doodads, self.group_objects)
         return {'FINISHED'}
 
     def invoke(self, context, event):
