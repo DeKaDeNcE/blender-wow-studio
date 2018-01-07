@@ -227,7 +227,7 @@ class MOGN_chunk:
 
         # padd 4 bytes after
         padding = len(self.StringTable) % 4
-        if padding > 0:
+        if(padding > 0):
             for iPad in range(4 - padding):
                 self.StringTable.append(0)
 

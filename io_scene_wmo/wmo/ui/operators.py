@@ -2,15 +2,199 @@ from .panels import *
 from ...m2 import import_m2 as m2
 
 import bpy
+import subprocess
 import mathutils
+import math
 import os
 import sys
 import time
+import struct
 
 
 ###############################
 ## WMO operators
 ###############################
+
+class IMPORT_ADT_SCENE(bpy.types.Operator):
+    bl_idname = "scene.wow_import_adt_scene"
+    bl_label = "Import M2s and WMOs from ADT"
+    bl_description = "Import M2s and WMOs from ADT"
+    bl_options = {'UNDO', 'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    dir_path = bpy.props.StringProperty(
+        name="",
+        description="Choose a directory with ADTs:",
+        default="",
+        maxlen=1024,
+        subtype='DIR_PATH')
+
+    doodads_on = bpy.props.BoolProperty(
+        name="As doodads",
+        description="Import M2 models as doodads",
+        default=True
+    )
+
+    group_objects = bpy.props.BoolProperty(
+        name="Group objects",
+        description="Add imported objects to a new group",
+        default=True
+    )
+
+    def execute(self, context):
+
+        game_data = getattr(bpy, "wow_game_data", None)
+
+        if not game_data or not game_data.files:
+            self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
+            return {'CANCELLED'}
+
+        save_dir = bpy.path.abspath("//") if bpy.data.is_saved else None
+
+        if not save_dir:
+            self.report({'ERROR'}, """Failed to import WMO.
+            Save your blendfile first.""")
+            return {'CANCELLED'}
+
+        preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
+
+        dir = self.dir_path
+        if not dir:
+            return {'FINISHED'}
+
+        fileinfo_path = preferences.fileinfo_path
+
+        m2_paths = []
+        wmo_paths = []
+
+        m2_instances = {}
+        wmo_instances = {}
+
+        group_name = None
+        if self.group_objects:
+            i = 0
+            while True:
+                name = "ADTImport_" + str(i)
+                if name not in bpy.context.scene.objects:
+                    group_name = name
+                    break
+                i += 1
+
+            bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
+            parent = bpy.context.scene.objects.active
+            parent.name = group_name
+
+        for filename in os.listdir(dir):
+
+            if filename.endswith(".adt"):
+                filepath = os.path.join(dir, filename)
+                subprocess.call([fileinfo_path, filepath] )
+
+                with open(os.path.splitext(filepath)[0] + ".txt", 'r') as f:
+
+                    cur_chunk = ""
+                    for line in f.readlines():
+                        parsed_line = line.replace('\t', ' ')
+                        data = parsed_line.split()
+
+                        if not data:
+                            continue
+
+                        if data[0] in {'MMDX', 'MWMO', 'MDDF', 'MODF'}:
+                            cur_chunk = data[0]
+                        else:
+                            if cur_chunk == 'MMDX':
+                                m2_paths.append(data[1])
+                            elif cur_chunk == 'MWMO':
+                                wmo_paths.append(data[1])
+                            elif cur_chunk == 'MDDF':
+                                entry = data[2:]
+                                entry.insert(0, data[0])
+                                m2_instances[data[1]] = entry
+                            elif cur_chunk == 'MODF':
+                                entry = data[2:]
+                                entry.insert(0, data[0])
+                                wmo_instances[data[1]] = entry
+
+
+        instance_cache = {}
+
+        # import M2s
+        for uid, instance in m2_instances.items():
+            doodad_path = m2_paths[int(instance[0])]
+            cached_obj = instance_cache.get(doodad_path)
+
+            if cached_obj:
+                obj = cached_obj.copy()
+                obj.data = cached_obj.data.copy()
+                bpy.context.scene.objects.link(obj)
+
+            else:
+                try:
+                    obj = m2.m2_to_blender_mesh(save_dir, doodad_path, game_data)
+                except:
+                    bpy.ops.mesh.primitive_cube_add()
+                    obj = bpy.context.scene.objects.active
+                    print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
+
+                instance_cache[doodad_path] = obj
+
+            obj.name += ".m2"
+            obj.location = ((-float(instance[1])), (float(instance[3])), float(instance[2]))
+            obj.rotation_euler = (math.radians(float(instance[6])),
+                                  math.radians(float(instance[4])),
+                                  math.radians(float(instance[5]) + 90))
+            obj.scale = tuple((float(instance[7]) / 1024.0 for _ in range(3)))
+
+            if self.doodads_on:
+                obj.WoWDoodad.Enabled = True
+                obj.WoWDoodad.Path = doodad_path
+
+            if self.group_objects:
+                obj.parent = parent
+
+        # import WMOs
+        from .. import import_wmo
+        for uid, instance in wmo_instances.items():
+
+            wmo_path = wmo_paths[int(instance[0])]
+
+            cached_obj = instance_cache.get(wmo_path)
+
+
+            game_data.extract_files(save_dir, (wmo_path,))
+
+            i = 0
+            while True:
+                result = game_data.extract_files(save_dir, (wmo_path[:-4] + "_" + str(i).zfill(3) + ".wmo",))
+                if not result:
+                    break
+                i += 1
+
+            try:
+                obj = import_wmo.import_wmo_to_blender_scene(os.path.join(save_dir, wmo_path), True, True, True)
+            except:
+                bpy.ops.mesh.primitive_cube_add()
+                obj = bpy.context.scene.objects.active
+                print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(wmo_path))
+
+
+            obj.location = ((-float(instance[1])), (float(instance[3])), float(instance[2]))
+            obj.rotation_euler = (math.radians(float(instance[6])),
+                                  math.radians(float(instance[4])),
+                                  math.radians(float(instance[5]) + 90))
+
+            if self.group_objects:
+                obj.parent = parent
+
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
 
 class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
     bl_idname = "scene.wow_import_last_wmo_from_wmv"
@@ -64,7 +248,7 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
 
             try:
                 from .. import import_wmo
-                import_wmo.import_wmo_to_blender_scene(os.path.join(dir, wmo_path), True, True)
+                import_wmo.import_wmo_to_blender_scene(os.path.join(dir, wmo_path), True, True, True)
             except:
                 self.report({'ERROR'}, "Failed to import model.")
                 return {'CANCELLED'}
