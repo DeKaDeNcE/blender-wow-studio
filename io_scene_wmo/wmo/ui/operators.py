@@ -164,23 +164,37 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
             cached_obj = instance_cache.get(wmo_path)
 
+            if not cached_obj:
 
-            game_data.extract_files(save_dir, (wmo_path,))
+                game_data.extract_files(save_dir, (wmo_path,))
 
-            i = 0
-            while True:
-                result = game_data.extract_files(save_dir, (wmo_path[:-4] + "_" + str(i).zfill(3) + ".wmo",))
-                if not result:
-                    break
-                i += 1
+                i = 0
+                while True:
+                    result = game_data.extract_files(save_dir, (wmo_path[:-4] + "_" + str(i).zfill(3) + ".wmo",))
+                    if not result:
+                        break
+                    i += 1
 
-            try:
-                obj = import_wmo.import_wmo_to_blender_scene(os.path.join(save_dir, wmo_path), True, True, True)
-            except:
-                bpy.ops.mesh.primitive_cube_add()
-                obj = bpy.context.scene.objects.active
-                print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(wmo_path))
+                try:
+                    obj = import_wmo.import_wmo_to_blender_scene(os.path.join(save_dir, wmo_path), True, True, True)
+                except:
+                    bpy.ops.mesh.primitive_cube_add()
+                    obj = bpy.context.scene.objects.active
+                    print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(wmo_path))
 
+                instance_cache[wmo_path] = obj
+
+            else:
+                bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
+                anchor = bpy.context.scene.objects.active
+                anchor.name = group_name
+
+                for child in cached_obj.children:
+                    nobj = child.copy()
+                    nobj.data = child.data.copy()
+                    bpy.context.scene.objects.link(nobj)
+
+                    nobj.parent = anchor
 
             obj.location = ((-float(instance[1])), (float(instance[3])), float(instance[2]))
             obj.rotation_euler = (math.radians(float(instance[6])),
