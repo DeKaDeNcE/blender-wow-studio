@@ -73,12 +73,6 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
         fileinfo_path = preferences.fileinfo_path
 
-        m2_paths = []
-        wmo_paths = []
-
-        m2_instances = {}
-        wmo_instances = {}
-
         instance_cache = {}
 
         group_name = None
@@ -96,6 +90,12 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
             parent.name = group_name
 
         for filename in os.listdir(dir):
+
+            m2_paths = []
+            wmo_paths = []
+
+            m2_instances = {}
+            wmo_instances = {}
 
             if filename.endswith(".adt"):
                 filepath = os.path.join(dir, filename)
