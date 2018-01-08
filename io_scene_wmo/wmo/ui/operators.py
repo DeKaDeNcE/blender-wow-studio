@@ -74,8 +74,10 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
         fileinfo_path = preferences.fileinfo_path
 
         instance_cache = {}
+        uid_cache = set()
 
         group_name = None
+        if self.group_objects:
         if self.group_objects:
             i = 0
             while True:
@@ -145,6 +147,11 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
             # import M2s
             for uid, instance in m2_instances.items():
+
+                if uid in uid_cache:
+                    continue
+                uid_cache.add(uid)
+
                 doodad_path = m2_paths[int(instance[0])]
                 cached_obj = instance_cache.get(doodad_path)
 
@@ -180,6 +187,10 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
             # import WMOs
             from .. import import_wmo
             for uid, instance in wmo_instances.items():
+
+                if uid in uid_cache:
+                    continue
+                uid_cache.add(uid)
 
                 wmo_path = wmo_paths[int(instance[0])]
 
