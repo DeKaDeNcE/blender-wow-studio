@@ -84,6 +84,19 @@ class WMOPreferences(bpy.types.AddonPreferences):
         subtype='FILE_PATH'
     )
 
+    use_cache_dir = BoolProperty(
+        name="Use cache directory",
+        description="Use custom cache directory for storing textures and other exported content",
+        default=True
+    )
+
+    cache_dir_path = StringProperty(
+        name="Cache Directory Path",
+        description="Any folder that can be used to store exporter content",
+        subtype="DIR_PATH"
+    )
+
+
     # addon updater preferences
 
     auto_check_update = bpy.props.BoolProperty(
@@ -124,6 +137,10 @@ class WMOPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "wmv_path")
         self.layout.prop(self, "blp_path")
         self.layout.prop(self, "fileinfo_path")
+
+        self.layour.prop(self, "use_cache_dir")
+        if self.use_cache_dir:
+            self.layour.prop(self, "csche_dir_path")
         addon_updater_ops.update_settings_ui(self, context)
 
 class WMOImporter(bpy.types.Operator):

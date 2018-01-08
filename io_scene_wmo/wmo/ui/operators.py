@@ -10,7 +10,7 @@ import sys
 import time
 import struct
 
-
+preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
 ###############################
 ## WMO operators
 ###############################
@@ -58,14 +58,13 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
             return {'CANCELLED'}
 
-        save_dir = bpy.path.abspath("//") if bpy.data.is_saved else None
+        save_dir = preferences.cache_dir_path if preferences.use_cache_dir else \
+                   bpy.path.abspath("//") if bpy.data.is_saved else None
 
         if not save_dir:
             self.report({'ERROR'}, """Failed to import WMO.
             Save your blendfile first.""")
             return {'CANCELLED'}
-
-        preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
 
         dir = bpy.path.abspath(self.dir_path)
         if not dir:
@@ -272,8 +271,6 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
     def wmv_get_last_wmo(self):
         """Get the path of last M2 model from WoWModelViewer or similar log."""
 
-        preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
-
         if preferences.wmv_path:
 
             lines = open(preferences.wmv_path).readlines()
@@ -290,7 +287,8 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
             return {'CANCELLED'}
 
-        dir = bpy.path.abspath("//") if bpy.data.is_saved else None
+        dir = preferences.cache_dir_path if preferences.use_cache_dir else \
+                   bpy.path.abspath("//") if bpy.data.is_saved else None
         wmo_path = self.wmv_get_last_wmo()
 
         if not wmo_path:
@@ -539,7 +537,8 @@ class DOODAD_SET_CLEAR_PRESERVED(bpy.types.Operator):
                 print("\n\n### Loading game data ###")
                 bpy.ops.scene.load_wow_filesystem()
 
-            dir = bpy.path.abspath("//") if bpy.data.is_saved else None
+            dir = preferences.cache_dir_path if preferences.use_cache_dir else \
+                  bpy.path.abspath("//") if bpy.data.is_saved else None
 
             if dir:
                 try:

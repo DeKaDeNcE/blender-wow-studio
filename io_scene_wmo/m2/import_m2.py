@@ -132,7 +132,10 @@ class WoW_WMO_Import_Doodad_WMV(bpy.types.Operator):
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
             return {'CANCELLED'}
 
-        dir = bpy.path.abspath("//") if bpy.data.is_saved else None
+        preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
+
+        dir = preferences.cache_dir_path if preferences.use_cache_dir else \
+              bpy.path.abspath("//") if bpy.data.is_saved else None
         m2_path = wmv_get_last_m2()
 
         if not m2_path:
