@@ -113,9 +113,25 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
                             cur_chunk = data[0]
                         else:
                             if cur_chunk == 'MMDX':
-                                m2_paths.append(data[1])
+
+                                m2_path = data[1]
+                                i = 2
+                                while not m2_path.endswith(".m2"):
+                                    m2_path += " {}".format(data[i])
+                                    i += 1
+
+                                m2_paths.append(m2_path)
+
                             elif cur_chunk == 'MWMO':
-                                wmo_paths.append(data[1])
+
+                                wmo_path = data[1]
+                                i = 2
+                                while not wmo_path.endswith(".wmo"):
+                                    wmo_path += " {}".format(data[i])
+                                    i += 1
+
+                                wmo_paths.append(wmo_path)
+
                             elif cur_chunk == 'MDDF':
                                 entry = data[2:]
                                 entry.insert(0, data[0])
