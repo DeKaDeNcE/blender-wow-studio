@@ -81,7 +81,6 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
         group_name = None
         if self.group_objects:
-        if self.group_objects:
             i = 0
             while True:
                 name = "ADTImport_" + str(i)
