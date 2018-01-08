@@ -138,9 +138,9 @@ class WMOPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "blp_path")
         self.layout.prop(self, "fileinfo_path")
 
-        self.layour.prop(self, "use_cache_dir")
+        self.layout.prop(self, "use_cache_dir")
         if self.use_cache_dir:
-            self.layour.prop(self, "csche_dir_path")
+            self.layout.prop(self, "csche_dir_path")
         addon_updater_ops.update_settings_ui(self, context)
 
 class WMOImporter(bpy.types.Operator):
