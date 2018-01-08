@@ -11,6 +11,7 @@ import time
 import struct
 
 preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
+
 ###############################
 ## WMO operators
 ###############################

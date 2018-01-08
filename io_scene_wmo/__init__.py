@@ -139,8 +139,10 @@ class WMOPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "fileinfo_path")
 
         self.layout.prop(self, "use_cache_dir")
-        if self.use_cache_dir:
-            self.layout.prop(self, "csche_dir_path")
+        row = self.layout.row()
+        row.prop(self, "cache_dir_path")
+        if not context.user_preferences.addons['io_scene_wmo'].preferences.use_cache_dir:
+            row.enabled = False
         addon_updater_ops.update_settings_ui(self, context)
 
 class WMOImporter(bpy.types.Operator):
