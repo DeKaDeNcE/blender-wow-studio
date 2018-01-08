@@ -79,6 +79,8 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
         m2_instances = {}
         wmo_instances = {}
 
+        instance_cache = {}
+
         group_name = None
         if self.group_objects:
             i = 0
@@ -141,108 +143,105 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
                                 entry.insert(0, data[0])
                                 wmo_instances[data[1]] = entry
 
+            # import M2s
+            for uid, instance in m2_instances.items():
+                doodad_path = m2_paths[int(instance[0])]
+                cached_obj = instance_cache.get(doodad_path)
 
-        instance_cache = {}
+                if cached_obj:
+                    obj = cached_obj.copy()
+                    obj.data = cached_obj.data.copy()
+                    bpy.context.scene.objects.link(obj)
 
-        # import M2s
-        for uid, instance in m2_instances.items():
-            doodad_path = m2_paths[int(instance[0])]
-            cached_obj = instance_cache.get(doodad_path)
+                else:
+                    try:
+                        obj = m2.m2_to_blender_mesh(save_dir, doodad_path, game_data)
+                    except:
+                        bpy.ops.mesh.primitive_cube_add()
+                        obj = bpy.context.scene.objects.active
+                        print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
 
-            if cached_obj:
-                obj = cached_obj.copy()
-                obj.data = cached_obj.data.copy()
-                bpy.context.scene.objects.link(obj)
+                    instance_cache[doodad_path] = obj
 
-            else:
-                try:
-                    obj = m2.m2_to_blender_mesh(save_dir, doodad_path, game_data)
-                except:
-                    bpy.ops.mesh.primitive_cube_add()
+                obj.name += ".m2"
+                obj.location = ((-float(instance[1])), (float(instance[3])), float(instance[2]))
+                obj.rotation_euler = (math.radians(float(instance[6])),
+                                      math.radians(float(instance[4])),
+                                      math.radians(float(instance[5]) + 90))
+                obj.scale = tuple((float(instance[7]) / 1024.0 for _ in range(3)))
+
+                if self.doodads_on:
+                    obj.WoWDoodad.Enabled = True
+                    obj.WoWDoodad.Path = doodad_path
+
+                if self.group_objects:
+                    obj.parent = parent
+
+            # import WMOs
+            from .. import import_wmo
+            for uid, instance in wmo_instances.items():
+
+                wmo_path = wmo_paths[int(instance[0])]
+
+                cached_obj = instance_cache.get(wmo_path)
+
+                if not cached_obj:
+
+                    game_data.extract_files(save_dir, (wmo_path,))
+
+                    i = 0
+                    while True:
+                        result = game_data.extract_files(save_dir, (wmo_path[:-4] + "_" + str(i).zfill(3) + ".wmo",))
+                        if not result:
+                            break
+                        i += 1
+
+                    try:
+                        obj = import_wmo.import_wmo_to_blender_scene(os.path.join(save_dir, wmo_path), True, True, True)
+                    except:
+                        bpy.ops.mesh.primitive_cube_add()
+                        obj = bpy.context.scene.objects.active
+                        print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(wmo_path))
+
+                    instance_cache[wmo_path] = obj
+
+                else:
+                    bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
                     obj = bpy.context.scene.objects.active
-                    print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
+                    obj.name = os.path.basename(wmo_path) + ".wmo"
 
-                instance_cache[doodad_path] = obj
+                    for child in cached_obj.children:
+                        nobj = child.copy()
+                        if nobj.data:
+                            nobj.data = child.data.copy()
+                        bpy.context.scene.objects.link(nobj)
 
-            obj.name += ".m2"
-            obj.location = ((-float(instance[1])), (float(instance[3])), float(instance[2]))
-            obj.rotation_euler = (math.radians(float(instance[6])),
-                                  math.radians(float(instance[4])),
-                                  math.radians(float(instance[5]) + 90))
-            obj.scale = tuple((float(instance[7]) / 1024.0 for _ in range(3)))
+                        nobj.parent = obj
 
-            if self.doodads_on:
-                obj.WoWDoodad.Enabled = True
-                obj.WoWDoodad.Path = doodad_path
+                obj.location = ((-float(instance[1])), (float(instance[3])), float(instance[2]))
+                obj.rotation_euler = (math.radians(float(instance[6])),
+                                      math.radians(float(instance[4])),
+                                      math.radians(float(instance[5]) + 90))
 
-            if self.group_objects:
-                obj.parent = parent
+                if self.group_objects:
+                    obj.parent = parent
 
-        # import WMOs
-        from .. import import_wmo
-        for uid, instance in wmo_instances.items():
+            if self.move_to_center:
+                selected = bpy.context.selected_objects
+                bpy.ops.object.select_all(action='DESELECT')
 
-            wmo_path = wmo_paths[int(instance[0])]
+                for obj in parent.children:
+                    obj.select = True
 
-            cached_obj = instance_cache.get(wmo_path)
+                bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
+                bpy.ops.view3d.snap_cursor_to_selected()
 
-            if not cached_obj:
+                bpy.ops.transform.translate(value=tuple(-x for x in bpy.context.space_data.cursor_location))
 
-                game_data.extract_files(save_dir, (wmo_path,))
+                bpy.ops.object.select_all(action='DESELECT')
 
-                i = 0
-                while True:
-                    result = game_data.extract_files(save_dir, (wmo_path[:-4] + "_" + str(i).zfill(3) + ".wmo",))
-                    if not result:
-                        break
-                    i += 1
-
-                try:
-                    obj = import_wmo.import_wmo_to_blender_scene(os.path.join(save_dir, wmo_path), True, True, True)
-                except:
-                    bpy.ops.mesh.primitive_cube_add()
-                    obj = bpy.context.scene.objects.active
-                    print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(wmo_path))
-
-                instance_cache[wmo_path] = obj
-
-            else:
-                bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
-                obj = bpy.context.scene.objects.active
-                obj.name = os.path.basename(wmo_path) + ".wmo"
-
-                for child in cached_obj.children:
-                    nobj = child.copy()
-                    if nobj.data:
-                        nobj.data = child.data.copy()
-                    bpy.context.scene.objects.link(nobj)
-
-                    nobj.parent = obj
-
-            obj.location = ((-float(instance[1])), (float(instance[3])), float(instance[2]))
-            obj.rotation_euler = (math.radians(float(instance[6])),
-                                  math.radians(float(instance[4])),
-                                  math.radians(float(instance[5]) + 90))
-
-            if self.group_objects:
-                obj.parent = parent
-
-        if self.move_to_center:
-            selected = bpy.context.selected_objects
-            bpy.ops.object.select_all(action='DESELECT')
-
-            for obj in parent.children:
-                obj.select = True
-
-            bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
-            bpy.ops.view3d.snap_cursor_to_selected()
-
-            bpy.ops.transform.translate(value=tuple(-x for x in bpy.context.space_data.cursor_location))
-
-            bpy.ops.object.select_all(action='DESELECT')
-
-            for obj in selected:
-                obj.select = True
+                for obj in selected:
+                    obj.select = True
 
         return {'FINISHED'}
 
