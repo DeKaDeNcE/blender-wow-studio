@@ -61,7 +61,7 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
         preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
 
-        dir = self.dir_path
+        dir = bpy.path.abspath(self.dir_path)
         if not dir:
             return {'FINISHED'}
 
@@ -186,15 +186,16 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
             else:
                 bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
-                anchor = bpy.context.scene.objects.active
-                anchor.name = group_name
+                obj = bpy.context.scene.objects.active
+                obj.name = os.path.basename(wmo_path) + ".wmo"
 
                 for child in cached_obj.children:
                     nobj = child.copy()
-                    nobj.data = child.data.copy()
+                    if nobj.data:
+                        nobj.data = child.data.copy()
                     bpy.context.scene.objects.link(nobj)
 
-                    nobj.parent = anchor
+                    nobj.parent = obj
 
             obj.location = ((-float(instance[1])), (float(instance[3])), float(instance[2]))
             obj.rotation_euler = (math.radians(float(instance[6])),
