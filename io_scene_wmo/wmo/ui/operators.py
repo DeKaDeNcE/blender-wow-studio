@@ -236,22 +236,22 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
                 if self.group_objects:
                     obj.parent = parent
 
-            if self.move_to_center:
-                selected = bpy.context.selected_objects
-                bpy.ops.object.select_all(action='DESELECT')
+        if self.move_to_center:
+            selected = bpy.context.selected_objects
+            bpy.ops.object.select_all(action='DESELECT')
 
-                for obj in parent.children:
-                    obj.select = True
+            for obj in parent.children:
+                obj.select = True
 
-                bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
-                bpy.ops.view3d.snap_cursor_to_selected()
+            bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
+            bpy.ops.view3d.snap_cursor_to_selected()
 
-                bpy.ops.transform.translate(value=tuple(-x for x in bpy.context.space_data.cursor_location))
+            bpy.ops.transform.translate(value=tuple(-x for x in bpy.context.space_data.cursor_location))
 
-                bpy.ops.object.select_all(action='DESELECT')
+            bpy.ops.object.select_all(action='DESELECT')
 
-                for obj in selected:
-                    obj.select = True
+            for obj in selected:
+                obj.select = True
 
         return {'FINISHED'}
 
