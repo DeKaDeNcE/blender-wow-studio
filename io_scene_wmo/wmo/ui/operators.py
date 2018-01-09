@@ -59,6 +59,8 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
             return {'CANCELLED'}
 
+        global preferences
+
         save_dir = preferences.cache_dir_path if preferences.use_cache_dir else \
                    bpy.path.abspath("//") if bpy.data.is_saved else None
 
@@ -287,6 +289,8 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
         if not game_data or not game_data.files:
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
             return {'CANCELLED'}
+
+        global preferences
 
         dir = preferences.cache_dir_path if preferences.use_cache_dir else \
                    bpy.path.abspath("//") if bpy.data.is_saved else None
