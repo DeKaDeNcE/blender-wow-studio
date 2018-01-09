@@ -10,8 +10,6 @@ import sys
 import time
 import struct
 
-preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
-
 ###############################
 ## WMO operators
 ###############################
@@ -59,7 +57,7 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
             return {'CANCELLED'}
 
-        global preferences
+        preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
 
         save_dir = preferences.cache_dir_path if preferences.use_cache_dir else \
                    bpy.path.abspath("//") if bpy.data.is_saved else None
@@ -290,7 +288,7 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
             return {'CANCELLED'}
 
-        global preferences
+        preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
 
         dir = preferences.cache_dir_path if preferences.use_cache_dir else \
                    bpy.path.abspath("//") if bpy.data.is_saved else None
