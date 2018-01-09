@@ -269,12 +269,12 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
     def poll(cls, context):
         return True
 
-    def wmv_get_last_wmo(self):
+    def wmv_get_last_wmo(self, wmv_path):
         """Get the path of last M2 model from WoWModelViewer or similar log."""
 
-        if preferences.wmv_path:
+        if wmv_path:
 
-            lines = open(preferences.wmv_path).readlines()
+            lines = open(wmv_path).readlines()
 
             for line in reversed(lines):
                 if 'Loading WMO' in line:
@@ -292,7 +292,8 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
 
         dir = preferences.cache_dir_path if preferences.use_cache_dir else \
                    bpy.path.abspath("//") if bpy.data.is_saved else None
-        wmo_path = self.wmv_get_last_wmo()
+
+        wmo_path = self.wmv_get_last_wmo(preferences.wmv_path)
 
         if not wmo_path:
             self.report({'ERROR'}, """WoW Model Viewer log contains no WMO entries.
