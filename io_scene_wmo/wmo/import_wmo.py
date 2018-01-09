@@ -19,6 +19,7 @@ def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_o
 
     if load_textures or import_doodads:
         game_data = getattr(bpy, "wow_game_data", None)
+        preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
 
         if not game_data:
             print("\n\n### Loading game data ###")
@@ -28,7 +29,9 @@ def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_o
         if game_data.files:
             if load_textures:
                 print("\n\n### Extracting textures ###")
-                game_data.extract_textures_as_png(os.path.dirname(filepath), wmo.motx.get_all_strings())
+                game_data.extract_textures_as_png(preferences.cache_dir_path
+                                                  if preferences.use_cache_dir else os.path.dirname(filepath),
+                                                  wmo.motx.get_all_strings())
         else:
             print("\nFailed to load textures because game data was not loaded.")
 

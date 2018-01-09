@@ -306,8 +306,8 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
 
             i = 0
             while True:
-                result = game_data.extract_files(dir, (wmo_path[:-4] + "_" + str(i).zfill(3) + ".wmo",))
-                if not result:
+                paths = game_data.extract_files(dir, (wmo_path[:-4] + "_" + str(i).zfill(3) + ".wmo",))
+                if not paths:
                     break
                 i += 1
 
@@ -317,6 +317,16 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
             except:
                 self.report({'ERROR'}, "Failed to import model.")
                 return {'CANCELLED'}
+
+            for filepath in paths:
+                os.remove(filepath)
+
+            local_dir = os.path.dirname(paths[0])
+
+            try:
+                os.rmdir(local_dir)
+            except OSError:
+                pass
 
             self.report({'INFO'}, "Done importing WMO object to scene.")
             return {'FINISHED'}
