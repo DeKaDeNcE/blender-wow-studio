@@ -592,6 +592,7 @@ class DOODAD_SET_CLEAR_PRESERVED(bpy.types.Operator):
                 print("\n\n### Loading game data ###")
                 bpy.ops.scene.load_wow_filesystem()
 
+            preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
             dir = preferences.cache_dir_path if preferences.use_cache_dir else \
                   bpy.path.abspath("//") if bpy.data.is_saved else None
 

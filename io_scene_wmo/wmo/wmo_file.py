@@ -223,7 +223,9 @@ class WMOFile:
     def load_materials(self):
         """ Load materials from WoW WMO root file """
         self.material_lookup = {}
-        texture_path = os.path.dirname(self.filepath) + "\\"
+
+        preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
+        texture_path = preferences.cache_dir_path if preferences.use_cache_dir else bpy.path.dirname(self.filepath) + "\\"
 
         images = []
         image_names = []
