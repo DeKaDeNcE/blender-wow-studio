@@ -63,7 +63,8 @@ def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_o
     print("\n\n### Importing WMO doodad sets ###")
 
     if import_doodads and game_data.files:
-        wmo.load_doodads(os.path.dirname(filepath), game_data)
+        wmo.load_doodads(preferences.cache_dir_path if preferences.use_cache_dir
+                         else os.path.dirname(filepath), game_data)
     else:
         wmo.load_doodads()
 
