@@ -1042,6 +1042,11 @@ class WMOToolsPanelObjectMode(bpy.types.Panel):
             else:
                 box_col2.operator("scene.wow_clear_preserved_doodad_sets", text='Clear doodad sets', icon='CANCEL')
 
+        col.separator()
+        col.label(text="Global:")
+        col.operator("scene.wow_fix_material_duplicates", text='Fix material duplicates', icon='ASSET_MANAGER')
+
+
 class ConvertOperators(bpy.types.Menu):
     bl_label = "Convert"
     bl_idname = "view3D.convert_to_menu"

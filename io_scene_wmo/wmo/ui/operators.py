@@ -34,20 +34,25 @@ class FIX_MATERIAL_DUPLICATES(bpy.types.Operator):
             'Texture2', 'DiffColor')
 
         for material in bpy.data.materials:
-            name = material.name.split('.png')[0] + '.png'
+
+            name = material.name.split('.png')[0]
+            if '.png' in material.name:
+                name += '.png'
             material_duplicates.setdefault(name, []).append(material.name)
 
         duplicate_count = 0
         for source, duplicates in material_duplicates.items():
-            source_prop = get_attributes(source)
+            source_prop = get_attributes(bpy.data.materials[source].WowMaterial)
 
             for duplicate in duplicates:
-                duplicate_prop = get_attributes(duplicate)
-                if source_prop == duplicate_prop:
+                duplicate_prop = get_attributes(bpy.data.materials[duplicate].WowMaterial)
+                if source_prop == duplicate_prop and source != duplicate:
                     bpy.ops.view3d.replace_material(matorg=duplicate, matrep=source)
                     duplicate_count += 1
 
         self.report({'INFO'}, "Cleared {} duplicated materials".format(duplicate_count))
+
+        return {'FINISHED'}
 
 
 class IMPORT_ADT_SCENE(bpy.types.Operator):
