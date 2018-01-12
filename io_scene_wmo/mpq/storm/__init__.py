@@ -5,7 +5,7 @@ import os
 
 import pkg_resources
 
-from mpq import storm
+import storm
 
 
 # __version__ = pkg_resources.require("mpq")[0].version
