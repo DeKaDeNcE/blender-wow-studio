@@ -1307,32 +1307,8 @@ class OBJECT_OP_To_WMOPortal(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         column = layout.column()
-        column.prop(context.object.WowPortalPlane, "First")
-        column.prop(context.object.WowPortalPlane, "Second")
-
-    First = bpy.props.PointerProperty(
-        type=bpy.types.Object,
-        name="First group",
-        poll=lambda self, obj: obj.WowWMOGroup.Enabled and self.Second != obj and obj.name in bpy.context.scene.objects,
-        update=portal_validator
-    )
-
-    Second = bpy.props.PointerProperty(
-        type=bpy.types.Object,
-        name="Second group",
-        poll=lambda self, obj: obj.WowWMOGroup.Enabled and self.First != obj and obj.name in bpy.context.scene.objects,
-        update=portal_validator
-    )
-
-    def portal_validator(self, context):
-        if self.Second and not self.Second.WowWMOGroup.Enabled:
-            self.Second = None
-
-        if self.First and not self.First.WowWMOGroup.Enabled:
-            self.First = None
 
     def execute(self, context):
-
         success = False
         for ob in bpy.context.selected_objects:
             if ob.type == 'MESH':
@@ -1340,8 +1316,6 @@ class OBJECT_OP_To_WMOPortal(bpy.types.Operator):
                 ob.WowLiquid.Enabled = False
                 ob.WowFog.Enabled = False
                 ob.WowPortalPlane.Enabled = True
-                ob.WowPortalPlane.First = self.First
-                ob.WowPortalPlane.Second = self.Second
 
                 ob.hide = False if "2" in bpy.context.scene.WoWVisibility else True
                 success = True
