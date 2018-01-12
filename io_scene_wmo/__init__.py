@@ -238,7 +238,7 @@ def unregister():
     bpy.utils.unregister_module(__name__)
     panels.unregister()
     bpy.types.INFO_MT_file_import.remove(menu_import)
-    bpy.types.INFO_MT_file_export.remove(menu_export))
+    bpy.types.INFO_MT_file_export.remove(menu_export)
 
 if __name__ == "__main__":
     register()
