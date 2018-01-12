@@ -3,7 +3,7 @@ import os
 import bpy
 import time
 import subprocess
-from storm import MPQFile
+from .storm import MPQFile
 
 
 class WoWFileData():

@@ -2,13 +2,7 @@
 Python wrapper around Storm C API bindings
 """
 import os
-
-import pkg_resources
-
-from mpq import storm
-
-
-# __version__ = pkg_resources.require("mpq")[0].version
+from . import storm
 
 
 class MPQFile(object):
