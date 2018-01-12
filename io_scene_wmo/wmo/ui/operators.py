@@ -986,7 +986,7 @@ class OBJECT_OP_Bake_Portal_Relations(bpy.types.Operator):
                 hit_dist = (
                 obj.matrix_world.inverted() * (object.matrix_world * object.data.polygons[0].center) - hit[1]).length
 
-                pairs.append((obj.name, hit_dist))
+                pairs.append((obj, hit_dist))
 
             pairs.sort(key=lambda x: x[1])
 
@@ -1306,24 +1306,30 @@ class OBJECT_OP_To_WMOPortal(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
-
         column = layout.column()
-        idproperty.layout_id_prop(column, context.object.WowPortalPlane, "First")
-        idproperty.layout_id_prop(column, context.object.WowPortalPlane, "Second")
+        column.prop(context.object.WowPortalPlane, "First")
+        column.prop(context.object.WowPortalPlane, "Second")
 
-    First = idproperty.ObjectIDProperty(
+    First = bpy.props.PointerProperty(
+        type=bpy.types.Object,
         name="First group",
-        validator=portal_validator
+        poll=lambda self, obj: obj.WowWMOGroup.Enabled and self.Second != obj and obj.name in bpy.context.scene.objects,
+        update=portal_validator
     )
 
-    Second = idproperty.ObjectIDProperty(
+    Second = bpy.props.PointerProperty(
+        type=bpy.types.Object,
         name="Second group",
-        validator=portal_validator
+        poll=lambda self, obj: obj.WowWMOGroup.Enabled and self.First != obj and obj.name in bpy.context.scene.objects,
+        update=portal_validator
     )
 
-    def portal_validator(ob):
-        return ob.type == 'MESH' and ob.WowWMOGroup.Enabled
+    def portal_validator(self, context):
+        if self.Second and not self.Second.WowWMOGroup.Enabled:
+            self.Second = None
+
+        if self.First and not self.First.WowWMOGroup.Enabled:
+            self.First = None
 
     def execute(self, context):
 

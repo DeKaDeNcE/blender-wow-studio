@@ -272,7 +272,10 @@ class WMOGroupFile:
 
         obj.WowLiquid.Color = self.root.material_lookup[self.mliq.materialID].WowMaterial.DiffColor
         obj.WowLiquid.LiquidType = str(real_liquid_type)
-        obj.WowLiquid.WMOGroup = group_name
+        try:
+            obj.WowLiquid.WMOGroup = bpy.context.scene.objects[group_name]
+        except KeyError:
+            raise KeyError("Liquid {} points to a non-existing WMO group".format(obj.name))
 
         if self.root.parent:
             obj.parent = self.root.parent
@@ -492,10 +495,11 @@ class WMOGroupFile:
         nobj.WowWMOGroup.GroupDesc = self.root.mogn.get_string(self.mogp.DescGroupNameOfs)
         nobj.WowWMOGroup.GroupDBCid = int(self.mogp.GroupID)
 
-        nobj.WowWMOGroup.Fog1 = self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[0]).zfill(2)
-        nobj.WowWMOGroup.Fog2 = self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[1]).zfill(2)
-        nobj.WowWMOGroup.Fog3 = self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[2]).zfill(2)
-        nobj.WowWMOGroup.Fog4 = self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[3]).zfill(2)
+        objects = bpy.context.scene.objects
+        nobj.WowWMOGroup.Fog1 = objects[self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[0]).zfill(2)]
+        nobj.WowWMOGroup.Fog2 = objects[self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[1]).zfill(2)]
+        nobj.WowWMOGroup.Fog3 = objects[self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[2]).zfill(2)]
+        nobj.WowWMOGroup.Fog4 = objects[self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[3]).zfill(2)]
 
         if self.mogp.Flags & MOGP_FLAG.HasWater:
             self.load_liquids(obj_name, nobj.location)
@@ -1068,7 +1072,7 @@ class WMOGroupFile:
 
         self.mogp.Flags |= int(obj.WowWMOGroup.PlaceType)
 
-        hasLights = False
+        has_lights = False
 
         fogs = (obj.WowWMOGroup.Fog1,
                 obj.WowWMOGroup.Fog2,
@@ -1077,16 +1081,14 @@ class WMOGroupFile:
 
         lamps = obj.WowWMOGroup.Relations.Lights
 
-        objects = bpy.context.scene.objects
-
         # set fog references
-        self.mogp.FogIndices = (objects[fogs[0]].WowFog.FogID if fogs[0] else 0,
-                                objects[fogs[1]].WowFog.FogID if fogs[0] else 0,
-                                objects[fogs[2]].WowFog.FogID if fogs[0] else 0,
-                                objects[fogs[3]].WowFog.FogID if fogs[0] else 0)
+        self.mogp.FogIndices = (fogs[0].WowFog.FogID if fogs[0] else 0,
+                                fogs[1].WowFog.FogID if fogs[0] else 0,
+                                fogs[2].WowFog.FogID if fogs[0] else 0,
+                                fogs[3].WowFog.FogID if fogs[0] else 0)
         # save lamps
         if lamps:
-            hasLights = True
+            has_lights = True
             for lamp in lamps:
                 self.molr.LightRefs.append(lamp.id)
 
@@ -1139,7 +1141,7 @@ class WMOGroupFile:
             self.root.mohd.Flags |= 0x4
             self.mogp.LiquidType = int(obj.WowWMOGroup.LiquidType)
 
-        if not hasLights:
+        if not has_lights:
             self.molr = None
         else:
             self.mogp.Flags |= MOGP_FLAG.HasLight

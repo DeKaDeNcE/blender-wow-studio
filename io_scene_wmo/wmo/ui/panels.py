@@ -472,16 +472,15 @@ class WowWMOGroupPanel(bpy.types.Panel):
 
         col.separator()
         col.label("Fogs:")
-        idproperty.layout_id_prop(col, context.object.WowWMOGroup, "Fog1")
-        idproperty.layout_id_prop(col, context.object.WowWMOGroup, "Fog2")
-        idproperty.layout_id_prop(col, context.object.WowWMOGroup, "Fog3")
-        idproperty.layout_id_prop(col, context.object.WowWMOGroup, "Fog4")
+        col.prop(context.object.WowWMOGroup, "Fog1")
+        col.prop(context.object.WowWMOGroup, "Fog2")
+        col.prop(context.object.WowWMOGroup, "Fog3")
+        col.prop(context.object.WowWMOGroup, "Fog4")
 
         col.separator()
         col.prop(context.object.WowWMOGroup, "GroupDBCid")
         col.prop(context.object.WowWMOGroup, "LiquidType")
 
-        idproperty.enabled = context.object.WowLiquid.Enabled
         self.layout.enabled = context.object.WowWMOGroup.Enabled
 
     @classmethod
@@ -495,8 +494,6 @@ class WowWMOGroupPanel(bpy.types.Panel):
                 and not context.object.WoWDoodad.Enabled
                 )
 
-def fog_validator(ob):
-    return ob.WowFog.Enabled
 
 class WowWMOMODRStore(bpy.types.PropertyGroup):
     value = bpy.props.IntProperty(name="Doodads Ref")
@@ -517,6 +514,18 @@ class WowWMOGroupRelations(bpy.types.PropertyGroup):
     Liquid = bpy.props.StringProperty()
     Doodads = bpy.props.CollectionProperty(type=WowWMODoodadRel)
 
+def fog_validator(self, context):
+    if not self.Fog1.WowFog.Enabled or self.Fog1.name not in bpy.context.scene.objects:
+        self.Fog1 = None
+
+    if not self.Fog2.WowFog.Enabled or self.Fog2.name not in bpy.context.scene.objects:
+        self.Fog2 = None
+
+    if not self.Fog3.WowFog.Enabled or self.Fog3.name not in bpy.context.scene.objects:
+        self.Fog3 = None
+
+    if not self.Fog4.WowFog.Enabled or self.Fog4.name not in bpy.context.scene.objects:
+        self.Fog4 = None
 
 class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
 
@@ -554,13 +563,33 @@ class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
         description="Fill this WMO group with selected liquid."
         )
 
-    Fog1 = idproperty.ObjectIDProperty(name="Fog #1", validator=fog_validator)
+    Fog1 = bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Fog #1",
+        poll=lambda self, obj: obj.WowFog.Enabled and obj.name in bpy.context.scene.objects,
+        update=fog_validator
+    )
 
-    Fog2 = idproperty.ObjectIDProperty(name="Fog #2", validator=fog_validator)
+    Fog2 = bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Fog #2",
+        poll=lambda self, obj: obj.WowFog.Enabled and obj.name in bpy.context.scene.objects,
+        update=fog_validator
+    )
 
-    Fog3 = idproperty.ObjectIDProperty(name="Fog #3", validator=fog_validator)
+    Fog3 = bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Fog #3",
+        poll=lambda self, obj: obj.WowFog.Enabled and obj.name in bpy.context.scene.objects,
+        update=fog_validator
+    )
 
-    Fog4 = idproperty.ObjectIDProperty(name="Fog #4", validator=fog_validator)
+    Fog4 = bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Fog #4",
+        poll=lambda self, obj: obj.WowFog.Enabled and obj.name in bpy.context.scene.objects,
+        update=fog_validator
+    )
 
 
     MODR = bpy.props.CollectionProperty(type=WowWMOMODRStore)
@@ -590,11 +619,10 @@ class WowPortalPlanePanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
 
         column = layout.column()
-        idproperty.layout_id_prop(column, context.object.WowPortalPlane, "First")
-        idproperty.layout_id_prop(column, context.object.WowPortalPlane, "Second")
+        column.prop(context.object.WowPortalPlane, "First")
+        column.prop(context.object.WowPortalPlane, "Second")
 
         col = layout.column()
 
@@ -602,7 +630,6 @@ class WowPortalPlanePanel(bpy.types.Panel):
         col.label("Relation direction:")
         col.prop(context.object.WowPortalPlane, "Algorithm", expand=True)
 
-        idproperty.enabled = context.object.WowLiquid.Enabled
         layout.enabled = context.object.WowPortalPlane.Enabled
 
     @classmethod
@@ -616,8 +643,13 @@ class WowPortalPlanePanel(bpy.types.Panel):
                 and not context.object.WoWDoodad.Enabled
                 )
 
-def portal_validator(ob):
-    return ob.type == 'MESH' and ob.WowWMOGroup.Enabled
+def portal_validator(self, context):
+    if self.Second and not self.Second.WowWMOGroup.Enabled:
+        self.Second = None
+
+    if self.First and not self.First.WowWMOGroup.Enabled:
+        self.First = None
+
 
 class WowPortalPlanePropertyGroup(bpy.types.PropertyGroup):
 
@@ -626,15 +658,19 @@ class WowPortalPlanePropertyGroup(bpy.types.PropertyGroup):
         description="Enable wow WMO group properties"
         )
 
-    First = idproperty.ObjectIDProperty(
+    First = bpy.props.PointerProperty(
+        type=bpy.types.Object,
         name="First group",
-        validator=portal_validator
-        )
+        poll=lambda self, obj: obj.WowWMOGroup.Enabled and self.Second != obj and obj.name in bpy.context.scene.objects,
+        update=portal_validator
+    )
 
-    Second = idproperty.ObjectIDProperty(
+    Second = bpy.props.PointerProperty(
+        type=bpy.types.Object,
         name="Second group",
-        validator=portal_validator
-        )
+        poll=lambda self, obj: obj.WowWMOGroup.Enabled and self.First != obj and obj.name in bpy.context.scene.objects,
+        update=portal_validator
+    )
 
     PortalID = bpy.props.IntProperty(
         name="Portal's ID",
@@ -668,14 +704,10 @@ class WowLiquidPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
         self.layout.prop(context.object.WowLiquid, "LiquidType")
         self.layout.prop(context.object.WowLiquid, "Color")
+        self.layout.prop(context.object.WowLiquid, "WMOGroup")
 
-        column = layout.column()
-        idproperty.layout_id_prop(column, context.object.WowLiquid, "WMOGroup")
-
-        idproperty.enabled = context.object.WowLiquid.Enabled
         layout.enabled = context.object.WowLiquid.Enabled
 
     @classmethod
@@ -686,12 +718,21 @@ class WowLiquidPanel(bpy.types.Panel):
                 and context.object.WowLiquid.Enabled
                 )
 
-def liquid_validator(ob):
-    for object in bpy.context.scene.objects:
-        if object.type == 'MESH' and object.WowLiquid.WMOGroup == ob.name:
-            bpy.ops.render.report_message(message="Test", type=False )
+def liquid_validator(self, context):
+    for ob in bpy.context.scene.objects:
+        if ob.WowLiquid.Enabled and ob.WMOGroup is ob:
+            self.WMOGroup = None
+    if not ob.WowWMOGroup.Enabled:
+        self.WMOGroup = None
+
+def liquid_poll(self, obj):
+    if not obj.WowWMOGroup.Enabled:
+        return False
+
+    for ob in bpy.context.scene.objects:
+        if ob.WowLiquid.Enabled and ob.WMOGroup is obj:
             return False
-    return ob.WowWMOGroup.Enabled
+
 
 class WowLiquidPropertyGroup(bpy.types.PropertyGroup):
 
@@ -716,10 +757,13 @@ class WowLiquidPropertyGroup(bpy.types.PropertyGroup):
         description="Type of the liquid present in this WMO group"
         )
 
-    WMOGroup = idproperty.ObjectIDProperty(
+    WMOGroup = bpy.props.PointerProperty(
+        type=bpy.types.Object,
         name="WMO Group",
-        validator=liquid_validator
-        )
+        poll=liquid_poll,
+        update=liquid_validator
+    )
+
 
 def RegisterWowLiquidProperties():
     bpy.types.Object.WowLiquid = bpy.props.PointerProperty(type=WowLiquidPropertyGroup)

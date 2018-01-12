@@ -577,10 +577,10 @@ class WMOFile:
                 if relation.PortalIndex == index:
                     group_name = self.mogn.get_string(self.groups[relation.GroupIndex].mogp.GroupNameOfs)
                     if first_relationship:
-                        obj.WowPortalPlane.First = group_name
+                        obj.WowPortalPlane.First = bpy.context.scene.objects[group_name]
                         first_relationship = False
                     else:
-                        obj.WowPortalPlane.Second = group_name
+                        obj.WowPortalPlane.Second = bpy.context.scene.objects[group_name]
                         break
 
             mesh.from_pydata(verts, [], faces)
@@ -790,7 +790,6 @@ class WMOFile:
             light.AttenuationEnd = mesh.WowLight.AttenuationEnd
             self.molt.Lights.append(light)
 
-
         print("\nDone saving lights. "
               "\nTotal saving time: ", time.strftime("%M minutes %S seconds", time.gmtime(time.time() - start_time)))
 
@@ -803,7 +802,7 @@ class WMOFile:
             if not liquid_obj.WowLiquid.WMOGroup:
                 print("WARNING: Failed saving liquid: <<{}>>".format(liquid_obj.name))
                 continue
-            group_obj = bpy.context.scene.objects[liquid_obj.WowLiquid.WMOGroup]
+            group_obj = liquid_obj.WowLiquid.WMOGroup
 
             group_index = group_obj.WowWMOGroup.GroupID
             group = self.groups[group_index]
@@ -867,8 +866,8 @@ class WMOFile:
 
                     print("Done saving portal: <<{}>>".format(portal_obj.name))
 
-                first = bpy.context.scene.objects[self.bl_scene_objects.portals[portal_index].WowPortalPlane.First]
-                second = bpy.context.scene.objects[self.bl_scene_objects.portals[portal_index].WowPortalPlane.Second]
+                first = self.bl_scene_objects.portals[portal_index].WowPortalPlane.First
+                second = self.bl_scene_objects.portals[portal_index].WowPortalPlane.Second
 
                 # calculating portal relation
                 relation = PortalRelationship()
@@ -1028,16 +1027,12 @@ class BlenderSceneObjects:
 
                     group_objects = (obj.WowPortalPlane.First, obj.WowPortalPlane.Second)
 
-                    for group_name in group_objects:
-                        if group_name:
-                            group_obj = None
-                            try:
-                                group_obj = bpy.context.scene.objects[group_name]
-                            except KeyError:
-                                print("\nWARNING: portal <<{}>> points to a non-existing object.".format(group_name))
-                                continue
+                    for group_obj in group_objects:
+                        if group_obj in bpy.context.scene:
                             rel = group_obj.WowWMOGroup.Relations.Portals.add()
                             rel.id = obj.name
+                        else:
+                            raise KeyError("Portal <<{}>> points to a non-existing object.".format(obj.name))
 
                 elif obj.WowFog.Enabled:
                     self.fogs.append(obj)
