@@ -1,6 +1,4 @@
 from .enums import *
-from ...idproperty import idproperty
-
 import bpy
 
 
