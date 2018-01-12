@@ -1008,12 +1008,15 @@ class WMOToolsPanelObjectMode(bpy.types.Panel):
         box1_row1.operator("scene.wow_add_fog", text = 'Fog', icon = 'GROUP_VERTEX')
         box1_row1.operator("scene.wow_add_water", text = 'Water', icon = 'MOD_WAVE')
         box1_row2 = box1_col.row(align=True)
+        box1_row3 = box1_col.row(align=True)
         if game_data_loaded:
             if not has_sets:
                 box1_row2.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2', icon = 'LOAD_FACTORY')
                 box1_row2.operator("scene.wow_import_last_wmo_from_wmv", text = 'WMO', icon = 'APPEND_BLEND')
-
-        box1_col.operator("scene.wow_add_scale_reference", text = 'Scale', icon = 'OUTLINER_OB_ARMATURE')
+                box1_row3.operator("scene.wow_import_adt_scene", text = 'ADT', icon = 'OUTLINER_OB_GROUP_INSTANCE')
+                box1_row3.operator("scene.wow_add_scale_reference", text = 'Scale', icon = 'OUTLINER_OB_ARMATURE')
+        else:
+            box1_col.operator("scene.wow_add_scale_reference", text = 'Scale', icon = 'OUTLINER_OB_ARMATURE')
 
         col.label(text="Game data:")
         icon = 'COLOR_GREEN' if game_data_loaded else 'COLOR_RED'

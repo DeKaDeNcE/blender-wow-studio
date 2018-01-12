@@ -19,7 +19,7 @@ class WoWFileData:
         """ Check if the file is available in WoW filesystem """
         for storage, type in self.files:
             if type:
-                file = storage.has_file(filepath)
+                file = filepath in storage
             else:
                 abs_path = os.path.join(storage, filepath)
                 file = os.path.exists(abs_path) and os.path.isfile(abs_path)
@@ -46,24 +46,18 @@ class WoWFileData:
 
     def extract_file(self, dir, filepath):
         """ Extract the latest version of the file from loaded archives to provided working directory. """
-        storage, type = self.has_file(filepath)
-        if storage:
-            if type:
-                storage.extract(filepath, dir)
-            else:
-                file = open(os.path.join(storage, filepath), "rb").read()
-                abs_path = os.path.join(dir, filepath)
-                local_dir = os.path.dirname(abs_path)
 
-                if not os.path.exists(local_dir):
-                    os.makedirs(local_dir)
+        file = self.read_file(filepath)
 
-                f = open(abs_path, 'wb')
-                f.write(file or b'')
-                f.close()
+        abs_path = os.path.join(dir, filepath)
+        local_dir = os.path.dirname(abs_path)
 
-        else:
-            raise KeyError("\nRequested file <<{}>> not found in WoW filesystem.".format(filepath))
+        if not os.path.exists(local_dir):
+            os.makedirs(local_dir)
+
+        f = open(abs_path, 'wb')
+        f.write(file or b'')
+        f.close()
 
     def extract_files(self, dir, filenames):
         """ Extract the latest version of the files from loaded archives to provided working directory. """
@@ -92,7 +86,8 @@ class WoWFileData:
             self.converter.convert(blp_paths)
 
             for blp_path in blp_paths:
-                os.remove(blp_path)
+                if os.path.exists(blp_path):
+                    os.remove(blp_path)
 
         else:
             raise FileNotFoundError("\nPNG texture extraction failed. No converter executable specified or found.")

@@ -10,6 +10,7 @@ import os
 import sys
 import time
 import struct
+import shutil
 
 ###############################
 ## WMO operators
@@ -238,19 +239,25 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
                 if not cached_obj:
                     try:
-                        game_data.extract_file(save_dir, wmo_path)
-                        abs_path = os.path.join(save_dir, wmo_path)
+                        game_data.extract_file(dir, wmo_path)
+                        root_path = os.path.join(dir, wmo_path)
 
-                        with open(abs_path, 'rb') as f:
-                            f.seek(20)
+                        with open(root_path, 'rb') as f:
+                            f.seek(24)
                             n_groups = struct.unpack('I', f.read(4))[0]
 
-                        game_data.extract_files(
-                            save_dir,
-                            ["{}_{}.wmo".format(wmo_path[:-4], str(i).zfill(3)) for i in range(n_groups)]
-                        )
+                        group_paths = ["{}_{}.wmo".format(wmo_path[:-4], str(i).zfill(3)) for i in range(n_groups)]
 
-                        obj = import_wmo.import_wmo_to_blender_scene(abs_path, True, True, True)
+                        game_data.extract_files(dir, group_paths)
+
+                        from .. import import_wmo
+                        obj = import_wmo.import_wmo_to_blender_scene(root_path, True, True, True)
+
+                        # clean up unnecessary files and directories
+                        os.remove(root_path)
+                        for group_path in group_paths:
+                            os.remove(os.path.join(dir, group_path))
+
                     except:
                         bpy.ops.mesh.primitive_cube_add()
                         obj = bpy.context.scene.objects.active
@@ -347,22 +354,25 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
         if dir:
             try:
                 game_data.extract_file(dir, wmo_path)
-                abs_path = os.path.join(dir, wmo_path)
+                root_path = os.path.join(dir, wmo_path)
 
-                with open(abs_path, 'rb') as f:
-                    f.seek(20)
+                with open(root_path, 'rb') as f:
+                    f.seek(24)
                     n_groups = struct.unpack('I', f.read(4))[0]
 
-                game_data.extract_files(
-                    dir,
-                    ["{}_{}.wmo".format(wmo_path[:-4], str(i).zfill(3)) for i in range(n_groups)]
-                )
+                group_paths = ["{}_{}.wmo".format(wmo_path[:-4], str(i).zfill(3)) for i in range(n_groups)]
+
+                game_data.extract_files(dir, group_paths)
 
                 from .. import import_wmo
-                obj = import_wmo.import_wmo_to_blender_scene(abs_path, True, True, True)
+                obj = import_wmo.import_wmo_to_blender_scene(root_path, True, True, True)
 
-            except Exception as e:
-                raise e
+                # clean up unnecessary files and directories
+                os.remove(root_path)
+                for group_path in group_paths:
+                    os.remove(os.path.join(dir, group_path))
+
+            except:
                 self.report({'ERROR'}, "Failed to import model.")
                 return {'CANCELLED'}
 
