@@ -998,7 +998,7 @@ class OBJECT_OP_Bake_Portal_Relations(bpy.types.Operator):
 
         success = False
 
-        groups = tuple(x for x in bpy.context.scene.objects if x.WowWMOGroup.Enabled)
+        groups = tuple(x for x in bpy.context.scene.objects if x.WowWMOGroup.Enabled and not x.hide)
 
         for obj in bpy.context.selected_objects:
             if obj.WowPortalPlane.Enabled:
