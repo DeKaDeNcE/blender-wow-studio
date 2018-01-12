@@ -3,8 +3,8 @@ import os
 import bpy
 import time
 import subprocess
-from storm import MPQFile
-
+from . import mpyq
+from .mpyq import *
 
 class WoWFileData():
     def __init__(self, wow_path, blp_path):
@@ -15,7 +15,7 @@ class WoWFileData():
     def __del__(self):
         print("\nUnloading game data...")
 
-    def read_file(self, filepath):
+    def read_file(self, filepath, force_decompress=False):
         """ Read the latest version of the file from loaded archives and directories. """
         file = None
         for pair in self.files:
@@ -23,10 +23,7 @@ class WoWFileData():
             type = pair[1]
 
             if type:
-                try:
-                    file = storage.open(filepath).read()
-                except KeyError:
-                    pass
+                file = storage.read_file(filepath, force_decompress)
             else:
                 abs_path = os.path.join(storage, filepath)
                 if os.path.exists(abs_path) and os.path.isfile(abs_path):
@@ -37,13 +34,13 @@ class WoWFileData():
         print("\nRequested file <<" + filepath + ">> not found in MPQ archives.")
         return None
 
-    def extract_files(self, dir, filenames):
+    def extract_files(self, dir, filenames, force_decompress=False):
         """ Read the latest version of the files from loaded archives and directories and
         extract them to provided working directory. """
 
         result = False
         for filename in filenames:
-            file = self.read_file(filename)
+            file = self.read_file(filename, force_decompress)
             if not file:
                 continue
 
@@ -63,7 +60,7 @@ class WoWFileData():
 
 
 
-    def extract_textures_as_png(self, dir, filenames):
+    def extract_textures_as_png(self, dir, filenames, force_decompress=False):
         """ Read the latest version of the texture files from loaded archives and directories and
         extract them to current working directory as PNG images. """
         if self.converter:
@@ -72,7 +69,7 @@ class WoWFileData():
             for filename in filenames:
                 abs_path = os.path.join(dir, filename)
                 if not os.path.exists(os.path.splitext(abs_path)[0] + ".png"):
-                    file = self.read_file(filename)
+                    file = self.read_file(filename, force_decompress)
                     if not file:
                         continue
                     local_dir = os.path.dirname(abs_path)
@@ -134,7 +131,7 @@ class WoWFileData():
 
             for package in data_packages:
                 if os.path.isfile(package):
-                    resource_map.append((MPQFile(package), True))
+                    resource_map.append((mpyq.MPQArchive(package, listfile=False), True))
                     print("\nLoaded MPQ: " + os.path.basename(package))
                 else:
                     resource_map.append((package, False))
