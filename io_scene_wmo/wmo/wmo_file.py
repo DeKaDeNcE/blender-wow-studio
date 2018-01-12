@@ -1028,7 +1028,7 @@ class BlenderSceneObjects:
                     group_objects = (obj.WowPortalPlane.First, obj.WowPortalPlane.Second)
 
                     for group_obj in group_objects:
-                        if group_obj in bpy.context.scene:
+                        if group_obj.name in bpy.context.scene:
                             rel = group_obj.WowWMOGroup.Relations.Portals.add()
                             rel.id = obj.name
                         else:

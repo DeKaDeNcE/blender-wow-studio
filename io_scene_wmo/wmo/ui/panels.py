@@ -1054,8 +1054,9 @@ class WMOToolsPanelObjectMode(bpy.types.Panel):
             if not has_sets:
                 box1_row2.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2', icon = 'LOAD_FACTORY')
                 box1_row2.operator("scene.wow_import_last_wmo_from_wmv", text = 'WMO', icon = 'APPEND_BLEND')
-                box1_row3.operator("scene.wow_import_adt_scene", text = 'ADT', icon = 'OUTLINER_OB_GROUP_INSTANCE')
-                box1_row3.operator("scene.wow_add_scale_reference", text = 'Scale', icon = 'OUTLINER_OB_ARMATURE')
+            box1_row3.operator("scene.wow_import_adt_scene", text='ADT', icon='OUTLINER_OB_GROUP_INSTANCE')
+            box1_row3.operator("scene.wow_add_scale_reference", text='Scale', icon='OUTLINER_OB_ARMATURE')
+
         else:
             box1_col.operator("scene.wow_add_scale_reference", text = 'Scale', icon = 'OUTLINER_OB_ARMATURE')
 
@@ -1119,6 +1120,7 @@ class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
         if hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files:
             col.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2', icon='LOAD_FACTORY')
             col.operator("scene.wow_import_last_wmo_from_wmv", text='WMO', icon='APPEND_BLEND')
+            col.operator("scene.wow_import_adt_scene", text='ADT', icon='OUTLINER_OB_GROUP_INSTANCE'
 
 def wow_components_add_menu_item(self, context):
     self.layout.menu("view3D.add_wow_components_menu", icon = 'SOLO_ON')
