@@ -1211,7 +1211,7 @@ class OBJECT_OP_Fill_Textures(bpy.types.Operator):
 
                         sys.stdout = open(os.devnull, 'w')
 
-                        if game_data.read_file(rest_path):
+                        if game_data.has_file(rest_path)[1]:
                             mesh.materials[i].WowMaterial.Texture1 = rest_path
                             break
 
