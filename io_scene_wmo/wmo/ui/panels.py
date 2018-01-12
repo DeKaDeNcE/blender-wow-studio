@@ -512,16 +512,16 @@ class WowWMOGroupRelations(bpy.types.PropertyGroup):
     Doodads = bpy.props.CollectionProperty(type=WowWMODoodadRel)
 
 def fog_validator(self, context):
-    if not self.Fog1.WowFog.Enabled or self.Fog1.name not in bpy.context.scene.objects:
+    if self.Fog1 and (not self.Fog1.WowFog.Enabled or self.Fog1.name not in bpy.context.scene.objects):
         self.Fog1 = None
 
-    if not self.Fog2.WowFog.Enabled or self.Fog2.name not in bpy.context.scene.objects:
+    if self.Fog2 and (not self.Fog2.WowFog.Enabled or self.Fog2.name not in bpy.context.scene.objects):
         self.Fog2 = None
 
-    if not self.Fog3.WowFog.Enabled or self.Fog3.name not in bpy.context.scene.objects:
+    if self.Fog3 and (not self.Fog3.WowFog.Enabled or self.Fog3.name not in bpy.context.scene.objects):
         self.Fog3 = None
 
-    if not self.Fog4.WowFog.Enabled or self.Fog4.name not in bpy.context.scene.objects:
+    if self.Fog4 and (not self.Fog4.WowFog.Enabled or self.Fog4.name not in bpy.context.scene.objects):
         self.Fog4 = None
 
 class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
