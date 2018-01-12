@@ -1041,12 +1041,11 @@ class BlenderSceneObjects:
                 elif obj.WowLiquid.Enabled:
                     self.liquids.append(obj)
                     group = obj.WowLiquid.WMOGroup
-                    
+
                     if group:
                         group.WowWMOGroup.Relations.Liquid = obj.name
                     else:
                         print("\nWARNING: liquid <<{}>> points to a non-existing object.".format(obj.WowLiquid.WMOGroup))
-                        group.WowWMOGroup.Relations.Liquid = ""
                         continue
 
             elif obj.type == 'LAMP' and obj.data.WowLight.Enabled:
