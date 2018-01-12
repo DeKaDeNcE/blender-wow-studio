@@ -1040,10 +1040,9 @@ class BlenderSceneObjects:
 
                 elif obj.WowLiquid.Enabled:
                     self.liquids.append(obj)
-                    group = None
-                    try:
-                        group = bpy.context.scene.objects[obj.WowLiquid.WMOGroup]
-                    except KeyError:
+                    if group:
+                        group = obj.WowLiquid.WMOGroup
+                    else:
                         print("\nWARNING: liquid <<{}>> points to a non-existing object.".format(obj.WowLiquid.WMOGroup))
                         group.WowWMOGroup.Relations.Liquid = ""
                         continue
