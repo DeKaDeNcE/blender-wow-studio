@@ -228,7 +228,6 @@ def menu_export(self, context):
 
 def register():
     addon_updater_ops.register(bl_info)
-    idproperty.register()
     bpy.utils.register_module(__name__)
     panels.register()
     bpy.types.INFO_MT_file_import.append(menu_import)
@@ -239,8 +238,7 @@ def unregister():
     bpy.utils.unregister_module(__name__)
     panels.unregister()
     bpy.types.INFO_MT_file_import.remove(menu_import)
-    bpy.types.INFO_MT_file_export.remove(menu_export)
-    idproperty.unregister()
+    bpy.types.INFO_MT_file_export.remove(menu_export))
 
 if __name__ == "__main__":
     register()
