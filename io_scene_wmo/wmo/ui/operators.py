@@ -1209,13 +1209,9 @@ class OBJECT_OP_Fill_Textures(bpy.types.Operator):
                         rest_path = os.path.join(path[1], rest_path)
                         rest_path = rest_path[:-1] if rest_path.endswith("\\") else rest_path
 
-                        sys.stdout = open(os.devnull, 'w')
-
                         if game_data.has_file(rest_path)[1]:
                             mesh.materials[i].WowMaterial.Texture1 = rest_path
                             break
-
-                        sys.stdout = sys.__stdout__
 
             self.report({'INFO'}, "Done filling texture paths")
 
