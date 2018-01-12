@@ -716,19 +716,18 @@ class WowLiquidPanel(bpy.types.Panel):
                 )
 
 def liquid_validator(self, context):
-    for ob in bpy.context.scene.objects:
-        if ob.WowLiquid.Enabled and ob.WMOGroup is ob:
-            self.WMOGroup = None
-    if not ob.WowWMOGroup.Enabled:
+    if self.WMOGroup and not self.WMOGroup.WowWMOGroup.Enabled:
         self.WMOGroup = None
 
 def liquid_poll(self, obj):
-    if not obj.WowWMOGroup.Enabled:
+    if not obj.WowWMOGroup.Enabled and obj.name in bpy.context.scene.objects:
         return False
 
     for ob in bpy.context.scene.objects:
-        if ob.WowLiquid.Enabled and ob.WMOGroup is obj:
+        if ob.WowLiquid.Enabled and ob.WowLiquid.WMOGroup is obj:
             return False
+
+    return True
 
 
 class WowLiquidPropertyGroup(bpy.types.PropertyGroup):
