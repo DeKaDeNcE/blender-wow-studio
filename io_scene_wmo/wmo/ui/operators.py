@@ -237,21 +237,24 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
                 cached_obj = instance_cache.get(wmo_path)
 
                 if not cached_obj:
-
-                    game_data.extract_files(save_dir, wmo_path,))
-
-                    i = 0
-                    while True:
-                        result = game_data.extract_files(save_dir, (wmo_path[:-4] + "_" + str(i).zfill(3) + ".wmo",))
-                        if not result:
-                            break
-                        i += 1
-
                     try:
-                        obj = import_wmo.import_wmo_to_blender_scene(os.path.join(save_dir, wmo_path), True, True, True)
+                        game_data.extract_file(save_dir, wmo_path)
+                        abs_path = os.path.join(save_dir, wmo_path)
+
+                        with open(abs_path, 'rb') as f:
+                            f.seek(20)
+                            n_groups = struct.unpack('I', f.read(4))[0]
+
+                        game_data.extract_files(
+                            save_dir,
+                            ["{}_{}.wmo".format(wmo_path[:-4], str(i).zfill(3)) for i in range(n_groups)]
+                        )
+
+                        obj = import_wmo.import_wmo_to_blender_scene(abs_path, True, True, True)
                     except:
                         bpy.ops.mesh.primitive_cube_add()
                         obj = bpy.context.scene.objects.active
+                        obj.name = os.path.basename(wmo_path) + ".wmo"
                         print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(wmo_path))
 
                     instance_cache[wmo_path] = obj
@@ -342,20 +345,24 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
             return {'CANCELLED'}
 
         if dir:
-
-            game_data.extract_files(dir, (wmo_path,))
-
-            i = 0
-            while True:
-                result = game_data.extract_files(dir, (wmo_path[:-4] + "_" + str(i).zfill(3) + ".wmo",))
-                if not result:
-                    break
-                i += 1
-
             try:
+                game_data.extract_file(dir, wmo_path)
+                abs_path = os.path.join(dir, wmo_path)
+
+                with open(abs_path, 'rb') as f:
+                    f.seek(20)
+                    n_groups = struct.unpack('I', f.read(4))[0]
+
+                game_data.extract_files(
+                    dir,
+                    ["{}_{}.wmo".format(wmo_path[:-4], str(i).zfill(3)) for i in range(n_groups)]
+                )
+
                 from .. import import_wmo
-                import_wmo.import_wmo_to_blender_scene(os.path.join(dir, wmo_path), True, True, True)
-            except:
+                obj = import_wmo.import_wmo_to_blender_scene(abs_path, True, True, True)
+
+            except Exception as e:
+                raise e
                 self.report({'ERROR'}, "Failed to import model.")
                 return {'CANCELLED'}
 
