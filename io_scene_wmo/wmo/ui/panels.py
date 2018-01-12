@@ -1,6 +1,6 @@
 from .enums import *
 import bpy
-
+~
 
 ###############################
 ## Root properties

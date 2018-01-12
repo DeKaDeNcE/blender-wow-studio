@@ -45,7 +45,6 @@ from .wmo.ui import enums
 from .wmo.ui import operators
 from .wmo.ui import panels
 from . import addon_updater_ops
-from .idproperty import idproperty
 from .mpq import wow as mpq
 from .wmo import export_wmo
 from .wmo import import_wmo
