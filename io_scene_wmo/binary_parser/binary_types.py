@@ -5,17 +5,17 @@ from types import LambdaType
 non_compatible_type_exception_str = "Provided type is not generic or container or does not define custom __read__() and __write__() methods."
 
 generic_type_dict = {
-    'b': "int8_t",
-    'B': "uint8_t",
-    'h': "int16_t",
-    'H': "uint16_t",
-    'i': "int32_t",
-    'I': "uint32_t",
-    'q': "int64_t",
-    'Q': "uint64_t",
+    'b': "int8",
+    'B': "uint8",
+    'h': "int16",
+    'H': "uint16",
+    'i': "int32",
+    'I': "uint32",
+    'q': "int64",
+    'Q': "uint64",
     'f': "float",
-    's': "char_t",
-    '?': "bool_t"
+    's': "char",
+    '?': "bool"
 }
 
 class GenericType:
@@ -39,18 +39,18 @@ class GenericType:
     def __repr__(self):
         return "<GenericType: {}>".format(generic_type_dict[self.format])
 
-int8_t = GenericType('b', 1)
-uint8_t = GenericType('B', 1)
-int16_t = GenericType('h', 2)
-uint16_t = GenericType('H', 2)
-int32_t = GenericType('i', 4)
-uint32_t = GenericType('I', 4)
-int64_t = GenericType('q', 8)
-uint64_t = GenericType('Q', 8)
-float32_t = GenericType('f', 4, 0.0)
-float64_t = GenericType('f', 8, 0.0)
-char_t = GenericType('s', 1, '')
-bool_t = GenericType('?', 1, False)
+int8 = GenericType('b', 1)
+uint8 = GenericType('B', 1)
+int16 = GenericType('h', 2)
+uint16 = GenericType('H', 2)
+int32 = GenericType('i', 4)
+uint32 = GenericType('I', 4)
+int64 = GenericType('q', 8)
+uint64 = GenericType('Q', 8)
+float32 = GenericType('f', 4, 0.0)
+float64 = GenericType('f', 8, 0.0)
+char = GenericType('s', 1, '')
+boolean = GenericType('?', 1, False)
 
 class string_t:
     default_value = ''
@@ -79,70 +79,6 @@ class string_t:
     def __write__(self, f, string):
         f.write(string.encode(self.encoding))
 
-
-# containers
-class ArrayMeta(type):
-    def __getitem__(cls, item):
-        return cls(item)
-
-class tuple_t(metaclass=ArrayMeta):
-    __slots__ = ('len', 'type', 'name')
-
-    def __init__(self, len):
-        self.len = len
-
-    def __call__(self):
-        return tuple(self.type() for _ in range(self.len))
-
-    def __read__(self, f, caller):
-        if isinstance(self.type, (GenericType, string_t)):
-            return tuple(self.type.__read__(f) for _ in range(self.len))
-        elif isinstance(self.type, (tuple_t, array_t)):
-            return tuple(self.type.__read__(f, self) for _ in range(self.len))
-        else:
-            for item in getattr(caller, self.name):
-                item.__read__(f)
-
-
-    def __getitem__(cls, item):
-        self.
-
-
-    def __lshift__(self, other):
-        self.type = other
-
-    def __or__(self, other):
-        self.name = other
-        return self, other
-
-
-class array_t(metaclass=ArrayMeta):
-    __slots__ = ('bound_len_val', 'type', 'name')
-
-    def __init__(self, bound_len_val):
-        self.bound_len_val = bound_len_val
-
-    def __call__(self):
-        return list()
-
-    def __read__(self, f, caller, *args, **kwargs):
-        len_ = len(getattr(caller, self.bound_len_val))
-        if isinstance(self.type, (GenericType, string_t)):
-            return tuple(self.type().__read__(f) for _ in range(len_))
-        elif isinstance(self.type, (tuple_t, array_t)):
-            return tuple(self.type().__read__(f, self) for _ in range(len_))
-        else:
-            for item in getattr(caller, self.name):
-                item.__read__(f)
-
-    def __lshift__(self, other):
-        self.type = other
-
-    def __or__(self, other):
-        self.name = other
-        return self, other
-
-
 # preprocessor-like conditions
 class if_:
     def __init__(self, exp):
@@ -161,6 +97,8 @@ class TypeMeta(type):
         return cls, other
 
     def __lshift__(cls, other):
+
+
         args = []
         kwargs = None
         if type(other) is dict:
@@ -184,6 +122,23 @@ class TypeMeta(type):
 
 class Type(metaclass=TypeMeta): pass
 
+
+# containers
+class ArrayMeta(type):
+    def __getitem__(cls, item):
+        return cls(item)
+
+
+class static_array(metaclass=ArrayMeta):
+    __slots__ = ('len', 'type')
+
+    def __init__(self, len):
+        self.len = len
+
+    def __lshift__(self, other):
+
+
+
 # templates
 class typename_t_meta(TypeMeta):
     def __getitem__(cls, item):
@@ -192,7 +147,7 @@ class typename_t_meta(TypeMeta):
         return instance
 
 
-class typename_t(metaclass=typename_t_meta):
+class template_T(metaclass=typename_t_meta):
     __slots__ = ('id',)
 
     def resolve_template_type(self, *args, **kwargs):
@@ -247,12 +202,12 @@ class TemplateExpressionQueue():
 
     def __call__(self, *args, **kwargs):
         type_ = self.cls
-        if isinstance(self.cls, typename_t):
+        if isinstance(self.cls, template_T):
             type_ = self.cls.resolve_template_type(*args, **kwargs)
 
         new_args = []
         for arg in self.args:
-            if isinstance(arg, typename_t):
+            if isinstance(arg, template_T):
                 new_args.append(arg.resolve_template_type(*args, **kwargs))
 
             elif isinstance(arg, TemplateExpressionQueue):
@@ -264,7 +219,7 @@ class TemplateExpressionQueue():
         new_kwargs = {}
         if kwargs is not None:
             for key, value in kwargs.items():
-                if isinstance(value, typename_t):
+                if isinstance(value, template_T):
                     new_kwargs[key] = value.resolve_template_type(*args, **kwargs)
 
                 elif isinstance(value, TemplateExpressionQueue):
@@ -352,7 +307,7 @@ class Struct(metaclass=StructMeta):
             field_type, field_name = field_pair
             type_ = field_type
 
-            if isinstance(field_type, typename_t):
+            if isinstance(field_type, template_T):
                 type_ = field_type.resolve_template_type(*args, **kwargs)
                 self.__fields__[i] = (type_, self.__fields__[i][1])
 
@@ -360,14 +315,14 @@ class Struct(metaclass=StructMeta):
                 type_ = field_type(*args, **kwargs)
 
             if isinstance(type_, (tuple_t, array_t)):
-                if isinstance(type_.type, typename_t):
+                if isinstance(type_.type, template_T):
                     type_.type = type_.type.resolve_template_type(*args, **kwargs)
                 setattr(self, field_name, type_())
 
             elif isinstance(type_, (GenericType, string_t, LambdaType)):
                 setattr(self, field_name, type_())
             else:
-                setattr(self, field_name, type_(*args, **kwargs)
+                setattr(self, field_name, type_(*args, **kwargs))
 
     def __read__(self, f):
 
@@ -410,7 +365,7 @@ def typeof(struct, field):
 
     for field_type, field_name in struct.__fields__:
         if field_name == field:
-            return struct.__template_types__[field_name] if isinstance(field_type, typename_t) \
+            return struct.__template_types__[field_name] if isinstance(field_type, template_T) \
                 else field_type if not isinstance(field_type, TemplateExpressionQueue) else TemplateExpressionQueue
 
     raise AttributeError("Struct {} does not define field {}."
@@ -427,51 +382,32 @@ if __name__ == '__main__':
 
     class SameStructChild(Struct):
         __fields__ = (
-            typename_t['b'] | 'radius',
-            float64_t | 'big_radius'
+            template_T['b'] | 'radius',
+            float64 | 'big_radius'
         )
 
     class SampleStruct2(Struct):
         __fields__ = (
             if_(False),
-                uint16_t | 'test',
-                uint32_t | 'test1',
+                uint16 | 'test',
+                uint32 | 'test1',
             elif_(True),
-                uint16_t | 'test',
+                uint16 | 'test',
                 if_(True),
-                    uint32_t | 'test1',
+                    uint32 | 'test1',
                 endif_,
             else_,
-                float64_t | 'test2',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test3',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test11',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test12',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test13',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test14',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test15',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test16',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test17',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test19',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test20',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test21',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test22',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test23',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test24',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test25',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test26',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test27',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test28',
-                SameStructChild << {'b': typename_t['b'], 'a': typename_t['a']} | 'test29',
-
+            float64 | 'test2',
+            SameStructChild << {'b': template_T['b'], 'a': template_T['a']} | 'test29',
             endif_,
-            uint32_t | 'test6',
-            uint32_t | 'test7',
-            uint32_t | 'test8'
+            uint32 | 'test6',
+            uint32 | 'test7',
+            uint32 | 'test8'
         )
 
     test_buf = []
     for _ in range(20000):
-        struct = SampleStruct2(b=uint8_t, a=float32_t)
+        struct = SampleStruct2(b=uint8, a=float32)
         test_buf.append(struct)
 
     print(test_buf[1500])

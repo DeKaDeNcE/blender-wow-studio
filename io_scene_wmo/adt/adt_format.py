@@ -3,10 +3,10 @@ from ..binary_parser.binary_types import *
 
 class MVER(Struct):
     __fields__ = (
-        uint32_t | 'version'
+            uint32 | 'version'
     )
 
 class MHDR(Struct):
     __fields__ = (
-        uint32_t | 'flags',
+        uint32 | 'flags',
     )

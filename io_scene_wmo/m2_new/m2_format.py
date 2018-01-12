@@ -12,10 +12,10 @@ VERSION = 264
 
 class M2CompQuaternion(Struct):
     __fields__ = (
-        uint16_t | 'x',
-        uint16_t | 'y',
-        uint16_t | 'z',
-        uint16_t | 'w',
+        uint16 | 'x',
+        uint16 | 'y',
+        uint16 | 'z',
+        uint16 | 'w',
     )
 
     #TODO: Divide by 0x7FFFF
@@ -38,13 +38,13 @@ class M2CompQuaternion(Struct):
 class M2Bounds(Struct):
     __fields__ = (
         CAaBox | 'extent',
-        float32_t | 'radius'
+        float32 | 'radius'
     )
 
 class M2InterpolationRange(Struct):
     __fields__ = (
-        uint32_t | 'start',
-        uint32_t | 'end'
+        uint32 | 'start',
+        uint32 | 'end'
     )
 
 class M2Array:
@@ -80,30 +80,30 @@ class M2Array:
 
 class M2Track(Struct):
     __fields__ = (
-        uint16_t | 'interpolation_type',
-        uint16_t | 'global_sequence_index',
+        uint16 | 'interpolation_type',
+        uint16 | 'global_sequence_index',
         if_(VERSION < M2Versions.WOTLK),
-            M2Array << (pair << uint32_t) | 'interpolation_ranges',
-            M2Array << uint32_t | 'timestamps',
-            M2Array << typename_t | 'values',
+        M2Array << (pair << uint32) | 'interpolation_ranges',
+        M2Array << uint32 | 'timestamps',
+        M2Array << template_T | 'values',
         else_,
-            M2Array << (M2Array << uint32_t) | 'timestamps',
-            M2Array << (M2Array << typename_t) | 'values',
+        M2Array << (M2Array << uint32) | 'timestamps',
+        M2Array << (M2Array << template_T) | 'values',
         endif_
     )
 
 
 class M2FakeTrack(Struct):
     __fields__ = (
-        M2Array << uint32_t | 'timestamps',
-        M2Array << uint32_t | 'values'
+        M2Array << uint32 | 'timestamps',
+        M2Array << uint32 | 'values'
     )
 
 
 class M2Loop(Struct):
     ''' A list of timestamps that act as upper limits for global sequence ranges. '''
     __fields__ = {
-        'timestamps': uint32_t
+        'timestamps': uint32
     }
 
 
@@ -138,7 +138,7 @@ class M2Versions:
 class PFID_Chunk(Struct):
     __fields__ = {
         'header': ChunkHeader,
-        'phys_file_id': uint32_t
+        'phys_file_id': uint32
     }
 
     def write(self, f):
@@ -182,9 +182,9 @@ class SFID_Chunk(Struct):
 
 class AnimFileID(Struct):
     __fields__ = (
-        uint8_t | 'anim_id',
-        uint8_t | 'sub_anim_id',
-        uint32_t | 'file_id'
+        uint8 | 'anim_id',
+        uint8 | 'sub_anim_id',
+        uint32 | 'file_id'
 
     )
 
@@ -259,25 +259,25 @@ class M2GlobalFlags:
 class M2Header(Struct):
     __fields__ = (
         ChunkHeader | 'header',
-        uint32_t | 'version',
-        M2Array << char_t | 'name',
-        uint32_t | 'global_flags',
+        uint32 | 'version',
+        M2Array << char | 'name',
+        uint32 | 'global_flags',
         M2Array << M2Loop | 'global_loops',
         M2Array << M2Sequence | 'sequences',
-        M2Array << uint16_t | 'sequence_lookup',
+        M2Array << uint16 | 'sequence_lookup',
 
         if_(VERSION <= M2Versions.TBC),
-            M2Array << uint16_t | 'playable_animation_lookup',  # TODO: verify type
+        M2Array << uint16 | 'playable_animation_lookup',  # TODO: verify type
         endif_,
 
         M2Array << M2CompBone | 'bones',
-        M2Array << uint16_t | 'key_bone_lookup',
+        M2Array << uint16 | 'key_bone_lookup',
         M2Array << M2Vertex | 'vertices',
 
         if_(VERSION <= M2Versions.TBC),
-            M2Array << M2SkinProfile | 'skin_profiles',
+        M2Array << M2SkinProfile | 'skin_profiles',
         else_,
-            uint32_t | 'num_skin_profiles',
+        uint32 | 'num_skin_profiles',
         endif_,
 
         M2Array << M2Color | 'colors',
@@ -285,38 +285,38 @@ class M2Header(Struct):
         M2Array << M2TextureWeight | 'texture_weights',
 
         if_(VERSION <= M2Versions.TBC),
-            M2Array << unk | 'unknown', # TODO: verify type
+        M2Array << unk | 'unknown',  # TODO: verify type
         endif_,
 
         M2Array << M2TextureTransform | 'texture_transforms',
-        M2Array << uint16_t | 'replaceable_texture_lookup',
+        M2Array << uint16 | 'replaceable_texture_lookup',
         M2Array << M2Material | 'materials',
-        M2Array << uint16_t | 'bone_lookup_table',
-        M2Array << uint16_t | 'texture_lookup_table',
-        M2Array << uint16_t | 'tex_unit_lookup_table', # >= cata unused
-        M2Array << uint16_t | 'transparency_lookup_table',
-        M2Array << uint16_t | 'texture_transforms_lookup_table',
+        M2Array << uint16 | 'bone_lookup_table',
+        M2Array << uint16 | 'texture_lookup_table',
+        M2Array << uint16 | 'tex_unit_lookup_table',  # >= cata unused
+        M2Array << uint16 | 'transparency_lookup_table',
+        M2Array << uint16 | 'texture_transforms_lookup_table',
 
         CAaBox | 'bounding_box',
-        float32_t | 'bounding_sphere_radius',
+        float32 | 'bounding_sphere_radius',
         CAaBox | 'collision_box',
-        float32_t | 'collision_sphere_radius',
+        float32 | 'collision_sphere_radius',
 
-        M2Array << uint16_t | 'collision_triangles',
+        M2Array << uint16 | 'collision_triangles',
         M2Array << C3Vector | 'collision_vertices',
         M2Array << C3Vector | 'collision_normals',
         M2Array << M2Attachment | 'attachments',
-        M2Array << uint16_t | 'attachment_lookup_table',
+        M2Array << uint16 | 'attachment_lookup_table',
         M2Array << M2Event | 'events',
         M2Array << M2Light | 'lights',
         M2Array << M2Camera | 'cameras',
-        M2Array << uint16_t | 'camera_lookup_table',
+        M2Array << uint16 | 'camera_lookup_table',
         M2Array << M2Ribbon | 'ribbon_emitters',
 
         if_(VERSION <= M2Versions.WOTLK),
-            M2Array << M2ParticleOld | 'particle_emitters',
+        M2Array << M2ParticleOld | 'particle_emitters',
         else_,
-            M2Array << M2Particle | 'particle_emitters',
+        M2Array << M2Particle | 'particle_emitters',
         endif_
 
         # TODO: implement on-demand structure
@@ -346,25 +346,25 @@ class M2SequenceFlags:
 
 class M2Sequence(Struct):
     __fields__ = (
-        uint16_t | 'id',
-        uint16_t | 'variation_index',
+        uint16 | 'id',
+        uint16 | 'variation_index',
 
         if_(VERSION <= M2Versions.TBC),
-            uint32_t | 'start_timestamp',
-            uint32_t | 'end_timestamp',
+        uint32 | 'start_timestamp',
+        uint32 | 'end_timestamp',
         else_,
-            uint32_t | 'duration',
+        uint32 | 'duration',
         endif_,
 
-        float32_t | 'movespeed',
-        uint32_t | 'flags',
-        int16_t | 'frequency',
-        uint16_t | 'padding',
-        M2Range  | 'replay',
-        uint32_t | 'blendtime',
+        float32 | 'movespeed',
+        uint32 | 'flags',
+        int16 | 'frequency',
+        uint16 | 'padding',
+        M2Range | 'replay',
+        uint32 | 'blendtime',
         M2Bounds | 'bounds',
-        int16_t | 'variation_next',
-        uint16_t | 'alias_next'
+        int16 | 'variation_next',
+        uint16 | 'alias_next'
     )
 
 class PlayableAnimationLookupFlags:  # TODO: check if other variations are ever seen
@@ -375,8 +375,8 @@ class PlayableAnimationLookupFlags:  # TODO: check if other variations are ever 
 
 class M2PlayableAnimationIndex(Struct):  # < TBC
     __fields__ = (
-        int16_t | 'fallback_animation_id',
-        int16_t | 'flags'
+        int16 | 'fallback_animation_id',
+        int16 | 'flags'
     )
 
 # == Bones == #
@@ -393,23 +393,23 @@ class M2CompBoneFlags:
 
 class M2CompBone(Struct):
     __fields__ = (
-        int32_t | 'key_bone_id',
-        uint32_t | 'flags',
-        int16_t | 'parent_bone',
-        uint16_t | 'submesh_id',
+        int32 | 'key_bone_id',
+        uint32 | 'flags',
+        int16 | 'parent_bone',
+        uint16 | 'submesh_id',
 
         if_(VERSION >= M2Versions.TBC),
-            uint16_t | 'unk', #TODO: see wiki, IRC 02.07.2017
-            uint32_t | 'bone_name_crc',
+        uint16 | 'unk',  #TODO: see wiki, IRC 02.07.2017
+        uint32 | 'bone_name_crc',
 
         M2Track << C3Vector | 'translation',
         if_(VERSION >= M2Versions.CLASSIC),
-            M2Track << C4Quaternion | 'rotation',
+        M2Track << C4Quaternion | 'rotation',
         else_,
-            M2Track << M2CompQuaternion | 'rotation',
+        M2Track << M2CompQuaternion | 'rotation',
         endif_,
-            M2Track << C3Vector | 'scale',
-            C3Vector | 'pivot'
+        M2Track << C3Vector | 'scale',
+        C3Vector | 'pivot'
     )
 
 M2KeyBoneNames = [
@@ -481,8 +481,8 @@ class M2BlendingModes:
 
 class M2Material(Struct):
     __fields__ = (
-        uint16_t | 'flags',
-        uint16_t | 'blending_mode'
+        uint16 | 'flags',
+        uint16 | 'blending_mode'
     )
 
 
@@ -520,9 +520,9 @@ class M2TextureWeight(Struct):
 
 class M2Texture(Struct):
     __fields__ = (
-        uint32_t | 'type',
-        uint32_t | 'flags',
-        M2Array << char_t | 'filename' #TODO: implement string type reading
+        uint32 | 'type',
+        uint32 | 'flags',
+        M2Array << char | 'filename' #TODO: implement string type reading
 
     )
 
@@ -561,118 +561,118 @@ class M2TextureTransform(Struct):
 
 class M2RibbonEmitter(Struct):
     __fields__ = (
-        uint32_t | 'ribbon_id',
-        uint32_t | 'bone_index',
+        uint32 | 'ribbon_id',
+        uint32 | 'bone_index',
         C3Vector | 'position',
-        M2Array << uint16_t | 'texture_indices',
-        M2Array << uint16_t | 'material_indices',
+        M2Array << uint16 | 'texture_indices',
+        M2Array << uint16 | 'material_indices',
         M2Track << C3Vector | 'color_track',
         M2Track << fixed16 | 'alpha_track',
-        M2Track << float32_t | 'height_above_track',
-        M2Track << float32_t | 'height_below_track',
-        float32_t | 'edge_lifetime',
-        float32_t | 'gravity',
-        uint16_t | 'texture_rows',
-        uint16_t | 'texture_cols',
-        M2Track << uint16_t | 'tex_slot_track',
-        M2Track << uint8_t | 'visibility_track', #TODO: check template type
+        M2Track << float32 | 'height_above_track',
+        M2Track << float32 | 'height_below_track',
+        float32 | 'edge_lifetime',
+        float32 | 'gravity',
+        uint16 | 'texture_rows',
+        uint16 | 'texture_cols',
+        M2Track << uint16 | 'tex_slot_track',
+        M2Track << uint8 | 'visibility_track',  #TODO: check template type
 
         if_(VERSION >= M2Versions.WOTLK),
-            int16_t | 'priority_plane',
-            uint16_t | 'padding',
+        int16 | 'priority_plane',
+        uint16 | 'padding',
         endif_
     )
 
 
 class M2ParticleOld(Struct):
     __fields__ = (
-        uint32_t | 'particle_id',
-        uint32_t | 'flags',
+        uint32 | 'particle_id',
+        uint32 | 'flags',
         C3Vector | 'position',
-        uint16_t | 'bone',
+        uint16 | 'bone',
 
         if_(VERSION >= M2Versions.CATA),
-            #TODO: implement bitfield in binary reader
+        #TODO: implement bitfield in binary reader
         else_,
-            uint16_t | 'texture',
+        uint16 | 'texture',
 
-        M2Array << char_t | 'geometry_model_filename',
-        M2Array << char_t | 'recursion_model_filename',
+        M2Array << char | 'geometry_model_filename',
+        M2Array << char | 'recursion_model_filename',
 
         if_(VERSION <= M2Versions.TBC),
-            uint8_t | 'blending_type',
-            uint8_t | 'emitter_type',
-            uint16_t | 'particle_color_index',
+        uint8 | 'blending_type',
+        uint8 | 'emitter_type',
+        uint16 | 'particle_color_index',
         else_,
-            uint16_t | 'blending_type',
-            uint16_t | 'emitter_type',
+        uint16 | 'blending_type',
+        uint16 | 'emitter_type',
         endif_,
 
         if_(VERSION >= M2Versions.CATA),
-            #TODO: implement fixed_point type
+        #TODO: implement fixed_point type
         else_,
-            uint8_t | 'particle_type',
-            uint8_t | 'head_or_tail',
+        uint8 | 'particle_type',
+        uint8 | 'head_or_tail',
         endif_,
 
-        uint16_t | 'texture_tile_rotation',
-        uint16_t | 'texture_dimensions_rows',
-        uint16_t | 'texture_dimensions_columns',
-        M2Track << float32_t | 'emission_speed',
-        M2Track << float32_t | 'speed_variation',
-        M2Track << float32_t | 'vertical_range',
-        M2Track << float32_t | 'horizontal_range',
-        M2Track << float32_t | 'gravity',
-        M2Track << float32_t | 'lifespan',
+        uint16 | 'texture_tile_rotation',
+        uint16 | 'texture_dimensions_rows',
+        uint16 | 'texture_dimensions_columns',
+        M2Track << float32 | 'emission_speed',
+        M2Track << float32 | 'speed_variation',
+        M2Track << float32 | 'vertical_range',
+        M2Track << float32 | 'horizontal_range',
+        M2Track << float32 | 'gravity',
+        M2Track << float32 | 'lifespan',
 
         if_(VERSION >= M2Versions.WOTLK),
-            float32_t | 'lifespan_vary',
+        float32 | 'lifespan_vary',
         endif_,
 
-        M2Track << float32_t | 'emission_rate',
+        M2Track << float32 | 'emission_rate',
 
         if_(VERSION >= M2Versions.WOTLK),
-            float32_t | 'emission_rate_vary',
+        float32 | 'emission_rate_vary',
         endif_,
 
-        M2Track << float32_t | 'emission_area_length',
-        M2Track << float32_t | 'emission_area_width',
-        M2Track << float32_t | 'z_source',
+        M2Track << float32 | 'emission_area_length',
+        M2Track << float32 | 'emission_area_width',
+        M2Track << float32 | 'z_source',
 
         if_(VERSION >= M2Versions.WOTLK),
-            M2FakeTrack << C3Vector | 'color_track',
-            M2FakeTrack << C2Vector | 'scale_track',
-            C2Vector | 'scale_vary',
-            M2FakeTrack << uint16_t | 'head_cell_track',
-            M2FakeTrack << uint16_t | 'tail_cell_track',
+        M2FakeTrack << C3Vector | 'color_track',
+        M2FakeTrack << C2Vector | 'scale_track',
+        C2Vector | 'scale_vary',
+        M2FakeTrack << uint16 | 'head_cell_track',
+        M2FakeTrack << uint16 | 'tail_cell_track',
         else_,
-            float32_t | 'mid_point',
-            #TODO: implement containers
+        float32 | 'mid_point',
+        #TODO: implement containers
         endif_,
 
-            float32_t | 'tail_length',
-            float32_t | 'twinkle_speed',
-            CRange | 'twinkle_scale',
-            float32_t | 'burst_multiplier',
-            float32_t | 'drag',
+        float32 | 'tail_length',
+        float32 | 'twinkle_speed',
+        CRange | 'twinkle_scale',
+        float32 | 'burst_multiplier',
+        float32 | 'drag',
 
         if_(VERSION >= M2Versions.WOTLK),
-            float32_t | 'base_spin',
-            float32_t | 'base_spin_vary',
-            float32_t | 'spin',
-            float32_t | 'spin_vary',
+        float32 | 'base_spin',
+        float32 | 'base_spin_vary',
+        float32 | 'spin',
+        float32 | 'spin_vary',
         else_,
-            float32_t | 'spin',
+        float32 | 'spin',
         endif_,
 
         M2Box | 'tumble',
         C3Vector | 'wind_vector',
-        float32_t | 'wind_time',
-        float32_t | 'follow_speed_1',
-        float32_t | 'follow_scale1',
-        float32_t | 'follow_speed_2',
+        float32 | 'wind_time',
+        float32 | 'follow_speed_1',
+        float32 | 'follow_scale1',
+        float32 | 'follow_speed_2',
         M2Array << C3Vector | 'spline_points',
-        M2Track << uint8_t | 'enabled_in'
+        M2Track << uint8 | 'enabled_in'
     )
 
 class M2ParicleOldEmittersTypes:
@@ -688,7 +688,7 @@ class M2BoundingVertices(Struct):
 
 class M2BoundingTriangles(Struct):
     __fields__ = (
-        uint16_t | 'index'
+            uint16 | 'index'
     )
 
 class M2BoundingNormals(Struct):
@@ -698,57 +698,57 @@ class M2BoundingNormals(Struct):
 
 class M2Light(Struct):
     __fields__ = (
-        uint16_t | 'type',
-        int16_t | 'bone',
+        uint16 | 'type',
+        int16 | 'bone',
         C3Vector | 'position',
         M2Track << C3Vector | 'ambient_color',
-        M2Track << float32_t | 'ambient_intensity',
+        M2Track << float32 | 'ambient_intensity',
         M2Track << C3Vector | 'diffuse_color',
-        M2Track << float32_t | 'diffuse_intensity',
-        M2Track << float32_t | 'attenuation_start',
-        M2Track << float32_t | 'attenuation_end',
-        M2Track << bool_t | 'visibility'
+        M2Track << float32 | 'diffuse_intensity',
+        M2Track << float32 | 'attenuation_start',
+        M2Track << float32 | 'attenuation_end',
+        M2Track << boolean | 'visibility'
     )
 
 
 class M2Camera(Struct):
     __fields__ = (
-        uint32_t | 'type',
+        uint32 | 'type',
 
         if_(VERSION < M2Versions.CATA),
-            float32_t | 'fov',
+        float32 | 'fov',
         endif_,
 
-        float32_t | 'far_clip',
-        float32_t | 'near_clip',
+        float32 | 'far_clip',
+        float32 | 'near_clip',
         M2Track << (M2SplineKey << C3Vector) | 'positions',
         C3Vector | 'position_base',
         M2Track << (M2SplineKey << C3Vector) | 'target_position',
         C3Vector | 'target_position_base',
-        M2Track << (M2SplineKey << float32_t) | 'roll',
+        M2Track << (M2SplineKey << float32) | 'roll',
 
         if_(VERSION >= M2Versions.CATA),
-            M2Track << (M2SplineKey << float32_t) | 'fov',
+        M2Track << (M2SplineKey << float32) | 'fov',
         endif_
     )
 
 class M2Attachment(Struct):
     __fields__ = (
-        uint32_t | 'id',
-        uint16_t | 'bone',
-        uint16_t | 'unknown',
+        uint32 | 'id',
+        uint16 | 'bone',
+        uint16 | 'unknown',
         C3Vector | 'position',
-        M2Track << bool_t | 'animate_attached'
+        M2Track << boolean | 'animate_attached'
     )
 
 class M2Events(Struct):
     __fields__ = (
-        uint32_t | 'identifier',
-        uint32_t | 'data',
-        uint32_t | 'bone',
+        uint32 | 'identifier',
+        uint32 | 'data',
+        uint32 | 'bone',
         C3Vector | 'position',
-        uint16_t | 'interpolation_type',
-        uint16_t | 'global_sequence'
+        uint16 | 'interpolation_type',
+        uint16 | 'global_sequence'
     )
 
 

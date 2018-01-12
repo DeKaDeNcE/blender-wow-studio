@@ -5,8 +5,8 @@ from mathutils import Vector, Quaternion
 
 class C2Vector(Struct):
     __fields__ = (
-        typename_t['x'] | 'x',
-        typename_t['x'] | 'y'
+        template_T['x'] | 'x',
+        template_T['x'] | 'y'
     )
 
 class CAaBox(Struct):

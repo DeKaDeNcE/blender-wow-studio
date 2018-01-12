@@ -8,23 +8,23 @@ class Chunk(Struct):
 
 class MVER_chunk(Chunk):
     __fields__ = (
-        uint32_t | 'version'
+            uint32 | 'version'
     )
 
 class MOHD_chunk(Chunk):
     __fields__ = (
-        uint32_t | 'n_materials',
-        uint32_t | 'n_groups',
-        uint32_t | 'n_portals',
-        uint32_t | 'n_lights',
-        uint32_t | 'n_models',
-        uint32_t | 'n_doodads',
-        uint32_t | 'n_sets',
+        uint32 | 'n_materials',
+        uint32 | 'n_groups',
+        uint32 | 'n_portals',
+        uint32 | 'n_lights',
+        uint32 | 'n_models',
+        uint32 | 'n_doodads',
+        uint32 | 'n_sets',
         BGRA | 'ambient_color',
-        uint32_t | 'id',
-        C3Vector << float32_t | 'bounding_box_corner_1',
-        C3Vector << float32_t | 'bounding_box_corner_2',
-        uint32_t | 'flags'
+        uint32 | 'id',
+        C3Vector << float32 | 'bounding_box_corner_1',
+        C3Vector << float32 | 'bounding_box_corner_2',
+        uint32 | 'flags'
     )
 
 class MOTX_chunk(Chunk):
@@ -34,16 +34,16 @@ class MOTX_chunk(Chunk):
 
 class WMO_Material(Struct):
     __fields__ = (
-        uint32_t | 'flags',
-        uint32_t | 'shader',
-        uint32_t | 'blend_mode',
-        uint32_t | 'texture1_ofs',
+        uint32 | 'flags',
+        uint32 | 'shader',
+        uint32 | 'blend_mode',
+        uint32 | 'texture1_ofs',
         BGRA | 'emissive_color',
         BGRA | 'sidn_emissive_color',
-        uint32_t | 'texture2_ofs',
+        uint32 | 'texture2_ofs',
         BGRA | 'diff_color',
-        uint32_t | 'terrain_type',
-        uint32_t | 'texture3_ofs',
+        uint32 | 'terrain_type',
+        uint32 | 'texture3_ofs',
         BGRA | 'color_3',
-        uint32_t | 'tex_3_flags',
+        uint32 | 'tex_3_flags',
     )
