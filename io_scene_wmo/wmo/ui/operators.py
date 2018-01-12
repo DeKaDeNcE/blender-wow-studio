@@ -238,7 +238,7 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
                 if not cached_obj:
 
-                    game_data.extract_files(save_dir, (wmo_path,))
+                    game_data.extract_files(save_dir, wmo_path,))
 
                     i = 0
                     while True:

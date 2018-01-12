@@ -28,21 +28,15 @@ class MPQFile(object):
 	def __repr__(self):
 		return "<%s paths=%r>" % (self.__class__.__name__, self.paths)
 
-	def _archive_contains(self, name):
+
+	def has_file(self, name):
+		"""
+		Returns an archive the containing requested file
+		"""
 		for mpq in self._archives:
 			if storm.SFileHasFile(mpq, name):
 				return mpq
 
-	def _regenerate_listfile(self):
-		self._listfile = []
-		for mpq in self._archives:
-			handle, file = storm.SFileFindFirstFile(mpq, "", "*")
-			while True:
-				self._listfile.append(file.replace("\\", "/"))
-				try:
-					file = storm.SFileFindNextFile(handle)
-				except storm.NoMoreFilesError:
-					break
 
 	def add_archive(self, name, flags=0):
 		"""
@@ -114,7 +108,7 @@ class MPQFile(object):
 
 		scope = int(bool(patched))
 
-		mpq = self._archive_contains(name)
+		mpq = self.has_file(name)
 		if not mpq:
 			raise KeyError("There is no item named %r in the archive" % (name))
 
@@ -137,7 +131,7 @@ class MPQFile(object):
 		otherwise unpatched.
 		"""
 		scope = int(bool(patched))
-		mpq = self._archive_contains(name)
+		mpq = self.has_file(name)
 		if not mpq:
 			raise KeyError("There is no item named %r in the archive" % (name))
 		storm.SFileExtractFile(mpq, name, path, scope)

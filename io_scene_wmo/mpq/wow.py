@@ -6,7 +6,7 @@ import subprocess
 from .storm import MPQFile
 
 
-class WoWFileData():
+class WoWFileData:
     def __init__(self, wow_path, blp_path):
         self.wow_path = wow_path
         self.files = self.open_game_resources(self.wow_path)
@@ -15,53 +15,61 @@ class WoWFileData():
     def __del__(self):
         print("\nUnloading game data...")
 
-    def read_file(self, filepath):
-        """ Read the latest version of the file from loaded archives and directories. """
-        file = None
-        for pair in self.files:
-            storage = pair[0]
-            type = pair[1]
-
+    def has_file(self, filepath):
+        """ Check if the file is available in WoW filesystem """
+        for storage, type in self.files:
             if type:
-                try:
-                    file = storage.open(filepath).read()
-                except KeyError:
-                    pass
+                file = storage.has_file(filepath)
             else:
                 abs_path = os.path.join(storage, filepath)
-                if os.path.exists(abs_path) and os.path.isfile(abs_path):
-                    file = open(abs_path, "rb").read()
-            if file:
-                return file
+                file = os.path.exists(abs_path) and os.path.isfile(abs_path)
 
-        print("\nRequested file <<" + filepath + ">> not found in MPQ archives.")
-        return None
+            if file:
+                return storage, type
+
+        return None, None
+
+    def read_file(self, filepath):
+        """ Read the latest version of the file from loaded archives and directories. """
+
+        storage, type = self.has_file(filepath)
+        if storage:
+            if type:
+                file = storage.open(filepath).read()
+            else:
+                file = open(os.path.join(storage, filepath), "rb").read()
+
+        else:
+            raise KeyError("\nRequested file <<{}>> not found in WoW filesystem.".format(filepath))
+
+        return file
+
+    def extract_file(self, dir, filepath):
+        """ Extract the latest version of the file from loaded archives to provided working directory. """
+        storage, type = self.has_file(filepath)
+        if storage:
+            if type:
+                storage.extract(filepath, dir)
+            else:
+                file = open(os.path.join(storage, filepath), "rb").read()
+                abs_path = os.path.join(dir, filepath)
+                local_dir = os.path.dirname(abs_path)
+
+                if not os.path.exists(local_dir):
+                    os.makedirs(local_dir)
+
+                f = open(abs_path, 'wb')
+                f.write(file or b'')
+                f.close()
+
+        else:
+            raise KeyError("\nRequested file <<{}>> not found in WoW filesystem.".format(filepath))
 
     def extract_files(self, dir, filenames):
-        """ Read the latest version of the files from loaded archives and directories and
-        extract them to provided working directory. """
+        """ Extract the latest version of the files from loaded archives to provided working directory. """
 
-        result = False
         for filename in filenames:
-            file = self.read_file(filename)
-            if not file:
-                continue
-
-            abs_path = os.path.join(dir, filename)
-            local_dir = os.path.dirname(abs_path)
-
-            if not os.path.exists(local_dir):
-                os.makedirs(local_dir)
-
-            f = open(abs_path, 'wb')
-            f.write(file or b'')
-            f.close()
-
-            result = True
-
-        return result
-
-
+            self.extract_file(dir, filename)
 
     def extract_textures_as_png(self, dir, filenames):
         """ Read the latest version of the texture files from loaded archives and directories and
@@ -72,17 +80,12 @@ class WoWFileData():
             for filename in filenames:
                 abs_path = os.path.join(dir, filename)
                 if not os.path.exists(os.path.splitext(abs_path)[0] + ".png"):
-                    file = self.read_file(filename)
-                    if not file:
+
+                    try:
+                        self.extract_file(dir, filename)
+                    except KeyError:
+                        print("PNG texture extraction: <<{}>> not found in WoW filesystem.".format(filename))
                         continue
-                    local_dir = os.path.dirname(abs_path)
-
-                    if not os.path.exists(local_dir):
-                        os.makedirs(local_dir)
-
-                    f = open(abs_path, 'wb')
-                    f.write(file or b'')
-                    f.close()
 
                     blp_paths.append(abs_path)
 
@@ -92,7 +95,7 @@ class WoWFileData():
                 os.remove(blp_path)
 
         else:
-            print("\nPNG texture extraction failed. No converter executable specified or found")
+            raise FileNotFoundError("\nPNG texture extraction failed. No converter executable specified or found.")
 
     @staticmethod
     def list_game_data_paths(path):
@@ -147,22 +150,23 @@ class WoWFileData():
             print("\nPath to World of Warcraft is empty or invalid. Failed to load game data.")
             return None
 
-class BLPConverter:
-    def __init__(self, toolPath):
-        if os.path.exists(toolPath):
-            self.toolPath = toolPath
-            print("\nFound BLP Converter executable: " + toolPath)
-        else:
-            raise Exception("\nNo BLPConverter found at given path: " + toolPath)
 
-    def convert(self, filepaths, alwaysReplace = False):
+class BLPConverter:
+    def __init__(self, tool_path):
+        if os.path.exists(tool_path):
+            self.toolPath = tool_path
+            print("\nFound BLP Converter executable: " + tool_path)
+        else:
+            raise Exception("\nNo BLPConverter found at given path: " + tool_path)
+
+    def convert(self, filepaths, always_replace = False):
         init_length = len(self.toolPath) + 4
         init_command = self.toolPath
         cur_length = 0
         cur_args = []
 
         for filepath in filepaths:
-            if alwaysReplace or not os.path.exists(os.path.splitext(filepath)[0] + ".png"):
+            if always_replace or not os.path.exists(os.path.splitext(filepath)[0] + ".png"):
                 length = len(filepath)
 
                 if 2047 - (cur_length + init_length) < length + 2:
