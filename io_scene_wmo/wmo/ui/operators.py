@@ -983,9 +983,7 @@ class OBJECT_OP_Bake_Portal_Relations(bpy.types.Operator):
             for obj in objects:
                 hit = obj.closest_point_on_mesh(
                     obj.matrix_world.inverted() * (object.matrix_world * object.data.polygons[0].center))
-                hit_dist = (
-                obj.matrix_world.inverted() * (object.matrix_world * object.data.polygons[0].center) - hit[1]).length
-
+                hit_dist = (obj.matrix_world * hit[1] - object.matrix_world * object.data.polygons[0].center).length
                 pairs.append((obj, hit_dist))
 
             pairs.sort(key=lambda x: x[1])
