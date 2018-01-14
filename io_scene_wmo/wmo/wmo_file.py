@@ -991,7 +991,7 @@ class BlenderSceneObjects:
         for obj in objects:
             obj_location_relative = obj.matrix_world.inverted() * object.location
             hit = obj.closest_point_on_mesh(obj_location_relative)
-            hit_dist = (obj_location_relative - hit[1]).length
+            hit_dist = (object.location - obj.matrix_world * hit[1]).length
             if hit_dist < dist:
                 dist = hit_dist
                 result = obj
