@@ -39,6 +39,7 @@ class GenericType:
     def __repr__(self):
         return "<GenericType: {}>".format(generic_type_dict[self.format])
 
+
 int8 = GenericType('b', 1)
 uint8 = GenericType('B', 1)
 int16 = GenericType('h', 2)
@@ -97,8 +98,6 @@ class TypeMeta(type):
         return cls, other
 
     def __lshift__(cls, other):
-
-
         args = []
         kwargs = None
         if type(other) is dict:
@@ -135,7 +134,33 @@ class static_array(metaclass=ArrayMeta):
     def __init__(self, len):
         self.len = len
 
+    def __or__(self, other):
+        return self, other
+
     def __lshift__(self, other):
+        args = []
+        kwargs = None
+        if type(other) is dict:
+            kwargs = other
+        elif isinstance(other, Iterable):
+            for element in other:
+                if type(element) is not dict:
+                    if kwargs is None:
+                        args.append(element)
+                    else:
+                        raise SyntaxError("Positional argument follows a keyword argument.")
+                else:
+                    kwargs = element
+        else:
+            args.append(other)
+
+        if kwargs is not None:
+            return TemplateExpressionQueue(self, *args, **kwargs)
+        else:
+            return TemplateExpressionQueue(self, *args)
+
+    def __call__(self, *args, **kwargs):
+        return tuple(self.type() for _ in range(self.len))
 
 
 
@@ -192,7 +217,7 @@ class template_T(metaclass=typename_t_meta):
             return TemplateExpressionQueue(self, *args)
 
 
-class TemplateExpressionQueue():
+class TemplateExpressionQueue:
     __slots__ = ('cls', 'args', 'kwargs')
 
     def __init__(self, cls, *args, **kwargs):
@@ -272,8 +297,6 @@ class StructMeta(TypeMeta):
                     raise SyntaxError("endif_ can only be used to close a condition.")
 
             elif (not exec_controller or exec_controller[-1]) and isinstance(element, tuple) and len(element) == 2:
-                if isinstance(element[0], (tuple_t, array_t)) and element[0].is_bound:
-                    dict['bound_containers'].append(element)
 
                 for field_type, field_name in new_fields:
                     if field_name == element[1]:
@@ -314,12 +337,12 @@ class Struct(metaclass=StructMeta):
             elif isinstance(field_type, TemplateExpressionQueue):
                 type_ = field_type(*args, **kwargs)
 
-            if isinstance(type_, (tuple_t, array_t)):
-                if isinstance(type_.type, template_T):
-                    type_.type = type_.type.resolve_template_type(*args, **kwargs)
-                setattr(self, field_name, type_())
+                if isinstance(type_, (static_array)):
+                    if isinstance(type_.type, TemplateExpressionQueue):
+                        type_.type = type_.type.resolve_template_type(*args, **kwargs)
+                    setattr(self, field_name, type_())
 
-            elif isinstance(type_, (GenericType, string_t, LambdaType)):
+            elif isinstance(type_, (GenericType, string_t, LambdaType, static_array)):
                 setattr(self, field_name, type_())
             else:
                 setattr(self, field_name, type_(*args, **kwargs))
@@ -329,7 +352,7 @@ class Struct(metaclass=StructMeta):
         for field_type, field_name in self.__fields__:
             if isinstance(field_type, (GenericType, string_t)):
                 setattr(self, field_name, field_type.__read__(f))
-            elif isinstance(field_type, (tuple_t, array_t)):
+            elif isinstance(field_type, (static_array)):
                 setattr(self, field_name, field_type.__read__(f, self))
             else:
                 getattr(self, field_name).__read__(f)
@@ -388,28 +411,12 @@ if __name__ == '__main__':
 
     class SampleStruct2(Struct):
         __fields__ = (
-            if_(False),
-                uint16 | 'test',
-                uint32 | 'test1',
-            elif_(True),
-                uint16 | 'test',
-                if_(True),
-                    uint32 | 'test1',
-                endif_,
-            else_,
-            float64 | 'test2',
-            SameStructChild << {'b': template_T['b'], 'a': template_T['a']} | 'test29',
-            endif_,
-            uint32 | 'test6',
-            uint32 | 'test7',
-            uint32 | 'test8'
+            static_array[3] << int8 | 'test',
         )
 
-    test_buf = []
-    for _ in range(20000):
-        struct = SampleStruct2(b=uint8, a=float32)
-        test_buf.append(struct)
 
-    print(test_buf[1500])
+    struct = SampleStruct2()
+
+    print(type(struct.test))
 
 
