@@ -171,16 +171,14 @@ class static_array(metaclass=ArrayMeta):
         else:
             dimension = iterable(type() if callable(type) else type for _ in range(lengths[0]))
 
-
         return dimension
 
-
     def __call__(self, *args, **kwargs):
-        self.type = args[0]()
+        arg = args[0]
+        self.type = arg() if callable(arg) else arg
 
         return self.generate_ndimensional_iterable(self.dimensions, self.type, tuple)
 
-        #return tuple(self.type() if isinstance(self.type, LambdaType) else self.type for _ in range(self.len))
 
 # templates
 class typename_t_meta(TypeMeta):
@@ -438,8 +436,8 @@ if __name__ == '__main__':
         )
 
 
-    struct = SampleStruct2(a=int16, b=int32, c=(static_array[3] << float32))
+    struct = SampleStruct2(a=int16, b=int32, c=SampleStruct(int8))
 
-    print(struct.array)
+    print(struct.array[1][1][1].test)
 
 
