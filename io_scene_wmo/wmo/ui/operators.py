@@ -990,7 +990,7 @@ class OBJECT_OP_Bake_Portal_Relations(bpy.types.Operator):
 
             return pairs[0][0], pairs[1][0]
 
-        if not  bpy.context.selected_objects:
+        if not bpy.context.selected_objects:
             self.report({'ERROR'}, "No objects selected.")
             return {'FINISHED'}
 

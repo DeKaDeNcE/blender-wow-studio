@@ -160,6 +160,7 @@ class static_array(metaclass=ArrayMeta):
             return TemplateExpressionQueue(self, *args)
 
     def __call__(self, *args, **kwargs):
+        self.type = args[0]
         return tuple(self.type() for _ in range(self.len))
 
 
@@ -226,17 +227,23 @@ class TemplateExpressionQueue:
         self.kwargs = kwargs
 
     def __call__(self, *args, **kwargs):
+        call_kwargs = self.kwargs
+
+        for key, value in kwargs.items():
+            if key not in call_kwargs:
+                call_kwargs[key] = value
+
         type_ = self.cls
-        if isinstance(self.cls, template_T):
-            type_ = self.cls.resolve_template_type(*args, **kwargs)
+        if isinstance(type_, template_T):
+            type_ = self.cls.resolve_template_type(*args, **call_kwargs)
 
         new_args = []
         for arg in self.args:
             if isinstance(arg, template_T):
-                new_args.append(arg.resolve_template_type(*args, **kwargs))
+                new_args.append(arg.resolve_template_type(*args, **call_kwargs))
 
             elif isinstance(arg, TemplateExpressionQueue):
-                new_args.append(lambda: arg(*args, **kwargs))
+                new_args.append(lambda: arg(*args, **call_kwargs))
 
             else:
                 new_args.append(arg)
@@ -245,15 +252,15 @@ class TemplateExpressionQueue:
         if kwargs is not None:
             for key, value in kwargs.items():
                 if isinstance(value, template_T):
-                    new_kwargs[key] = value.resolve_template_type(*args, **kwargs)
+                    new_kwargs[key] = value.resolve_template_type(*args, **call_kwargs)
 
                 elif isinstance(value, TemplateExpressionQueue):
-                    new_kwargs[key] = lambda: value(*args, **kwargs)
+                    new_kwargs[key] = lambda: value(*args, **call_kwargs)
 
                 else:
                     new_kwargs[key] = value
 
-            return lambda: type_(*new_args, **new_kwargs)
+            return lambda: type_(*new_args, **call_kwargs)
 
         else:
             return lambda: type_(*new_args)
@@ -337,12 +344,9 @@ class Struct(metaclass=StructMeta):
             elif isinstance(field_type, TemplateExpressionQueue):
                 type_ = field_type(*args, **kwargs)
 
-                if isinstance(type_, (static_array)):
-                    if isinstance(type_.type, TemplateExpressionQueue):
-                        type_.type = type_.type.resolve_template_type(*args, **kwargs)
-                    setattr(self, field_name, type_())
+                setattr(self, field_name, type_())
 
-            elif isinstance(type_, (GenericType, string_t, LambdaType, static_array)):
+            if isinstance(type_, (GenericType, string_t, LambdaType, static_array)):
                 setattr(self, field_name, type_())
             else:
                 setattr(self, field_name, type_(*args, **kwargs))
@@ -403,20 +407,20 @@ def sizeof(struct):
 
 if __name__ == '__main__':
 
-    class SameStructChild(Struct):
+    class SampleStruct(Struct):
         __fields__ = (
-            template_T['b'] | 'radius',
-            float64 | 'big_radius'
+            template_T['a'] | 'test',
         )
-
     class SampleStruct2(Struct):
         __fields__ = (
-            static_array[3] << int8 | 'test',
+            float64 | 'big_radius',
+            SampleStruct << {'a': int8} | 'structure',
+            static_array[3] << (SampleStruct << {'a': float32}) | 'test',
         )
 
 
     struct = SampleStruct2()
 
-    print(type(struct.test))
+    print(type(struct.test[0].test))
 
 
