@@ -129,10 +129,14 @@ class ArrayMeta(type):
 
 
 class static_array(metaclass=ArrayMeta):
-    __slots__ = ('len', 'type')
+    __slots__ = ('dimensions', 'type')
 
-    def __init__(self, len):
-        self.len = len
+    def __init__(self, length):
+        self.dimensions = [length,]
+
+    def __getitem__(self, length):
+        self.dimensions.append(length)
+        return self
 
     def __or__(self, other):
         return self, other
@@ -159,9 +163,24 @@ class static_array(metaclass=ArrayMeta):
         else:
             return TemplateExpressionQueue(self, *args)
 
+    @staticmethod
+    def generate_ndimensional_iterable(lengths, type, iterable):
+        if len(lengths) > 1:
+            dimension = iterable(static_array.generate_ndimensional_iterable(lengths[1:], type, iterable)
+                                 for _ in range(lengths[0]))
+        else:
+            dimension = iterable(type() if callable(type) else type for _ in range(lengths[0]))
+
+
+        return dimension
+
+
     def __call__(self, *args, **kwargs):
         self.type = args[0]()
-        return tuple(self.type() if isinstance(self.type, LambdaType) else self.type for _ in range(self.len))
+
+        return self.generate_ndimensional_iterable(self.dimensions, self.type, tuple)
+
+        #return tuple(self.type() if isinstance(self.type, LambdaType) else self.type for _ in range(self.len))
 
 # templates
 class typename_t_meta(TypeMeta):
@@ -415,11 +434,11 @@ if __name__ == '__main__':
             #SampleStruct << {'a': int8} | 'structure',
             SampleStruct << template_T['a'] | 'test',
             SampleStruct << template_T['b'] | 'test1',
-            static_array[15000] << template_T['c'] | 'array',
+            static_array[2][2][3] << template_T['c'] | 'array',
         )
 
 
-    struct = SampleStruct2(a=int16, b=int32, c=(static_array[2] << float32))
+    struct = SampleStruct2(a=int16, b=int32, c=(static_array[3] << float32))
 
     print(struct.array)
 
