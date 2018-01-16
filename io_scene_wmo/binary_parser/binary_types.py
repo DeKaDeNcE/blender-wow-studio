@@ -163,8 +163,6 @@ class static_array(metaclass=ArrayMeta):
         self.type = args[0]()
         return tuple(self.type() if isinstance(self.type, LambdaType) else self.type for _ in range(self.len))
 
-
-
 # templates
 class typename_t_meta(TypeMeta):
     def __getitem__(cls, item):
@@ -315,7 +313,7 @@ class StructMeta(TypeMeta):
 
         dict['__fields__'] = new_fields
 
-        slots = []
+        slots = ['fields',]
 
         for field in new_fields:
             slots.append(field[1])
@@ -327,11 +325,12 @@ class StructMeta(TypeMeta):
 
 
 class Struct(metaclass=StructMeta):
-    __fields__ = []
     __slots__ = ()
+    __fields__ = []
     bound_containers = []
 
     def __init__(self, *args, **kwargs):
+        self.fields = self.__fields__[:]
 
         for i, field_pair in enumerate(self.__fields__):
             field_type, field_name = field_pair
@@ -339,7 +338,7 @@ class Struct(metaclass=StructMeta):
 
             if isinstance(field_type, template_T):
                 type_ = field_type.resolve_template_type(*args, **kwargs)
-                self.__fields__[i] = (type_, self.__fields__[i][1])
+                self.fields[i] = (type_, self.__fields__[i][1])
 
             elif isinstance(field_type, TemplateExpressionQueue):
                 type_ = field_type(*args, **kwargs)
@@ -409,18 +408,19 @@ if __name__ == '__main__':
 
     class SampleStruct(Struct):
         __fields__ = (
-            template_T['a'] | 'test',
+            template_T[0] | 'test',
         )
     class SampleStruct2(Struct):
         __fields__ = (
-            float64 | 'big_radius',
-            SampleStruct << {'a': int8} | 'structure',
-            static_array[3] << (SampleStruct << {'a': float32}) | 'test',
+            #SampleStruct << {'a': int8} | 'structure',
+            SampleStruct << template_T['a'] | 'test',
+            SampleStruct << template_T['b'] | 'test1',
+            static_array[15000] << template_T['c'] | 'array',
         )
 
 
-    struct = SampleStruct2()
+    struct = SampleStruct2(a=int16, b=int32, c=(static_array[2] << float32))
 
-    print(type(struct.test[0].test))
+    print(struct.array)
 
 
