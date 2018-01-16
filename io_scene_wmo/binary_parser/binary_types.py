@@ -160,8 +160,8 @@ class static_array(metaclass=ArrayMeta):
             return TemplateExpressionQueue(self, *args)
 
     def __call__(self, *args, **kwargs):
-        self.type = args[0]
-        return tuple(self.type() for _ in range(self.len))
+        self.type = args[0]()
+        return tuple(self.type() if isinstance(self.type, LambdaType) else self.type for _ in range(self.len))
 
 
 
