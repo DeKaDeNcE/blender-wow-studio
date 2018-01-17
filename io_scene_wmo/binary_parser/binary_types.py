@@ -290,8 +290,8 @@ class StructMeta(TypeMeta):
         struct_fields = []
         for base in bases:
             if issubclass(base, Struct):
-                struct_fields.extend(base.__fields__)
-        struct_fields.extend(dict.get('__fields__'))
+                struct_fields.extend(base._fields_)
+        struct_fields.extend(dict.get('_fields_'))
 
         new_fields = []
         exec_controller = deque()
@@ -328,9 +328,9 @@ class StructMeta(TypeMeta):
         if exec_controller:
             raise SyntaxError("At least one condition is not closed with endif_.")
 
-        dict['__fields__'] = new_fields
+        dict['_fields_'] = new_fields
 
-        slots = ['fields',]
+        slots = ['_rfields_',]
 
         for field in new_fields:
             slots.append(field[1])
@@ -343,22 +343,23 @@ class StructMeta(TypeMeta):
 
 class Struct(metaclass=StructMeta):
     __slots__ = ()
-    __fields__ = []
+    _fields_ = []
     bound_containers = []
 
     def __init__(self, *args, **kwargs):
-        self.fields = self.__fields__[:]
+        self._rfields_ = self._fields_[:]
 
-        for i, field_pair in enumerate(self.__fields__):
+        for i, field_pair in enumerate(self._fields_):
             field_type, field_name = field_pair
             type_ = field_type
 
             if isinstance(field_type, template_T):
                 type_ = field_type.resolve_template_type(*args, **kwargs)
-                self.fields[i] = (type_, self.__fields__[i][1])
+                self._rfields_[i] = (type_, self._fields_[i][1])
 
             elif isinstance(field_type, TemplateExpressionQueue):
                 type_ = field_type(*args, **kwargs)
+                self._rfields_[i] = field_type.cls.__class__
 
                 setattr(self, field_name, type_())
 
@@ -367,9 +368,9 @@ class Struct(metaclass=StructMeta):
             else:
                 setattr(self, field_name, type_(*args, **kwargs))
 
-    def __read__(self, f):
+    def _read_(self, f):
 
-        for field_type, field_name in self.__fields__:
+        for field_type, field_name in self._rfields_:
             if isinstance(field_type, (GenericType, string_t)):
                 setattr(self, field_name, field_type.__read__(f))
             elif isinstance(field_type, (static_array)):
@@ -377,11 +378,11 @@ class Struct(metaclass=StructMeta):
             else:
                 getattr(self, field_name).__read__(f)
 
-    def __write__(self, f):
+    def _write_(self, f):
 
         self.update_bound_container_data()
 
-        for field_type, field_name in self.__fields__:
+        for field_type, field_name in self._rfields_:
 
             if isinstance(field_type, (GenericType, string_t, tuple_t, array_t)):
                 field_type.__write__(f, getattr(self, field_name))
@@ -393,43 +394,16 @@ class Struct(metaclass=StructMeta):
         for cntr, name in self.bound_containers:
             setattr(self, cntr.bound_value, len(getattr(self, name)))
 
-    @property
-    def __size__(self):
-        total_size = 0
-        for field_type, field_name in self.__fields__:
-            total_size += field_type.__size__
-        return total_size
-
-
-def typeof(struct, field):
-    is_class = isinstance(struct, type)
-    if (not is_class and not isinstance(struct, Struct)) or (is_class and not issubclass(struct, Struct)):
-        raise TypeError("typeof(object, attribute) requires a statically typed structure.")
-
-    for field_type, field_name in struct.__fields__:
-        if field_name == field:
-            return struct.__template_types__[field_name] if isinstance(field_type, template_T) \
-                else field_type if not isinstance(field_type, TemplateExpressionQueue) else TemplateExpressionQueue
-
-    raise AttributeError("Struct {} does not define field {}."
-                         .format(struct.__class__ if is_class else struct.__class__.__name__, field))
-
-
-def sizeof(struct):
-    if not isinstance(struct, Struct):
-        raise TypeError("sizeof(object) requires an instance of a statically typed structure.")
-    return struct.__size__
-
 
 if __name__ == '__main__':
 
     class SampleStruct(Struct):
-        __fields__ = (
+        _fields_ = (
             template_T[0] | 'test',
         )
 
     class SampleStruct2(Struct):
-        __fields__ = (
+        _fields_ = (
             #SampleStruct << {'a': int8} | 'structure',
             SampleStruct << template_T['a'] | 'test',
             SampleStruct << template_T['b'] | 'test1',
@@ -439,6 +413,6 @@ if __name__ == '__main__':
 
     struct = SampleStruct2(a=int16, b=int32, c=SampleStruct(int8))
 
-    print(struct.array)
+    print(struct._rfields_)
 
 
