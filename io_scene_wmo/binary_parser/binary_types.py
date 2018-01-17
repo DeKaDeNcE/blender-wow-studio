@@ -177,14 +177,25 @@ class static_array(metaclass=ArrayMeta):
             return TemplateExpressionQueue(self, *args)
 
     def _read_(self, f, attribute_pair):
-        itrbl = getattr(*attribute_pair)
+        cls, attr = attribute_pair
+        itrbl = getattr(cls, attr)
+        dimensions = self.dimensions
+        if self.is_bound:
+            for i, dm in enumerate(self.dimensions):
+                dm_type = type(dm)
+                if dm_type is str:
+                    dimensions[i] = getattr(cls, dm)
+                elif dm_type is int:
+                    pass
+                else:
+                    raise TypeError('Unknown dynamic_array length identifier. Must be structure field name or int.')
 
         if isinstance(self.type, (GenericType, string_t)):
-            return static_array.generate_ndimensional_iterable(self.dimensions,
+            return static_array.generate_ndimensional_iterable(dimensions,
                                                                self.type,
                                                                list if self.is_bound else tuple)
 
-        for indices in product(*[range(s) for s in self.dimensions]):
+        for indices in product(*[range(s) for s in dimensions]):
             item = itrbl
             for idx in indices:
                 item = item[idx]
@@ -193,7 +204,23 @@ class static_array(metaclass=ArrayMeta):
         return itrbl
 
     def _write_(self, f, attribute_pair):
-        itrbl = getattr(*attribute_pair)
+        cls, attr = attribute_pair
+        itrbl = getattr(cls, attr)
+        if self.is_bound:
+            for i, dm in enumerate(self.dimensions):
+                dm_type = type(dm)
+                if dm_type is str:
+                    dm_itrbl = itrbl
+                    for j in range(i + 1):
+                        dm_itrbl = dm_itrbl[j]
+
+                    setattr(cls, dm, len(dm_itrbl))
+
+                elif dm_type is int:
+                    pass
+
+                else:
+                    raise TypeError('Unknown dynamic_array length identifier. Must be structure field name or int.')
 
         for indices in product(*[range(s) for s in self.dimensions]):
             item = itrbl
@@ -211,6 +238,7 @@ class static_array(metaclass=ArrayMeta):
 
 class dynamic_array(static_array):
     __slots__ = ('dimensions', 'type')
+    is_bound = True
 
 
 # templates
@@ -413,19 +441,15 @@ class Struct(metaclass=StructMeta):
 
     def _write_(self, f):
 
-        self.update_bound_container_data()
-
         for field_type, field_name in self._rfields_:
 
-            if isinstance(field_type, (GenericType, string_t, tuple_t, array_t)):
+            if isinstance(field_type, (GenericType, string_t)):
                 field_type._write_(f, getattr(self, field_name))
+            elif isinstance(field_type, (static_array, dynamic_array)):
+                field_type._write_(f, (self, field_name))
             else:
                 getattr(self, field_name)._write_(f)
 
-    def update_bound_container_data(self):
-        # update dependent length variables in the structure
-        for cntr, name in self.bound_containers:
-            setattr(self, cntr.bound_value, len(getattr(self, name)))
 
 
 if __name__ == '__main__':
