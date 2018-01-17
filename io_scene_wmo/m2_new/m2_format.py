@@ -429,32 +429,13 @@ M2KeyBoneNames = [
 
 class M2Vertex(Struct):
     __fields__ = (
-        C3Vector | 'pos',
-        
+        C3Vector << float32 | 'pos',
+        static_array[4] << uint8 | 'bone_weights',
+        static_array[4] << uint8 | 'bone_indices',
+        C3Vector << float32 | 'normal',
+        static_array[2] << (C2Vector << float32) | 'text_coords'
+
     )
-
-    def __init__(self):
-        self.pos = Vector((0, 0, 0))
-        self.bone_weights = [0, 0, 0, 0]
-        self.bone_indices = [0, 0, 0, 0]
-        self.normal = Vector((0, 0, 0))
-        self.tex_coords = [Vector((0, 0)), Vector((0, 0))]
-
-    def read(self, f):
-        self.pos = struct.unpack('3f', f.read(12))
-        self.bone_weights = struct.unpack('4B', f.read(4))[0]
-        self.bone_indices = struct.unpack('4B', f.read(4))[0]
-        self.normal = struct.unpack('3f', f.read(12))
-        for _ in range(2):
-            self.tex_coords.append(struct.unpack('2f', f.read(8))[0])
-
-    def write(self, f):
-        f.write(struct.pack('3f', *self.pos))
-        f.write(struct.pack('4B', *self.bone_weights))
-        f.write(struct.pack('4B', *self.bone_indices))
-        f.write(struct.pack('3f', *self.normal))
-        for tex_coord in self.tex_coords:
-            f.write(struct.pack('2f', *tex_coord))
 
 
 class M2RenderFlags:
@@ -487,6 +468,7 @@ class M2Material(Struct):
 
 
 class M2TextureUnitLookupTable:
+
     def __init__(self):
         self.texture_units = []
 
@@ -578,9 +560,9 @@ class M2RibbonEmitter(Struct):
         M2Track << uint8 | 'visibility_track',  #TODO: check template type
 
         if_(VERSION >= M2Versions.WOTLK),
-        int16 | 'priority_plane',
-        uint16 | 'padding',
-        endif_
+            int16 | 'priority_plane',
+            uint16 | 'padding',
+            endif_
     )
 
 
@@ -600,19 +582,19 @@ class M2ParticleOld(Struct):
         M2Array << char | 'recursion_model_filename',
 
         if_(VERSION <= M2Versions.TBC),
-        uint8 | 'blending_type',
-        uint8 | 'emitter_type',
-        uint16 | 'particle_color_index',
+            uint8 | 'blending_type',
+            uint8 | 'emitter_type',
+            uint16 | 'particle_color_index',
         else_,
-        uint16 | 'blending_type',
-        uint16 | 'emitter_type',
+            uint16 | 'blending_type',
+            uint16 | 'emitter_type',
         endif_,
 
         if_(VERSION >= M2Versions.CATA),
         #TODO: implement fixed_point type
         else_,
-        uint8 | 'particle_type',
-        uint8 | 'head_or_tail',
+            uint8 | 'particle_type',
+            uint8 | 'head_or_tail',
         endif_,
 
         uint16 | 'texture_tile_rotation',
@@ -626,13 +608,13 @@ class M2ParticleOld(Struct):
         M2Track << float32 | 'lifespan',
 
         if_(VERSION >= M2Versions.WOTLK),
-        float32 | 'lifespan_vary',
+            float32 | 'lifespan_vary',
         endif_,
 
         M2Track << float32 | 'emission_rate',
 
         if_(VERSION >= M2Versions.WOTLK),
-        float32 | 'emission_rate_vary',
+            float32 | 'emission_rate_vary',
         endif_,
 
         M2Track << float32 | 'emission_area_length',
@@ -640,13 +622,13 @@ class M2ParticleOld(Struct):
         M2Track << float32 | 'z_source',
 
         if_(VERSION >= M2Versions.WOTLK),
-        M2FakeTrack << C3Vector | 'color_track',
-        M2FakeTrack << C2Vector | 'scale_track',
-        C2Vector | 'scale_vary',
-        M2FakeTrack << uint16 | 'head_cell_track',
-        M2FakeTrack << uint16 | 'tail_cell_track',
+            M2FakeTrack << C3Vector | 'color_track',
+            M2FakeTrack << C2Vector | 'scale_track',
+            C2Vector | 'scale_vary',
+            M2FakeTrack << uint16 | 'head_cell_track',
+            M2FakeTrack << uint16 | 'tail_cell_track',
         else_,
-        float32 | 'mid_point',
+            float32 | 'mid_point',
         #TODO: implement containers
         endif_,
 
@@ -657,12 +639,12 @@ class M2ParticleOld(Struct):
         float32 | 'drag',
 
         if_(VERSION >= M2Versions.WOTLK),
-        float32 | 'base_spin',
-        float32 | 'base_spin_vary',
-        float32 | 'spin',
-        float32 | 'spin_vary',
+            float32 | 'base_spin',
+            float32 | 'base_spin_vary',
+            float32 | 'spin',
+            float32 | 'spin_vary',
         else_,
-        float32 | 'spin',
+            float32 | 'spin',
         endif_,
 
         M2Box | 'tumble',

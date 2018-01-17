@@ -427,17 +427,18 @@ if __name__ == '__main__':
         __fields__ = (
             template_T[0] | 'test',
         )
+
     class SampleStruct2(Struct):
         __fields__ = (
             #SampleStruct << {'a': int8} | 'structure',
             SampleStruct << template_T['a'] | 'test',
             SampleStruct << template_T['b'] | 'test1',
-            static_array[2][2][3] << template_T['c'] | 'array',
+            static_array[2][2] << (SampleStruct << int8) | 'array',
         )
 
 
     struct = SampleStruct2(a=int16, b=int32, c=SampleStruct(int8))
 
-    print(struct.array[1][1][1].test)
+    print(struct.array)
 
 
