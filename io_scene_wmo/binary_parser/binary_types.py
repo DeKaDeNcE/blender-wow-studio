@@ -1,8 +1,9 @@
 from struct import pack, unpack
 from collections import deque, Iterable
 from types import LambdaType
+from itertools import product
 
-non_compatible_type_exception_str = "Provided type is not generic or container or does not define custom __read__() and __write__() methods."
+non_compatible_type_exception_str = "Provided type is not generic or container or does not define custom _read_() and _write_() methods."
 
 generic_type_dict = {
     'b': "int8",
@@ -27,10 +28,10 @@ class GenericType:
     def __call__(self):
         return self.default_value
 
-    def __read__(self, f):
+    def _read_(self, f):
         return unpack(self.format, f.read(self.__size__))
 
-    def __write__(self, f, value):
+    def _write_(self, f, value):
         f.write(pack(self.format, value))
 
     def __or__(self, other):
@@ -63,7 +64,7 @@ class string_t:
     def __call__(self):
         return self.default_value
 
-    def __read__(self, f):
+    def _read_(self, f):
         if self.len == 0:
             string = ''
             while True:
@@ -77,7 +78,7 @@ class string_t:
         else:
             return f.read(self.len).decode(self.encoding)
 
-    def __write__(self, f, string):
+    def _write_(self, f, string):
         f.write(string.encode(self.encoding))
 
 # preprocessor-like conditions
@@ -130,6 +131,18 @@ class ArrayMeta(type):
 
 class static_array(metaclass=ArrayMeta):
     __slots__ = ('dimensions', 'type')
+    is_bound = False
+
+    @staticmethod
+    def generate_ndimensional_iterable(lengths, type, iterable):
+        if len(lengths) > 1:
+            dimension = iterable(static_array.generate_ndimensional_iterable(lengths[1:], type, iterable)
+                                 for _ in range(lengths[0]))
+        else:
+            dimension = iterable(type() if callable(type) else type for _ in range(lengths[0]))
+
+        return dimension
+
 
     def __init__(self, length):
         self.dimensions = [length,]
@@ -163,15 +176,31 @@ class static_array(metaclass=ArrayMeta):
         else:
             return TemplateExpressionQueue(self, *args)
 
-    @staticmethod
-    def generate_ndimensional_iterable(lengths, type, iterable):
-        if len(lengths) > 1:
-            dimension = iterable(static_array.generate_ndimensional_iterable(lengths[1:], type, iterable)
-                                 for _ in range(lengths[0]))
-        else:
-            dimension = iterable(type() if callable(type) else type for _ in range(lengths[0]))
+    def _read_(self, f, attribute_pair):
+        itrbl = getattr(*attribute_pair)
 
-        return dimension
+        if isinstance(self.type, (GenericType, string_t)):
+            return static_array.generate_ndimensional_iterable(self.dimensions,
+                                                               self.type,
+                                                               list if self.is_bound else tuple)
+
+        for indices in product(*[range(s) for s in self.dimensions]):
+            item = itrbl
+            for idx in indices:
+                item = item[idx]
+            item._read_(f)
+
+        return itrbl
+
+    def _write_(self, f, attribute_pair):
+        itrbl = getattr(*attribute_pair)
+
+        for indices in product(*[range(s) for s in self.dimensions]):
+            item = itrbl
+            for idx in indices:
+                item = item[idx]
+
+            self.type._write_(f, item) if isinstance(self.type, (GenericType, string_t)) else item._write_(f)
 
     def __call__(self, *args, **kwargs):
         arg = args[0]
@@ -367,7 +396,7 @@ class Struct(metaclass=StructMeta):
 
                 setattr(self, field_name, type_())
 
-            if isinstance(type_, (GenericType, string_t, LambdaType, static_array)):
+            if isinstance(type_, (GenericType, string_t, LambdaType)):
                 setattr(self, field_name, type_())
             else:
                 setattr(self, field_name, type_(*args, **kwargs))
@@ -376,11 +405,11 @@ class Struct(metaclass=StructMeta):
 
         for field_type, field_name in self._rfields_:
             if isinstance(field_type, (GenericType, string_t)):
-                setattr(self, field_name, field_type.__read__(f))
-            elif isinstance(field_type, dynamic_array):
-                setattr(self, field_name, field_type.__read__(f, self))
+                setattr(self, field_name, field_type._read_(f))
+            elif isinstance(field_type, (static_array, dynamic_array)):
+                setattr(self, field_name, field_type._read_(f, (self, field_name)))
             else:
-                getattr(self, field_name).__read__(f)
+                getattr(self, field_name)._read_(f)
 
     def _write_(self, f):
 
@@ -389,9 +418,9 @@ class Struct(metaclass=StructMeta):
         for field_type, field_name in self._rfields_:
 
             if isinstance(field_type, (GenericType, string_t, tuple_t, array_t)):
-                field_type.__write__(f, getattr(self, field_name))
+                field_type._write_(f, getattr(self, field_name))
             else:
-                getattr(self, field_name).__write__(f)
+                getattr(self, field_name)._write_(f)
 
     def update_bound_container_data(self):
         # update dependent length variables in the structure

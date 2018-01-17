@@ -11,7 +11,7 @@ VERSION = 264
 ##### Types #####
 
 class M2CompQuaternion(Struct):
-    __fields__ = (
+    _fields_ = (
         uint16 | 'x',
         uint16 | 'y',
         uint16 | 'z',
@@ -36,13 +36,13 @@ class M2CompQuaternion(Struct):
 
 
 class M2Bounds(Struct):
-    __fields__ = (
+    _fields_ = (
         CAaBox | 'extent',
         float32 | 'radius'
     )
 
 class M2InterpolationRange(Struct):
-    __fields__ = (
+    _fields_ = (
         uint32 | 'start',
         uint32 | 'end'
     )
@@ -79,7 +79,7 @@ class M2Array:
 
 
 class M2Track(Struct):
-    __fields__ = (
+    _fields_ = (
         uint16 | 'interpolation_type',
         uint16 | 'global_sequence_index',
         if_(VERSION < M2Versions.WOTLK),
@@ -94,7 +94,7 @@ class M2Track(Struct):
 
 
 class M2FakeTrack(Struct):
-    __fields__ = (
+    _fields_ = (
         M2Array << uint32 | 'timestamps',
         M2Array << uint32 | 'values'
     )
@@ -102,7 +102,7 @@ class M2FakeTrack(Struct):
 
 class M2Loop(Struct):
     ''' A list of timestamps that act as upper limits for global sequence ranges. '''
-    __fields__ = {
+    _fields_ = {
         'timestamps': uint32
     }
 
@@ -115,7 +115,7 @@ class M2SplineKey:
         self.out_tan = None
 
 class M2Box(Struct):
-    __fields__ = (
+    _fields_ = (
         C3Vector | 'model_rotation_speed_min',
         C3Vector | 'model_rotation_speed_max'
     )
@@ -136,7 +136,7 @@ class M2Versions:
 ##### Chunks #####
 
 class PFID_Chunk(Struct):
-    __fields__ = {
+    _fields_ = {
         'header': ChunkHeader,
         'phys_file_id': uint32
     }
@@ -147,13 +147,13 @@ class PFID_Chunk(Struct):
         super().write(f)
 
 class SFID_Chunk(Struct):
-    __fields__ = {
+    _fields_ = {
         'header': ChunkHeader
     }
 
     def __init__(self, n_views, n_lod_bands):
         super().__init__()
-        self.__fields__['']
+        self._fields_['']
 
     def __init__(self):
         self.header = ChunkHeader()
@@ -181,7 +181,7 @@ class SFID_Chunk(Struct):
 
 
 class AnimFileID(Struct):
-    __fields__ = (
+    _fields_ = (
         uint8 | 'anim_id',
         uint8 | 'sub_anim_id',
         uint32 | 'file_id'
@@ -189,7 +189,7 @@ class AnimFileID(Struct):
     )
 
 class AFID_Chunk(Struct):
-    __fields__ = (
+    _fields_ = (
         ChunkHeader | 'header',
 
     )
@@ -257,7 +257,7 @@ class M2GlobalFlags:
 
 
 class M2Header(Struct):
-    __fields__ = (
+    _fields_ = (
         ChunkHeader | 'header',
         uint32 | 'version',
         M2Array << char | 'name',
@@ -345,7 +345,7 @@ class M2SequenceFlags:
 
 
 class M2Sequence(Struct):
-    __fields__ = (
+    _fields_ = (
         uint16 | 'id',
         uint16 | 'variation_index',
 
@@ -374,7 +374,7 @@ class PlayableAnimationLookupFlags:  # TODO: check if other variations are ever 
 
 
 class M2PlayableAnimationIndex(Struct):  # < TBC
-    __fields__ = (
+    _fields_ = (
         int16 | 'fallback_animation_id',
         int16 | 'flags'
     )
@@ -392,7 +392,7 @@ class M2CompBoneFlags:
 
 
 class M2CompBone(Struct):
-    __fields__ = (
+    _fields_ = (
         int32 | 'key_bone_id',
         uint32 | 'flags',
         int16 | 'parent_bone',
@@ -428,7 +428,7 @@ M2KeyBoneNames = [
 ##### Geometry and rendering #####
 
 class M2Vertex(Struct):
-    __fields__ = (
+    _fields_ = (
         C3Vector << float32 | 'pos',
         static_array[4] << uint8 | 'bone_weights',
         static_array[4] << uint8 | 'bone_indices',
@@ -461,7 +461,7 @@ class M2BlendingModes:
 
 
 class M2Material(Struct):
-    __fields__ = (
+    _fields_ = (
         uint16 | 'flags',
         uint16 | 'blending_mode'
     )
@@ -484,7 +484,7 @@ class M2TextureUnitLookupTable:
 # == Colors and transparency == #
 
 class M2Color(Struct):
-    __fields__ = (
+    _fields_ = (
         M2Track << C3Vector | 'color',
         M2Track << fixed16 | 'alpha'
 
@@ -492,7 +492,7 @@ class M2Color(Struct):
 
 '''
 class M2TextureWeight(Struct):
-    __fields__ = (
+    _fields_ = (
         M2Track << fixed16 | 'weight'
     )
 '''
@@ -501,7 +501,7 @@ class M2TextureWeight(Struct):
 # == Textures == #
 
 class M2Texture(Struct):
-    __fields__ = (
+    _fields_ = (
         uint32 | 'type',
         uint32 | 'flags',
         M2Array << char | 'filename' #TODO: implement string type reading
@@ -534,7 +534,7 @@ class M2TextureTypes:
 # == Effects == #
 
 class M2TextureTransform(Struct):
-    __fields__ = (
+    _fields_ = (
         M2Track << C3Vector | 'translation',
         M2Track << C4Quaternion | 'rotation',
         M2Track << C3Vector | 'scaling'
@@ -542,7 +542,7 @@ class M2TextureTransform(Struct):
 
 
 class M2RibbonEmitter(Struct):
-    __fields__ = (
+    _fields_ = (
         uint32 | 'ribbon_id',
         uint32 | 'bone_index',
         C3Vector | 'position',
@@ -567,7 +567,7 @@ class M2RibbonEmitter(Struct):
 
 
 class M2ParticleOld(Struct):
-    __fields__ = (
+    _fields_ = (
         uint32 | 'particle_id',
         uint32 | 'flags',
         C3Vector | 'position',
@@ -664,22 +664,22 @@ class M2ParicleOldEmittersTypes:
     BONE = 4
 
 class M2BoundingVertices(Struct):
-    __fields__ = (
+    _fields_ = (
         C3Vector | 'position'
     )
 
 class M2BoundingTriangles(Struct):
-    __fields__ = (
+    _fields_ = (
             uint16 | 'index'
     )
 
 class M2BoundingNormals(Struct):
-    __fields__ = (
+    _fields_ = (
         C3Vector | 'normal'
     )
 
 class M2Light(Struct):
-    __fields__ = (
+    _fields_ = (
         uint16 | 'type',
         int16 | 'bone',
         C3Vector | 'position',
@@ -694,7 +694,7 @@ class M2Light(Struct):
 
 
 class M2Camera(Struct):
-    __fields__ = (
+    _fields_ = (
         uint32 | 'type',
 
         if_(VERSION < M2Versions.CATA),
@@ -715,7 +715,7 @@ class M2Camera(Struct):
     )
 
 class M2Attachment(Struct):
-    __fields__ = (
+    _fields_ = (
         uint32 | 'id',
         uint16 | 'bone',
         uint16 | 'unknown',
@@ -724,7 +724,7 @@ class M2Attachment(Struct):
     )
 
 class M2Events(Struct):
-    __fields__ = (
+    _fields_ = (
         uint32 | 'identifier',
         uint32 | 'data',
         uint32 | 'bone',
