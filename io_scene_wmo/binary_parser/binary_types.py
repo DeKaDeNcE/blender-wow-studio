@@ -180,6 +180,10 @@ class static_array(metaclass=ArrayMeta):
         return self.generate_ndimensional_iterable(self.dimensions, self.type, tuple)
 
 
+class dynamic_array(static_array):
+    __slots__ = ('dimensions', 'type')
+
+
 # templates
 class typename_t_meta(TypeMeta):
     def __getitem__(cls, item):
@@ -373,7 +377,7 @@ class Struct(metaclass=StructMeta):
         for field_type, field_name in self._rfields_:
             if isinstance(field_type, (GenericType, string_t)):
                 setattr(self, field_name, field_type.__read__(f))
-            elif isinstance(field_type, (static_array)):
+            elif isinstance(field_type, dynamic_array):
                 setattr(self, field_name, field_type.__read__(f, self))
             else:
                 getattr(self, field_name).__read__(f)
