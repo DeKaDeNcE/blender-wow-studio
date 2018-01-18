@@ -126,10 +126,31 @@ class Type(metaclass=TypeMeta): pass
 # containers
 class ArrayMeta(type):
     def __getitem__(cls, item):
+        if not cls.is_bound:
+            if type(item) is not int:
+                raise TypeError('Static array can only accept ints as length identifiers. Use dynamic array instead.')
+            elif item == 0:
+                raise ValueError('Static array cannot have 0-length dimensions.')
+
+        if type(item) is int and item < 0:
+            raise ValueError('Length cannot be negative.')
+
         return cls(item)
 
 
-class this_size: pass
+class this_size:
+    __slots__ = ('size_attr')
+    def __init__(self, size_attr):
+        self.size_attr = size_attr
+
+class this_exp:
+    __slots__ = ('exp',)
+    def __init__(self, exp):
+        self.exp = exp
+
+    def __call__(self, this):
+        return eval(self.exp)
+
 
 
 class static_array(metaclass=ArrayMeta):
@@ -146,11 +167,22 @@ class static_array(metaclass=ArrayMeta):
 
         return dimension
 
-
     def __init__(self, length):
         self.dimensions = [length,]
 
     def __getitem__(self, length):
+        if not self.is_bound:
+            if type(length) is not int:
+                raise TypeError('Static array can only accept integers as length identifiers. Use dynamic array instead.')
+            elif length == 0:
+                raise ValueError('Static array cannot have 0-length dimensions.')
+
+        if self.dimensions[-1] == 0:
+            raise TypeError('Zero-length dimension cannot contain any further elements.')
+
+        if type(length) is int and length < 0:
+            raise ValueError('Length cannot be negative.')
+
         self.dimensions.append(length)
         return self
 
@@ -467,7 +499,7 @@ if __name__ == '__main__':
             #SampleStruct << {'a': int8} | 'structure',
             SampleStruct << template_T['a'] | 'test',
             SampleStruct << template_T['b'] | 'test1',
-            static_array[2][2] << (SampleStruct << int8) | 'array',
+            static_array[1][2] << (SampleStruct << int8) | 'array',
         )
 
 
