@@ -129,6 +129,9 @@ class ArrayMeta(type):
         return cls(item)
 
 
+class this_size: pass
+
+
 class static_array(metaclass=ArrayMeta):
     __slots__ = ('dimensions', 'type')
     is_bound = False
