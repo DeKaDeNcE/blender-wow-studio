@@ -924,6 +924,8 @@ def update_wow_visibility(self, context):
         elif obj.type == "LAMP" and obj.data.WowLight.Enabled:
             obj.hide = '5' not in values
 
+        obj['wow_hide'] = obj.hide
+
 
 def update_liquid_flags(self, context):
     value = self.WoWLiquidFlags
