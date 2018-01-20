@@ -167,7 +167,7 @@ class BLPConverter:
                 length = len(filepath)
 
                 if 2047 - (cur_length + init_length) < length + 2:
-                    final_command = [init_command, "-out png"]
+                    final_command = [init_command, "-out", "png"]
                     final_command.extend(cur_args)
                     if subprocess.call(final_command):
                         raise Exception("\nBLP convertion failed.")
@@ -178,7 +178,7 @@ class BLPConverter:
                 cur_args.append(filepath)
 
         if cur_length:
-            final_command = [init_command, "-out png"]
+            final_command = [init_command, "-out", "png"]
             final_command.extend(cur_args)
             if subprocess.call(final_command):
                 raise Exception("\nBLP convertion failed.")
