@@ -151,14 +151,14 @@ class BLPConverter:
         if os.path.exists(tool_path):
             if os.name == 'nt' and not tool_path.endswith('.exe'):
                 raise Exception("\nBLPConverter not found. Applications must have a .exe extension on Windows.")
-            self.toolPath = tool_path
+            self.tool_path = tool_path
             print("\nFound BLP Converter executable: " + tool_path)
         else:
             raise Exception("\nNo BLPConverter found at given path: " + tool_path)
 
     def convert(self, filepaths, always_replace = False):
-        init_length = len(self.toolPath) + 4
-        init_command = self.toolPath
+        init_length = len(self.tool_path) + 4
+        init_command = self.tool_path
         cur_length = 0
         cur_args = []
 
@@ -167,7 +167,7 @@ class BLPConverter:
                 length = len(filepath)
 
                 if 2047 - (cur_length + init_length) < length + 2:
-                    final_command = [init_command, '/M']
+                    final_command = [init_command,]
                     final_command.extend(cur_args)
                     if subprocess.call(final_command):
                         raise Exception("\nBLP convertion failed.")
@@ -178,7 +178,7 @@ class BLPConverter:
                 cur_args.append(filepath)
 
         if cur_length:
-            final_command = [init_command, '/M']
+            final_command = [init_command,]
             final_command.extend(cur_args)
             if subprocess.call(final_command):
                 raise Exception("\nBLP convertion failed.")
