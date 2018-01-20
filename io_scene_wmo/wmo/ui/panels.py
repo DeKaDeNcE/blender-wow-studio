@@ -901,21 +901,28 @@ def UnregisterWowFogProperties():
 
 def update_wow_visibility(self, context):
     values = self.WoWVisibility
+
     for obj in self.objects:
+        if 'wow_hide' not in obj:
+            obj['wow_hide'] = obj.hide
+
+        if obj['wow_hide'] != obj.hide:
+            continue
+
         if obj.type == "MESH":
             if obj.WowWMOGroup.Enabled:
                 if obj.WowWMOGroup.PlaceType == '8':
-                    obj.hide = False if '0' in values else True
+                    obj.hide = '0' not in values
                 else:
-                    obj.hide = False if '1' in values else True
+                    obj.hide = '1' not in values
             elif obj.WowPortalPlane.Enabled:
-                obj.hide = False if '2' in values else True
+                obj.hide = '2' not in values
             elif obj.WowFog.Enabled:
-                obj.hide = False if '3' in values else True
+                obj.hide = '3' not in values
             elif obj.WowLiquid.Enabled:
-                obj.hide = False if '4' in values else True
+                obj.hide = '4' not in values
         elif obj.type == "LAMP" and obj.data.WowLight.Enabled:
-            obj.hide = False if '5' in values else True
+            obj.hide = '5' not in values
 
 
 def update_liquid_flags(self, context):

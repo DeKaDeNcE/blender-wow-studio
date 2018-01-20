@@ -692,7 +692,6 @@ class DOODAD_SET_ADD(bpy.types.Operator):
             else:
                 self.report({'WARNING'}, "Select a doodad set to link objects to first")
 
-
         elif self.Action == "CUSTOM":
             if self.Name:
                 bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
