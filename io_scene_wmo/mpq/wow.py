@@ -166,19 +166,19 @@ class BLPConverter:
             if always_replace or not os.path.exists(os.path.splitext(filepath)[0] + ".png"):
                 length = len(filepath)
 
-                if 2047 - (cur_length + init_length) < length + 2:
-                    final_command = [init_command, "-out", "png"]
+                if 2047 - (cur_length + init_length) < length + 12:
+                    final_command = [init_command, "-quiet", "-out", "png"]
                     final_command.extend(cur_args)
                     if subprocess.call(final_command):
                         raise Exception("\nBLP convertion failed.")
                     cur_length = 0
                     cur_args = []
 
-                cur_length += length + 3
+                cur_length += length + 13
                 cur_args.append(filepath)
 
         if cur_length:
-            final_command = [init_command, "-out", "png"]
+            final_command = [init_command, "-quiet", "-out", "png"]
             final_command.extend(cur_args)
             if subprocess.call(final_command):
                 raise Exception("\nBLP convertion failed.")
