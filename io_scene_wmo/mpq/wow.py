@@ -149,6 +149,8 @@ class WoWFileData:
 class BLPConverter:
     def __init__(self, tool_path):
         if os.path.exists(tool_path):
+            if os.name == 'nt' and not tool_path.endswith('.exe'):
+                raise Exception("\nBLPConverter not found. Applications must have a .exe extension on Windows.")
             self.toolPath = tool_path
             print("\nFound BLP Converter executable: " + tool_path)
         else:
