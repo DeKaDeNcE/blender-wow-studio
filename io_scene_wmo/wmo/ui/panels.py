@@ -1170,56 +1170,6 @@ def render_gamedata_toggle(self, context):
     row.operator("scene.load_wow_filesystem", text=text, icon=icon)
 
 
-class WowPieMenu(bpy.types.Menu):
-    bl_idname = "pie.wow_pie_menue"
-    bl_label = "WoW Blender Studio"
-
-    def draw(self, context):
-        layout = self.layout
-        parent_pie = layout.menu_pie()
-
-        ################################################
-        # No Objects                                   #
-        ################################################
-        if bpy.context.area.type == 'VIEW_3D' and not bpy.context.object:
-
-            split = pie.split()
-            col = split.column(align=True)
-
-            col.operator("scene.wow_add_fog", text='Fog', icon='GROUP_VERTEX')
-            col.operator("scene.wow_add_water", text='Water', icon='MOD_WAVE')
-            col.operator("scene.wow_add_scale_reference", text='Scale', icon='OUTLINER_OB_ARMATURE')
-
-            if hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files:
-                col.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2', icon='LOAD_FACTORY')
-                col.operator("scene.wow_import_last_wmo_from_wmv", text='WMO', icon='APPEND_BLEND')
-                col.operator("scene.wow_import_adt_scene", text='ADT', icon='OUTLINER_OB_GROUP_INSTANCE')
-
-            split = pie.split()
-            col = split.column(align=True)
-
-            row = col.row(align=True)
-            row.label("WoW :")
-            row = col.row(align=True)
-            row.scale_y = self.scale_y
-            row.scale_x = 1.4
-
-            # Import Export
-            row = col.row()
-            row.label("Import/Export :")
-            row = col.row(align=True)
-            row.scale_y = self.scale_y
-            if hasattr(bpy.types, "IMPORT_SCENE_OT_obj"):
-                row.operator("object.rmb_import_exports", text="OBJ", icon='IMPORT').import_exports = "obj"
-
-                # if hasattr(bpy.types, "WMOImporter"):
-            row.operator("object.rmb_import_exports", text="WMO", icon='IMPORT').import_exports = "wmo"
-
-            if hasattr(bpy.types, "IMPORT_SCENE_OT_fbx"):
-                row.operator("object.rmb_import_exports", text="FBX", icon='IMPORT').import_exports = "fbx"
-
-
-
 def register():
     RegisterWowRootProperties()
     RegisterWoWDoodadProperties()
