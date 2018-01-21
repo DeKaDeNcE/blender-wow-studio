@@ -2,6 +2,8 @@
 Python wrapper around Storm C API bindings
 """
 import os
+import sys
+os.environ['DYLD_LIBRARY_PATH'] = ':' + os.path.dirname(__file__)
 from . import storm
 
 
