@@ -127,7 +127,7 @@ class WoWFileData:
         start_time = time.time()
 
         if WoWFileData.is_wow_path_valid(wow_path):
-            data_packages = WoWFileData.list_game_data_paths(os.path.join(wow_path, "Data\\"))
+            data_packages = WoWFileData.list_game_data_paths(os.path.join(wow_path, "Data"))
             resource_map = []
 
             for package in data_packages:
