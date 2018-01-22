@@ -523,6 +523,17 @@ class Struct(metaclass=StructMeta):
 def sizeof(struct):
     return struct._size_()
 
+def typeof(struct, attr):
+    try:
+        for field_type, field_name in struct._rfields_:
+            if field_name == 'attr':
+                return field_type
+    except AttributeError:
+        raise TypeError('typeof() function works only for Struct objects.')
+
+    raise AttributeError('Field \'{}\' not found in struct \'{}\'.'.format(attr, struct.__name__))
+
+
 if __name__ == '__main__':
 
     class SampleStruct(Struct):
