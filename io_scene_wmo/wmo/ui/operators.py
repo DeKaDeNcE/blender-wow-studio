@@ -1196,25 +1196,39 @@ class OBJECT_OP_Fill_Textures(bpy.types.Operator):
 
         for ob in bpy.context.selected_objects:
             mesh = ob.data
-            for i in range(len(mesh.materials)):
-                if mesh.materials[i].active_texture is not None \
-                        and not mesh.materials[i].WowMaterial.Texture1 \
-                        and mesh.materials[i].active_texture.type == 'IMAGE' \
-                        and mesh.materials[i].active_texture.image is not None:
-                    path = (os.path.splitext(bpy.path.abspath(mesh.materials[i].active_texture.image.filepath))[0] + ".blp", "")
+            for material in mesh.materials:
+
+                img = None
+                for i in range(3):
+                    try:
+                        img = material.texture_slots[3 - i].texture.image
+                    except:
+                        pass
+
+                if img and not material.WowMaterial.Texture1:
+
+                    path = (os.path.splitext(bpy.path.abspath(img.filepath))[0] + ".blp", "")
                     rest_path = ""
 
                     while True:
                         path = os.path.split(path[0])
+
                         if not path[1]:
-                            print("\nTexture <<{}>> not found.".format(mesh.materials[i].active_texture.image.filepath))
+                            print("\nTexture <<{}>> not found.".format(img.filepath))
                             break
 
                         rest_path = os.path.join(path[1], rest_path)
-                        rest_path = rest_path[:-1] if rest_path.endswith("\\") else rest_path
+                        rest_path = rest_path[:-1] if rest_path.endswith('\\') else rest_path
 
-                        if game_data.has_file(rest_path)[0]:
-                            mesh.materials[i].WowMaterial.Texture1 = rest_path
+                        if os.name != 'nt':
+                            rest_path_n = rest_path.replace('/', '\\')
+                        else:
+                            rest_path_n = rest_path
+
+                        rest_path_n = rest_path_n[:-1] if rest_path_n.endswith('\\') else rest_path_n
+
+                        if game_data.has_file(rest_path_n)[0]:
+                            material.WowMaterial.Texture1 = rest_path_n
                             break
 
             self.report({'INFO'}, "Done filling texture paths")

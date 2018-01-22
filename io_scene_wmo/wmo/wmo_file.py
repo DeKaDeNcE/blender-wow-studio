@@ -298,6 +298,7 @@ class WMOFile:
                         tex1.image = tex1_img
                         images.append(tex1_img)
                         image_names.append(tex1_img_filename)
+                        mat.active_texture = tex1_img
 
                 except:
                     pass
