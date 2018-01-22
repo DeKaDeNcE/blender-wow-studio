@@ -140,18 +140,15 @@ class ArrayMeta(type):
 
 
 class this_size:
-    __slots__ = ('size_attr')
-    def __init__(self, size_attr):
+    __slots__ = ('size_attr', 'extra_bytes')
+    def __init__(self, size_attr, extra_bytes=0):
         self.size_attr = size_attr
+        self.extra_bytes = extra_bytes
 
 class this_exp:
-    __slots__ = ('exp',)
+    __slots__ = ('exp')
     def __init__(self, exp):
         self.exp = exp
-
-    def __call__(self, this):
-        return eval(self.exp)
-
 
 class static_array(metaclass=ArrayMeta):
     __slots__ = ('dimensions', 'type', 'type_size')
@@ -213,6 +210,7 @@ class static_array(metaclass=ArrayMeta):
 
     def _read_(self, f, attribute_pair):
         cls, attr = attribute_pair
+        this = cls
         itrbl = getattr(cls, attr)
         dimensions = self.dimensions
         if self.is_bound:
@@ -222,6 +220,10 @@ class static_array(metaclass=ArrayMeta):
                     dimensions[i] = getattr(cls, dm)
                 elif dm_type is int:
                     pass
+                elif dm_type is this_size:
+                    dimensions[i] = getattr(this, dm_type.size_attr) * self.type_size - dm_type.extra_bytes
+                elif dm_type is this_exp:
+                    dimensions[i] = eval(dm_type.exp)
                 else:
                     raise TypeError('Unknown dynamic_array length identifier. Must be structure field name or int.')
 
@@ -252,6 +254,12 @@ class static_array(metaclass=ArrayMeta):
                     setattr(cls, dm, len(dm_itrbl))
 
                 elif dm_type is int:
+                    pass
+
+                elif dm_type is this_size:
+                    setattr(cls, dm_type.size_attr, self._size_() - dm_type.extra_bytes)
+
+                elif dm_type is this_exp:
                     pass
 
                 else:
