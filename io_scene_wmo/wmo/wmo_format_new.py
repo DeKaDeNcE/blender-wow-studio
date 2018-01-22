@@ -359,7 +359,21 @@ class MOCV(Chunk):
 
     )
 
-class WMOWaterVert
+class WMOWaterVert(Struct):
+    _fields_ = (
+        uint8 | 'flow1',
+        uint8 | 'flow2',
+        uint8 | 'flow1Pct',
+        uint8 | 'filler',
+        float32 | 'height'
+    )
+
+class WMOMagmaVert(Struct):
+    _fields_ = (
+        int16 | 'u',
+        int16 | 'v',
+        float32 | 'height'
+    )
 
 class MLIQ(Chunk):
     _fields_ = (
@@ -369,8 +383,67 @@ class MLIQ(Chunk):
         uint32 | 'n_y_tiles',
         static_array[3] << float32 | 'base_coordinates',
         uint16 | 'material_id',
+        dynamic_array['n_x_vertices']['n_y_vertices'] << template_T['vertex_type'],
+        dynamic_array['n_x_tiles']['n_y_tiles'] << uint8 | 'tile_flags'
 
     )
+
+class MORI(Chunk):
+    _fields_ = (
+        dynamic_array[this_size('size')] << uint16 | 'triangle_strip_indices',
+    )
+
+class MORB(Chunk):
+    _fields_ = (
+        uint32 | 'start_index',
+        uint16 | 'index_count',
+        uint16 | 'padding'
+    )
+
+class MOBS(Chunk):
+    _fields_ = (
+        dynamic_array[this_size('size')][24] << char | 'unk',
+    )
+
+# WoD+
+class MDAL(Chunk):
+    _fields_ = (
+        CArgb | 'replacement_for_header_color',
+    )
+
+# WoD+
+class MOPL(Chunk):
+    _fields_ = (
+        dynamic_array[this_size('size')] << C4Plane | 'terrain_cutting_planes',
+    )
+
+#Legion+
+class MOLS(Chunk):
+    _fields_ = (
+        dynamic_array[this_size('size')][56] << char | 'unk',
+    )
+
+#Legion+
+class WMOPointLight(Struct):
+    _fields_ = (
+        uint32 | 'unk',
+        CImVector | 'color',
+        C3Vector | 'pos',
+        float32 | 'intensity',
+        float32 | 'attenuation_start',
+        float32 | 'attenuation_end',
+        float32 | 'unk1',
+        uint32 | 'unk2',
+        uint32 | 'unk3'
+    )
+
+class MOLP(Chunk):
+    _fields_ = (
+        dynamic_array[this_size('size')] << WMOPointLight | 'point_lights',
+    )
+
+
+
 
 
 
