@@ -1,9 +1,7 @@
 from struct import pack, unpack
 from collections import deque, Iterable
-from types import LambdaType
 from itertools import product
-
-non_compatible_type_exception_str = "Provided type is not generic or container or does not define custom _read_() and _write_() methods."
+from functools import partial
 
 generic_type_dict = {
     'b': "int8",
@@ -22,17 +20,20 @@ generic_type_dict = {
 class GenericType:
     def __init__(self, format, size, default_value=0):
         self.format = format
-        self.__size__ = size
+        self.size = size
         self.default_value = default_value
 
     def __call__(self):
         return self.default_value
 
     def _read_(self, f):
-        return unpack(self.format, f.read(self.__size__))
+        return unpack(self.format, f.read(self.size))
 
     def _write_(self, f, value):
         f.write(pack(self.format, value))
+
+    def _size_(self):
+        return self.size
 
     def __or__(self, other):
         return self, other
@@ -152,9 +153,8 @@ class this_exp:
         return eval(self.exp)
 
 
-
 class static_array(metaclass=ArrayMeta):
-    __slots__ = ('dimensions', 'type')
+    __slots__ = ('dimensions', 'type', 'type_size')
     is_bound = False
 
     @staticmethod
@@ -267,8 +267,21 @@ class static_array(metaclass=ArrayMeta):
     def __call__(self, *args, **kwargs):
         arg = args[0]
         self.type = arg() if callable(arg) else arg
+        type_ = self.type() if callable(self.type) else self.type
+
+        try:
+            self.type_size = self.type._size_() if isinstance(type_, (GenericType, string_t)) else type_._size_()
+        except AttributeError:
+            raise TypeError("All used types should define _size_ method.")
 
         return self.generate_ndimensional_iterable(self.dimensions, self.type, tuple)
+
+    def _size_(self):
+        length = self.dimensions[0]
+        for dim in self.dimensions[1:]:
+            length *= dim
+
+        return self.type_size * length
 
 
 class dynamic_array(static_array):
@@ -354,7 +367,7 @@ class TemplateExpressionQueue:
                 new_args.append(arg.resolve_template_type(*args, **call_kwargs))
 
             elif isinstance(arg, TemplateExpressionQueue):
-                new_args.append(lambda: arg(*args, **call_kwargs))
+                new_args.append(partial(arg, *args, **call_kwargs))
 
             else:
                 new_args.append(arg)
@@ -366,15 +379,15 @@ class TemplateExpressionQueue:
                     new_kwargs[key] = value.resolve_template_type(*args, **call_kwargs)
 
                 elif isinstance(value, TemplateExpressionQueue):
-                    new_kwargs[key] = lambda: value(*args, **call_kwargs)
+                    new_kwargs[key] = partial(value, *args, **call_kwargs)
 
                 else:
                     new_kwargs[key] = value
 
-            return lambda: type_(*new_args, **call_kwargs)
+            return partial(type_, *new_args, **call_kwargs)
 
         else:
-            return lambda: type_(*new_args)
+            return partial(type_, *new_args)
 
     def __or__(self, other):
         return self, other
@@ -455,11 +468,12 @@ class Struct(metaclass=StructMeta):
 
             elif isinstance(field_type, TemplateExpressionQueue):
                 type_ = field_type(*args, **kwargs)
-                self._rfields_[i] = field_type.cls.__class__
+                self._rfields_[i] = (field_type.cls, self._fields_[i][1])
 
                 setattr(self, field_name, type_())
+                continue
 
-            if isinstance(type_, (GenericType, string_t, LambdaType)):
+            if isinstance(type_, (GenericType, string_t)):
                 setattr(self, field_name, type_())
             else:
                 setattr(self, field_name, type_(*args, **kwargs))
@@ -485,7 +499,21 @@ class Struct(metaclass=StructMeta):
             else:
                 getattr(self, field_name)._write_(f)
 
+    def _size_(self):
+        size = 0
+        try:
+            for field_type, field_name in self._rfields_:
+                size += field_type._size_() \
+                        if isinstance(field_type, (GenericType, string_t, static_array, dynamic_array)) else \
+                        getattr(self, field_name)._size_()
+        except AttributeError:
+            raise TypeError("All used types should define _size_ method.")
 
+        return size
+
+
+def sizeof(struct):
+    return struct._size_()
 
 if __name__ == '__main__':
 
@@ -499,12 +527,13 @@ if __name__ == '__main__':
             #SampleStruct << {'a': int8} | 'structure',
             SampleStruct << template_T['a'] | 'test',
             SampleStruct << template_T['b'] | 'test1',
+            template_T['a'] | 'test3',
             static_array[1][2] << (SampleStruct << int8) | 'array',
         )
 
 
     struct = SampleStruct2(a=int16, b=int32, c=SampleStruct(int8))
 
-    print(struct._rfields_)
+    print(sizeof(struct))
 
 
