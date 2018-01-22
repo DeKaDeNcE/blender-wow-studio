@@ -225,7 +225,7 @@ class WMOFile:
         self.material_lookup = {}
 
         preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
-        texture_path = preferences.cache_dir_path if preferences.use_cache_dir else bpy.path.dirname(self.filepath)
+        texture_path = preferences.cache_dir_path if preferences.use_cache_dir else os.path.dirname(self.filepath)
 
         images = []
         image_names = []
