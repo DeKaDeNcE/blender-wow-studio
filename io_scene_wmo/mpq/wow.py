@@ -49,6 +49,9 @@ class WoWFileData:
 
         file = self.read_file(filepath)
 
+        if os.name != 'nt':
+            filepath = filepath.replace('\\', '/')
+
         abs_path = os.path.join(dir, filepath)
         local_dir = os.path.dirname(abs_path)
 
@@ -72,7 +75,13 @@ class WoWFileData:
             blp_paths = []
 
             for filename in filenames:
-                abs_path = os.path.join(dir, filename)
+                if os.name != 'nt':
+                    filename_ = filename.replace('\\', '/')
+
+                    abs_path = os.path.join(dir, filename_)
+                else:
+                    abs_path = os.path.join(dir, filename)
+
                 if not os.path.exists(os.path.splitext(abs_path)[0] + ".png"):
 
                     try:

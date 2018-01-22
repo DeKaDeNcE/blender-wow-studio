@@ -72,10 +72,12 @@ def m2_to_blender_mesh(dir, filepath, filedata):
     for batch in skin.texunit:
         m2_mesh = skin.mesh[batch.submesh]
 
-        # check if forced decompression is required here !!!
         path = os.path.splitext(
             m2.textures[m2.tex_lookup[batch.texture].Id].name.decode("utf-8").rstrip('\0')
         )[0] + ".png"
+
+        if os.name != 'nt':
+            path = path.replace('\\', '/')
 
         img = None
 

@@ -235,6 +235,9 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
                 wmo_path = wmo_paths[int(instance[0])]
 
+                if os.name != 'nt':
+                    wmo_path = wmo_path.replace('\\', '/')
+
                 cached_obj = instance_cache.get(wmo_path)
 
                 if not cached_obj:
@@ -250,7 +253,6 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
                         game_data.extract_files(dir, group_paths)
 
-                        from .. import import_wmo
                         obj = import_wmo.import_wmo_to_blender_scene(root_path, True, True, True)
 
                         # clean up unnecessary files and directories
@@ -354,7 +356,11 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
         if dir:
             try:
                 game_data.extract_file(dir, wmo_path)
-                root_path = os.path.join(dir, wmo_path)
+
+                if os.name != 'nt':
+                    root_path = os.path.join(dir, wmo_path.replace('\\', '/'))
+                else:
+                    root_path = os.path.join(dir, wmo_path)
 
                 with open(root_path, 'rb') as f:
                     f.seek(24)
@@ -370,9 +376,10 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
                 # clean up unnecessary files and directories
                 os.remove(root_path)
                 for group_path in group_paths:
-                    os.remove(os.path.join(dir, group_path))
+                    os.remove(os.path.join(dir, *group_path.split('\\')))
 
-            except:
+            except Exception as e:
+                print(e)
                 self.report({'ERROR'}, "Failed to import model.")
                 return {'CANCELLED'}
 
