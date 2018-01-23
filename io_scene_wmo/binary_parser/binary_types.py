@@ -230,7 +230,7 @@ class static_array(metaclass=ArrayMeta):
                 else:
                     raise TypeError('Unknown dynamic_array length identifier. Must be structure field name or int.')
 
-        if isinstance(self.type, (GenericType, string_t)):
+        if type(self.type) in (GenericType, string_t):
             return static_array.generate_ndimensional_iterable(dimensions,
                                                                self.type,
                                                                list if self.is_bound else tuple)
@@ -273,7 +273,7 @@ class static_array(metaclass=ArrayMeta):
             for idx in indices:
                 item = item[idx]
 
-            self.type._write_(f, item) if isinstance(self.type, (GenericType, string_t)) else item._write_(f)
+            self.type._write_(f, item) if type(self.type) in (GenericType, string_t) else item._write_(f)
 
     def __call__(self, *args, **kwargs):
         arg = args[0]
@@ -281,7 +281,7 @@ class static_array(metaclass=ArrayMeta):
         type_ = self.type() if callable(self.type) else self.type
 
         try:
-            self.type_size = self.type._size_() if isinstance(type_, (GenericType, string_t)) else type_._size_()
+            self.type_size = self.type._size_() if type(type_) in (GenericType, string_t) else type_._size_()
         except AttributeError:
             raise TypeError("All used types should define _size_ method.")
 
@@ -312,11 +312,11 @@ class template_T(metaclass=typename_t_meta):
     __slots__ = ('id',)
 
     def resolve_template_type(self, *args, **kwargs):
-        if isinstance(self.id, str):
+        if type(self.id) is str:
             type_ = kwargs.get(self.id)
             if not type_:
                 raise KeyError("Template key <<{}>> was not passed to structure constructor.".format(self.id))
-        elif isinstance(self.id, int):
+        elif type(self.id) is int:
             try:
                 type_ = args[self.id]
             except IndexError:
@@ -369,15 +369,15 @@ class TemplateExpressionQueue:
                 call_kwargs[key] = value
 
         type_ = self.cls
-        if isinstance(type_, template_T):
+        if type(type_) is template_T:
             type_ = self.cls.resolve_template_type(*args, **call_kwargs)
 
         new_args = []
         for arg in self.args:
-            if isinstance(arg, template_T):
+            if type(arg) is template_T:
                 new_args.append(arg.resolve_template_type(*args, **call_kwargs))
 
-            elif isinstance(arg, TemplateExpressionQueue):
+            elif type(arg) is TemplateExpressionQueue:
                 new_args.append(partial(arg, *args, **call_kwargs))
 
             else:
@@ -386,10 +386,10 @@ class TemplateExpressionQueue:
         new_kwargs = {}
         if kwargs is not None:
             for key, value in kwargs.items():
-                if isinstance(value, template_T):
+                if type(value) is template_T:
                     new_kwargs[key] = value.resolve_template_type(*args, **call_kwargs)
 
-                elif isinstance(value, TemplateExpressionQueue):
+                elif type(value) is TemplateExpressionQueue:
                     new_kwargs[key] = partial(value, *args, **call_kwargs)
 
                 else:
@@ -438,7 +438,7 @@ class StructMeta(TypeMeta):
                 except IndexError:
                     raise SyntaxError("endif_ can only be used to close a condition.")
 
-            elif (not exec_controller or exec_controller[-1]) and isinstance(element, tuple) and len(element) == 2:
+            elif (not exec_controller or exec_controller[-1]) and type(element) is tuple and len(element) == 2:
 
                 for field_type, field_name in new_fields:
                     if field_name == element[1]:
@@ -473,18 +473,18 @@ class Struct(metaclass=StructMeta):
             field_type, field_name = field_pair
             type_ = field_type
 
-            if isinstance(field_type, template_T):
+            if type(field_type) is template_T:
                 type_ = field_type.resolve_template_type(*args, **kwargs)
                 self._rfields_[i] = (type_, self._fields_[i][1])
 
-            elif isinstance(field_type, TemplateExpressionQueue):
+            elif type(field_type) is TemplateExpressionQueue:
                 type_ = field_type(*args, **kwargs)
                 self._rfields_[i] = (field_type.cls, self._fields_[i][1])
 
                 setattr(self, field_name, type_())
                 continue
 
-            if isinstance(type_, (GenericType, string_t)):
+            if type(type_) in (GenericType, string_t):
                 setattr(self, field_name, type_())
             else:
                 setattr(self, field_name, type_(*args, **kwargs))
@@ -492,10 +492,12 @@ class Struct(metaclass=StructMeta):
     def _read_(self, f):
 
         for field_type, field_name in self._rfields_:
-            if isinstance(field_type, (GenericType, string_t)):
+            if type(field_type) in (GenericType, string_t):
                 setattr(self, field_name, field_type._read_(f))
-            elif isinstance(field_type, (static_array, dynamic_array)):
+
+            elif type(field_type) in (static_array, dynamic_array):
                 setattr(self, field_name, field_type._read_(f, (self, field_name)))
+
             else:
                 getattr(self, field_name)._read_(f)
 
@@ -503,9 +505,9 @@ class Struct(metaclass=StructMeta):
 
         for field_type, field_name in self._rfields_:
 
-            if isinstance(field_type, (GenericType, string_t)):
+            if type(field_type) in (GenericType, string_t):
                 field_type._write_(f, getattr(self, field_name))
-            elif isinstance(field_type, (static_array, dynamic_array)):
+            elif type(field_type) in (static_array, dynamic_array):
                 field_type._write_(f, (self, field_name))
             else:
                 getattr(self, field_name)._write_(f)
@@ -515,7 +517,7 @@ class Struct(metaclass=StructMeta):
         try:
             for field_type, field_name in self._rfields_:
                 size += field_type._size_() \
-                        if isinstance(field_type, (GenericType, string_t, static_array, dynamic_array)) else \
+                        if type(field_type) in (GenericType, string_t, static_array, dynamic_array) else \
                         getattr(self, field_name)._size_()
         except AttributeError:
             raise TypeError("All used types should define _size_ method.")
@@ -552,7 +554,31 @@ if __name__ == '__main__':
             static_array[1][2] << (SampleStruct << int8) | 'array',
         )
 
-    struct = SampleStruct2(a=int16, b=int32, c=SampleStruct(int8))
+    class SampleStruct3(Struct):
+        _fields_ = (
+            int32 | 'test',
+            float64 | 'test1',
+            float32 | 'test2',
+            float32 | 'test3',
+            float32 | 'test4',
+            float32 | 'test5',
+            int32 | 'test6',
+            float64 | 'test7',
+            float32 | 'test8',
+            float32 | 'test9',
+            float32 | 'test10',
+            float32 | 'test11',
+            SampleStruct << template_T[0] | 'test12',
+            SampleStruct << template_T[0] | 'test13',
+            SampleStruct << template_T[0] | 'test14',
+            SampleStruct << template_T[0] | 'test15',
+
+        )
+
+    from timeit import timeit
+
+    print(timeit(lambda: SampleStruct3(int8)))
+
 
 
 
