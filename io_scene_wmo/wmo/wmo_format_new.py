@@ -1,25 +1,23 @@
 from ..binary_parser.binary_types import *
 from ..m2_new.wow_common_types import *
 
-class Chunk(Struct):
+
+class MVER(Struct):
     _fields_ = (
-
-    )
-    #TODO: get back here
-
-
-class MVER_chunk(Chunk):
-    _fields_ = (
-            uint32 | 'version'
+            string_t(4) | 'magic',
+            uint32 | 'size',
+            uint32 | 'version',
     )
 
 """
 WMO Root File
 """
 
-class MOHD_chunk(Chunk):
+class MOHD(Struct):
     """WMO root file header"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         uint32 | 'n_materials',
         uint32 | 'n_groups',
         uint32 | 'n_portals',
@@ -35,14 +33,16 @@ class MOHD_chunk(Chunk):
     )
 
 
-class MOTX_chunk(Chunk):
+class MOTX(Struct):
     """List of all texture files used in a WMO"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         StringTable | 'string_table'
     )
 
 
-class WMO_Material(Struct):
+class WMOMaterial(Struct):
     """WMO Material structure"""
     _fields_ = (
         uint32 | 'flags',
@@ -60,16 +60,20 @@ class WMO_Material(Struct):
     )
 
 
-class MOUV(Chunk):
+class MOUV(Struct):
     """Map Object UV Legion+"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         static_array[template_T['len']] << C2Vector | 'translation_speed',
     )
 
 
-class MOGN(Chunk):
+class MOGN(Struct):
     """Names of all referenced WMO groups"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         StringBlock | 'group_names',
     )
 
@@ -84,22 +88,28 @@ class WMOGroupInfo(Struct):
         int32 | 'name_offset'
     )
 
-class MOGI(Chunk):
+class MOGI(Struct):
     """List of all group infos"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         static_array[template_T['n_groups']] << WMOGroupInfo | 'group_infos',
     )
 
 
-class MOSB(Chunk):
+class MOSB(Struct):
     """Path to a skybox .M2 model (optional)"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         string_t | 'skybox_filename',
     )
 
-class MOPV(Chunk):
+class MOPV(Struct):
     """List of all portal vertices positions"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         static_array[template_T['n_portal_vertices']] << C3Vector | 'portal_vertices',
     )
 
@@ -111,9 +121,11 @@ class WMOPortal(Struct):
         C4Plane | 'plane'
     )
 
-class MOPT(Chunk):
+class MOPT(Struct):
     """List of all portal structures"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << WMOPortal | 'portals',
     )
 
@@ -126,15 +138,19 @@ class WMOPortalRelation(Struct):
         uint16 | 'padding'
     )
 
-class MOPR(Chunk):
+class MOPR(Struct):
     """List of all WMO Portal Relation structures"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << WMOPortalRelation | 'portal_relations',
     )
 
-class MOVV(Chunk):
+class MOVV(Struct):
     """List of visible block vertices locations"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << C3Vector | 'visible_block_vertices',
     )
 
@@ -145,9 +161,11 @@ class VisibleBlock(Struct):
         uint16 | 'count'
     )
 
-class MOVB(Chunk):
+class MOVB(Struct):
     """List of all visible blocks"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << VisibleBlock | 'visible_blocks'
     )
 
@@ -165,9 +183,11 @@ class WMOLight(Struct):
         static_array[4] << float32 | 'unk'
     )
 
-class MOLT(Chunk):
+class MOLT(Struct):
     """List of all WMO Light structures"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << WMOLight | 'lights',
     )
 
@@ -180,15 +200,19 @@ class WMODoodadSet(Struct):
         uint32 | 'padding'
     )
 
-class MODS(Chunk):
+class MODS(Struct):
     """List of all WMO Doodad Set structures"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << WMODoodadSet | 'doodad_sets'
     )
 
 class MODN(Struct):
     """List of all doodad names (paths)"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         StringBlock | 'doodad_names',
     )
 
@@ -202,9 +226,11 @@ class WMODoodadDefinition(Struct):
         CImVector | 'color'
     )
 
-class MODD(Chunk):
+class MODD(Struct):
     """List of all doodad definitions"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << WMODoodadDefinition | 'doodad_definitions',
     )
 
@@ -220,19 +246,23 @@ class WMOFog(Struct):
         CImVector | 'color'
     )
 
-class MFOG(Chunk):
+class MFOG(Struct):
     """List of all WMO fogs"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << WMOFog | 'fogs',
     )
 
-class MCVP(Chunk):
+class MCVP(Struct):
     """List of convex volume planes (used for transport objects)"""
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << C4Plane | 'convex_volume_planes',
     )
 
-class GFID(Chunk):
+class GFID(Struct):
     """Required when WMO is loaded from fileID (Legion+)"""
     _fields_ = (
         #TODO: get back here
@@ -243,8 +273,10 @@ class GFID(Chunk):
 WMO Group File
 """
 
-class MOGP(Chunk):
+class MOGP(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         uint32 | 'group_name',
         uint32 | 'descriptive_group_name',
         uint32 | 'flags',
@@ -270,28 +302,38 @@ class TriangleMaterial(Struct):
 
     # TODO: implement poll methods here
 
-class MOPY(Chunk):
+class MOPY(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[template_T['n_triangles']] << TriangleMaterial | 'polygons',
     )
 
-class MOVI(Chunk):
+class MOVI(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size['size']] << uint16 | 'triangle_vertex_indices',
     )
 
-class MOVT(Chunk):
+class MOVT(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size['size']] << C3Vector | 'vertex_coordinates',
     )
 
-class MONR(Chunk):
+class MONR(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size['size']] << C3Vector | 'normals',
     )
 
-class MOTV(Chunk):
+class MOTV(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size['size']] << C2Vector | 'texture_coordinates',
     )
 
@@ -312,19 +354,25 @@ class RenderBatch(Struct):
         uint8 | 'material_id',
     )
 
-class MOBA(Chunk):
+class MOBA(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << RenderBatch | 'batches',
     )
 
-class MOLR(Chunk):
+class MOLR(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << uint16 | 'light_references',
 
     )
 
-class MODR(Chunk):
+class MODR(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << uint16 | 'doodad_references',
 
     )
@@ -339,22 +387,28 @@ class BSPNode(Struct):
         float32 | 'plane_dist'
     )
 
-class MOBN(Chunk):
+class MOBN(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << BSPNode | 'bsp_nodes',
 
     )
 
 
-class MOBR(Chunk):
+class MOBR(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << uint16 | 'node_face_indices',
 
     )
 
 
-class MOCV(Chunk):
+class MOCV(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << CImVector | 'color_vertices',
 
     )
@@ -375,8 +429,10 @@ class WMOMagmaVert(Struct):
         float32 | 'height'
     )
 
-class MLIQ(Chunk):
+class MLIQ(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         uint32 | 'n_x_vertices',
         uint32 | 'n_y_vertices',
         uint32 | 'n_x_tiles',
@@ -388,44 +444,58 @@ class MLIQ(Chunk):
 
     )
 
-class MORI(Chunk):
+class MORI(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << uint16 | 'triangle_strip_indices',
     )
 
-class MORB(Chunk):
+class MORB(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         uint32 | 'start_index',
         uint16 | 'index_count',
         uint16 | 'padding'
     )
 
-class MOBS(Chunk):
+class MOBS(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')][24] << char | 'unk',
     )
 
 # WoD+
-class MDAL(Chunk):
+class MDAL(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         CArgb | 'replacement_for_header_color',
     )
 
 # WoD+
-class MOPL(Chunk):
+class MOPL(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << C4Plane | 'terrain_cutting_planes',
     )
 
 #Legion+
-class MOLS(Chunk):
+class MOLS(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')][56] << char | 'unk',
     )
 
 #Legion+
 class WMOPointLight(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         uint32 | 'unk',
         CImVector | 'color',
         C3Vector | 'pos',
@@ -437,8 +507,10 @@ class WMOPointLight(Struct):
         uint32 | 'unk3'
     )
 
-class MOLP(Chunk):
+class MOLP(Struct):
     _fields_ = (
+        string_t(4) | 'magic',
+        uint32 | 'size',
         dynamic_array[this_size('size')] << WMOPointLight | 'point_lights',
     )
 

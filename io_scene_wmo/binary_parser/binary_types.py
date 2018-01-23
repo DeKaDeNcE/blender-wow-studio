@@ -82,6 +82,9 @@ class string_t:
     def _write_(self, f, string):
         f.write(string.encode(self.encoding))
 
+    def __or__(self, other):
+        return self, other
+
 # preprocessor-like conditions
 class if_:
     def __init__(self, exp):
@@ -543,16 +546,17 @@ if __name__ == '__main__':
 
     class SampleStruct2(Struct):
         _fields_ = (
-            #SampleStruct << {'a': int8} | 'structure',
             SampleStruct << template_T['a'] | 'test',
             SampleStruct << template_T['b'] | 'test1',
             template_T['a'] | 'test3',
             static_array[1][2] << (SampleStruct << int8) | 'array',
         )
 
-
     struct = SampleStruct2(a=int16, b=int32, c=SampleStruct(int8))
 
-    print(typeof(struct, 'test'))
+
+
+
+
 
 
