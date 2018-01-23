@@ -205,7 +205,7 @@ class WOW_FILESYSTEM_LOAD_OP(bpy.types.Operator):
             for storage, type in bpy.wow_game_data.files:
                 if type:
                     storage.close()
-                
+
             delattr(bpy, "wow_game_data")
             self.report({'INFO'}, "WoW game data is unloaded.")
 

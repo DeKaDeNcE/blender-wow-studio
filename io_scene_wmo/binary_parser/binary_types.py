@@ -144,12 +144,14 @@ class ArrayMeta(type):
 
 class this_size:
     __slots__ = ('size_attr', 'extra_bytes')
+
     def __init__(self, size_attr, extra_bytes=0):
         self.size_attr = size_attr
         self.extra_bytes = extra_bytes
 
 class this_exp:
     __slots__ = ('exp')
+
     def __init__(self, exp):
         self.exp = exp
 
@@ -575,10 +577,9 @@ if __name__ == '__main__':
 
         )
 
-    from timeit import timeit
 
-    print(timeit(lambda: SampleStruct3(int8)))
-
+    for _ in range(100000):
+        struct = SampleStruct3(uint8)
 
 
 

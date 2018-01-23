@@ -1002,6 +1002,8 @@ class WMOGroupFile:
                                                                             0,
                                                                             weight if weight > 0 else 0x00)
 
+                        self.root.mohd.Flags |= 0x2
+
                     normal_map.setdefault(new_index, []).append(tuple(mesh.loops[loop_index].normal))
 
                 self.mopy.TriangleMaterials.append(tri_mat)
