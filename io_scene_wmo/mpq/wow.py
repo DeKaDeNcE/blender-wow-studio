@@ -141,7 +141,7 @@ class WoWFileData:
 
             for package in data_packages:
                 if os.path.isfile(package):
-                    resource_map.append((MPQFile(package), True))
+                    resource_map.append((MPQFile(package, 0x00000100), True))
                     print("\nLoaded MPQ: " + os.path.basename(package))
                 else:
                     resource_map.append((package, False))
