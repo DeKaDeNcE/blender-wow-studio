@@ -1017,9 +1017,10 @@ def UnregisterWoWVisibilityProperties():
     bpy.types.Scene.WoWLiquidFlags = None
     bpy.types.Scene.WoWDoodadVisibility = None
 
-class WMOToolsPanelObjectMode(bpy.types.Panel):
-    bl_label = 'Quick WMO'
-    bl_idname = 'WMOQuickPanelObjMode'
+
+class WMOToolsPanelObjectModeDisplay(bpy.types.Panel):
+    bl_label = 'Display'
+    bl_idname = 'WMODisplay'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     bl_context = 'objectmode'
@@ -1027,13 +1028,7 @@ class WMOToolsPanelObjectMode(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout.split()
-
-        has_sets = True if bpy.context.scene.WoWRoot.MODS_Sets else False
-        game_data_loaded = hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files
-
         col = layout.column(align=True)
-
-        col.label(text="Display:")
         col_row = col.row()
         col_row.column(align=True).prop(context.scene, "WoWVisibility")
         col_col = col_row.column(align=True)
@@ -1049,8 +1044,23 @@ class WMOToolsPanelObjectMode(bpy.types.Panel):
             box2_row2.prop(context.scene, "WoWDoodadVisibility", expand=False)
             box2_row2.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'WoWDoodad'
 
-        col.separator()
-        col.label(text="Add to scene:")
+
+class WMOToolsPanelObjectModeAddToScene(bpy.types.Panel):
+    bl_label = 'Add to scene'
+    bl_idname = 'WMOAddToScene'
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    bl_context = 'objectmode'
+    bl_category = 'WMO'
+
+    def draw(self, context):
+        layout = self.layout.split()
+
+        has_sets = True if bpy.context.scene.WoWRoot.MODS_Sets else False
+        game_data_loaded = hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files
+
+        col = layout.column(align=True)
+
         box1 = col.box().column(align=True)
         box1_col = box1.column(align=True)
         box1_row1 = box1_col.row(align=True)
@@ -1068,11 +1078,22 @@ class WMOToolsPanelObjectMode(bpy.types.Panel):
         else:
             box1_col.operator("scene.wow_add_scale_reference", text = 'Scale', icon = 'OUTLINER_OB_ARMATURE')
 
+
+class WMOToolsPanelObjectModeActions(bpy.types.Panel):
+    bl_label = 'Actions'
+    bl_idname = 'WMOQuickPanelObjModeActions'
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    bl_context = 'objectmode'
+    bl_category = 'WMO'
+
+    def draw(self, context):
+        layout = self.layout.split()
+        col = layout.column(align=True)
+
         if bpy.context.selected_objects:
-            col.separator()
+            box = col.box()
             col.label(text="Selected:")
-            box = col.box().column(align=True)
-            #box.label(text="Convert:")
             box.menu("view3D.convert_to_menu", text="Convert selected")
             box.label(text="Apply:")
             box_col = box.column(align=True)
@@ -1080,8 +1101,34 @@ class WMOToolsPanelObjectMode(bpy.types.Panel):
             box_col.operator("scene.wow_fill_textures", text='Fill texture paths', icon='FILE_IMAGE')
             box_col.operator("scene.wow_set_portal_dir_alg", text='Set portal dir.', icon='FILE_REFRESH')
             box_col.operator("scene.wow_bake_portal_relations", text='Bake portal rels.', icon='LINKED')
-            box.label(text="Doodads:")
-            box_col2 = box.column(align=True)
+
+        col.separator()
+        col.label(text="Global:")
+        col.operator("scene.wow_fix_material_duplicates", text='Fix material duplicates', icon='ASSET_MANAGER')
+
+
+
+class WMOToolsPanelObjectModeDoodads(bpy.types.Panel):
+    bl_label = 'Doodads'
+    bl_idname = 'WMOQuickPanelObjModeDoodads'
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    bl_context = 'objectmode'
+    bl_category = 'WMO'
+
+    @classmethod
+    def poll(cls, context):
+        return True if bpy.context.scene.WoWRoot.MODS_Sets else False
+
+    def draw(self, context):
+        layout = self.layout.split()
+        col = layout.column(align=True)
+
+        has_sets = True if bpy.context.scene.WoWRoot.MODS_Sets else False
+        box = col.box()
+        box_col2 = box.column(align=True)
+
+        if bpy.context.selected_objects:
             if not has_sets:
                 box_col2.operator("scene.wow_doodad_set_add", text='Add to doodadset', icon='ZOOMIN')
                 box_col2.operator("scene.wow_doodads_bake_color", text='Bake color', icon='GROUP_VCOL')
@@ -1089,10 +1136,6 @@ class WMOToolsPanelObjectMode(bpy.types.Panel):
                 box_col2.operator("scene.wow_doodad_set_template_action", text='Template action', icon='FORCE_MAGNETIC')
             else:
                 box_col2.operator("scene.wow_clear_preserved_doodad_sets", text='Clear doodad sets', icon='CANCEL')
-
-        col.separator()
-        col.label(text="Global:")
-        col.operator("scene.wow_fix_material_duplicates", text='Fix material duplicates', icon='ASSET_MANAGER')
 
 
 class ConvertOperators(bpy.types.Menu):
