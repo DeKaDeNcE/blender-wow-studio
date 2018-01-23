@@ -1091,6 +1091,9 @@ class WMOToolsPanelObjectModeActions(bpy.types.Panel):
         layout = self.layout.split()
         col = layout.column(align=True)
 
+        col.label(text="Global:")
+        col.operator("scene.wow_fix_material_duplicates", text='Fix material duplicates', icon='ASSET_MANAGER')
+
         if bpy.context.selected_objects:
             box = col.box()
             col.label(text="Selected:")
@@ -1101,11 +1104,6 @@ class WMOToolsPanelObjectModeActions(bpy.types.Panel):
             box_col.operator("scene.wow_fill_textures", text='Fill texture paths', icon='FILE_IMAGE')
             box_col.operator("scene.wow_set_portal_dir_alg", text='Set portal dir.', icon='FILE_REFRESH')
             box_col.operator("scene.wow_bake_portal_relations", text='Bake portal rels.', icon='LINKED')
-
-        col.separator()
-        col.label(text="Global:")
-        col.operator("scene.wow_fix_material_duplicates", text='Fix material duplicates', icon='ASSET_MANAGER')
-
 
 
 class WMOToolsPanelObjectModeDoodads(bpy.types.Panel):
