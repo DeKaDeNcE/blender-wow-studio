@@ -1096,7 +1096,7 @@ class WMOToolsPanelObjectModeActions(bpy.types.Panel):
 
         if bpy.context.selected_objects:
             box = col.box()
-            col.label(text="Selected:")
+            box.label(text="Selected:")
             box.menu("view3D.convert_to_menu", text="Convert selected")
             box.label(text="Apply:")
             box_col = box.column(align=True)

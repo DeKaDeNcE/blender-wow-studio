@@ -23,7 +23,7 @@ class GenericType:
         self.size = size
         self.default_value = default_value
 
-    def __call__(self):
+    def __call__(self, *args, **kwargs):
         return self.default_value
 
     def _read_(self, f):
@@ -62,7 +62,7 @@ class string_t:
         self.encoding = encoding
         self.len = len
 
-    def __call__(self):
+    def __call__(self, *args, **kwargs):
         return self.default_value
 
     def _read_(self, f):
@@ -483,13 +483,7 @@ class Struct(metaclass=StructMeta):
                 type_ = field_type(*args, **kwargs)
                 self._rfields_[i] = (field_type.cls, self._fields_[i][1])
 
-                setattr(self, field_name, type_())
-                continue
-
-            if type(type_) in (GenericType, string_t):
-                setattr(self, field_name, type_())
-            else:
-                setattr(self, field_name, type_(*args, **kwargs))
+            setattr(self, field_name, type_(*args, **kwargs))
 
     def _read_(self, f):
 
@@ -578,8 +572,8 @@ if __name__ == '__main__':
         )
 
 
-    for _ in range(100000):
-        struct = SampleStruct3(uint8)
+    from timeit import timeit
+    timeit(lambda: SampleStruct3(uint8))
 
 
 
