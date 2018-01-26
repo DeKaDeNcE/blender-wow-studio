@@ -65,7 +65,7 @@ class MOUV(Struct):
     _fields_ = (
         string_t(4) | 'magic',
         uint32 | 'size',
-        static_array[template_T['len']] << C2Vector | 'translation_speed',
+        array[template_T['len']] << C2Vector | 'translation_speed',
     )
 
 
@@ -93,7 +93,7 @@ class MOGI(Struct):
     _fields_ = (
         string_t(4) | 'magic',
         uint32 | 'size',
-        static_array[template_T['n_groups']] << WMOGroupInfo | 'group_infos',
+        array[template_T['n_groups']] << WMOGroupInfo | 'group_infos',
     )
 
 
@@ -110,7 +110,7 @@ class MOPV(Struct):
     _fields_ = (
         string_t(4) | 'magic',
         uint32 | 'size',
-        static_array[template_T['n_portal_vertices']] << C3Vector | 'portal_vertices',
+        array[template_T['n_portal_vertices']] << C3Vector | 'portal_vertices',
     )
 
 class WMOPortal(Struct):
@@ -180,7 +180,7 @@ class WMOLight(Struct):
         float32 | 'intensity',
         float32 | 'attenuation_start',
         float32 | 'attenuation_end',
-        static_array[4] << float32 | 'unk'
+        array[4] << float32 | 'unk'
     )
 
 class MOLT(Struct):
@@ -287,7 +287,7 @@ class MOGP(Struct):
         uint16 | 'int_batch_count',
         uint16 | 'ext_batch_count',
         uint16 | 'padding',
-        static_array[4] << uint8 | 'fog_ids',
+        array[4] << uint8 | 'fog_ids',
         uint32 | 'group_liquid',
         uint32 | 'unique_id',
         uint32 | 'flags2',
@@ -340,10 +340,10 @@ class MOTV(Struct):
 class RenderBatch(Struct):
     _fields_ = (
         if_(VERSION < Versions.Legion),
-            static_array[6] << int16 | 'bounding_box',
+        array[6] << int16 | 'bounding_box',
         else_,
-            static_array[10] << uint8 | 'unk',
-            uint16 | 'material_id_large',
+        array[10] << uint8 | 'unk',
+        uint16 | 'material_id_large',
         endif_,
 
         uint32 | 'start_index',
@@ -437,7 +437,7 @@ class MLIQ(Struct):
         uint32 | 'n_y_vertices',
         uint32 | 'n_x_tiles',
         uint32 | 'n_y_tiles',
-        static_array[3] << float32 | 'base_coordinates',
+        array[3] << float32 | 'base_coordinates',
         uint16 | 'material_id',
         dynamic_array['n_x_vertices']['n_y_vertices'] << template_T['vertex_type'],
         dynamic_array['n_x_tiles']['n_y_tiles'] << uint8 | 'tile_flags'

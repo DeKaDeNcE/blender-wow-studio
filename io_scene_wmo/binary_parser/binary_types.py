@@ -155,14 +155,14 @@ class this_exp:
     def __init__(self, exp):
         self.exp = exp
 
-class static_array(metaclass=ArrayMeta):
+class array(metaclass=ArrayMeta):
     __slots__ = ('dimensions', 'type', 'type_size')
     is_bound = False
 
     @staticmethod
     def generate_ndimensional_iterable(lengths, type, iterable):
         if len(lengths) > 1:
-            dimension = iterable(static_array.generate_ndimensional_iterable(lengths[1:], type, iterable)
+            dimension = iterable(array.generate_ndimensional_iterable(lengths[1:], type, iterable)
                                  for _ in range(lengths[0]))
         else:
             dimension = iterable(type() if callable(type) else type for _ in range(lengths[0]))
@@ -233,9 +233,9 @@ class static_array(metaclass=ArrayMeta):
                     raise TypeError('Unknown dynamic_array length identifier. Must be structure field name or int.')
 
         if type(self.type) in (GenericType, string_t):
-            return static_array.generate_ndimensional_iterable(dimensions,
-                                                               self.type,
-                                                               list if self.is_bound else tuple)
+            return array.generate_ndimensional_iterable(dimensions,
+                                                        self.type,
+                                                        list if self.is_bound else tuple)
 
         for indices in product(*[range(s) for s in dimensions]):
             item = itrbl
@@ -297,20 +297,20 @@ class static_array(metaclass=ArrayMeta):
         return self.type_size * length
 
 
-class dynamic_array(static_array):
+class dynamic_array(array):
     __slots__ = ('dimensions', 'type')
     is_bound = True
 
 
 # templates
-class typename_t_meta(TypeMeta):
+class TemplateTMeta(TypeMeta):
     def __getitem__(cls, item):
         instance = cls()
         instance.id = item
         return instance
 
 
-class template_T(metaclass=typename_t_meta):
+class template_T(metaclass=TemplateTMeta):
     __slots__ = ('id',)
 
     def resolve_template_type(self, *args, **kwargs):
@@ -491,7 +491,7 @@ class Struct(metaclass=StructMeta):
             if type(field_type) in (GenericType, string_t):
                 setattr(self, field_name, field_type._read_(f))
 
-            elif type(field_type) in (static_array, dynamic_array):
+            elif type(field_type) in (array, dynamic_array):
                 setattr(self, field_name, field_type._read_(f, (self, field_name)))
 
             else:
@@ -503,7 +503,7 @@ class Struct(metaclass=StructMeta):
 
             if type(field_type) in (GenericType, string_t):
                 field_type._write_(f, getattr(self, field_name))
-            elif type(field_type) in (static_array, dynamic_array):
+            elif type(field_type) in (array, dynamic_array):
                 field_type._write_(f, (self, field_name))
             else:
                 getattr(self, field_name)._write_(f)
@@ -513,7 +513,7 @@ class Struct(metaclass=StructMeta):
         try:
             for field_type, field_name in self._rfields_:
                 size += field_type._size_() \
-                        if type(field_type) in (GenericType, string_t, static_array, dynamic_array) else \
+                        if type(field_type) in (GenericType, string_t, array, dynamic_array) else \
                         getattr(self, field_name)._size_()
         except AttributeError:
             raise TypeError("All used types should define _size_ method.")
@@ -547,7 +547,7 @@ if __name__ == '__main__':
             SampleStruct << template_T['a'] | 'test',
             SampleStruct << template_T['b'] | 'test1',
             template_T['a'] | 'test3',
-            static_array[1][2] << (SampleStruct << int8) | 'array',
+            array[1][2] << (SampleStruct << int8) | 'array',
         )
 
     class SampleStruct3(Struct):

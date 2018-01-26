@@ -430,10 +430,10 @@ M2KeyBoneNames = [
 class M2Vertex(Struct):
     _fields_ = (
         C3Vector << float32 | 'pos',
-        static_array[4] << uint8 | 'bone_weights',
-        static_array[4] << uint8 | 'bone_indices',
+        array[4] << uint8 | 'bone_weights',
+        array[4] << uint8 | 'bone_indices',
         C3Vector << float32 | 'normal',
-        static_array[2] << (C2Vector << float32) | 'text_coords'
+        array[2] << (C2Vector << float32) | 'text_coords'
 
     )
 
