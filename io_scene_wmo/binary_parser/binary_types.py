@@ -419,10 +419,10 @@ class StructMeta(TypeMeta):
         exec_controller = deque()
 
         for element in struct_fields:
-            if isinstance(element, if_):
+            if type(element) is if_:
                 exec_controller.append(element.value)
 
-            elif isinstance(element, elif_):
+            elif type(element) is elif_:
                 try:
                     exec_controller[-1] = element.value
                 except IndexError:
@@ -573,7 +573,7 @@ if __name__ == '__main__':
 
 
     from timeit import timeit
-    timeit(lambda: SampleStruct3(uint8))
+    print(timeit(lambda: SampleStruct2(a=uint8, b=float32)))
 
 
 
