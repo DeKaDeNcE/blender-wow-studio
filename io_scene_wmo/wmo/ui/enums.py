@@ -10,7 +10,8 @@ terrain_type_enum = [
     ('0', "Dirt", ""), ('1', "Metallic", ""), ('2', "Stone", ""),
     ('3', "Snow", ""), ('4', "Wood", ""), ('5', "Grass", ""),
     ('6', "Leaves", ""), ('7', "Sand", ""), ('8', "Soggy", ""),
-    ('9', "Dusty Grass", ""), ('10', "None", ""), ('11', "Water", "")
+    ('9', "Dusty Grass", ""), ('10', "None", ""), ('11', "Water", ""),
+    ('12', "Unknown", ""),('13', "Unknown", ""),
 ]
 
 blending_enum = [
