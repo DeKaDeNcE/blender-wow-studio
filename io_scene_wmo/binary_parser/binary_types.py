@@ -597,7 +597,11 @@ class StructMeta(TypeMeta):
         dict['__fields__'] = new_fields
 
         if new_fields:
-            dict['__slots__'] = list(new_fields.keys()) + ['__rfields__', ]
+            user_slots = dict.get('__slots__')
+            final_slots = tuple(new_fields.keys()) + ('__rfields__', ) 
+            if user_slots:
+                final_slots += tuple(user_slots) if type(user_slots) in (tuple, list) else (user_slots,)
+            dict['__slots__'] = final_slots
 
         return type.__new__(cls, name, bases, dict)
 
@@ -678,6 +682,7 @@ if __name__ == '__main__':
 
 
     class SampleStruct2(Struct):
+        __slots__ = ('test_slot', 'a')
         __fields__ = (
             template_T['a'] | 'test',
             SampleStruct << int8 | 'test_cache',
@@ -695,7 +700,6 @@ if __name__ == '__main__':
     # print(timeit(lambda: SampleStruct2(a=int8, b=int16)))
 
     struct = SampleStruct2(a=int8, b=int16)
-    print(struct.__rfields__)
-    print(SampleStruct2(a=float32, b=int16).__rfields__)
-    print(struct.__rfields__)
+    struct.test_slot = 1
+    print(struct.test_slot)
 
