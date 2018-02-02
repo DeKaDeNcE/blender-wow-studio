@@ -1,5 +1,4 @@
 from ..binary_parser.binary_types import *
-from ..m2_new.wow_common_types import *
 
 
 class MVER(Struct):

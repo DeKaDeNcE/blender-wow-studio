@@ -1,7 +1,61 @@
 from struct import pack, unpack
-from collections import deque, Iterable
+from collections import deque, Iterable, OrderedDict
 from itertools import product
 from functools import partial
+from copy import copy
+
+
+def _lshift(self, other):
+    is_static = True
+    args = []
+    kwargs = None
+    template_types = (template_T, TemplateExpressionQueue)
+
+    if type(self) in template_types:
+        is_static = False
+
+    if type(other) is tuple:
+        for arg in other:
+            if type(arg) is not dict:
+                if kwargs is None:
+                    args.append(arg)
+                    if type(arg) in template_types:
+                        is_static = False
+                else:
+                    raise SyntaxError("Keyword argument followed by a positional argument.")
+            else:
+                if kwargs is not None:
+                    raise SyntaxError("Only one set of keyword arguments is supported.")
+                kwargs = arg
+
+    elif type(other) is dict:
+        kwargs = other
+
+    else:
+        args.append(other)
+
+        if type(other) in template_types:
+            is_static = False
+
+    if kwargs is not None:
+        for key, value in kwargs.items():
+            if type(value) in template_types:
+                is_static = False
+
+    if is_static:
+        type_cache = TemplateTypeCache()
+        kwargs = tuple(kwargs.items()) if kwargs else ()
+        return type_cache.setdefault(self, args, kwargs)
+    else:
+        if kwargs is not None:
+            return TemplateExpressionQueue(self, *args, **kwargs)
+        else:
+            return TemplateExpressionQueue(self, *args)
+
+
+#############################################################
+######                 Generic types                   ######
+#############################################################
 
 generic_type_dict = {
     'b': "int8",
@@ -17,26 +71,27 @@ generic_type_dict = {
     '?': "bool"
 }
 
+
 class GenericType:
     def __init__(self, format, size, default_value=0):
         self.format = format
         self.size = size
         self.default_value = default_value
 
-    def __call__(self, *args, **kwargs):
-        return self.default_value
-
-    def _read_(self, f):
+    def __read__(self, f):
         return unpack(self.format, f.read(self.size))
 
-    def _write_(self, f, value):
+    def __write__(self, f, value):
         f.write(pack(self.format, value))
 
-    def _size_(self):
+    def __size__(self, dummy):
         return self.size
 
     def __or__(self, other):
-        return self, other
+        return (self, other[0], other[1]) if type(other) is tuple else (self, other, self.default_value)
+
+    def __call__(self, *args, **kwargs):
+        return self.default_value
 
     def __repr__(self):
         return "<GenericType: {}>".format(generic_type_dict[self.format])
@@ -55,6 +110,7 @@ float64 = GenericType('f', 8, 0.0)
 char = GenericType('s', 1, '')
 boolean = GenericType('?', 1, False)
 
+
 class string_t:
     default_value = ''
 
@@ -65,7 +121,7 @@ class string_t:
     def __call__(self, *args, **kwargs):
         return self.default_value
 
-    def _read_(self, f):
+    def __read__(self, f):
         if self.len == 0:
             string = ''
             while True:
@@ -83,226 +139,21 @@ class string_t:
         f.write(string.encode(self.encoding))
 
     def __or__(self, other):
-        return self, other
+        return self, other, ""
 
-# preprocessor-like conditions
-class if_:
-    def __init__(self, exp):
-        self.value = bool(exp)
 
-class elif_:
-    def __init__(self, exp):
-        self.value = bool(exp)
-
-class else_: pass
-class endif_: pass
-
-# parent of all supported complex types
 class TypeMeta(type):
     def __or__(cls, other):
-        return cls, other
+        return (cls, other[0], other[1]) if type(other) is tuple else (cls, other, None)
 
     def __lshift__(cls, other):
-        args = []
-        kwargs = None
-        if type(other) is dict:
-            kwargs = other
-        elif isinstance(other, Iterable):
-            for element in other:
-                if type(element) is not dict:
-                    if kwargs is None:
-                        args.append(element)
-                    else:
-                        raise SyntaxError("Positional argument follows a keyword argument.")
-                else:
-                    kwargs = element
-        else:
-            args.append(other)
-
-        if kwargs is not None:
-            return TemplateExpressionQueue(cls, *args, **kwargs)
-        else:
-            return TemplateExpressionQueue(cls, *args)
-
-class Type(metaclass=TypeMeta): pass
+        return _lshift(cls, other)
 
 
-# containers
-class ArrayMeta(type):
-    def __getitem__(cls, item):
-        if not cls.is_bound:
-            if type(item) is not int:
-                raise TypeError('Static array can only accept ints as length identifiers. Use dynamic array instead.')
-            elif item == 0:
-                raise ValueError('Static array cannot have 0-length dimensions.')
+#############################################################
+######                  Templates                      ######
+#############################################################
 
-        if type(item) is int and item < 0:
-            raise ValueError('Length cannot be negative.')
-
-        return cls(item)
-
-
-class this_size:
-    __slots__ = ('size_attr', 'extra_bytes')
-
-    def __init__(self, size_attr, extra_bytes=0):
-        self.size_attr = size_attr
-        self.extra_bytes = extra_bytes
-
-class this_exp:
-    __slots__ = ('exp')
-
-    def __init__(self, exp):
-        self.exp = exp
-
-class array(metaclass=ArrayMeta):
-    __slots__ = ('dimensions', 'type', 'type_size')
-    is_bound = False
-
-    @staticmethod
-    def generate_ndimensional_iterable(lengths, type, iterable):
-        if len(lengths) > 1:
-            dimension = iterable(array.generate_ndimensional_iterable(lengths[1:], type, iterable)
-                                 for _ in range(lengths[0]))
-        else:
-            dimension = iterable(type() if callable(type) else type for _ in range(lengths[0]))
-
-        return dimension
-
-    def __init__(self, length):
-        self.dimensions = [length,]
-
-    def __getitem__(self, length):
-        if not self.is_bound:
-            if type(length) is not int:
-                raise TypeError('Static array can only accept integers as length identifiers. Use dynamic array instead.')
-            elif length == 0:
-                raise ValueError('Static array cannot have 0-length dimensions.')
-
-        if self.dimensions[-1] == 0:
-            raise TypeError('Zero-length dimension cannot contain any further elements.')
-
-        if type(length) is int and length < 0:
-            raise ValueError('Length cannot be negative.')
-
-        self.dimensions.append(length)
-        return self
-
-    def __or__(self, other):
-        return self, other
-
-    def __lshift__(self, other):
-        args = []
-        kwargs = None
-        if type(other) is dict:
-            kwargs = other
-        elif isinstance(other, Iterable):
-            for element in other:
-                if type(element) is not dict:
-                    if kwargs is None:
-                        args.append(element)
-                    else:
-                        raise SyntaxError("Positional argument follows a keyword argument.")
-                else:
-                    kwargs = element
-        else:
-            args.append(other)
-
-        if kwargs is not None:
-            return TemplateExpressionQueue(self, *args, **kwargs)
-        else:
-            return TemplateExpressionQueue(self, *args)
-
-    def _read_(self, f, attribute_pair):
-        cls, attr = attribute_pair
-        this = cls
-        itrbl = getattr(cls, attr)
-        dimensions = self.dimensions
-        if self.is_bound:
-            for i, dm in enumerate(self.dimensions):
-                dm_type = type(dm)
-                if dm_type is str:
-                    dimensions[i] = getattr(cls, dm)
-                elif dm_type is int:
-                    pass
-                elif dm_type is this_size:
-                    dimensions[i] = getattr(this, dm_type.size_attr) * self.type_size - dm_type.extra_bytes
-                elif dm_type is this_exp:
-                    dimensions[i] = eval(dm_type.exp)
-                else:
-                    raise TypeError('Unknown dynamic_array length identifier. Must be structure field name or int.')
-
-        if type(self.type) in (GenericType, string_t):
-            return array.generate_ndimensional_iterable(dimensions,
-                                                        self.type,
-                                                        list if self.is_bound else tuple)
-
-        for indices in product(*[range(s) for s in dimensions]):
-            item = itrbl
-            for idx in indices:
-                item = item[idx]
-            item._read_(f)
-
-        return itrbl
-
-    def _write_(self, f, attribute_pair):
-        cls, attr = attribute_pair
-        itrbl = getattr(cls, attr)
-        if self.is_bound:
-            for i, dm in enumerate(self.dimensions):
-                dm_type = type(dm)
-                if dm_type is str:
-                    dm_itrbl = itrbl
-                    for j in range(i + 1):
-                        dm_itrbl = dm_itrbl[j]
-
-                    setattr(cls, dm, len(dm_itrbl))
-
-                elif dm_type is int:
-                    pass
-
-                elif dm_type is this_size:
-                    setattr(cls, dm_type.size_attr, self._size_() - dm_type.extra_bytes)
-
-                elif dm_type is this_exp:
-                    pass
-
-                else:
-                    raise TypeError('Unknown dynamic_array length identifier. Must be structure field name or int.')
-
-        for indices in product(*[range(s) for s in self.dimensions]):
-            item = itrbl
-            for idx in indices:
-                item = item[idx]
-
-            self.type._write_(f, item) if type(self.type) in (GenericType, string_t) else item._write_(f)
-
-    def __call__(self, *args, **kwargs):
-        arg = args[0]
-        self.type = arg() if callable(arg) else arg
-        type_ = self.type() if callable(self.type) else self.type
-
-        try:
-            self.type_size = self.type._size_() if type(type_) in (GenericType, string_t) else type_._size_()
-        except AttributeError:
-            raise TypeError("All used types should define _size_ method.")
-
-        return self.generate_ndimensional_iterable(self.dimensions, self.type, tuple)
-
-    def _size_(self):
-        length = self.dimensions[0]
-        for dim in self.dimensions[1:]:
-            length *= dim
-
-        return self.type_size * length
-
-
-class dynamic_array(array):
-    __slots__ = ('dimensions', 'type')
-    is_bound = True
-
-
-# templates
 class TemplateTMeta(TypeMeta):
     def __getitem__(cls, item):
         instance = cls()
@@ -330,7 +181,9 @@ class template_T(metaclass=TemplateTMeta):
         return type_
 
     def __or__(self, other):
-        return self, other
+        if type(other) is tuple:
+            raise SyntaxError("Template expressions do not support default values.")
+        return self, other, None
 
     def __lshift__(self, other):
         args = []
@@ -353,6 +206,58 @@ class template_T(metaclass=TemplateTMeta):
             return TemplateExpressionQueue(self, *args, **kwargs)
         else:
             return TemplateExpressionQueue(self, *args)
+
+
+class TemplateTypeCache:
+    # make class a singleton
+    _instance = None
+    cache = {}
+
+    def __new__(class_, *args, **kwargs):
+        if not isinstance(class_._instance, class_):
+            class_._instance = object.__new__(class_, *args, **kwargs)
+        return class_._instance
+
+    def setdefault(self, cls, args, kwargs):
+        hashable_kwargs = frozenset(kwargs)
+        t_type = self.cache.get((cls, tuple(args), hashable_kwargs))
+        if t_type is None:
+            t_type = copy(cls)
+            t_type.__fields__ = copy(cls.__fields__)
+
+            for f_name, f_pair in t_type.__fields__.items():
+                f_type, f_default = f_pair
+
+                if type(f_type) is template_T:
+                    if type(f_type.id) is int:
+                        try:
+                            f_type = args[f_type.id]
+                        except IndexError:
+                            raise SyntaxError("No template key passed for field \"{}\".".format(f_name))
+
+                    elif type(f_type.id) is str:
+                        try:
+                            f_type = kwargs[f_type.id]
+                        except KeyError:
+                            raise SyntaxError("No template key passed for field \"{}\".".format(f_name))
+
+                    else:
+                        raise SyntaxError("Invalid template identifier {}".format(f_type.id))
+
+                    t_type.__fields__[f_name] = f_type, None
+
+                elif type(f_type) is TemplateExpressionQueue:
+                    type_cache = TemplateTypeCache()
+
+                    partial_ = f_type(*args, **kwargs)
+                    keywords = tuple(partial_.keywords.items()) if partial_.keywords else ()
+                    f_type = type_cache.setdefault(partial_.func, partial_.args, keywords)
+
+                    t_type.__fields__[f_name] = f_type, None
+
+            self.cache[cls, tuple(args), hashable_kwargs] = t_type
+
+        return t_type
 
 
 class TemplateExpressionQueue:
@@ -388,10 +293,11 @@ class TemplateExpressionQueue:
         new_kwargs = {}
         if kwargs is not None:
             for key, value in kwargs.items():
-                if type(value) is template_T:
+                val_type = type(value)
+                if val_type is template_T:
                     new_kwargs[key] = value.resolve_template_type(*args, **call_kwargs)
 
-                elif type(value) is TemplateExpressionQueue:
+                elif val_type is TemplateExpressionQueue:
                     new_kwargs[key] = partial(value, *args, **call_kwargs)
 
                 else:
@@ -403,19 +309,257 @@ class TemplateExpressionQueue:
             return partial(type_, *new_args)
 
     def __or__(self, other):
-        return self, other
+        if type(other) is tuple:
+            raise SyntaxError("Template expressions do not support default values.")
+        return self, other, None
 
-# structures
+
+#############################################################
+######                    Arrays                       ######
+#############################################################
+
+class ArrayMeta(type):
+    def __getitem__(cls, item):
+        type_ = type(item)
+        int_only = False
+
+        if not cls.is_dynamic:
+            if type_ is not int:
+                raise TypeError('Static array can only accept ints as length identifiers. Use dynamic array instead.')
+            elif item == 0:
+                raise ValueError('Static array cannot have 0-length dimensions.')
+
+        if type_ is int:
+            if item < 0:
+                raise ValueError('Length cannot be negative.')
+            int_only = True
+
+        return cls(item, int_only)
+
+
+class ThisMeta(type):
+    def __getattribute__(cls, name):
+        return cls(name)
+
+
+class this(metaclass=ThisMeta):
+    __slots__ = ('exp',)
+
+    def __init__(self, attr):
+        self.exp = "struct.{}".format(attr)
+
+    def __add__(self, other):
+        self.exp = "({} + {})".format(self.exp, other.exp if type(other) is this else other)
+        return self
+
+    def __sub__(self, other):
+        self.exp = "({} - {})".format(self.exp, other.exp if type(other) is this else other)
+        return self
+
+    def __mul__(self, other):
+        self.exp = "({} * {})".format(self.exp, other.exp if type(other) is this else other)
+        return self
+
+    def __div__(self, other):
+        self.exp = "({} // {})".format(self.exp, other.exp if type(other) is this else other)
+        return self
+
+
+class array(metaclass=ArrayMeta):
+    __slots__ = ('dimensions', 'type', 'type_size', 'int_only')
+    is_dynamic = False
+
+    def __init__(self, length, int_only):
+        self.int_only = int_only
+        self.dimensions = [length, ]
+
+    def __getitem__(self, length):
+        if not self.is_dynamic:
+            if type(length) is not int:
+                raise TypeError(
+                    'Static array can only accept integers as length identifiers. Use dynamic array instead.')
+            elif length == 0:
+                raise ValueError('Static array cannot have 0-length dimensions.')
+
+        if self.dimensions[-1] == 0:
+            raise TypeError('Zero-length dimension cannot contain any further elements.')
+
+        if type(length) is int:
+            if length < 0:
+                raise ValueError('Length cannot be negative.')
+        else:
+            self.int_only = False
+
+        self.dimensions.append(length)
+        return self
+
+    def __or__(self, other):
+        return self, other, None
+
+    @staticmethod
+    def gen_ndim_itrbl(lengths, type, iterable):
+        if len(lengths) > 1:
+            dimension = iterable(array.gen_ndim_itrbl(lengths[1:], type, iterable)
+                                 for _ in range(lengths[0]))
+        else:
+            dimension = iterable(type() if callable(type) else type for _ in range(lengths[0]))
+
+        return dimension
+
+    def _get_real_dimensions(self, struct):
+        real_dimensions = []
+        for dim in self.dimensions:
+            type_ = type(dim)
+
+            if type_ is int:
+                real_dimensions.append(dim)
+            elif type_ is str:
+                real_dimensions.append(getattr(struct, dim))
+            elif type_ is this:
+                real_dimensions.append(eval(dim.exp))
+
+        return real_dimensions
+
+    def __lshift__(self, other):
+        self.type = other
+        return self
+
+    def __call__(self, struct, *args, **kwargs):
+        type_t = type(self.type)
+        if type_t is template_T:
+            self.type = self.type.resolve_template_type(*args, **kwargs)
+
+        elif type_t is TemplateExpressionQueue:
+            self.type = TemplateExpressionQueue(*args, **kwargs)
+
+        try:
+            self.type_size = self.type().__size__() if type(self.type) not in (
+            GenericType, string_t) else self.type.__size__(True)
+        except AttributeError:
+            raise TypeError("All used types should define __size__() method.")
+
+        if isinstance(type_t, array):
+            raise TypeError("Nested arrays are not supported. Use dimensions instead.")
+
+        if not self.is_dynamic or self.int_only:
+            return array.gen_ndim_itrbl(self.dimensions, self.type, tuple)
+        else:
+            dimensions = self._get_real_dimensions(struct)
+            for dim in dimensions:
+                if type(dim) is not int or dim <= 0:
+                    return []
+
+            return array.gen_ndim_itrbl(dimensions, self.type, list)
+
+    def _get_length(self, attribute_pair=None):
+        if not self.is_dynamic or self.int_only:
+            length = self.dimensions[0]
+            for dim in self.dimensions[1:]:
+                length *= dim
+        else:
+            array = getattr(*attribute_pair)
+            if not array:
+                return 0
+            cur_dim = array[0]
+            length = len(cur_dim)
+
+            for _ in range(len(self.dimensions) - 1):
+                cur_dim = cur_dim[0]
+                length *= len(cur_dim)
+
+        return length
+
+    def __read__(self, f, attribute_pair):
+        struct, attr = attribute_pair
+        type_ = type(self.type)
+
+        dimensions = self.dimensions if not self.is_dynamic or self.int_only else self._get_real_dimensions(struct)
+
+        new_array = array.gen_ndim_itrbl(dimensions, self.type, list)
+        if type_ in (GenericType, string_t):
+
+            for indices in product(*[range(s) for s in dimensions]):
+                item = new_array
+                n_indices = len(indices)
+                for i, idx in enumerate(indices):
+                    item = item[idx]
+
+                    if i == n_indices - 1:
+                        item[idx] = self.type.__read__(f)
+
+        else:
+            for indices in product(*[range(s) for s in dimensions]):
+                item = new_array
+                for i, idx in enumerate(indices):
+                    item = item[idx]
+
+                item.__read__(f)
+
+        setattr(struct, attr, new_array if self.is_dynamic else tuple(new_array))
+
+    def __write__(self, f, attribute_pair):
+        struct, attr = attribute_pair
+        array = getattr(*attribute_pair)
+        type_ = type(self.type)
+
+        dimensions = self.dimensions if not self.is_dynamic or self.int_only else self._get_real_dimensions(struct)
+
+        write_type = lambda item: self.type.__write__(f, item) if type_ in (GenericType, string_t) else item.__write__(
+            f)
+
+        for indices in product(*[range(s) for s in dimensions]):
+            item = array
+            for i, idx in enumerate(indices):
+                item = item[idx]
+            write_type(item)
+
+    def __size__(self, attribute_pair):
+
+        length = self._get_length(attribute_pair)
+        return length * self.type_size
+
+
+class dynamic_array(array):
+    is_dynamic = True
+
+
+#############################################################
+######                  Structure                      ######
+#############################################################
+
+# preprocessor-like conditions
+class if_:
+    def __init__(self, exp):
+        self.value = bool(exp)
+
+
+class elif_:
+    def __init__(self, exp):
+        self.value = bool(exp)
+
+
+class else_: pass
+
+
+class endif_: pass
+
+
 class StructMeta(TypeMeta):
+    """Code launched on creation of the Struct object"""
+
     def __new__(cls, name, bases, dict):
 
+        # inherit fields from parent structs
         struct_fields = []
         for base in bases:
             if issubclass(base, Struct):
-                struct_fields.extend(base._fields_)
-        struct_fields.extend(dict.get('_fields_'))
+                struct_fields.extend(base.__fields__)
+        struct_fields.extend(dict.get('__fields__'))
 
-        new_fields = []
+        # create ordered dict for final fields
+        new_fields = OrderedDict()
+
+        # implement preprocessor-like directives
         exec_controller = deque()
 
         for element in struct_fields:
@@ -440,144 +584,118 @@ class StructMeta(TypeMeta):
                 except IndexError:
                     raise SyntaxError("endif_ can only be used to close a condition.")
 
-            elif (not exec_controller or exec_controller[-1]) and type(element) is tuple and len(element) == 2:
+            elif (not exec_controller or exec_controller[-1]) and type(element) is tuple:
 
-                for field_type, field_name in new_fields:
-                    if field_name == element[1]:
-                        raise NameError("Field name \"{}\" was already used before in this struct.".format(element[1]))
-                new_fields.append(element)
+                f_type, f_name, f_default = element
 
-        if exec_controller:
-            raise SyntaxError("At least one condition is not closed with endif_.")
+                # safety check
+                if f_name in new_fields.keys():
+                    raise NameError("Field name \"{}\" was already used before in this struct.".format(f_name))
 
-        dict['_fields_'] = new_fields
+                new_fields[f_name] = f_type, f_default
 
-        slots = ['_rfields_',]
-
-        for field in new_fields:
-            slots.append(field[1])
+        dict['__fields__'] = new_fields
 
         if new_fields:
-            dict['__slots__'] = slots
+            dict['__slots__'] = list(new_fields.keys()) + ['__rfields__', ]
 
         return type.__new__(cls, name, bases, dict)
 
 
 class Struct(metaclass=StructMeta):
     __slots__ = ()
-    _fields_ = []
-    bound_containers = []
+    __fields__ = []
 
     def __init__(self, *args, **kwargs):
-        self._rfields_ = self._fields_[:]
+        self.__rfields__ = copy(self.__fields__)
 
-        for i, field_pair in enumerate(self._fields_):
-            field_type, field_name = field_pair
-            type_ = field_type
+        for f_name, f_pair in self.__rfields__.items():
+            f_type, f_default = f_pair
+            type_ = type(f_type)
 
-            if type(field_type) is template_T:
-                type_ = field_type.resolve_template_type(*args, **kwargs)
-                self._rfields_[i] = (type_, self._fields_[i][1])
+            if type_ is template_T:
+                f_type = f_type.resolve_template_type(*args, **kwargs)
+                self.__rfields__[f_name] = (f_type, None)
 
-            elif type(field_type) is TemplateExpressionQueue:
-                type_ = field_type(*args, **kwargs)
-                self._rfields_[i] = (field_type.cls, self._fields_[i][1])
+            elif type_ is TemplateExpressionQueue:
+                self.__rfields__[f_name] = (f_type.cls, None)
+                f_type = f_type(*args, **kwargs)
 
-            setattr(self, field_name, type_(*args, **kwargs))
+            elif type_ in (array, dynamic_array):
+                setattr(self, f_name, f_type(self, *args, **kwargs))
+                continue
 
-    def _read_(self, f):
+            setattr(self, f_name, f_default if f_default is not None else f_type(*args, **kwargs))
 
-        for field_type, field_name in self._rfields_:
-            if type(field_type) in (GenericType, string_t):
-                setattr(self, field_name, field_type._read_(f))
+    def __read__(self, f):
+        for f_name, f_pair in self.__rfields__.items():
+            f_type, f_default = f_pair
 
-            elif type(field_type) in (array, dynamic_array):
-                setattr(self, field_name, field_type._read_(f, (self, field_name)))
-
+            if type(f_type) in (GenericType, string_t, array, dynamic_array):
+                getattr(self, f_name).__read__(f)
             else:
-                getattr(self, field_name)._read_(f)
+                setattr(self, f_name, f_type.__read__(f))
 
-    def _write_(self, f):
+    def __write__(self, f):
+        for f_name, f_pair in self.__rfields__.items():
+            f_type, f_default = f_pair
 
-        for field_type, field_name in self._rfields_:
-
-            if type(field_type) in (GenericType, string_t):
-                field_type._write_(f, getattr(self, field_name))
-            elif type(field_type) in (array, dynamic_array):
-                field_type._write_(f, (self, field_name))
+            if type(f_type) in (GenericType, string_t, array, dynamic_array):
+                f_type.__write__(f, getattr(self, f_name))
             else:
-                getattr(self, field_name)._write_(f)
+                getattr(self, f_name).__write__(f)
 
-    def _size_(self):
+    def __size__(self):
         size = 0
-        try:
-            for field_type, field_name in self._rfields_:
-                size += field_type._size_() \
-                        if type(field_type) in (GenericType, string_t, array, dynamic_array) else \
-                        getattr(self, field_name)._size_()
-        except AttributeError:
-            raise TypeError("All used types should define _size_ method.")
+
+        for f_name, f_pair in self.__rfields__.items():
+            f_type, f_default = f_pair
+            if type(f_type) in (GenericType, string_t, array, dynamic_array):
+                size += f_type.__size__((self, f_name))
+            else:
+                size += getattr(self, f_name).__size__()
 
         return size
 
 
 def sizeof(struct):
-    return struct._size_()
+    return struct.__size__()
+
 
 def typeof(struct, attr):
     try:
-        for field_type, field_name in struct._rfields_:
-            if field_name == attr:
-                return field_type
-    except AttributeError:
-        raise TypeError('typeof() function works only for Struct objects.')
-
-    raise AttributeError('Field \'{}\' not found in struct \'{}\'.'.format(attr, struct))
+        f_type, f_default = struct.__rfields__[attr]
+    except KeyError:
+        raise AttributeError('Field \'{}\' not found in struct \'{}\'.'.format(attr, struct))
+    return f_type
 
 
 if __name__ == '__main__':
-
     class SampleStruct(Struct):
-        _fields_ = (
+        __fields__ = (
             template_T[0] | 'test',
         )
 
+
     class SampleStruct2(Struct):
-        _fields_ = (
-            SampleStruct << template_T['a'] | 'test',
-            SampleStruct << template_T['b'] | 'test1',
-            template_T['a'] | 'test3',
+        __fields__ = (
+            template_T['a'] | 'test',
+            SampleStruct << int8 | 'test_cache',
+            template_T['a'] | 'test_template',
+            int32 | ('test_default', 5),
+            int64 | ('test_this', 2),
             array[1][2] << (SampleStruct << int8) | 'array',
-        )
-
-    class SampleStruct3(Struct):
-        _fields_ = (
-            int32 | 'test',
-            float64 | 'test1',
-            float32 | 'test2',
-            float32 | 'test3',
-            float32 | 'test4',
-            float32 | 'test5',
-            int32 | 'test6',
-            float64 | 'test7',
-            float32 | 'test8',
-            float32 | 'test9',
-            float32 | 'test10',
-            float32 | 'test11',
-            SampleStruct << template_T[0] | 'test12',
-            SampleStruct << template_T[0] | 'test13',
-            SampleStruct << template_T[0] | 'test14',
-            SampleStruct << template_T[0] | 'test15',
-
+            dynamic_array[1][2] << int64 | 'd_array',
+            dynamic_array[this.test_this * this.test_default][this.test_this] << template_T['a'] | 'da_array'
         )
 
 
     from timeit import timeit
-    print(timeit(lambda: SampleStruct2(a=uint8, b=float32)))
 
+    # print(timeit(lambda: SampleStruct2(a=int8, b=int16)))
 
-
-
-
-
+    struct = SampleStruct2(a=int8, b=int16)
+    print(struct.__rfields__)
+    print(SampleStruct2(a=float32, b=int16).__rfields__)
+    print(struct.__rfields__)
 
