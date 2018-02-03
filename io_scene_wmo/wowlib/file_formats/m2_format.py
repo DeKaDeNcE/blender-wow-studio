@@ -1,4 +1,4 @@
-from .wow_common_types import *
+from wow_common_types import *
 
 VERSION = 264
 
@@ -73,6 +73,24 @@ class M2Range(Struct):
         uint32 | 'maximum'
     )
 
+class M2Track(Struct):
+    __fields__ = (
+        uint16 | 'interpolation_type',
+        uint16 | 'global_sequence',
+        if_(VERSION < M2Versions.WOTLK),
+            M2Array << M2Range,
+            M2Array << uint32 | 'timestamps',
+        else_,
+            M2Array << (M2Array << uint32) | 'timestamps',
+        endif_,
+
+        if_(VERSION < M2Versions.WOTLK),
+            M2Array << template_T[0] | 'values',
+        else_,
+            M2Array << (M2Array << template_T[0]) | 'values',
+        endif_
+    )
+
 #############################################################
 ######                  M2 Chunks                      ######
 #############################################################
@@ -108,9 +126,6 @@ class AFID(Chunk):
         uint32 | 'size',
         dynamic_array[this.size / 8] << AnimFileID | 'anim_file_ids'
     )
-
-
-
 
 
 
@@ -194,7 +209,7 @@ class M2GlobalFlags(Bitfield):
         if_(VERSION >= M2Versions.WOTLK), # verify version
             "flag_use_texture_combiner_combos",
             unk,
-            if_(VERSION >= M2Versions.MOP,
+            if_(VERSION >= M2Versions.MOP),
                 'flag_load_phys_data',
                 unk,
                 if_(VERSION >= M2Versions.WOD),
@@ -205,3 +220,83 @@ class M2GlobalFlags(Bitfield):
 
     )
 
+#############################################################
+######              Animation sequences                ######
+#############################################################
+
+class M2Sequence(Struct):
+    __fields__ = (
+        uint16 | "id",                       # Animation id in AnimationData.dbc
+        uint16 | "variation_index",          # Sub-animation id: Which number in a row of animations this one is.
+        if_(VERSION <= M2Versions.TBC),
+            uint32 | "start_timestamp",
+            uint32 | "end_timestamp",
+        else_,
+            uint32 | "duration",             # The length of this animation sequence in milliseconds.
+        endif_,
+
+        float32 | "movespeed",               # This is the speed the character moves with in this animation.
+        M2SequenceFlags << uint32 | "flags", # See below.
+        int16 | "frequency",                 # This is used to determine how often the animation is played. For all animations of the same type, this adds up to 0x7FFF (32767).
+        uint16 | "_padding",
+        M2Range | "replay",                  # May both be 0 to not repeat. Client will pick a random number of repetitions within bounds if given.
+        
+        if_(VERSION < M2Versions.WOD),
+            uint32 | "blend_time",
+        else_,
+            uint16 | "blend_time_in",        # The client blends (lerp) animation states between animations where the end and start values differ. This specifies how long that blending takes. Values: 0, 50, 100, 150, 200, 250, 300, 350, 500.
+            uint16 | "blend_time_out",       # The client blends between this sequence and the next sequence for blendTimeOut milliseconds.
+        endif_,
+                                             # For both blendTimeIn and blendTimeOut, the client plays both sequences simultaneously while interpolating between their animation transforms.
+        M2Bounds | "bounds",
+        int16 | "variation_next",            # id of the following animation of this AnimationID, points to an Index or is -1 if none.
+        uint16 | "alias_next",               # id in the list of animations. Used to find actual animation if this sequence is an alias (flags & 0x40)
+    )
+
+class M2SequenceFlags:
+        blended_animation_auto = 0x1         # Sets 0x80 when loaded. (M2Init)                
+        load_low_priority_sequence = 0x10    # apparently set during runtime in CM2Shared::LoadLowPrioritySequence for all entries of a loaded sequence (including aliases)
+        looped_animation = 0x20              # primary bone sequence -- If set, the animation data is in the .m2 file. If not set, the animation data is in an .anim file.
+        is_alias = 0x40                      # has next / is alias (To find the animation data, the client skips these by following aliasNext until an animation without 0x40 is found.)
+        blended_animation = 0x80             # Blended animation (if either side of a transition has 0x80, lerp between end->start states, unless end==start by comparing bone values)
+        sequence_stored_in_model = 0x100     # sequence stored in model ?
+        some_legion_flag = 0x800             # seen in Legion 24500 models
+
+# TODO: animation lookup
+# TODO: playable animation lookup (<= TBC)
+
+#############################################################
+######                     Bones                       ######
+#############################################################
+
+class M2CompBone(Struct):
+    __fields__ = (
+        int32 | "key_bone_id",                    # Back-reference to the key bone lookup table. -1 if this is no key bone.
+        uint32 | "flags",                 
+        int16 | "parent_bone",                    # Parent bone ID or -1 if there is none.
+        uint16 | "submesh_id",
+        
+        # union
+        uint16 | "u_dist_to_furth_desc",
+        uint16 | "u_zration_of_chain",    
+        # uint32 | boneNameCRC",                  # these are for debugging only. their bone names match those in key bone lookup.
+        # unionend
+
+        M2Track << C3Vector | "translation",
+        if_(VERSION <= M2Versions.CLASSIC),
+            M2Track << C4Quaternion | "rotation",
+        else_,
+            M2Track << M2CompQuat | "rotation",   # compressed values, default is (32767,32767,32767,65535) == (0,0,0,1) == identity
+        endif_,
+        M2Track << C3Vector | "scale",
+        C3Vector |  "pivot",                      # The pivot point of that bone.
+    )
+
+class M2CompBoneFlags:
+    spherical_billboard = 0x8,
+    cylindrical_billboard_lock_x = 0x10,
+    cylindrical_billboard_lock_y = 0x20,
+    cylindrical_billboard_lock_z = 0x40,
+    transformed = 0x200,
+    kinematic_bone = 0x400,                       # MoP+: allow physics to influence this bone
+    helmet_anim_scaled = 0x1000,                  # set blend_modificator to helmetAnimScalingRec.m_amount for this bone

@@ -1,4 +1,4 @@
-from ...binary_parser import *
+from binary_parser.binary_types import *
 
 
 class C2Vector(Struct):
