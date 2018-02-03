@@ -51,7 +51,7 @@ class C4iVector(Struct):
         int32 | 'x',
         int32 | 'y',
         int32 | 'z',
-        int32 | 'w',
+        int32 | 'w'
     )
 
 
@@ -64,14 +64,14 @@ class C33Matrix(Struct):
 
 class C34Matrix(Struct):
     """A three by four matrix."""
-   __fields__ = (
+    __fields__ = (
         array[4] << C3Vector | 'columns',
     )
 
 
 class C44Matrix(Struct):
     """A four by four matrix."""
-   __fields__ = (
+    __fields__ = (
         array[4] << C4Vector | 'columns',
     )
 

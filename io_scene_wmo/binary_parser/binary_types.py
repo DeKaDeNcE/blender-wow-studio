@@ -6,21 +6,14 @@ from copy import copy
 
 
 def _lshift(self, other):
-    is_static = True
     args = []
     kwargs = None
-    template_types = (template_T, TemplateExpressionQueue)
-
-    if type(self) in template_types:
-        is_static = False
 
     if type(other) is tuple:
         for arg in other:
             if type(arg) is not dict:
                 if kwargs is None:
                     args.append(arg)
-                    if type(arg) in template_types:
-                        is_static = False
                 else:
                     raise SyntaxError("Keyword argument followed by a positional argument.")
             else:
@@ -34,23 +27,10 @@ def _lshift(self, other):
     else:
         args.append(other)
 
-        if type(other) in template_types:
-            is_static = False
-
     if kwargs is not None:
-        for key, value in kwargs.items():
-            if type(value) in template_types:
-                is_static = False
-
-    if is_static:
-        type_cache = TemplateTypeCache()
-        kwargs = tuple(kwargs.items()) if kwargs else ()
-        return type_cache.setdefault(self, args, kwargs)
+        return TemplateExpressionQueue(self, *args, **kwargs)
     else:
-        if kwargs is not None:
-            return TemplateExpressionQueue(self, *args, **kwargs)
-        else:
-            return TemplateExpressionQueue(self, *args)
+        return TemplateExpressionQueue(self, *args)
 
 
 #############################################################
@@ -79,7 +59,7 @@ class GenericType:
         self.default_value = default_value
 
     def __read__(self, f):
-        return unpack(self.format, f.read(self.size))
+        return unpack(self.format, f.read(self.size))[0]
 
     def __write__(self, f, value):
         f.write(pack(self.format, value))
@@ -111,7 +91,15 @@ char = GenericType('s', 1, '')
 boolean = GenericType('?', 1, False)
 
 
-class string_t:
+class StringMeta(type):
+    def __getitem__(self, item):
+        if type(item) is int:
+            return string_t(item)
+        else:
+            raise TypeError("Strings accept only integers as length identifiers.")
+
+
+class string_t(metaclass=StringMeta):
     default_value = ''
 
     def __init__(self, len=0, encoding='utf-8'):
@@ -139,7 +127,7 @@ class string_t:
         f.write(string.encode(self.encoding))
 
     def __or__(self, other):
-        return self, other, ""
+        return (self, other[0], other[1]) if type(other) is tuple else (self, other, self.default_value)
 
 
 class TypeMeta(type):
@@ -218,9 +206,10 @@ class TemplateTypeCache:
             class_._instance = object.__new__(class_, *args, **kwargs)
         return class_._instance
 
-    def setdefault(self, cls, args, kwargs):
+    def setdefault(self, cls, *args, **kwargs):
         hashable_kwargs = frozenset(kwargs)
-        t_type = self.cache.get((cls, tuple(args), hashable_kwargs))
+        t_type = self.cache.get((cls, args, hashable_kwargs))
+
         if t_type is None:
             t_type = copy(cls)
             t_type.__fields__ = copy(cls.__fields__)
@@ -250,12 +239,12 @@ class TemplateTypeCache:
                     type_cache = TemplateTypeCache()
 
                     partial_ = f_type(*args, **kwargs)
-                    keywords = tuple(partial_.keywords.items()) if partial_.keywords else ()
+                    keywords = partial_.keywords
                     f_type = type_cache.setdefault(partial_.func, partial_.args, keywords)
 
                     t_type.__fields__[f_name] = f_type, None
 
-            self.cache[cls, tuple(args), hashable_kwargs] = t_type
+            # self.cache[cls, tuple(args), hashable_kwargs] = t_type
 
         return t_type
 
@@ -636,9 +625,10 @@ class Struct(metaclass=StructMeta):
             f_type, f_default = f_pair
 
             if type(f_type) in (GenericType, string_t, array, dynamic_array):
-                getattr(self, f_name).__read__(f)
-            else:
+                test = f.tell()
                 setattr(self, f_name, f_type.__read__(f))
+            else:
+                getattr(self, f_name).__read__(f)
 
     def __write__(self, f):
         for f_name, f_pair in self.__rfields__.items():
