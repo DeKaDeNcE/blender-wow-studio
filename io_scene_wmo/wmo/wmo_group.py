@@ -312,15 +312,11 @@ class WMOGroupFile:
     # Create mesh from file data
     def load_object(self, obj_name, editable_doodads):
         """ Load WoW WMO group as an object to the Blender scene """
-        custom_normals = []
-        faces = []
 
         vertices = self.movt.Vertices
         normals = self.monr.Normals
         tex_coords = self.motv.TexCoords
-
-        for i in range(0, len(self.movi.Indices), 3):
-            faces.append(self.movi.Indices[i:i+3])
+        faces = [self.movi.Indices[i:i+3] for i in range(0, len(self.movi.Indices), 3)]
 
         # create mesh
         mesh = bpy.data.meshes.new(obj_name)
@@ -342,10 +338,11 @@ class WMOGroupFile:
         for i in range(len(normals)):
             mesh.vertices[i].normal = normals[i]
 
+        custom_normals = [(0.0, 0.0, 0.0)] * len(mesh.loops)
         mesh.use_auto_smooth = True
-        for loop in mesh.loops:
+        for i, loop in enumerate(mesh.loops):
             mesh.vertices[loop.vertex_index].normal = normals[loop.vertex_index]
-            custom_normals.append(normals[loop.vertex_index])
+            custom_normals[i] = normals[loop.vertex_index]
 
         mesh.normals_split_custom_set(custom_normals)
 
