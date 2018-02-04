@@ -26,7 +26,7 @@ class M2Bounds(Struct):
 
 
 class M2Array(Struct):
-    __slots__ = ("elements", "e_read", "e_write", "type")
+    __slots__ = ("elements", "type")
     __fields__ = (
         uint32 | 'n_elements',
         uint32 | 'ofs_elements'
@@ -47,9 +47,15 @@ class M2Array(Struct):
         if type(self.type) in (GenericType, string_t):
             self.elements = [self.type.__read__(f) for _ in range(self.n_elements)]
         elif type_ is partial:
-            self.elements = [self.type()().__read__(f) for _ in range(self.n_elements)]
+            for _ in range(self.n_elements):
+                struct = self.type()()
+                struct.__read__(f)
+                self.elements.append(struct)
         else:
-            self.elements = [self.type().__read__(f) for _ in range(self.n_elements)]
+            for _ in range(self.n_elements):
+                struct = self.type()
+                struct.__read__(f)
+                self.elements.append(struct)
 
         f.seek(pos)
 
@@ -549,7 +555,7 @@ class M2Camera(Struct):
     __fields__ = (
         uint32 | 'type',                                            # 0: portrait, 1: characterinfo; -1: else (flyby etc.); referenced backwards in the lookup table.
         if_(VERSION < M2Versions.CATA),
-        float32 | 'fov',                                            # Diagonal FOV in radians. See below for conversion.
+            float32 | 'fov',                                        # Diagonal FOV in radians. See below for conversion.
         endif_,
         float32 | 'far_clip',
         float32 | 'near_clip',
@@ -559,7 +565,7 @@ class M2Camera(Struct):
         C3Vector | 'target_position_base',
         M2Track << (M2SplineKey << float32) | 'roll',               # The camera can have some roll-effect. Its 0 to 2*Pi.
         if_(VERSION >= M2Versions.CATA),
-        M2Track << (M2SplineKey << float32) | 'fov',                # Diagonal FOV in radians. float vfov = dfov / sqrt(1.0 + pow(aspect, 2.0));
+            M2Track << (M2SplineKey << float32) | 'fov',            # Diagonal FOV in radians. float vfov = dfov / sqrt(1.0 + pow(aspect, 2.0));
         endif_,
     )
 
@@ -604,57 +610,64 @@ class M2Header(Struct):
         M2Array << uint16 | 'sequence_lookups',
 
         if_(VERSION <= M2Versions.TBC),
-            M2Array << uint32 | 'playable_animation_lookup',  # type is unk
+            M2Array << uint32 | 'playable_animation_lookup',                                # type is unk
         endif_,
 
-        M2Array << M2CompBone | 'bones',  # 0x100 bones max
+        M2Array << M2CompBone | 'bones',                                                    # 0x100 bones max
+
         M2Array << uint16 | 'key_bone_lookup',
         M2Array << M2Vertex | 'vertices',
 
         if_(VERSION <= M2Versions.TBC),
-            M2Array << uint32 | 'skin_profiles', # SkinProfile
+            M2Array << uint32 | 'skin_profiles',                                            # SkinProfile
         else_,
             uint32 | 'num_skin_profiles',
         endif_,
 
-        M2Array << M2Color | 'colors',  # Color and alpha animations definitions.
+        M2Array << M2Color | 'colors',                                                      # Color and alpha animations definitions.
         M2Array << M2Texture | 'textures',
-        M2Array << M2TextureWeight | 'texture_weights',  # Transparency of textures.
+        M2Array << M2TextureWeight | 'texture_weights',                                     # Transparency of textures.
 
         if_(VERSION <= M2Versions.TBC),
-            M2Array << uint16 | 'unknown',  # type is unk
+            M2Array << uint16 | 'unknown',                                                  # type is unk
         endif_,
 
         M2Array << M2TextureTransform | 'texture_transforms',
         M2Array << uint16 | 'replacable_texture_lookup',
-        M2Array << M2Material | 'materials',  # Blending modes / render flags.
+        M2Array << M2Material | 'materials',                                                # Blending modes / render flags.
         M2Array << uint16 | 'bone_lookup_table',
         M2Array << uint16 | 'texture_lookup_table',
-        M2Array << uint16 | 'tex_unit_lookup_table',  # ≥ Cata: unused
+        M2Array << uint16 | 'tex_unit_lookup_table',                                        # ≥ Cata: unused
         M2Array << uint16 | 'transparency_lookup_table',
         M2Array << uint16 | 'texture_transforms_lookup_table',
 
-        CAaBox | 'bounding_box',  # min/max( [1].z, 2.0277779f ) - 0.16f seems to be the maximum camera height
+
+
+        CAaBox | 'bounding_box',                                                            # min/max( [1].z, 2.0277779f ) - 0.16f seems to be the maximum camera height
         float32 | 'bounding_sphere_radius',
-        # detail doodad draw dist = clamp (bounding_sphere_radius * detailDoodadDensityFade * detailDoodadDist, …)
+                                                                                            # detail doodad draw dist = clamp (bounding_sphere_radius * detailDoodadDensityFade * detailDoodadDist, …)
         CAaBox | 'collision_box',
         float32 | 'collision_sphere_radius',
 
         M2Array << uint16 | 'collision_triangles',
         M2Array << C3Vector | 'collision_vertices',
         M2Array << C3Vector | 'collision_normals',
-        M2Array << M2Attachment | 'attachments',  # position of equipped weapons or effects
+        M2Array << M2Attachment | 'attachments',                                            # position of equipped weapons or effects
+
         M2Array << uint16 | 'attachment_lookup_table',
-        M2Array << M2Event | 'events',  # Used for playing sounds when dying and a lot else.
-        M2Array << M2Light | 'lights',  # Lights are mainly used in loginscreens but in wands and some doodads too.
+        M2Array << M2Event | 'events',                                                      # Used for playing sounds when dying and a lot else.
+        M2Array << M2Light | 'lights',                                                      # Lights are mainly used in loginscreens but in wands and some doodads too.
         M2Array << M2Camera | 'cameras',
-        # The cameras are present in most models for having a model in the character tab.
+
+                                                                                            # The cameras are present in most models for having a model in the character tab.
         M2Array << uint16 | 'camera_lookup_table',
-        M2Array << M2Ribbon | 'ribbon_emitters',  # Things swirling around. See the CoT-entrance for light-trails.
+        M2Array << M2Ribbon | 'ribbon_emitters',                                            # Things swirling around. See the CoT-entrance for light-trails.
+
         M2Array << M2Particle | 'particle_emitters',
 
-        # TODO: implement on-demand fields
-        '''
+    
+            # TODO: implement on-demand fields
+            '''
         #if ≥ Wrath                                              # TODO: verify version
         if (flag_use_texture_combiner_combos)
         {
@@ -662,6 +675,7 @@ class M2Header(Struct):
         }
         #endif
         '''
+
     )
 
 

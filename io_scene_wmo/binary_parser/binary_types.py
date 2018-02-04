@@ -58,7 +58,7 @@ class GenericType:
         self.size = size
         self.default_value = default_value
 
-    def __read__(self, f):
+    def __read__(self, f, dummy=None):
         return unpack(self.format, f.read(self.size))[0]
 
     def __write__(self, f, value):
@@ -109,7 +109,7 @@ class string_t(metaclass=StringMeta):
     def __call__(self, *args, **kwargs):
         return self.default_value
 
-    def __read__(self, f):
+    def __read__(self, f, dummy=None):
         if self.len == 0:
             string = ''
             while True:
@@ -467,14 +467,19 @@ class array(metaclass=ArrayMeta):
         new_array = array.gen_ndim_itrbl(dimensions, self.type, list)
         if type_ in (GenericType, string_t):
 
-            for indices in product(*[range(s) for s in dimensions]):
-                item = new_array
-                n_indices = len(indices)
-                for i, idx in enumerate(indices):
-                    item = item[idx]
+            if len(dimensions) > 1:
+                for indices in product(*[range(s) for s in dimensions]):
+                    item = new_array
+                    n_indices = len(indices)
+                    for i, idx in enumerate(indices):
+                        item = item[idx]
 
-                    if i == n_indices - 1:
-                        item[idx] = self.type.__read__(f)
+                        if i == n_indices - 1:
+                            item[idx] = self.type.__read__(f)
+
+            else:
+                for element in new_array:
+                    element
 
         else:
             for indices in product(*[range(s) for s in dimensions]):
@@ -542,7 +547,7 @@ class StructMeta(TypeMeta):
         struct_fields = []
         for base in bases:
             if issubclass(base, Struct):
-                struct_fields.extend(base.__fields__)
+                struct_fields.extend([(values[0], key, values[1]) for key, values in base.__fields__.items()])
         struct_fields.extend(dict.get('__fields__'))
 
         # create ordered dict for final fields
@@ -626,9 +631,11 @@ class Struct(metaclass=StructMeta):
 
             if type(f_type) in (GenericType, string_t, array, dynamic_array):
                 test = f.tell()
-                setattr(self, f_name, f_type.__read__(f))
+                setattr(self, f_name, f_type.__read__(f, (self, f_name)))
             else:
                 getattr(self, f_name).__read__(f)
+
+        return self
 
     def __write__(self, f):
         for f_name, f_pair in self.__rfields__.items():
@@ -638,6 +645,8 @@ class Struct(metaclass=StructMeta):
                 f_type.__write__(f, getattr(self, f_name))
             else:
                 getattr(self, f_name).__write__(f)
+
+        return self
 
     def __size__(self):
         size = 0
