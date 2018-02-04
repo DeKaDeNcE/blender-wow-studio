@@ -476,9 +476,10 @@ class WMOFile:
                     if not obj:
                         try:
                             obj = m2.m2_to_blender_mesh(dir, doodad_path, game_data)
-                        except:
+                        except Exception as e:
                             bpy.ops.mesh.primitive_cube_add()
                             obj = bpy.context.scene.objects.active
+                            print(e)
                             print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
 
                         obj.WoWDoodad.Enabled = True
