@@ -21,7 +21,7 @@ class Submesh:
         self.n_triangles = unpack('H', f.read(2))[0]
         self.texture_id = 0
 
-        skip(f, 32)
+        skip(f, 36)
 
 
 def skip(f, n_bytes):
