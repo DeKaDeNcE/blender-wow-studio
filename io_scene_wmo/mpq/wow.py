@@ -179,7 +179,7 @@ class BLPConverter:
                     final_command = [init_command, "-quiet", "-out", "png"]
                     final_command.extend(cur_args)
                     if subprocess.call(final_command):
-                        raise Exception("\nBLP convertion failed.")
+                        print("\nBLP convertion failed. Some textures might not be converted correctly.")
                     cur_length = 0
                     cur_args = []
 
@@ -190,7 +190,7 @@ class BLPConverter:
             final_command = [init_command, "-quiet", "-out", "png"]
             final_command.extend(cur_args)
             if subprocess.call(final_command):
-                raise Exception("\nBLP convertion failed.")
+                print("\nBLP convertion failed. Some textures might not be converted correctly.")
 
 
 class WOW_FILESYSTEM_LOAD_OP(bpy.types.Operator):

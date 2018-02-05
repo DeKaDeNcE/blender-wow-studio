@@ -479,8 +479,7 @@ class WMOFile:
                         except Exception as e:
                             bpy.ops.mesh.primitive_cube_add()
                             obj = bpy.context.scene.objects.active
-                            print(e)
-                            print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
+                            print("\n{}\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(e, doodad_path))
 
                         obj.WoWDoodad.Enabled = True
                         obj.WoWDoodad.Path = doodad_path
