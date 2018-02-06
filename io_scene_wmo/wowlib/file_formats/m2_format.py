@@ -1167,7 +1167,7 @@ class M2Header:
         if VERSION <= M2Versions.TBC:
             self.skin_profiles = M2Array(M2SkinProfile)
         else:
-            self.num_skin_profiles = 0
+            self.num_skin_profiles = 1
 
         self.colors = M2Array(M2Color)
         self.textures = M2Array(M2Texture)
