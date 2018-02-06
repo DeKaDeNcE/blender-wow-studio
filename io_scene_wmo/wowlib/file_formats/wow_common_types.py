@@ -245,3 +245,16 @@ class M2Array(metaclass=Template):
     def __getitem__(self, item):
         return self.values[item]
 
+    def append(self, value):
+        self.values.append(value)
+
+    def extend(self, itrbl):
+        self.values.extend(itrbl)
+
+    def prepend(self, itrbl):
+        self.values = itrbl[:].extend(self.values)
+
+    def set(self, itrbl):
+        self.values = itrbl
+
+
