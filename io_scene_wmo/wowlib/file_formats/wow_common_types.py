@@ -242,3 +242,6 @@ class M2Array(metaclass=Template):
 
         return self
 
+    def __getitem__(self, item):
+        return self.values[item]
+
