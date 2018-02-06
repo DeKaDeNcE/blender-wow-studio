@@ -18,14 +18,14 @@ class BlenderM2Scene:
         skin = self.skins[0]  # assuming first skin is the most detailed one
 
         for tex_unit in skin.texture_units:
-            texture = self.m2.textures[self.m2.texture_lookup_table[tex_unit.texture_combo_index]]
+            texture = self.m2.textures[self.m2.texture_lookup_table[tex_unit.texture_combo_index]].filename.value
             texture_png = os.path.splitext(texture)[0] + '.png'
             m2_mat = self.m2.materials[tex_unit.material_index]
 
             # creating material
             blender_mat = bpy.data.materials.new(os.path.basename(texture_png))
 
-            tex1_slot = blender_mat.texture_slots.create(1)
+            tex1_slot = blender_mat.texture_slots.create(0)
             tex1_slot.uv_layer = "UVMap"
             tex1_slot.texture_coords = 'UV'
 
@@ -39,7 +39,7 @@ class BlenderM2Scene:
             try:
                 tex1_img = bpy.data.images.load(os.path.join(texture_dir, texture_png))
                 tex1.image = tex1_img
-                blender_mat.active_texture = tex1_img
+                blender_mat.active_texture = tex1
             except RuntimeError:
                 pass
 
@@ -61,33 +61,32 @@ class BlenderM2Scene:
             print("\nNo mesh geometry found to import.")
             return
 
+        else:
+            print("\nImporting geosets...")
+
         skin = self.skins[0]
-        skin_tris = [skin.triangle_indices[i:i+2] for i in range(len(skin.triangle_indices))]
 
         for smesh_i, smesh in enumerate(skin.submeshes):
-            smesh_tris = [skin_tris[i] for i in range(smesh.start_triangle // 3,
-                                                      smesh.start_triangle + smesh.n_triangles // 3)]
 
-            vertices = []
-            normals = []
-            tex_coords = []
+            # TODO: correctly name geosets
 
-            final_tris = []
+            vertices = [self.m2.vertices[skin.vertex_indices[i]].pos
+                        for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
 
-            for tri in smesh_tris:
-                final_tri = tuple([i - smesh.start_triangle for i in tri])
-                for index in tri:
-                    vertex = self.m2.vertices[skin.vertex_indices[index]]
-                    vertices.append(vertex.position)
-                    normals.append(vertex.normal)
-                    tex_coords.append(vertex.tex_coords)
-                    # TODO: bone stuff, tex_coords2
+            normals = [self.m2.vertices[skin.vertex_indices[i]].normal
+                       for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
 
-                final_tris.append(final_tri)
+            tex_coords = [self.m2.vertices[skin.vertex_indices[i]].tex_coords
+                          for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
+
+            # TODO: other vertex stuff
+
+            triangles = [[skin.triangle_indices[i + j] - smesh.vertex_start for j in range(3)]
+                         for i in range(smesh.index_start, smesh.index_start + smesh.index_count, 3)]
 
             # create mesh
             mesh = bpy.data.meshes.new(self.m2.name.value)
-            mesh.from_pydata(vertices, [], final_tris)
+            mesh.from_pydata(vertices, [], triangles)
 
             for poly in mesh.polygons:
                 poly.use_smooth = True
@@ -107,10 +106,17 @@ class BlenderM2Scene:
             material = self.materials[smesh_i]
             mesh.materials.append(material)
 
-            img = get_material_viewport_image(material)
             for i, poly in enumerate(mesh.polygons):
-                uv1.active.data[i] = img
+                uv1.data[i].image = material.active_texture.image
                 poly.material_index = 0
+
+            # create object
+            bpy.context.scene.objects.link(bpy.data.objects.new('GEOSET', mesh))
+
+
+    def load_collision(self):
+
+        if self.
 
 
 def import_m2(version, file):  # TODO: implement multiversioning
@@ -132,7 +138,7 @@ def import_m2(version, file):  # TODO: implement multiversioning
 
         if game_data.files:
             print("\n\n### Extracting textures ###")
-            textures = m2.textures.values
+            textures = [m2_texture.filename.value for m2_texture in m2.textures]
             game_data.extract_textures_as_png(texture_dir, textures)
 
         print("\n\n### Importing M2 model ###")
