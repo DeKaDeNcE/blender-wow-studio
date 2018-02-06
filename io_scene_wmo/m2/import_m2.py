@@ -1,7 +1,8 @@
 import bpy
 import os
 from ..wowlib.m2_file import M2File, M2Externals
-from ..utils import parse_bitfield, get_material_viewport_image
+from ..wowlib.enums.m2_enums import M2SkinMeshPartID
+from ..utils import parse_bitfield
 
 
 class BlenderM2Scene:
@@ -110,13 +111,32 @@ class BlenderM2Scene:
                 uv1.data[i].image = material.active_texture.image
                 poly.material_index = 0
 
-            # create object
-            bpy.context.scene.objects.link(bpy.data.objects.new('GEOSET', mesh))
-
+            # get object name
+            name = M2SkinMeshPartID.get_mesh_part_name(smesh.skin_section_id)
+            bpy.context.scene.objects.link(bpy.data.objects.new(name if name else 'Geoset', mesh))
 
     def load_collision(self):
 
-        if self.
+        if not len(self.m2.collision_vertices):
+            print("\nNo collision mesh found to import.")
+            return
+        else:
+            print("\nImporting collision mesh.")
+
+        vertices = [vertex.values for vertex in self.m2.collision_vertices]
+        triangles = [self.m2.collision_triangles[i:i+3] for i in range(0, len(self.m2.collision_triangles), 3)]
+
+        # create mesh
+        mesh = bpy.data.meshes.new(self.m2.name.value)
+        mesh.from_pydata(vertices, [], triangles)
+
+        for poly in mesh.polygons:
+            poly.use_smooth = True
+
+        # create object
+        bpy.context.scene.objects.link(bpy.data.objects.new('Collision', mesh))
+
+        # TODO: add UI
 
 
 def import_m2(version, file):  # TODO: implement multiversioning
@@ -138,7 +158,7 @@ def import_m2(version, file):  # TODO: implement multiversioning
 
         if game_data.files:
             print("\n\n### Extracting textures ###")
-            textures = [m2_texture.filename.value for m2_texture in m2.textures]
+            textures = [m2_texture.filename.value for m2_texture in m2.textures if not m2_texture.type]
             game_data.extract_textures_as_png(texture_dir, textures)
 
         print("\n\n### Importing M2 model ###")
@@ -147,6 +167,7 @@ def import_m2(version, file):  # TODO: implement multiversioning
 
         bl_m2.load_materials(texture_dir)
         bl_m2.load_geosets()
+        bl_m2.load_collision()
 
     else:
         pass
