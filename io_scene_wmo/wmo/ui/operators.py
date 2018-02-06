@@ -1,5 +1,5 @@
 from .panels import *
-from ...m2 import import_m2 as m2
+from ...m2 import import_doodad as m2
 
 import bpy
 import subprocess
