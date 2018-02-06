@@ -257,4 +257,6 @@ class M2Array(metaclass=Template):
     def set(self, itrbl):
         self.values = itrbl
 
+    def __len__(self):
+        return len(self.values)
 
