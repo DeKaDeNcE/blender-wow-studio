@@ -260,3 +260,6 @@ class M2Array(metaclass=Template):
     def __len__(self):
         return len(self.values)
 
+    def __iter__(self):
+        return self.values.__iter__()
+
