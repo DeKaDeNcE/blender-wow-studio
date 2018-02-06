@@ -181,7 +181,7 @@ def m2_to_blender_mesh(dir, filepath, filedata):
 
         try:
             img = bpy.data.images.load(os.path.join(dir, tex_path), check_existing=True)
-        except:
+        except RuntimeError:
             print("\nFailed to load texture: <<{}>>. File is missing or corrupted.".format(tex_path))
 
         if img:

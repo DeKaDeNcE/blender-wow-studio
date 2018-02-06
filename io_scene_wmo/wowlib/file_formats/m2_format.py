@@ -490,7 +490,7 @@ class M2Material:
     
     def __init__(self):
         self.flags = 0
-        self.blending_mode = 0 # apparently a bitfield
+        self.blending_mode = 0  # apparently a bitfield
    
     def read(self, f):
         self.flags = uint16.read(f)
