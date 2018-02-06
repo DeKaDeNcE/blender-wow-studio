@@ -175,7 +175,7 @@ def m2_to_blender_mesh(dir, filepath, filedata):
 
         # add support for unix filesystems
         if os.name != 'nt':
-            path = path.replace('\\', '/')
+            tex_path = tex_path.replace('\\', '/')
 
         img = None
 
