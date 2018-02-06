@@ -1,215 +1,244 @@
-from binary_parser.binary_types import *
+from struct import pack, unpack
+from functools import partial
 
 
-class C2Vector(Struct):
-    """A two component float vector."""
-    __fields__ = (
-        float32 | 'x',
-        float32 | 'y'
-    )
+#############################################################
+######                 Parsing helpers                 ######
+#############################################################
+
+class GenericType:
+    __slots__ = ('format', 'size', 'default_value')
+
+    def __init__(self, format, size, default_value=0):
+        self.format = format
+        self.size = size
+        self.default_value = 0
+
+    def read(self, f, n=1):
+        if type(n) is not int:
+            raise TypeError('Length can only be represented by an integer value.')
+
+        if n <= 0:
+            raise TypeError('Length should be an integer value above 0.')
+
+        if n == 1:
+            ret = unpack(self.format, f.read(self.size))
+        else:
+            ret = unpack(str(n) + self.format, f.read(self.size * n))
+        return ret[0] if len(ret) == 1 else ret
+
+    def write(self, f, value, n=1):
+        if type(n) is not int:
+            raise TypeError('Length can only be represented by an integer value.')
+
+        if n <= 0:
+            raise TypeError('Length should be an integer value above 0.')
+
+        if n == 1:
+            f.write(pack(self.format, value))
+        else:
+            f.write(pack(str(n) + self.format, *value))
+
+    def __call__(self, *args, **kwargs):
+        return self.default_value
 
 
-class C2iVector(Struct):
-    """A two component int vector."""
-    __fields__ = (
-        int32 | 'x',
-        int32 | 'y'
-    )
+class Template(type):
+    def __lshift__(cls, other):
+        args = []
+        kwargs = None
+
+        if type(other) is tuple:
+            for arg in other:
+                if type(arg) is not dict:
+                    if kwargs is None:
+                        args.append(arg)
+                    else:
+                        raise SyntaxError("Keyword argument followed by a positional argument.")
+                else:
+                    if kwargs is not None:
+                        raise SyntaxError("Only one set of keyword arguments is supported.")
+                    kwargs = arg
+
+        elif type(other) is dict:
+            kwargs = other
+
+        else:
+            return partial(cls, other)
+
+        if kwargs is not None:
+            return partial(cls, *args, **kwargs)
+        else:
+            return partial(cls, *args)
 
 
-class C3Vector(Struct):
-    """A three component float vector."""
-    __fields__ = (
-        float32 | 'x',
-        float32 | 'y',
-        float32 | 'z'
-    )
+class Array(metaclass=Template):
+    __slots__ = ('type', 'length', 'values')
+
+    def __init__(self, type_, length):
+        self.type = type_
+        self.length = length
+        self.values = [type_ for _ in range(length)]
+
+    def read(self, f):
+        type_ = type(self.type)
+
+        if type_ is GenericType:
+            self.values = [self.type.read(f) for _ in range(self.length)]
+        else:
+            for val in self.values:
+                val.read(f)
+
+        return self
+
+    def write(self, f):
+        type_ = type(self.type)
+
+        if type_ is GenericType:
+            for val in self.values:
+                self.type.write(f, val)
+        else:
+            for val in self.values:
+                val.write(f)
+
+        return self
 
 
-class C3iVector(Struct):
-    """A three component int vector."""
-    __fields__ = (
-        int32 | 'x',
-        int32 | 'y',
-        int32 | 'z'
-    )
+###### Common binary types ######
+
+int8 = GenericType('b', 1)
+uint8 = GenericType('B', 1)
+int16 = GenericType('h', 2)
+uint16 = GenericType('H', 2)
+int32 = GenericType('i', 4)
+uint32 = GenericType('I', 4)
+int64 = GenericType('q', 8)
+uint64 = GenericType('Q', 8)
+float32 = GenericType('f', 4, 0.0)
+float64 = GenericType('f', 8, 0.0)
+char = GenericType('s', 1, '')
+boolean = GenericType('?', 1, False)
+vec3D = GenericType('fff', 12, (0.0, 0.0, 0.0))
+vec2D = GenericType('ff', 8, (0.0, 0.0))
+quat = GenericType('ffff', 16, (0.0, 0.0, 0.0, 0.0))
+string = char
 
 
-class C4Vector(Struct):
-    """A four component float vector."""
-    __fields__ = (
-        float32 | 'x',
-        float32 | 'y',
-        float32 | 'z',
-        float32 | 'w',
-    )
-    
-    
-class C4iVector(Struct):
-    """A four component int vector."""
-    __fields__ = (
-        int32 | 'x',
-        int32 | 'y',
-        int32 | 'z',
-        int32 | 'w'
-    )
+###### M2 file versions ######
+VERSION = 264
 
 
-class C33Matrix(Struct):
-    """A three by three matrix."""
-    __fields__ = (
-        array[3] << C3Vector | 'columns',
-    )
+class M2Versions:
+    CLASSIC = 256
+    TBC = 263
+    WOTLK = 264
+    CATA = 272
+    MOP = 272
+    WOD = 273 # ?
+    LEGION = 274
+    # BFA - ?
 
 
-class C34Matrix(Struct):
-    """A three by four matrix."""
-    __fields__ = (
-        array[4] << C3Vector | 'columns',
-    )
+#############################################################
+######                WoW Common Types                 ######
+#############################################################
 
 
-class C44Matrix(Struct):
-    """A four by four matrix."""
-    __fields__ = (
-        array[4] << C4Vector | 'columns',
-    )
-
-
-class C4Plane(Struct):
-    """A 3D plane defined by four floats."""
-    __fields__ = (
-        C3Vector | 'normal',
-        float32 | 'distance'
-    )
-
-
-class C4Quaternion(Struct):
-    """A quaternion."""
-    __fields__ = (
-        float32 | 'x',
-        float32 | 'y',
-        float32 | 'z',
-        float32 | 'w',
-    )
-
-
-class CRange(Struct):
+class CRange:
     """A one dimensional float range defined by the bounds."""
-    __fields__ = (
-        float32 | 'min',
-        float32 | 'max'
-    )
+    def __init__(self):
+        self.min = 0.0
+        self.max = 0.0
+
+    def read(self, f):
+        self.min = float32.read(f)
+        self.max = float32.read(f)
+
+        return self
+
+    def write(self, f):
+        float32.write(f, self.min)
+        float32.write(f, self.max)
+
+        return self
 
 
-class CiRange(Struct):
-    """A one dimensional int range defined by the bounds."""
-    __fields__ = (
-        int32 | 'min',
-        int32 | 'max'
-    )
-
-
-class CAaBox(Struct):
+class CAaBox:
     """An axis aligned box described by the minimum and maximum point."""
-    __fields__ = (
-        C3Vector | 'min',
-        C3Vector | 'max'
-    )
+    def __init__(self):
+        self.min = 0.9
+        self.max = 0.0
+
+    def read(self, f):
+        self.min = vec3D.read(f)
+        self.max = vec3D.read(f)
+
+        return self
+
+    def write(self, f):
+        vec3D.write(f, self.min)
+        vec3D.write(f, self.max)
+
+        return self
 
 
-class CAaSphere(Struct):
-    """An axis aligned sphere described by position and radius."""
-    __fields__ = (
-        C3Vector | 'position',
-        float32 | 'radius'
-    )
-
-
-class CArgb(Struct):
-    """A color given in values of red, green, blue and alpha."""
-    __fields__ = (
-        uint8 | 'r',
-        uint8 | 'g',
-        uint8 | 'b',
-        uint8 | 'a'    
-    )
-
-
-class CImVector(Struct):
-    """A color given in values of blue, green, red and alpha."""
-    __fields__ = (
-        uint8 | 'b',
-        uint8 | 'g',
-        uint8 | 'r',
-        uint8 | 'a'
-    )
-
-
-class C3sVector(Struct):
-    """A three component vector of shorts."""
-    __fields__ = (
-        int16 | 'x',
-        int16 | 'y',
-        int16 | 'z'
-    )
-
-
-class C3Segment(Struct):
-    __fields__ = (
-        C3Vector | 'start',
-        C3Vector | 'end'
-    )
-
-
-class CFacet(Struct):
-    __fields__ = (
-        C4Plane | 'plane',
-        array[3] << C3Vector | 'vertices'
-    )
-
-
-class C3Ray(Struct):
-    """A ray defined by an origin and direction."""
-    __fields__ = (
-        C3Vector | 'origin',
-        C3Vector | 'dir'
-    )
-
-
-class CRect(Struct):
-    __fields__ = (
-        float32 | 'top',
-        float32 | 'miny',
-        float32 | 'left',
-        float32 | 'minx',
-        float32 | 'bottom',
-        float32 | 'maxy',
-        float32 | 'right',
-        float32 | 'maxx',
-    )
-
-
-class CiRect(Struct):
-    __fields__ = (
-        int32 | 'top',
-        int32 | 'miny',
-        int32 | 'left',
-        int32 | 'minx',
-        int32 | 'bottom',
-        int32 | 'maxy',
-        int32 | 'right',
-        int32 | 'maxx',
-    )
-
-
-class fixed_point(Struct):
+class fixed_point:
     """A fixed point real number, opposed to a floating point."""
-    __fields__ = (
-        # TODO: BITFIELDS
-    )
-    
+    def __init__(self, type_, dec_bits, int_bits):
+        self.type = type_
+        self.value = 0
+
+    def read(self, f):
+        self.value = self.type.read(f)
+
+    def write(self, f):
+        self.type.write(f, self.value)
+
 
 # A fixed point number without integer part.
 fixed16 = int16
+
+
+class M2Array(metaclass=Template):
+
+    def __init__(self, type_):
+        self.type = type_
+        self.values = []
+
+    def read(self, f):
+        n_elements = uint32.read(f)
+        ofs_elements = uint32.read(f)
+
+        pos = f.tell()
+        f.seek(ofs_elements)
+
+        type_t = type(self.type)
+
+        if type_t is GenericType:
+            self.values = [self.type.read(f) for _ in range(n_elements)]
+        else:
+            self.values = [self.type().read(f) for _ in range(n_elements)]
+        f.seek(pos)
+
+        return self
+
+    def write(self, f):
+        ofs = request_offset()
+        uint32.write(f, len(self.values))
+        uint32.write(f, ofs)
+
+        type_t = type(self.type)
+
+        pos = f.tell()
+        f.seek(ofs)
+
+        if type_t is GenericType:
+            for value in self.values:
+                type_t.write(f, value)
+        else:
+            for value in self.values:
+                value.write(f)
+        f.seek(pos)
+
+        return self
 

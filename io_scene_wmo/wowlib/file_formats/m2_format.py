@@ -1,132 +1,220 @@
-from enum import IntEnum
 from .wow_common_types import *
+from .skin_format import M2SkinProfile
+from enum import IntEnum
 
-VERSION = 264
-
-
-class M2Versions:
-    CLASSIC = 256
-    TBC = 263
-    WOTLK = 264
-    CATA = 272
-    MOP = 272
-    WOD = 273 # ?
-    LEGION = 274
-    # BFA - ?
 
 #############################################################
 ######                 M2 Common Types                 ######
 #############################################################
 
-class M2Bounds(Struct):
-    __fields__ = (
-        CAaBox | 'extent',
-        float32 | 'radius'
-    )
+class M2Bounds:
+
+    def __init__(self):
+        self.extent = CAaBox()
+        self.radius = 0.0
+
+    def read(self, f):
+        self.extent = CAaBox.read(f)
+        self.radius = float32.read(f)
+        return self
+
+    def write(self, f):
+        self.extent.write(f)
+        float32.write(f, self.radius)
 
 
-class M2Array(Struct):
-    __slots__ = ("elements", "type")
-    __fields__ = (
-        uint32 | 'n_elements',
-        uint32 | 'ofs_elements'
-    )
+class M2String:
+    __slots__ = ('value',)
 
-    def __init__(self, *args, **kwargs):
-        type_t = args[0]
-        super(M2Array, self).__init__(*args, **kwargs)
-        self.type = type_t
-        self.elements = []
+    def __init__(self):
+        self.value = ""
 
-    def __read__(self, f):
-        super(M2Array, self).__read__(f)
+    def read(self, f):
+        n_characters = uint32.read(f)
+        ofs_characters = uint32.read(f)
+
         pos = f.tell()
-        f.seek(self.ofs_elements)
+        f.seek(ofs_characters)
+        self.value = f.read(n_characters).decode('utf-8').rstrip('\0')
+        f.seek(pos)
 
-        type_ = type(self.type)
-        if type(self.type) in (GenericType, string_t):
-            self.elements = [self.type.__read__(f) for _ in range(self.n_elements)]
-        elif type_ is partial:
-            for _ in range(self.n_elements):
-                struct = self.type()()
-                struct.__read__(f)
-                self.elements.append(struct)
+        return self
+
+    def write(self, f):
+        ofs = request_offset()
+        uint32.write(f, len(self.value) + 1)
+        uint32.write(f, ofs)
+
+        pos = f.tell()
+        f.seek(ofs)
+        self.value = f.write(self.value + '\0'.encode('utf-8'))
+        f.seek(pos)
+        
+        return self
+
+
+class M2SplineKey(metaclass=Template):
+    
+    def __init__(self, type_):
+        self.value = type_()
+        self.in_tan = type_()
+        self.out_tan = type_()
+
+        self.type = type_
+   
+    def read(self, f):
+        if type(self.type) is GenericType:
+            self.value = self.type.read(f)
+            self.in_tan = self.type.read(f)
+            self.out_tan = self.type.read(f)
         else:
-            for _ in range(self.n_elements):
-                struct = self.type()
-                struct.__read__(f)
-                self.elements.append(struct)
+            self.value.read(f)
+            self.in_tan.read(f)
+            self.out_tan.read(f)
 
-        f.seek(pos)
+        return self
+        
+    def write(self, f):
+        if type(self.type) is GenericType:
+            self.type.write(f, self.value)
+            self.type.write(f, self.in_tan)
+            self.type.write(f, self.out_tan)
+        else:
+            self.value.write(f)
+            self.in_tan.write(f)
+            self.out_tan.write(f)
+            
+        return self
+    
 
-    def __write__(self, f):
-        self.n_elements = len(self.elements)
-        self.ofs_elements = request_offset(self.n_elements, sizeof(self.type))
+class M2Range:
+    
+    def __init__(self):
+        self.minimum = 0
+        self.maximum = 0
+   
+    def read(self, f):
+        self.minimum = uint32.read(f)
+        self.maximum = uint32.read(f)
 
-        super(M2Array, self).__write__(f)
-        pos = f.tell()
-        f.seek(self.ofs_elements)
-        for element in self.elements:
-            self.e_write(f, element)
-        f.seek(pos)
+        return self
+        
+    def write(self, f):
+        uint32.write(f, self.minimum)
+        uint32.write(f, self.maximum)
 
+        return self
+    
+    
+class M2TrackBase:
+    
+    def __init__(self):
+        self.interpolation_type = 0
+        self.global_sequence = 0
 
-class M2SplineKey(Struct):
-    __fields__ = (
-        template_T[0] | 'value',
-        template_T[0] | 'in_tan',
-        template_T[0] | 'out_tan'
-    )
+        if VERSION < M2Versions.WOTLK:
+            self.interpolation_ranges = M2Array(M2Range)
+            self.timestamps = M2Array(uint32)
+        else:
+            self.timestamps = M2Array(M2Array << uint32)
+   
+    def read(self, f):
+        self.interpolation_type = uint16.read(f)
+        self.global_sequence = uint16.read(f)
 
+        if VERSION < M2Versions.WOTLK:
+            self.interpolation_ranges.read(f)
+        self.timestamps.read(f)
 
-class M2Range(Struct):
-    __fields__ = (
-        uint32 | 'minimum',
-        uint32 | 'maximum'
-    )
+        return self
+        
+    def write(self, f):
+        uint16.write(f, self.interpolation_type)
+        uint16.write(f, self.global_sequence)
 
+        if VERSION < M2Versions.WOTLK:
+            self.interpolation_ranges.read(f)
 
-class M2TrackBase(Struct):
-    __fields__ = (
-        uint16 | 'interpolation_type',
-        uint16 | 'global_sequence',
-        if_(VERSION < M2Versions.WOTLK),
-            M2Array << M2Range,
-            M2Array << uint32 | 'timestamps',
-        else_,
-            M2Array << (M2Array << uint32) | 'timestamps',
-        endif_,
-    )
+        self.timestamps.read(f)
 
-
-class M2Track(M2TrackBase):
-    __fields__ = (
-        if_(VERSION < M2Versions.WOTLK),
-            M2Array << template_T[0] | 'values',
-        else_,
-            M2Array << (M2Array << template_T[0]) | 'values',
-        endif_
-    )
-
-
-class FBlock(Struct):
-    __fields__ = (
-        # TODO: get back here
-    )
+        return self
 
 
-class Vector_2fp_6_9(Struct):
-    __fields__ = (
-        fixed_point << (uint16, 6, 9) | 'x',
-        fixed_point << (uint16, 6, 9) | 'y'
-    )
+class M2Track(M2TrackBase, metaclass=Template):
+
+    def __init__(self, type_):
+        super(M2Track, self).__init__()
+        self.values = M2Array(type_) if VERSION < M2Versions.WOTLK else M2Array(M2Array << type_)
+
+    def read(self, f):
+        super(M2Track, self).read(f)
+        self.values.read(f)
+
+        return self
+
+    def write(self, f):
+        super(M2Track, self).write(f)
+        self.values.write(f)
+
+        return self
 
 
-class M2Box(Struct):
-    __fields__ = (
-        C3Vector | 'model_rotation_speed_min',
-        C3Vector | 'model_rotation_speed_max'
-    )
+class FBlock:
+
+    def __init__(self, type_):
+        self.timestamps = M2Array(uint16)
+        self.keys = M2Array(type_)
+
+    def read(self, f):
+        self.timestamps.read(f)
+        self.keys.read(f)
+
+        return self
+
+    def write(self, f):
+        self.timestamps.write(f)
+        self.keys.write(f)
+
+        return self
+
+
+class Vector_2fp_6_9:
+
+    def __init__(self):
+        self.x = fixed_point(uint16, 6, 9)
+        self.y = fixed_point(uint16, 6, 9)
+
+    def read(self, f):
+        self.x.read(f)
+        self.y.read(f)
+
+        return self
+
+    def write(self, f):
+        self.x.write(f)
+        self.y.write(f)
+        
+        return self
+    
+
+class M2Box:
+    
+    def __init__(self):
+        self.model_rotation_speed_min = (0.0, 0.0, 0.0)
+        self.model_rotation_speed_max = (0.0, 0.0, 0.0)
+   
+    def read(self, f):
+        self.model_rotation_speed_min = vec3D.read(f)
+        self.model_rotation_speed_max = vec3D.read(f)
+
+        return self
+        
+    def write(self, f):
+        vec3D.write(f, self.model_rotation_speed_min)
+        vec3D.write(f, self.model_rotation_speed_max)
+
+        return self
+
 
 #############################################################
 ######                  M2 Chunks                      ######
@@ -168,83 +256,161 @@ class AFID(Chunk):
         uint32 | 'size',
         dynamic_array[this.size / 8] << AnimFileID | 'anim_file_ids'
     )
-    
-'''
 
+'''
+        
 
 #############################################################
 ######              Animation sequences                ######
 #############################################################
 
 class M2SequenceFlags:
-    blended_animation_auto = 0x1             # Sets 0x80 when loaded. (M2Init)
-    load_low_priority_sequence = 0x10        # apparently set during runtime in CM2Shared::LoadLowPrioritySequence for all entries of a loaded sequence (including aliases)
-    looped_animation = 0x20                  # primary bone sequence -- If set, the animation data is in the .m2 file. If not set, the animation data is in an .anim file.
-    is_alias = 0x40                          # has next / is alias (To find the animation data, the client skips these by following aliasNext until an animation without 0x40 is found.)
-    blended_animation = 0x80                 # Blended animation (if either side of a transition has 0x80, lerp between end->start states, unless end==start by comparing bone values)
-    sequence_stored_in_model = 0x100         # sequence stored in model ?
-    some_legion_flag = 0x800                 # seen in Legion 24500
+    blended_animation_auto = 0x1                                # Sets 0x80 when loaded. (M2Init)
+    load_low_priority_sequence = 0x10                           # apparently set during runtime in CM2Shared::LoadLowPrioritySequence for all entries of a loaded sequence (including aliases)
+    looped_animation = 0x20                                     # primary bone sequence -- If set, the animation data is in the .m2 file. If not set, the animation data is in an .anim file.
+    is_alias = 0x40                                             # has next / is alias (To find the animation data, the client skips these by following aliasNext until an animation without 0x40 is found.)
+    blended_animation = 0x80                                    # Blended animation (if either side of a transition has 0x80, lerp between end->start states, unless end==start by comparing bone values)
+    sequence_stored_in_model = 0x100                            # sequence stored in model ?
+    some_legion_flag = 0x800                                    # seen in Legion 24500
 
 
-class M2Sequence(Struct):
-    __fields__ = (
-        uint16 | "id",                       # Animation id in AnimationData.dbc
-        uint16 | "variation_index",          # Sub-animation id: Which number in a row of animations this one is.
-        if_(VERSION <= M2Versions.TBC),
-            uint32 | "start_timestamp",
-            uint32 | "end_timestamp",
-        else_,
-            uint32 | "duration",             # The length of this animation sequence in milliseconds.
-        endif_,
+class M2Sequence:
+    def __init__(self):
+        self.id = 0                                             # Animation id in AnimationData.dbc
+        self.variation_index = 0                                # Sub-animation id: Which number in a row of animations this one is.
 
-        float32 | "movespeed",               # This is the speed the character moves with in this animation.
-        uint32 | "flags",                    # See below.
-        int16 | "frequency",                 # This is used to determine how often the animation is played. For all animations of the same type, this adds up to 0x7FFF (32767).
-        uint16 | "padding",
-        M2Range | "replay",                  # May both be 0 to not repeat. Client will pick a random number of repetitions within bounds if given.
+        if VERSION <= M2Versions.TBC:
+            self.start_timestamp = 0
+            self.end_timestamp = 0
+        else:
+            self.duration = 0                                   # The length of this animation sequence in milliseconds.
+
+        self.movespeed = 0                                      # This is the speed the character moves with in this animation.
+        self.flags = 0                                          # See below.
+        self.frequency = 0                                      # This is used to determine how often the animation is played. For all animations of the same type, this adds up to 0x7FFF (32767).
+        self.padding = 0
+        self.replay = M2Range()                                 # May both be 0 to not repeat. Client will pick a random number of repetitions within bounds if given.
+
+        if VERSION < M2Versions.WOD:
+            self.blend_time = 0
+        else:
+            self.blend_time_in = 0                              # The client blends (lerp) animation states between animations where the end and start values differ. This specifies how long that blending takes. Values: 0, 50, 100, 150, 200, 250, 300, 350, 500.
+            self.blend_time_out = 0                             # The client blends between this sequence and the next sequence for blendTimeOut milliseconds.
+                                                                # For both blendTimeIn and blendTimeOut, the client plays both sequences simultaneously while interpolating between their animation transforms.
+        self.bounds = M2Bounds()
+        self.variation_next = 0                                 # id of the following animation of this AnimationID, points to an Index or is -1 if none.
+        self.alias_next = 0                                     # id in the list of animations. Used to find actual animation if this sequence is an alias (flags & 0x40)
+
+    def read(self, f):
+        self.id = uint16.read(f)
+        self.variation_index = uint16.read(f)
+
+        if VERSION <= M2Versions.TBC:
+            self.start_timestamp = uint32.read(f)
+            self.end_timestamp = uint32.read(f)
+        else:
+            self.duration = uint32.read(f)
         
-        if_(VERSION < M2Versions.WOD),
-            uint32 | "blend_time",
-        else_,
-            uint16 | "blend_time_in",        # The client blends (lerp) animation states between animations where the end and start values differ. This specifies how long that blending takes. Values: 0, 50, 100, 150, 200, 250, 300, 350, 500.
-            uint16 | "blend_time_out",       # The client blends between this sequence and the next sequence for blendTimeOut milliseconds.
-        endif_,
-                                             # For both blendTimeIn and blendTimeOut, the client plays both sequences simultaneously while interpolating between their animation transforms.
-        M2Bounds | "bounds",
-        int16 | "variation_next",            # id of the following animation of this AnimationID, points to an Index or is -1 if none.
-        uint16 | "alias_next",               # id in the list of animations. Used to find actual animation if this sequence is an alias (flags & 0x40)
-    )
+        self.movespeed = float32.read(f)
+        self.flags = uint32.read(f)
+        self.frequency = int16.read(f)
+        self.padding = uint16.read(f)
+        self.replay = M2Range()
 
-# TODO: animation lookup
-# TODO: playable animation lookup (<= TBC)
+        if VERSION < M2Versions.WOD:
+            self.blend_time = uint32.read(f)
+        else:
+            self.blend_time_in = uint16.read(f)
+            self.blend_time_out = uint16.read(f)
+
+        self.bounds = M2Bounds()
+        self.variation_next = int16.read(f)
+        self.alias_next = uint16.read(f)
+
+        return self
+
+    def write(self, f):
+        uint16.write(f, self.id)
+        uint16.write(f, self.variation_index)
+        if VERSION <= M2Versions.TBC:
+            uint32.write(f, self.start_timestamp)
+            uint32.write(f, self.end_timestamp)
+        else:
+            uint32.write(f, self.duration)
+
+        float32.write(f, self.movespeed)
+        uint32.write(f, self.flags)
+        int16.write(f, self.frequency)
+        uint16.write(f, self.padding)
+        self.replay.write(f)
+
+        if VERSION < M2Versions.WOD:
+            uint32.write(f, self.blend_time)
+        else:
+            uint16.write(f, self.blend_time_in)
+            uint16.write(f, self.blend_time_out)
+
+        self.bounds.write(f)
+        int16.write(f, self.variation_next)
+        uint16.write(f, self.alias_next)
+
+        return self
+
 
 #############################################################
 ######                     Bones                       ######
 #############################################################
 
+class M2CompBone:
 
-class M2CompBone(Struct):
-    __fields__ = (
-        int32 | "key_bone_id",                    # Back-reference to the key bone lookup table. -1 if this is no key bone.
-        uint32 | "flags",                 
-        int16 | "parent_bone",                    # Parent bone ID or -1 if there is none.
-        uint16 | "submesh_id",
-        
+    def __init__(self):
+        self.key_bone_id = 0                                    # Back-reference to the key bone lookup table. -1 if this is no key bone.
+        self.flags = 0
+        self.parent_bone = 0                                    # Parent bone ID or -1 if there is none.
+        self.submesh_id = 0
+
         # union
-        uint16 | "u_dist_to_furth_desc",
-        uint16 | "u_zration_of_chain",    
-        # uint32 | boneNameCRC",                  # these are for debugging only. their bone names match those in key bone lookup.
+        self.u_dist_to_furth_desc = 0
+        self.u_zratio_of_chain = 0
+        # uint32 | boneNameCRC",                                # these are for debugging only. their bone names match those in key bone lookup.
         # unionend
 
-        M2Track << C3Vector | "translation",
-        if_(VERSION <= M2Versions.CLASSIC),
-            M2Track << C4Quaternion | "rotation",
-        else_,
-            M2Track << C4Quaternion | "rotation",   # compressed values, default is (32767,32767,32767,65535) == (0,0,0,1) == identity TODO: M2CompQuat
-        endif_,
-        M2Track << C3Vector | "scale",
-        C3Vector | "pivot",                      # The pivot point of that bone.
-    )
+        self.translation = M2Track(vec3D)
+        if VERSION <= M2Versions.CLASSIC:
+            self.rotation = M2Track(quat)
+        else:
+            self.rotation = M2Track(quat)                       # compressed values, default is (32767,32767,32767,65535) == (0,0,0,1) == identity TODO: M2CompQuat
+
+        self.scale = M2Track(vec3D)
+        self.pivot = (0.0, 0.0, 0.0)                            # The pivot point of that bone.
+
+    def read(self, f):
+        self.key_bone_id = int32.read(f)
+        self.flags = uint32.read(f)
+        self.parent_bone = int16.read(f)
+        self.submesh_id = uint16.read(f)
+        self.u_dist_to_furth_desc = uint16.read(f)
+        self.u_zratio_of_chain = uint16.read(f)
+
+        self.translation.read(f)
+        self.rotation.read(f)
+        self.scale.read(f)
+        self.pivot = vec3D.read(f)
+
+        return self
+
+    def write(self, f):
+        int32.write(f, self.key_bone_id)
+        uint32.write(f, self.flags)
+        int16.write(f, self.parent_bone)
+        int16.write(f, self.u_dist_to_furth_desc)
+        uint16.write(f, self.u_zratio_of_chain)
+        self.translation.write(f)
+        quat.write(f, self.rotation)
+        self.scale.write(f)
+        vec3D.write(f, self.pivot)
+
+        return self
 
 
 class M2CompBoneFlags:
@@ -263,14 +429,37 @@ class M2CompBoneFlags:
 
 ###### Vertices ######
 
-class M2Vertex(Struct):
-    __fields__ = (
-        C3Vector | 'pos',
-        array[4] << uint8 | 'bone_weights',
-        array[4] << uint8 | 'bone_indices',
-        C3Vector | 'normal',
-        array[2] << C2Vector | 'tex_coords'  # two textures, depending on shader used
-    )
+class M2Vertex:
+    __slots__ = ('pos', 'bone_weights', 'bone_indices',
+                 'normal', 'tex_coords', 'tex_coords2')
+
+    def __init__(self):
+        self.pos = (0.0, 0.0, 0.0)
+        self.bone_weights = (0, 0, 0, 0)
+        self.bone_indices = (0, 0, 0, 0)
+        self.normal = (0.0, 0.0, 0.0)
+        self.tex_coords = (0.0, 0.0)
+        self.tex_coords2 = (0.0, 0.0)
+
+    def read(self, f):
+        self.pos = vec3D.read(f)
+        self.bone_weights = uint8.read(f, 4)
+        self.bone_indices = uint8.read(f, 4)
+        self.normal = vec3D.read(f)
+        self.tex_coords = vec2D.read(f)
+        self.tex_coords2 = vec2D.read(f)
+    
+        return self
+
+    def write(self, f):
+        vec3D.write(f, self.pos)
+        uint8.write(f, self.bone_weights, 4)
+        uint8.write(f, self.bone_indices, 4)
+        vec3D.write(f, self.normal)
+        vec2D.write(f, self.tex_coords)
+        vec2D.write(f, self.tex_coords2)
+
+        return self
 
 
 ###### Render flags ######
@@ -297,36 +486,66 @@ class M2BlendingModes:
     WoD = 7
 
 
-class M2Material(Struct):
-    __fields__ = (
-        uint16 | 'flags',
-        uint16 | 'blending_mode'  # apparently a bitfield
-    )
+class M2Material:
+    
+    def __init__(self):
+        self.flags = 0
+        self.blending_mode = 0 # apparently a bitfield
+   
+    def read(self, f):
+        self.flags = uint16.read(f)
+        self.blending_mode = uint16.read(f)
+
+        return self
+        
+    def write(self, f):
+        uint16.write(f, self.flags)
+        uint16.write(f, self.blending_mode)
+
+        return self
 
 
 ###### Colors and transparency ######
 
-class M2Color(Struct):
-    __fields__ = (
-        M2Track << C3Vector | 'color',  # vertex colors in rgb order
-        M2Track << fixed16 | 'alpha'    # 0 - transparent, 0x7FFF - opaque. NonInterp
-    )
+class M2Color:
+
+    def __init__(self):
+        self.color = M2Track(vec3D)
+        self.alpha = M2Track(fixed16)
+
+    def read(self, f):
+        self.color.read(f)
+        self.alpha.read(f)
+
+        return self
+
+    def write(self, f):
+        self.color.write(f)
+        self.alpha.write(f)
+
+        return self
 
 
-class M2TextureWeight(Struct):
-    __fields__ = (
-        M2Track << fixed16 | 'weight',
-    )
+class M2Texture:
 
+    def __init__(self):
+        self.type = 0
+        self.flags = 0
+        self.filename = M2String()
 
-###### Colors and transparency ######
+    def read(self, f):
+        self.type = uint32.read(f)
+        self.flags = uint32.read(f)
+        self.filename.read(f)
 
-class M2Texture(Struct):
-    __fields__ = (
-        uint32 | 'type',
-        uint32 | 'flags',
-        M2Array << char | 'filename'  # TODO: implement it different for strings
-    )
+        return self
+
+    def write(self, f):
+        uint32.write(f, self.type)
+        uint32.write(f, self.flags)
+        self.filename.write(f)
+
+        return self
 
 
 class M2TextureTypes(IntEnum):
@@ -362,165 +581,399 @@ class M2TextureFlags:
 ######                    Effects                      ######
 #############################################################
 
-class M2TextureTransform(Struct):
-    __fields__ = (
-        M2Track << C3Vector | 'translation',
-        M2Track << C4Quaternion | 'rotation',   # rotation center is texture center (0.5, 0.5, 0.5)
-        M2Track << C3Vector | 'scaling'
-    )
+class M2TextureTransform:
+
+    def __init__(self):
+        self.translation = M2Track(vec3D)
+        self.rotation = M2Track(quat)                           # rotation center is texture center (0.5, 0.5, 0.5)
+        self.scaling = M2Track(vec3D)
+
+    def read(self, f):
+        self.translation.read(f)
+        self.rotation.read(f)
+        self.scaling.read(f)
+
+        return self
+
+    def write(self, f):
+        self.translation.write(f)
+        self.rotation.write(f)
+        self.scaling.write(f)
+
+        return self
 
 
-class M2Ribbon(Struct):
-    __fields__ = (
-        uint32 | 'ribbon_id',                        # Always (as I have seen): -1.
-        uint32 | 'bone_index',                       # A bone to attach to.
-        C3Vector | 'position',                       # And a position, relative to that bone.
-        M2Array << uint16 | 'texture_indices',       # into textures
-        M2Array << uint16 | 'material_indices',      # into materials
-        M2Track << C3Vector | 'color_track',
-        M2Track << fixed16 | 'alpha_track',          # And an alpha value in a short, where: 0 - transparent, 0x7FFF - opaque.
-        M2Track << float32 | 'height_above_track',
-        M2Track << float32 | 'height_below_track',   # do not set to same!
-        float32 | 'edges_per_second',                # this defines how smooth the ribbon is. A low value may produce a lot of edges.
-        float32 | 'edge_lifetime',                   # the length aka Lifespan. in seconds
-        float32 | 'gravity',                         # use arcsin(val) to get the emission angle in degree
-        uint16 | 'texture_rows',                     # tiles in texture
-        uint16 | 'texture_cols',
-        M2Track << uint16 | 'tex_slot_track',
-        M2Track << uint8 | 'visibility_track',
+class M2Ribbon:
 
-        if_(VERSION >= M2Versions.WOTLK),            # TODO: verify version
-            int16 | 'priority_plane',
-            uint16 | 'padding',
-        endif_
-    )
+    def __init__(self):
+        self.ribbon_id = -1                                     # Always (as I have seen): -1.
+        self.bone_index = 0                                     # A bone to attach to.
+        self.position = (0.0, 0.0, 0.0)                         # And a position, relative to that bone.
+        self.texture_indices = M2Array(uint16)                  # into textures
+        self.material_indices = M2Array(uint16)                 # into materials
+        self.color_track = M2Track(vec3D)
+        self.alpha_track = M2Track(fixed16)                     # And an alpha value in a short, where: 0 - transparent, 0x7FFF - opaque.
+        self.height_above_track = M2Track(float32)
+        self.height_below_track = M2Track(float32)              # do not set to same!
+        self.edges_per_second = 0.0                             # this defines how smooth the ribbon is. A low value may produce a lot of edges.
+        self.edge_lifetime = 0.0                                # the length aka Lifespan. in seconds
+        self.gravity = 0.0                                      # use arcsin(val) to get the emission angle in degree
+        self.texture_rows = 0                                   # tiles in texture
+        self.texture_cols = 0
+        self.tex_slot_track = M2Track(uint16)
+        self.visibility_track = M2Track(uint8)
+
+        if VERSION >= M2Versions.WOTLK:                         # TODO: verify version
+            self.priority_plane = 0
+            self.padding = 0
+
+    def read(self, f):
+        self.ribbon_id = int32.read(f)
+        self.bone_index = uint32.read(f)
+        self.position = vec3D.read(f)
+        self.texture_indices.read(f)
+        self.material_indices.read(f)
+        self.color_track.read(f)
+        self.alpha_track.read(f)
+        self.height_above_track.read(f)
+        self.height_below_track.read(f)
+        self.edges_per_second = float32.read(f)
+        self.edge_lifetime = float32.read(f)
+        self.gravity = float32.read(f)
+        self.texture_rows = uint16.read(f)
+        self.texture_cols = uint16.read(f)
+
+        if VERSION >= M2Versions.WOTLK:
+            self.tex_slot_track.read(f)
+            self.visibility_track.read(f)
+
+        return self
+
+    def write(self, f):
+        int32.write(f, self.ribbon_id)
+        uint32.write(f, self.bone_index)
+        vec3D.write(f, self.position)
+        self.texture_indices.write(f)
+        self.material_indices.write(f)
+        self.color_track.write(f)
+        self.alpha_track.write(f)
+        self.height_above_track.write(f)
+        self.height_below_track.write(f)
+        float32.write(f, self.edges_per_second)
+        float32.write(f, self.edge_lifetime)
+        float32.write(f, self.gravity)
+        uint16.write(f, self.texture_rows)
+        uint16.write(f, self.texture_cols)
+        self.tex_slot_track.write(f)
+        self.visibility_track.write(f)
+
+        if VERSION >= M2Versions.WOTLK:
+            int16.write(f, self.priority_plane)
+            uint16.write(f, self.padding)
+
+        return self
 
 
-class M2Particle(Struct):
-    __fields__ = (
-        uint32 | 'particle_id',                                                     # Always (as I have seen): -1.
-        uint32 | 'flags',                                                           # See Below
-        C3Vector | 'position',                                                      # The position. Relative to the following bone.
-        uint16 | 'bone',                                                            # The bone its attached to.
-        uint16 | 'texture',                                                         # And the textures that are used. For multi-textured particles actually three ids
-        M2Array << int8 | 'geometry_model_filename',                                # if given, this emitter spawns models
-        M2Array << int8 | 'recursion_model_filename',                               # if given, this emitter is an alias for the (maximum 4) emitters of the given model
+class M2Particle:
 
-        if_(VERSION >= M2Versions.TBC),
-            uint8 | 'blending_type',                                                # A blending type for the particle. See Below
-            uint8 | 'emitter_type',                                                 # 1 - Plane (rectangle), 2 - Sphere, 3 - Spline, 4 - Bone
-            uint16 | 'particle_color_index',                                        # This one is used for ParticleColor.dbc. See below.
-        else_,
-            uint16 | 'blending_type',                                               # A blending type for the particle. See Below
-            uint16 | 'emitter_type',                                                # 1 - Plane (rectangle), 2 - Sphere, 3 - Spline, 4 - Bone
-        endif_,
+    def __init__(self):
+        self.particle_id = 0                                    # Always (as I have seen): -1.
+        self.flags = 0                                          # See Below
+        self.position = (0.0, 0.0, 0.0)                         # The position. Relative to the following bone.
+        self.bone = 0                                           # The bone its attached to.
+        self.texture = 0                                        # And the textures that are used. For multi-textured particles actually three ids
+        self.geometry_model_filename = M2Array(int8)            # if given, this emitter spawns models
+        self.recursion_model_filename = M2Array(int8)           # if given, this emitter is an alias for the (maximum 4) emitters of the given model
 
-        if_(VERSION >= M2Versions.CATA),
-            array[2] << (fixed_point << uint8, 2, 5) | 'multi_texture_paramX',
-        else_,
-            uint8 | 'particle_type',                                                # Found below.
-            uint8 | 'head_or_tail',                                                 # 0 - Head, 1 - Tail, 2 - Both
-        endif_,
+        if VERSION >= M2Versions.TBC:
+            self.blending_type = 0                              # A blending type for the particle. See Below
+            self.emitter_type = 0                               # 1 - Plane (rectangle), 2 - Sphere, 3 - Spline, 4 - Bone
+            self.particle_color_index = 0                       # This one is used for ParticleColor.dbc. See below.
+        else:
+            self.blending_type = 0                              # A blending type for the particle. See Below
+            self.emitter_type = 0                               # 1 - Plane (rectangle), 2 - Sphere, 3 - Spline, 4 - Bone
 
-        uint16 | 'texture_tile_rotation',                                           # Rotation for the texture tile. (Values: -1,0,1) -- priorityPlane
-        uint16 | 'texture_dimensions_rows',                                         # for tiled textures
-        uint16 | 'texture_dimensions_columns',
-        M2Track << float32 | 'emission_speed',                                      # Base velocity at which particles are emitted.
-        M2Track << float32 | 'speed_variation',                                     # Random variation in particle emission speed. (range: 0 to 1)
-        M2Track << float32 | 'vertical_range',                                      # Drifting away vertically. (range: 0 to pi) For plane generators, this is the maximum polar angle of the initial velocity;
-                                                                                    # 0 makes the velocity straight up (+z). For sphere generators, this is the maximum elevation of the initial position; 0 makes the initial position entirely in the x-y plane (z=0).
-        M2Track << float32 | 'horizontal_range',                                    # They can do it horizontally too! (range: 0 to 2*pi) For plane generators, this is the maximum azimuth angle of the initial velocity;
-                                                                                    # 0 makes the velocity have no sideways (y-axis) component.  For sphere generators, this is the maximum azimuth angle of the initial position.
+        if VERSION >= M2Versions.CATA:
+            self.multi_tex_param_x = fixed_point(uint8, 2, 5)
+            self.multi_tex_param_y = fixed_point(uint8, 2, 5)
+        else:
+            self.particle_type = 0                              # Found below.
+            self.head_or_tail = 0                               # 0 - Head, 1 - Tail, 2 - Both
 
-        M2Track << float32 | 'gravity',                                             # Not necessarily a float; see below.
-        M2Track << float32 | 'lifespan',
+        self.texture_tile_rotation = 0                          # Rotation for the texture tile. (Values: -1,0,1) -- priorityPlane
+        self.texture_dimensions_rows = 0                        # for tiled textures
+        self.texture_dimension_columns = 0
+        self.emission_speed = M2Track(float32)                  # Base velocity at which particles are emitted.
+        self.speed_variation = M2Track(float32)                 # Random variation in particle emission speed. (range: 0 to 1)
+        self.vertical_range = M2Track(float32)                  # Drifting away vertically. (range: 0 to pi) For plane generators, this is the maximum polar angle of the initial velocity;
+        self.horizontal_range = M2Track(float32)                # They can do it horizontally too! (range: 0 to 2*pi) For plane generators, this is the maximum azimuth angle of the initial velocity;
+                                                                # 0 makes the velocity have no sideways (y-axis) component.  For sphere generators, this is the maximum azimuth angle of the initial position.
+        self.gravity = M2Track(float32)                         # Not necessarily a float; see below.
+        self.lifespan = M2Track(float32)                        # 0 makes the velocity have no sideways (y-axis) component.  For sphere generators, this is the maximum azimuth angle of the initial position.
 
-        if_(VERSION >= M2Versions.WOTLK),
-            float32 | 'lifespan_vary',                                              # An individual particle's lifespan is added to by lifespanVary * random(-1, 1)
-        endif_,
+        if VERSION >= M2Versions.WOTLK:
+            self.life_span_vary = 0.0                           # An individual particle's lifespan is added to by lifespanVary * random(-1, 1)
+            self.emission_rate_vary = 0.0                       # This adds to the base emissionRate value the same way as lifespanVary. The random value is different every update.
 
-        M2Track << float32 | 'emission_rate',
+        self.emission_rate = M2Track(float32)
+        self.emission_area_length = M2Track(float32)            # For plane generators, this is the width of the plane in the x-axis. For sphere generators, this is the minimum radius.
+        self.emission_area_width = M2Track(float32)             # For plane generators, this is the width of the plane in the y-axis. For sphere generators, this is the maximum radius.
+        self.z_source = M2Track(float32)                        # When greater than 0, the initial velocity of the particle is (particle.position - C3Vector(0, 0, zSource)).Normalize()
+        
+        if VERSION >= M2Versions.WOTLK:
+            self.color_track = FBlock(vec3D)                    # Most likely they all have 3 timestamps for {start, middle, end}.
+            self.alpha_track = FBlock(fixed16)
+            self.scale_track = FBlock(vec2D)
+            self.scale_vary = (0.0, 0.0)                        # A percentage amount to randomly vary the scale of each particle
+            self.head_cell_track = FBlock(uint16)               # Some kind of intensity values seen: 0,16,17,32 (if set to different it will have high intensity)
+            self.tail_cell_track = FBlock(uint16)
+        else:
+            self.mid_point = 0.0                                # Middle point in lifespan (0 to 1).
+            self.color_values = Array((Array << uint8, 4), 3)
+            self.scale_values = Array(float32, 4)
+            self.head_cell_begin = Array(uint16, 2)
+            self.head_cell_end = Array(uint16, 2)
+            self.tiles = Array(int16, 4)                        # Indices into the tiles on the texture ? Or tailCell maybe ?
 
-        if_(VERSION >= M2Versions.WOTLK),
-            float32 | 'emission_rate_vary',                                         # This adds to the base emissionRate value the same way as lifespanVary. The random value is different every update.
-        endif_,
+        self.tail_length = 0.0                                  # TailCellTime?
+        self.twinkle_speed = 0.0                                # has something to do with the spread
+        self.twinkle_percent = 0.0                              # has something to do with the spread
+        self.twinkle_scale = CRange()
+        self.burst_multiplier = 0.0                             # ivelScale
+        self.drag = 0.0                                         # For a non-zero values, instead of travelling linearly the particles seem to slow down sooner. Speed is multiplied by exp( -drag * t ).
+        
+        if VERSION >= M2Versions.WOTLK:
+            self.basespin = 0.0                                 # Initial rotation of the particle quad
+            self.base_spin_vary = 0.0
+            self.spin = 0.0                                     # Rotation of the particle quad per second
+            self.spin_vary = 0.0
+        else:
+            self.spin = 0.0                                     # 0.0 for none, 1.0 to rotate the particle 360 degrees throughout its lifetime.
 
-        M2Track << float32 | 'emission_area_length',                                # For plane generators, this is the width of the plane in the x-axis. For sphere generators, this is the minimum radius.
-        M2Track << float32 | 'emission_area_width',                                 # For plane generators, this is the width of the plane in the y-axis. For sphere generators, this is the maximum radius.
-        M2Track << float32 | 'z_source',                                            # When greater than 0, the initial velocity of the particle is (particle.position - C3Vector(0, 0, zSource)).Normalize()
+        self.tumble = M2Box()
+        self.wind_vector = (0.0, 0.0, 0.0)
+        self.wind_time = 0.0
+        self.follow_speed1 = 0.0
+        self.follow_scale1 = 0.0
+        self.follow_speed2 = 0.0
+        self.follow_scale2 = 0.0
+        self.spline_points = M2Array(vec3D)                     # Set only for spline praticle emitter. Contains array of points for spline
+        self.enabled_in = M2Track(uint8)                        # (boolean) Appears to be used sparely now, probably there's a flag that links particles to animation sets where they are enabled.
 
-        if_(VERSION >= M2Versions.WOTLK),
-            FBlock << C3Vector | 'color_track',                                     # Most likely they all have 3 timestamps for {start, middle, end}.
-            FBlock << fixed16 | 'alpha_track',
-            FBlock << C2Vector | 'scale_track',
-            C2Vector | 'scale_vary',                                                # A percentage amount to randomly vary the scale of each particle
-            FBlock << uint16 | 'head_cell_track',                                   # Some kind of intensity values seen: 0,16,17,32 (if set to different it will have high intensity)
-            FBlock << uint16 | 'tail_cell_track',
-        else_,
-            float32 | 'mid_point',                                                  # Middle point in lifespan (0 to 1).
-            array[3] << CImVector | 'color_values',
-            array[4] << float32 | 'scale_values',
-            array[2] << uint16 | 'head_cell_begin',
-            uint16 | ('between1', 1),
-            array[2] << uint16 | 'head_cell_end',
-            uint16 | ('between2', 1),
-            array[4] << int16 | 'tiles',                                            # Indices into the tiles on the texture ? Or tailCell maybe ?
-        endif_,
+        if VERSION >= M2Versions.CATA:
+            self.multi_texture_param0 = Array(Vector_2fp_6_9)
+            self.multi_texture_param1 = Array(Vector_2fp_6_9)
 
-        float32 | 'tail_length',                                                    # TailCellTime?
-        float32 | 'twinkle_speed',                                                  # has something to do with the spread
-        float32 | 'twinkle_percent',                                                # has something to do with the spread
-        CRange | 'twinkle_scale',
-        float32 | 'burst_multiplier',                                               # ivelScale
-        float32 | 'drag',                                                           # For a non-zero values, instead of travelling linearly the particles seem to slow down sooner. Speed is multiplied by exp( -drag * t ).
+    def read(self, f):
+        self.particle_id = uint32.read(f)
+        self.flags = uint32.read(f)
+        self.position = vec3D.read(f)
+        self.bone = uint16.read(f)
+        self.texture = uint16.read(f)
+        self.geometry_model_filename.read(f)
+        self.recursion_model_filename.read(f)
 
-        if_(VERSION >= M2Versions.WOTLK),
-            float32 | 'basespin',                                                   # Initial rotation of the particle quad
-            float32 | 'base_spin_vary',
-            float32 | 'spin',                                                       # Rotation of the particle quad per second
-            float32 | 'spin_vary',
-        else_,
-            float32 | 'spin',                                                       # 0.0 for none, 1.0 to rotate the particle 360 degrees throughout its lifetime.
-        endif_,
+        if VERSION >= M2Versions.TBC:
+            self.blending_type = uint8.read(f)
+            self.emitter_type = uint8.read(f)
+            self.particle_color_index = uint16.read(f)
+        else:
+            self.blending_type = uint16.read(f)
+            self.emitter_type = uint16.read(f)
 
-        M2Box | 'tumble',
-        C3Vector | 'wind_vector',
-        float32 | 'wind_time',
+        if VERSION >= M2Versions.CATA:
+            self.multi_tex_param_x.read(f)
+            self.multi_tex_param_y.read(f)
+        else:
+            self.particle_type = uint8.read(f)
+            self.head_or_tail = uint8.read(f)
 
-        float32 | 'follow_speed1',
-        float32 | 'follow_scale1',
-        float32 | 'follow_speed2',
-        float32 | 'follow_scale2',
-        M2Array << C3Vector | 'spline_points',                                      # Set only for spline praticle emitter. Contains array of points for spline
-        M2Track << uint8 | 'enabled_in',                                            # (boolean) Appears to be used sparely now, probably there's a flag that links particles to animation sets where they are enabled.
+        self.texture_tile_rotation = uint16.read(f)
+        self.texture_dimensions_rows = uint16.read(f)
+        self.texture_dimension_columns = uint16.read(f)
+        self.emission_speed.read(f)
+        self.speed_variation.read(f)
+        self.vertical_range.read(f)
+        self.horizontal_range.read(f)
+        self.gravity.read(f)
+        self.lifespan.read(f)
 
-        if_(VERSION >= M2Versions.CATA),
-            array[2] << Vector_2fp_6_9 | 'multi_texture_param0',
-            array[2] << Vector_2fp_6_9 | 'multi_texture_param1',
-        endif_
-    )
+        if VERSION >= M2Versions.WOTLK:
+            self.life_span_vary = float32.read(f)
+
+        self.emission_rate.read(f)
+
+        if VERSION >= M2Versions.WOTLK:
+            self.emission_rate_vary = float32.read(f)
+
+        self.emission_area_length.read(f)
+        self.emission_area_width.read(f)
+        self.z_source.read(f)
+
+        if VERSION >= M2Versions.WOTLK:
+            self.color_track.read(f)
+            self.alpha_track.read(f)
+            self.scale_track.read(f)
+            self.scale_vary = vec2D.read(f)
+            self.head_cell_track.read(f)
+            self.tail_cell_track.read(f)
+        else:
+            self.mid_point = float32.read(f)
+            self.color_values.read(f)
+            self.scale_values.read(f)
+            self.head_cell_begin.read(f)
+            f.skip(2)
+            self.head_cell_end.read(f)
+            f.skip(2)
+            self.tiles.read(f)
+
+        self.tail_length = float32.read(f)
+        self.twinkle_speed = float32.read(f)
+        self.twinkle_percent = float32.read(f)
+        self.twinkle_scale.read(f)
+        self.burst_multiplier = float32.read(f)
+        self.drag = float32.read(f)
+
+        if VERSION >= M2Versions.WOTLK:
+            self.basespin = float32.read(f)
+            self.base_spin_vary = float32.read(f)
+            self.spin = float32.read(f)
+            self.spin_vary = float32.read(f)
+        else:
+            self.spin = float32.read(f)
+
+        self.tumble.read(f)
+        self.wind_vector = vec3D.read(f)
+        self.wind_time = float32.read(f)
+        self.follow_speed1 = float32.read(f)
+        self.follow_scale1 = float32.read(f)
+        self.follow_speed2 = float32.read(f)
+        self.follow_scale1 = float32.read(f)
+        self.spline_points.read(f)
+        self.enabled_in.read(f)
+
+        if VERSION >= M2Versions.CATA:
+            self.multi_texture_param0.read(f)
+            self.multi_texture_param1.read(f)
+
+        return self
+
+    def write(self, f):
+        uint32.write(f, self.particle_id)
+        uint32.write(f, self.flags)
+        vec3D.write(f, self.position)
+        uint16.write(f, self.bone)
+        uint16.write(f, self.texture)
+        self.geometry_model_filename.write(f)
+        self.recursion_model_filename.write(f)
+
+        if VERSION >= M2Versions.TBC:
+            uint8.write(f, self.blending_type)
+            uint8.write(f, self.emitter_type)
+            uint16.write(f, self.particle_color_index)
+        else:
+            uint16.write(f, self.blending_type)
+            uint16.write(f, self.emitter_type)
+            
+        if VERSION >= M2Versions.CATA:
+            self.multi_tex_param_x.write(f)
+            self.multi_tex_param_y.write(f)
+        else:
+            uint8.write(f, self.particle_type)
+            uint8.write(f, self.head_or_tail)
+            
+        uint16.write(f, self.texture_tile_rotation)
+        uint16.write(f, self.texture_dimensions_rows)
+        uint16.write(f, self.texture_dimension_columns)
+        self.emission_speed.write(f)
+        self.speed_variation.write(f)
+        self.vertical_range.write(f)
+        self.horizontal_range.write(f)
+        self.gravity.write(f)
+        self.lifespan.write(f)
+
+        if VERSION >= M2Versions.WOTLK:
+            float32.write(f, self.life_span_vary)
+
+        self.emission_rate.write(f)
+
+        if VERSION >= M2Versions.WOTLK:
+            float32.write(f, self.emission_rate_vary)
+            
+        self.emission_area_length.write(f)
+        self.emission_area_width.write(f)
+        self.z_source.write(f)
+
+        if VERSION >= M2Versions.WOTLK:
+            self.color_track.write(f)
+            self.alpha_track.write(f)
+            self.scale_track.write(f)
+            vec2D.write(f, self.scale_vary)
+            self.head_cell_track.write(f)
+            self.tail_cell_track.write(f)
+        else:
+            float32.write(f, self.mid_point)
+            self.color_values.write(f)
+            self.scale_values.write(f)
+            self.head_cell_begin.write(f)
+            uint16.write(f, 1)
+            self.head_cell_end.write(f)
+            uint16.write(f, 1)
+            self.tiles.write(f)
+
+        float32.write(f, self.tail_length)
+        float32.write(f, self.twinkle_speed)
+        float32.write(f, self.twinkle_percent)
+        self.twinkle_scale.write(f)
+        float32.write(f, self.burst_multiplier)
+        float32.write(f, self.drag)
+
+        if VERSION >= M2Versions.WOTLK:
+            float32.write(f, self.basespin)
+            float32.write(f, self.base_spin_vary)
+            float32.write(f, self.spin)
+            float32.write(f, self.spin_vary)
+        else:
+            float32.write(f, self.spin)
+
+        self.tumble.write(f)
+        vec3D.write(f, self.wind_vector)
+        float32.write(f, self.wind_time)
+
+        float32.write(f, self.follow_speed1)
+        float32.write(f, self.follow_scale1)
+        float32.write(f, self.follow_speed2)
+        float32.write(f, self.follow_scale2)
+        self.spline_points.write(f)
+        self.enabled_in.write(f)
+
+        if VERSION >= M2Versions.CATA:
+            self.multi_texture_param0.write(f)
+            self.multi_texture_param1.write(f)
+
+        return self
 
 
 class M2ParticleFlags(IntEnum):
-    EffectedByLight = 0x1               # Particles are affected by lighting;
-    UseWorldMatrix = 0x8                # Particles travel "up" in world space, rather than model.
-    DoNotTrail = 0x10                   # Do not Trail
-    Unlightning = 0x20                  # Unlightning
-    UseModelMatrix = 0x80               # Particles in Model Space
-    SpawnPosRandom = 0x200              # spawn position randomized in some way?
-    PinParticle = 0x400                 # Pinned Particles, their quad enlarges from their creation position to where they expand.
-    XYQuad = 0x1000                     # XYQuad Particles. They align to XY axis facing Z axis direction.
-    ClampToGround = 0x2000              # clamp to ground
-    ChooseRandomTexture = 0x10000       # ChooseRandomTexture
-    OutwardParticle = 0x20000           # "Outward" particles, most emitters have this and their particles move away from the origin, when they don't the particles start at origin+(speed*life) and move towards the origin.
-    Unknown = 0x40000                   # unknown. In a large proportion of particles this seems to be simply the opposite of the above flag, but in some (e.g. voidgod.m2 or wingedlionmount.m2) both flags are true.
-    ScaleVaryXY = 0x80000               # If set, ScaleVary affects x and y independently; if not set, ScaleVary.x affects x and y uniformly, and ScaleVary.y is not used.
-    RandFlipBookStart = 0x200000        # Random FlipBookStart
-    IgnoreDistance = 0x400000           # Ignores Distance (or 0x4000000?!, CMapObjDef::SetDoodadEmittersIgnoresDistance has this one)
-    CompressGravity = 0x800000          # gravity values are compressed vectors instead of z-axis values (see Compressed Particle Gravity below)
-    BoneGenerator = 0x1000000           # bone generator = bone, not joint
-    DoNotThrottleEmission = 0x4000000   # do not throttle emission rate based on distance
-    UseMultiTexturing = 0x10000000      # Particle uses multi-texturing (could be one of the other WoD-specific flags), see multi-textured section.
+    EffectedByLight = 0x1                                       # Particles are affected by lighting;
+    UseWorldMatrix = 0x8                                        # Particles travel "up" in world space, rather than model.
+    DoNotTrail = 0x10                                           # Do not Trail
+    Unlightning = 0x20                                          # Unlightning
+    UseModelMatrix = 0x80                                       # Particles in Model Space
+    SpawnPosRandom = 0x200                                      # spawn position randomized in some way?
+    PinParticle = 0x400                                         # Pinned Particles, their quad enlarges from their creation position to where they expand.
+    XYQuad = 0x1000                                             # XYQuad Particles. They align to XY axis facing Z axis direction.
+    ClampToGround = 0x2000                                      # clamp to ground
+    ChooseRandomTexture = 0x10000                               # ChooseRandomTexture
+    OutwardParticle = 0x20000                                   # "Outward" particles, most emitters have this and their particles move away from the origin, when they don't the particles start at origin+(speed*life) and move towards the origin.
+    Unknown = 0x40000                                           # unknown. In a large proportion of particles this seems to be simply the opposite of the above flag, but in some (e.g. voidgod.m2 or wingedlionmount.m2) both flags are true.
+    ScaleVaryXY = 0x80000                                       # If set, ScaleVary affects x and y independently; if not set, ScaleVary.x affects x and y uniformly, and ScaleVary.y is not used.
+    RandFlipBookStart = 0x200000                                # Random FlipBookStart
+    IgnoreDistance = 0x400000                                   # Ignores Distance (or 0x4000000?!, CMapObjDef::SetDoodadEmittersIgnoresDistance has this one)
+    CompressGravity = 0x800000                                  # gravity values are compressed vectors instead of z-axis values (see Compressed Particle Gravity below)
+    BoneGenerator = 0x1000000                                   # bone generator = bone, not joint
+    DoNotThrottleEmission = 0x4000000                           # do not throttle emission rate based on distance
+    UseMultiTexturing = 0x10000000                              # Particle uses multi-texturing (could be one of the other WoD-specific flags), see multi-textured section.
 
 
 #############################################################
@@ -529,145 +982,229 @@ class M2ParticleFlags(IntEnum):
 
 ###### Lights ######
 
-class M2Light(Struct):
-    __fields__ = (
-        uint16 | ('type', 1),                             # Types are listed below.
-        int16 | 'bone',                                   # -1 if not attached to a bone
-        C3Vector | 'position',                            # relative to bone, if given
-        M2Track << C3Vector | 'ambient_color',
-        M2Track << float32 | 'ambient_intensity',         # defaults to 1.0
-        M2Track << C3Vector | 'diffuse_color',
-        M2Track << float32 | 'diffuse_intensity',
-        M2Track << float32 | 'attenuation_start',
-        M2Track << float32 | 'attenuation_end',
-        M2Track << uint8 | 'visibility'                   # enabled?
-    )
+class M2Light:
+
+    def __init__(self):
+        self.type = 1                                           # Types are listed below.
+        self.bone = -1                                          # -1 if not attached to a bone
+        self.position = (0.0, 0.0, 0.0)                         # relative to bone, if given
+        self.ambient_color = M2Track(vec3D)
+        self.ambient_intensity = M2Track(float32)               # defaults to 1.0
+        self.diffuse_color = M2Track(vec3D)
+        self.diffuse_intensity = M2Track(float32)
+        self.attenuation_start = M2Track(float32)
+        self.attenuation_end = M2Track(float32)
+        self.visibility = M2Track(uint8)                        # enabled?
+
+    def read(self, f):
+        self.type = uint16.read(f)
+        self.bone = int16.read(f)
+        self.position = vec3D.read(f)
+        self.ambient_color.read(f)
+        self.ambient_intensity.read(f)
+        self.diffuse_color.read(f)
+        self.diffuse_intensity.read(f)
+        self.attenuation_start.read(f)
+        self.attenuation_end.read(f)
+        self.visibility.read(f)
+
+        return self
+
+    def write(self, f):
+        uint16.write(f, self.type)
+        int16.write(f, self.bone)
+        vec3D.write(f, self.position)
+        self.ambient_color.write(f)
+        self.ambient_intensity.write(f)
+        self.diffuse_color.write(f)
+        self.diffuse_intensity.write(f)
+        self.attenuation_start.write(f)
+        self.attenuation_end.write(f)
+        self.visibility.write(f)
+
+        return self
 
 
 class M2LightTypes:
-    Directional = 0     # Directional light type is not used (at least in 3.3.5) outside login screen, and doesn't seem to be taken into account in world.
+    Directional = 0                                             # Directional light type is not used (at least in 3.3.5) outside login screen, and doesn't seem to be taken into account in world.
     Point = 1
 
 
 ###### Cameras ######
 
-class M2Camera(Struct):
-    __fields__ = (
-        uint32 | 'type',                                            # 0: portrait, 1: characterinfo; -1: else (flyby etc.); referenced backwards in the lookup table.
-        if_(VERSION < M2Versions.CATA),
-            float32 | 'fov',                                        # Diagonal FOV in radians. See below for conversion.
-        endif_,
-        float32 | 'far_clip',
-        float32 | 'near_clip',
-        M2Track << (M2SplineKey << C3Vector) | 'positions',         # positions; // How the camera's position moves. Should be 3*3 floats.
-        C3Vector | 'position_base',
-        M2Track << (M2SplineKey << C3Vector) | 'target_position',   # How the target moves. Should be 3*3 floats.
-        C3Vector | 'target_position_base',
-        M2Track << (M2SplineKey << float32) | 'roll',               # The camera can have some roll-effect. Its 0 to 2*Pi.
-        if_(VERSION >= M2Versions.CATA),
-            M2Track << (M2SplineKey << float32) | 'fov',            # Diagonal FOV in radians. float vfov = dfov / sqrt(1.0 + pow(aspect, 2.0));
-        endif_,
-    )
+class M2Camera:
+
+    def __init__(self):
+        self.type = 0                                           # 0: portrait, 1: characterinfo; -1: else (flyby etc.); referenced backwards in the lookup table.
+        if VERSION < M2Versions.CATA:
+            self.fov = 0.0                                      # Diagonal FOV in radians. See below for conversion.
+
+        self.far_clip = 0.0
+        self.near_clip = 0.0
+        self.positions = M2Track(M2SplineKey << vec3D)          # positions; // How the camera's position moves. Should be 3*3 floats.
+        self.position_base = (0.0, 0.0, 0.0)
+        self.target_position = M2Track(M2SplineKey << vec3D)    # How the target moves. Should be 3*3 floats.
+        self.target_position_base = (0.0, 0.0, 0.0)
+        self.roll = M2Track(M2SplineKey << float32)             # The camera can have some roll-effect. Its 0 to 2*Pi.
+        if VERSION >= M2Versions.CATA:
+            self.fov = M2Track(M2SplineKey << float32)          # Diagonal FOV in radians. float vfov = dfov / sqrt(1.0 + pow(aspect, 2.0));
+
+    def read(self, f):
+        self.type = uint32.read(f)
+        if VERSION < M2Versions.CATA:
+            self.fov = float32.read(f)
+        self.far_clip = float32.read(f)
+        self.near_clip = float32.read(f)
+        self.positions.read(f)
+        self.position_base = vec3D.read(f)
+        self.target_position.read(f)
+        self.target_position_base = vec3D.read(f)
+        self.roll.read(f)
+        if VERSION >= M2Versions.CATA:
+            self.fov.read(f)
+            
+        return self
+
+    def write(self, f):
+        uint32.write(f, self.type)
+        if VERSION < M2Versions.CATA:
+            float32.write(f, self.fov)
+        float32.write(f, self.far_clip)
+        float32.write(f, self.near_clip)
+        self.positions.write(f)
+        vec3D.write(f, self.position_base)
+        self.target_position.write(f)
+        vec3D.write(f, self.target_position_base)
+        self.roll.write(f)
+        if VERSION >= M2Versions.CATA:
+            self.fov.write(f)
+
+        return self
 
 
 ###### Attachments ######
 
-class M2Attachment(Struct):
-    __fields__ = (
-        uint32 | 'id',                              # Referenced in the lookup-block below.
-        uint16 | 'bone',                            # attachment base
-        uint16 | 'unknown',                         # see BogBeast.m2 in vanilla for a model having values here
-        C3Vector | 'position',                      # relative to bone; Often this value is the same as bone's pivot point
-        M2Track << boolean | 'animate_attached'     # whether or not the attached model is animated when this model is. only a bool is used. default is true.
-    )
+class M2Attachment:
+
+    def __init__(self):
+        self.id = 0                                             # Referenced in the lookup-block below.
+        self.bone = 0                                           # attachment base
+        self.unknown = 0                                        # see BogBeast.m2 in vanilla for a model having values here
+        self.position = (0.0, 0.0, 0.0)                         # relative to bone; Often this value is the same as bone's pivot point
+        self.animate_attached = M2Track(boolean)                # whether or not the attached model is animated when this model is. only a bool is used. default is true.
+
+    def read(self, f):
+        self.id = uint32.read(f)
+        self.bone = uint16.read(f)
+        self.unknown = uint16.read(f)
+        self.position = vec3D.read(f)
+        self.animate_attached.read(f)
+
+        return self
+
+    def write(self, f):
+        uint32.write(f, self.id)
+        uint16.write(f, self.bone)
+        uint16.write(f, self.unknown)
+        vec3D.write(f, self.position)
+        self.animate_attached.write(f)
+
+        return self
 
 
 ###### Events ######
 
-class M2Event(Struct):
-    __fields__ = (
-        uint32 | 'identifier',
-        uint32 | 'data',
-        uint32 | 'bone',
-        C3Vector | 'position',
-        M2TrackBase | 'enabled'
-    )
+class M2Event:
+
+    def __init__(self):
+        self.identifier = 0
+        self.data = 0
+        self.bone = 0
+        self.position = (0.0, 0.0, 0.0)
+        self.enabled = M2TrackBase()
+
+    def read(self, f):
+        self.identifier = uint32.read(f)
+        self.data = uint32.read(f)
+        self.bone = uint32.read(f)
+        self.position = vec3D.read(f)   
+        self.enabled.read(f)
+        
+        return self
+
+    def write(self, f):
+        uint32.write(f, self.identifier)
+        uint32.write(f, self.data)
+        uint32.write(f, self.bone)  
+        vec3D.write(f, self.position)
+        self.enabled.write(f)
+
+        return self
 
 
 #############################################################
 ######                  M2 Header                      ######
 #############################################################
 
+class M2Header:
 
-class M2Header(Struct):
-    __fields__ = (
-        string_t[4] | ('magic', 'MD20' if VERSION < M2Versions.LEGION else 'MD21'),
-        uint32 | ('version', VERSION),
-        M2Array << char | 'name',
-        uint32 | 'global_flags',
-        M2Array << uint32 | 'global_loops',
-        M2Array << M2Sequence | 'sequences',
-        M2Array << uint16 | 'sequence_lookups',
+    def __init__(self):
+        self.magic = 'MD20' if VERSION < M2Versions.LEGION else 'MD21'
+        self.version = VERSION
+        self.name = M2String()
+        self.global_flags = 0
+        self.global_loops = M2Array(uint32)
+        self.sequences = M2Array(M2Sequence)
+        self.sequence_loopkup = M2Array(uint16)
 
-        if_(VERSION <= M2Versions.TBC),
-            M2Array << uint32 | 'playable_animation_lookup',                                # type is unk
-        endif_,
+        if VERSION <= M2Versions.TBC:
+            self.playable_animation_lookup = M2Array(uint32)
 
-        M2Array << M2CompBone | 'bones',                                                    # 0x100 bones max
+        self.bones = M2Array(M2CompBone)
+        self.key_bone_lookup = M2Array(uint16)
+        self.vertices = M2Array(M2Vertex)
 
-        M2Array << uint16 | 'key_bone_lookup',
-        M2Array << M2Vertex | 'vertices',
+        if VERSION <= M2Versions.TBC:
+            self.skin_profiles = M2Array(M2SkinProfile)
+        else:
+            self.num_skin_profiles = 0
 
-        if_(VERSION <= M2Versions.TBC),
-            M2Array << uint32 | 'skin_profiles',                                            # SkinProfile
-        else_,
-            uint32 | 'num_skin_profiles',
-        endif_,
+        self.colors = M2Array(M2Color)
+        self.textures = M2Array(M2Texture)
+        self.texture_weights = M2Array(fixed16)
 
-        M2Array << M2Color | 'colors',                                                      # Color and alpha animations definitions.
-        M2Array << M2Texture | 'textures',
-        M2Array << M2TextureWeight | 'texture_weights',                                     # Transparency of textures.
+        if VERSION <= M2Versions.TBC:
+            self.unknown = M2Array(uint16)
 
-        if_(VERSION <= M2Versions.TBC),
-            M2Array << uint16 | 'unknown',                                                  # type is unk
-        endif_,
+        self.texture_transforms = M2Array(M2TextureTransform)
+        self.replacable_texture_lookup = M2Array(uint16)
+        self.materials = M2Array(M2Material)
+        self.bone_lookup_table = M2Array(uint16)
+        self.texture_lookup_table = M2Array(uint16)
+        self.tex_unit_lookup_table = M2Array(uint16)
+        self.transparency_lookup_table = M2Array(uint16)
+        self.texture_transforms_lookup_table = M2Array(uint16)
+        
+        self.bounding_box = CAaBox()
+        self.bounding_sphere_radius = 0.0
 
-        M2Array << M2TextureTransform | 'texture_transforms',
-        M2Array << uint16 | 'replacable_texture_lookup',
-        M2Array << M2Material | 'materials',                                                # Blending modes / render flags.
-        M2Array << uint16 | 'bone_lookup_table',
-        M2Array << uint16 | 'texture_lookup_table',
-        M2Array << uint16 | 'tex_unit_lookup_table',                                        # ≥ Cata: unused
-        M2Array << uint16 | 'transparency_lookup_table',
-        M2Array << uint16 | 'texture_transforms_lookup_table',
+        self.collision_box = CAaBox()
+        self.collision_sphere_radius = 0.0
+        
+        self.collision_triangles = M2Array(uint16)
+        self.collision_vertices = M2Array(Array << (float32, 3))
+        self.collision_normals = M2Array(Array << (float32, 3))
+        self.attachments = M2Array(M2Attachment)
+        self.attachment_lookup_table = M2Array(uint16)
+        self.events = M2Array(M2Event)
+        self.lights = M2Array(M2Light)
+        self.cameras = M2Array(M2Camera)
+        self.camera_lookup_table = M2Array(uint16)
+        self.ribbon_emitters = M2Array(M2Ribbon)
+        self.particle_emitters = M2Array(M2Particle)
 
-
-
-        CAaBox | 'bounding_box',                                                            # min/max( [1].z, 2.0277779f ) - 0.16f seems to be the maximum camera height
-        float32 | 'bounding_sphere_radius',
-                                                                                            # detail doodad draw dist = clamp (bounding_sphere_radius * detailDoodadDensityFade * detailDoodadDist, …)
-        CAaBox | 'collision_box',
-        float32 | 'collision_sphere_radius',
-
-        M2Array << uint16 | 'collision_triangles',
-        M2Array << C3Vector | 'collision_vertices',
-        M2Array << C3Vector | 'collision_normals',
-        M2Array << M2Attachment | 'attachments',                                            # position of equipped weapons or effects
-
-        M2Array << uint16 | 'attachment_lookup_table',
-        M2Array << M2Event | 'events',                                                      # Used for playing sounds when dying and a lot else.
-        M2Array << M2Light | 'lights',                                                      # Lights are mainly used in loginscreens but in wands and some doodads too.
-        M2Array << M2Camera | 'cameras',
-
-                                                                                            # The cameras are present in most models for having a model in the character tab.
-        M2Array << uint16 | 'camera_lookup_table',
-        M2Array << M2Ribbon | 'ribbon_emitters',                                            # Things swirling around. See the CoT-entrance for light-trails.
-
-        M2Array << M2Particle | 'particle_emitters',
-
-    
-            # TODO: implement on-demand fields
-            '''
+        # TODO: implement on-demand fields
+        '''
         #if ≥ Wrath                                              # TODO: verify version
         if (flag_use_texture_combiner_combos)
         {
@@ -676,7 +1213,66 @@ class M2Header(Struct):
         #endif
         '''
 
-    )
+    def read(self, f):
+        self.magic = string.read(f, 4)
+        self.version = uint32.read(f)
+        self.name.read(f)
+        self.global_flags = uint32.read(f)
+        self.global_loops.read(f)
+        self.sequences.read(f)
+        self.sequence_loopkup.read(f)
+
+        if VERSION <= M2Versions.TBC:
+            self.playable_animation_lookup.read(f)
+
+        self.bones.read(f)
+        self.key_bone_lookup.read(f)
+        self.vertices.read(f)
+
+        if VERSION <= M2Versions.TBC:
+            self.skin_profiles.read(f)
+        else:
+            self.num_skin_profiles = uint32.read(f)
+
+        self.colors.read(f)
+        self.textures.read(f)
+        self.texture_weights.read(f)
+        
+        if VERSION <= M2Versions.TBC:
+            self.unknown.read(f)
+
+        self.texture_transforms.read(f)
+        self.replacable_texture_lookup.read(f)
+        self.materials.read(f)
+        self.bone_lookup_table.read(f)
+        self.texture_lookup_table.read(f)
+        self.tex_unit_lookup_table.read(f)
+        self.transparency_lookup_table.read(f)
+        self.texture_transforms_lookup_table.read(f)
+
+        self.bounding_box.read(f)
+        self.bounding_sphere_radius = float32.read(f)
+        self.collision_box.read(f)
+        self.collision_sphere_radius = float32.read(f)
+
+        self.collision_triangles.read(f)
+        self.collision_vertices.read(f)
+        self.collision_normals.read(f)
+        self.attachments.read(f)
+
+        self.attachment_lookup_table.read(f)
+        self.events.read(f)
+        self.lights.read(f)
+        self.cameras.read(f)
+
+        self.camera_lookup_table.read(f)
+        self.ribbon_emitters.read(f)
+        self.particle_emitters.read(f)
+
+        return self
+
+    def write(self, f):
+        return self
 
 
 class M2GlobalFlags(IntEnum):
@@ -686,7 +1282,3 @@ class M2GlobalFlags(IntEnum):
     LoadPhysData = 0x20
     UNK = 0x80
     CameraRelated = 0x100
-
-
-
-
