@@ -1,6 +1,6 @@
 from .wmo_group import *
 from .wmo_format import *
-from ..m2 import import_m2 as m2
+from ..m2 import import_doodad as m2
 from mathutils.kdtree import KDTree
 
 import bpy
@@ -77,7 +77,6 @@ class WMOFile:
 
                 print("\nDone reading root file: <<" + os.path.basename(f.name) + ">>")
                 root_name = os.path.splitext(self.filepath)[0]
-
 
                 for i in range(self.mohd.nGroups):
                     group_name = root_name + "_" + str(i).zfill(3) + ".wmo"
