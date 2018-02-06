@@ -1,6 +1,5 @@
 from .wow_common_types import *
 from .skin_format import M2SkinProfile
-from enum import IntEnum
 
 
 #############################################################
@@ -379,7 +378,7 @@ class M2CompBone:
         if VERSION <= M2Versions.CLASSIC:
             self.rotation = M2Track(quat)
         else:
-            self.rotation = M2Track(quat)                       # compressed values, default is (32767,32767,32767,65535) == (0,0,0,1) == identity TODO: M2CompQuat
+            self.rotation = M2Track(Array << (uint16, 4))       # compressed values, default is (32767,32767,32767,65535) == (0,0,0,1) == identity TODO: M2CompQuat
 
         self.scale = M2Track(vec3D)
         self.pivot = (0.0, 0.0, 0.0)                            # The pivot point of that bone.
@@ -411,16 +410,6 @@ class M2CompBone:
         vec3D.write(f, self.pivot)
 
         return self
-
-
-class M2CompBoneFlags:
-    spherical_billboard = 0x8,
-    cylindrical_billboard_lock_x = 0x10,
-    cylindrical_billboard_lock_y = 0x20,
-    cylindrical_billboard_lock_z = 0x40,
-    transformed = 0x200,
-    kinematic_bone = 0x400,                       # MoP+: allow physics to influence this bone
-    helmet_anim_scaled = 0x1000,                  # set blend_modificator to helmetAnimScalingRec.m_amount for this bone
 
 
 #############################################################
@@ -463,28 +452,6 @@ class M2Vertex:
 
 
 ###### Render flags ######
-
-class M2RenderFlags:
-    Unlit = 0x1
-    Unfogged = 0x2
-    TwoSided = 0x8
-    DepthWrite = 0x10
-    ShadowBatch1 = 0x40
-    ShadowBatch2 = 0x80
-    UnkWoD = 0x400
-    PreventAlpha = 0x800
-
-
-class M2BlendingModes:
-    Opaque = 0
-    Mod = 1
-    Decal = 2
-    Add = 3
-    Mod2X = 4
-    Fade = 5
-    DeeprunTram = 6
-    WoD = 7
-
 
 class M2Material:
     
@@ -546,35 +513,6 @@ class M2Texture:
         self.filename.write(f)
 
         return self
-
-
-class M2TextureTypes(IntEnum):
-    NONE = 0                # Texture given in filename
-    SKIN = 1                # Skin Body + clothes
-    OBJECT_SKIN = 2         # Object Skin -- Item, Capes ("Item\ObjectComponents\Cape\*.blp")
-    WEAPON_BLADE = 3        # Weapon Blade -- Used on several models but not used in the client as far as I see. Armor Reflect?
-    WEAPON_HANDLE = 4       # Weapon Handle
-    ENVIRONMENT = 5         # (OBSOLETE) Environment (Please remove from source art)
-    CHAR_HAIR = 6           # Skin Body + clothes
-    CHAR_FACIAL_HAIR = 7    # (OBSOLETE) Character Facial Hair (Please remove from source art)
-    SKIN_EXTRA = 8          # Skin Extra
-    UI_SKIN = 9             # UI Skin -- Used on inventory art M2s (1): inventoryartgeometry.m2 and inventoryartgeometryold.m2
-    TAUREN_MANE = 10        # (OBSOLETE) Tauren Mane (Please remove from source art) -- Only used in quillboarpinata.m2. I can't even find something referencing that file. Oo Is it used?
-    MONSTER_1 = 11          # Monster Skin 1 -- Skin for creatures or gameobjects #1
-    MONSTER_2 = 12          # Monster Skin 2 -- Skin for creatures or gameobjects #2
-    MONSTER_3 = 13          # Monster Skin 3 -- Skin for creatures or gameobjects #3
-    ITEM_ICON = 14          # Item Icon -- Used on inventory art M2s (2): ui-button.m2 and forcedbackpackitem.m2 (CSimpleModel_ReplaceIconTexture("texture"))
-
-    # Cata+
-    GUILD_BG_COLOR = 15
-    GUILD_EMBLEM_COLOR = 16
-    GUILD_BORDER_COLOR = 17
-    GUILD_EMBLEM = 18
-
-
-class M2TextureFlags:
-    T_WRAP_X = 0x1
-    T_WRAP_Y = 0x2
 
 
 #############################################################
@@ -954,28 +892,6 @@ class M2Particle:
         return self
 
 
-class M2ParticleFlags(IntEnum):
-    EffectedByLight = 0x1                                       # Particles are affected by lighting;
-    UseWorldMatrix = 0x8                                        # Particles travel "up" in world space, rather than model.
-    DoNotTrail = 0x10                                           # Do not Trail
-    Unlightning = 0x20                                          # Unlightning
-    UseModelMatrix = 0x80                                       # Particles in Model Space
-    SpawnPosRandom = 0x200                                      # spawn position randomized in some way?
-    PinParticle = 0x400                                         # Pinned Particles, their quad enlarges from their creation position to where they expand.
-    XYQuad = 0x1000                                             # XYQuad Particles. They align to XY axis facing Z axis direction.
-    ClampToGround = 0x2000                                      # clamp to ground
-    ChooseRandomTexture = 0x10000                               # ChooseRandomTexture
-    OutwardParticle = 0x20000                                   # "Outward" particles, most emitters have this and their particles move away from the origin, when they don't the particles start at origin+(speed*life) and move towards the origin.
-    Unknown = 0x40000                                           # unknown. In a large proportion of particles this seems to be simply the opposite of the above flag, but in some (e.g. voidgod.m2 or wingedlionmount.m2) both flags are true.
-    ScaleVaryXY = 0x80000                                       # If set, ScaleVary affects x and y independently; if not set, ScaleVary.x affects x and y uniformly, and ScaleVary.y is not used.
-    RandFlipBookStart = 0x200000                                # Random FlipBookStart
-    IgnoreDistance = 0x400000                                   # Ignores Distance (or 0x4000000?!, CMapObjDef::SetDoodadEmittersIgnoresDistance has this one)
-    CompressGravity = 0x800000                                  # gravity values are compressed vectors instead of z-axis values (see Compressed Particle Gravity below)
-    BoneGenerator = 0x1000000                                   # bone generator = bone, not joint
-    DoNotThrottleEmission = 0x4000000                           # do not throttle emission rate based on distance
-    UseMultiTexturing = 0x10000000                              # Particle uses multi-texturing (could be one of the other WoD-specific flags), see multi-textured section.
-
-
 #############################################################
 ######                  Miscellaneous                  ######
 #############################################################
@@ -1274,11 +1190,3 @@ class M2Header:
     def write(self, f):
         return self
 
-
-class M2GlobalFlags(IntEnum):
-    TILT_X = 0x1
-    TILT_Y = 0x2
-    UseTextureCombiner_Combos = 0x8
-    LoadPhysData = 0x20
-    UNK = 0x80
-    CameraRelated = 0x100

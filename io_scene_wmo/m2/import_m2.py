@@ -134,9 +134,12 @@ class BlenderM2Scene:
             poly.use_smooth = True
 
         # create object
-        bpy.context.scene.objects.link(bpy.data.objects.new('Collision', mesh))
+        obj = bpy.data.objects.new('Collision', mesh)
+        bpy.context.scene.objects.link(obj)
+        obj.hide = True
 
         # TODO: add UI
+        # TODO: add transparent material
 
 
 def import_m2(version, file):  # TODO: implement multiversioning
