@@ -1,8 +1,9 @@
 import bpy
 import os
 from ..wowlib.m2_file import M2File, M2Externals
-from ..wowlib.enums.m2_enums import M2SkinMeshPartID
+from ..wowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones
 from ..utils import parse_bitfield
+from mathutils import Vector
 
 
 class BlenderM2Scene:
@@ -10,7 +11,8 @@ class BlenderM2Scene:
         self.m2 = m2
         self.skins = skins
         self.materials = {}
-        self.geosets = {}
+        self.vertex_infos = []
+        self.geosets = []
         self.collision_mesh = None
         self.settings = prefs
 
@@ -57,6 +59,65 @@ class BlenderM2Scene:
 
             self.materials[tex_unit.skin_section_index] = blender_mat
 
+    def load_armature(self):
+        print("\nImporting armature")
+
+        # Create armature
+        armature = bpy.data.armatures.new('{}_Armature'.format(self.m2.name.value))
+        rig = bpy.data.objects.new(self.m2.name.value, armature)
+        rig.location = (0, 0, 0)
+
+        # Link the object to the scene
+        scene = bpy.context.scene
+        scene.objects.link(rig)
+        scene.objects.active = rig
+        scene.update()
+
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        for i, bone in enumerate(self.m2.bones):  # add bones to armature.
+            bl_edit_bone = armature.edit_bones.new(bone.name)
+            bl_edit_bone.head = Vector(bone.pivot)
+
+            bl_edit_bone.tail.x = bl_edit_bone.head.x + 0.1
+            bl_edit_bone.tail.y = bl_edit_bone.head.y
+            bl_edit_bone.tail.z = bl_edit_bone.head.z
+
+        for i, bone in enumerate(self.m2.bones):  # link children to parents
+            if bone.parent_bone >= 0:
+                bl_edit_bone = armature.edit_bones[bone.name]
+                parent = armature.edit_bones[self.m2.bones[bone.parent_bone].name]
+                bl_edit_bone.parent = parent
+
+        bpy.context.scene.update()  # update scene.
+        bpy.ops.object.mode_set(mode='OBJECT')  # return to object mode.
+
+        skin = self.skins[0]
+
+        for i, smesh in enumerate(skin.submeshes):
+            bl_obj = self.geosets[i]
+            print('geoset' + bl_obj.name)
+
+            bl_obj.parent = rig
+
+            # create vertex groups for all bones
+            for bone in self.m2.bones:
+                bl_obj.vertex_groups.new(bone.name)
+
+            # bind armature to geometry
+            bpy.context.scene.objects.active = bl_obj
+            bpy.ops.object.modifier_add(type='ARMATURE')
+            bpy.context.object.modifiers["Armature"].object = rig
+
+            for j in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count):
+                m2_vertex = self.m2.vertices[skin.vertex_indices[j]]
+
+                for k in range(4):
+                    weight = m2_vertex.bone_weights[k]
+                    if weight > 0:
+                        vg = bl_obj.vertex_groups.get(self.m2.bones[m2_vertex.bone_indices[k]].name)
+                        vg.add([j], 1.0 / 255 * weight, 'ADD')
+
     def load_geosets(self):
         if not len(self.m2.vertices):
             print("\nNo mesh geometry found to import.")
@@ -79,8 +140,6 @@ class BlenderM2Scene:
 
             tex_coords = [self.m2.vertices[skin.vertex_indices[i]].tex_coords
                           for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
-
-            # TODO: other vertex stuff
 
             triangles = [[skin.triangle_indices[i + j] - smesh.vertex_start for j in range(3)]
                          for i in range(smesh.index_start, smesh.index_start + smesh.index_count, 3)]
@@ -113,7 +172,10 @@ class BlenderM2Scene:
 
             # get object name
             name = M2SkinMeshPartID.get_mesh_part_name(smesh.skin_section_id)
-            bpy.context.scene.objects.link(bpy.data.objects.new(name if name else 'Geoset', mesh))
+            obj = bpy.data.objects.new(name if name else 'Geoset', mesh)
+            bpy.context.scene.objects.link(obj)
+
+            self.geosets.append(obj)
 
     def load_collision(self):
 
@@ -170,6 +232,7 @@ def import_m2(version, file):  # TODO: implement multiversioning
 
         bl_m2.load_materials(texture_dir)
         bl_m2.load_geosets()
+        bl_m2.load_armature()
         bl_m2.load_collision()
 
     else:

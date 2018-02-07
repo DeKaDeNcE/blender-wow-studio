@@ -129,7 +129,51 @@ class M2SkinMeshPartID(Enum):
         return None
 
 
+class M2KeyBones(Enum):
+    ArmL = 0
+    ArmR = 1
+    ShoulderL = 2
+    ShoulderR = 3
+    SpineLow = 4
+    Waist = 5
+    Head = 6
+    Jaw = 7
+    IndexFingerR = 8
+    MiddleFingerR = 9
+    PinkyFingerR = 10
+    RingFingerR = 11
+    ThumbR = 12
+    IndexFingerL = 13
+    MiddleFingerL = 14
+    PinkyFingerL = 15
+    RingFingerL = 16
+    ThumbL = 17
+    BTH = 18
+    CSR = 19
+    CSL = 20
+    _Breath = 21
+    _Name = 22
+    _NameMount = 23
+    CHD = 24
+    CCH = 25
+    Root = 26
+    Wheel1 = 27
+    Wheel2 = 28
+    Wheel3 = 29
+    Wheel4 = 30
+    Wheel5 = 31
+    Wheel6 = 32
+    Wheel7 = 33
+    Wheel8 = 34
 
+    @classmethod
+    def get_bone_name(cls, keybone_id, idx):
+        if keybone_id == -1:
+            return "Bone_{}".format(idx)
 
+        for field in cls:
+            if field.value == keybone_id:
+                return field.name
 
-
+        print("\nUnknown keybone ID: {}".format(keybone_id))
+        return "UNK_Keybone"

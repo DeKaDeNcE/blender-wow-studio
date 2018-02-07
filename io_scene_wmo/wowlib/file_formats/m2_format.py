@@ -1,5 +1,6 @@
 from .wow_common_types import *
 from .skin_format import M2SkinProfile
+from ..enums.m2_enums import M2KeyBones
 
 
 #############################################################
@@ -383,6 +384,12 @@ class M2CompBone:
         self.scale = M2Track(vec3D)
         self.pivot = (0.0, 0.0, 0.0)                            # The pivot point of that bone.
 
+        # Helpers
+        self.parent = None
+        self.children = []
+        self.name = 'Bone'
+        self.index = 0
+
     def read(self, f):
         self.key_bone_id = int32.read(f)
         self.flags = uint32.read(f)
@@ -410,6 +417,20 @@ class M2CompBone:
         vec3D.write(f, self.pivot)
 
         return self
+
+    def build_relations(self, bones):
+        if self.parent_bone >= 0:
+            parent = bones[self.parent_bone]
+            self.parent = parent
+            parent.children.append(self)
+
+    def load_bone_name(self):
+        self.name = M2KeyBones.get_bone_name(self.key_bone_id, self.index)
+
+    def get_depth(self):
+        if not self.children:
+            return 0
+        return sum(map(lambda x: x.get_depth(), self.children)) + len(self.children)
 
 
 #############################################################
@@ -1141,7 +1162,14 @@ class M2Header:
         if VERSION <= M2Versions.TBC:
             self.playable_animation_lookup.read(f)
 
+        # bones
         self.bones.read(f)
+        for i, bone in enumerate(self.bones):
+            bone.index = i
+            bone.build_relations(self.bones)
+            bone.load_bone_name()
+        # end;
+
         self.key_bone_lookup.read(f)
         self.vertices.read(f)
 
