@@ -100,14 +100,12 @@ class BlenderM2Scene:
 
             bl_obj.parent = rig
 
-            # create vertex groups for all bones
-            for bone in self.m2.bones:
-                bl_obj.vertex_groups.new(bone.name)
-
             # bind armature to geometry
             bpy.context.scene.objects.active = bl_obj
             bpy.ops.object.modifier_add(type='ARMATURE')
             bpy.context.object.modifiers["Armature"].object = rig
+
+            '''
 
             for j in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count):
                 m2_vertex = self.m2.vertices[skin.vertex_indices[j]]
@@ -117,6 +115,20 @@ class BlenderM2Scene:
                     if weight > 0:
                         vg = bl_obj.vertex_groups.get(self.m2.bones[m2_vertex.bone_indices[k]].name)
                         vg.add([j], 1.0 / 255 * weight, 'ADD')
+                        
+            '''
+
+            vgroups = {}
+            for j in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count):
+                m2_vertex = self.m2.vertices[skin.vertex_indices[j]]
+                for b_index, bone_index in enumerate(filter(lambda x: x > 0, m2_vertex.bone_indices)):
+                    vgroups.setdefault(self.m2.bones[bone_index].name, []).append((j - smesh.vertex_start, m2_vertex.bone_weights[b_index] / 255))
+
+            for name in vgroups.keys():
+                if len(vgroups[name]) > 0:
+                    grp = bl_obj.vertex_groups.new(name)
+                    for (v, w) in vgroups[name]:
+                        grp.add([v], w, 'REPLACE')
 
     def load_geosets(self):
         if not len(self.m2.vertices):
