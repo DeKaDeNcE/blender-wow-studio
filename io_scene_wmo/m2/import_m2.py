@@ -60,6 +60,10 @@ class BlenderM2Scene:
             self.materials[tex_unit.skin_section_index] = blender_mat
 
     def load_armature(self):
+        if not len(self.m2.bones):
+            print("\nNo armature found to import.")
+            return
+
         print("\nImporting armature")
 
         # Create armature
@@ -104,19 +108,6 @@ class BlenderM2Scene:
             bpy.context.scene.objects.active = bl_obj
             bpy.ops.object.modifier_add(type='ARMATURE')
             bpy.context.object.modifiers["Armature"].object = rig
-
-            '''
-
-            for j in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count):
-                m2_vertex = self.m2.vertices[skin.vertex_indices[j]]
-
-                for k in range(4):
-                    weight = m2_vertex.bone_weights[k]
-                    if weight > 0:
-                        vg = bl_obj.vertex_groups.get(self.m2.bones[m2_vertex.bone_indices[k]].name)
-                        vg.add([j], 1.0 / 255 * weight, 'ADD')
-                        
-            '''
 
             vgroups = {}
             for j in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count):
