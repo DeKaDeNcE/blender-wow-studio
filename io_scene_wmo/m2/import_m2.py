@@ -83,7 +83,7 @@ class BlenderM2Scene:
             bl_edit_bone = armature.edit_bones.new(bone.name)
             bl_edit_bone.head = Vector(bone.pivot)
 
-            bl_edit_bone.tail.x = bl_edit_bone.head.x + 0.1
+            bl_edit_bone.tail.x = bl_edit_bone.head.x + 0.1 # TODO: mess with bones parenting even more
             bl_edit_bone.tail.y = bl_edit_bone.head.y
             bl_edit_bone.tail.z = bl_edit_bone.head.z
 
@@ -100,8 +100,6 @@ class BlenderM2Scene:
 
         for i, smesh in enumerate(skin.submeshes):
             bl_obj = self.geosets[i]
-            print('geoset' + bl_obj.name)
-
             bl_obj.parent = rig
 
             # bind armature to geometry
