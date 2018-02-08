@@ -216,6 +216,45 @@ class M2Box:
         return self
 
 
+class M2CompQuaternion:
+    
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        self.z = 0
+        self.w = 0
+
+    def read(self, f):
+        self.x = int16.read(f)
+        self.y = int16.read(f)
+        self.z = int16.read(f)
+        self.w = int16.read(f)
+
+        return self
+
+    def write(self, f):
+        int16.write(f, self.x)
+        int16.write(f, self.y)
+        int16.write(f, self.z)
+        int16.write(f, self.w)
+
+        return self
+
+    def to_quaternion(self, quat_type=None):
+        type_ = quat_type if quat_type else tuple
+        return type_(
+            (
+                (self.w + 32768 if self.w < 0 else self.w - 32767) / 32767,
+                (self.x + 32768 if self.x < 0 else self.x - 32767) / 32767,
+                (self.y + 32768 if self.y < 0 else self.y - 32767) / 32767,
+                (self.z + 32768 if self.z < 0 else self.z - 32767) / 32767
+            )
+        )
+
+    def from_quaternion(self):
+        pass
+        # TODO: implement
+
 #############################################################
 ######                  M2 Chunks                      ######
 #############################################################
@@ -379,7 +418,7 @@ class M2CompBone:
         if VERSION <= M2Versions.CLASSIC:
             self.rotation = M2Track(quat)
         else:
-            self.rotation = M2Track(Array << (uint16, 4))       # compressed values, default is (32767,32767,32767,65535) == (0,0,0,1) == identity TODO: M2CompQuat
+            self.rotation = M2Track(M2CompQuaternion)       # compressed values, default is (32767,32767,32767,65535) == (0,0,0,1) == identity
 
         self.scale = M2Track(vec3D)
         self.pivot = (0.0, 0.0, 0.0)                            # The pivot point of that bone.

@@ -3,7 +3,7 @@ import os
 from ..wowlib.m2_file import M2File, M2Externals
 from ..wowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones
 from ..utils import parse_bitfield
-from mathutils import Vector
+from mathutils import Vector, Quaternion
 
 
 class BlenderM2Scene:
@@ -11,8 +11,8 @@ class BlenderM2Scene:
         self.m2 = m2
         self.skins = skins
         self.materials = {}
-        self.vertex_infos = []
         self.geosets = []
+        self.rig = None
         self.collision_mesh = None
         self.settings = prefs
 
@@ -70,6 +70,7 @@ class BlenderM2Scene:
         armature = bpy.data.armatures.new('{}_Armature'.format(self.m2.name.value))
         rig = bpy.data.objects.new(self.m2.name.value, armature)
         rig.location = (0, 0, 0)
+        self.rig = rig
 
         # Link the object to the scene
         scene = bpy.context.scene
@@ -118,6 +119,70 @@ class BlenderM2Scene:
                     grp = bl_obj.vertex_groups.new(name)
                     for (v, w) in vgroups[name]:
                         grp.add([v], w, 'REPLACE')
+
+    def load_animations(self):
+        if not len(self.m2.sequences):
+            print("\nNo animation data found to import.")
+            return
+        else:
+            print("\nImporting animations.")
+
+        if not self.rig:
+            print("\nArmature is not present on the scene. Skipping animation import. M2 is most likely corrupted.")
+            return
+
+        rig = self.rig
+        rig.animation_data_create()
+        bpy.context.scene.objects.active = rig
+        bpy.ops.object.mode_set(mode='POSE')
+
+        for i, sequence in enumerate(self.m2.sequences):
+            action = bpy.data.actions.new('Anim_{}'.format(i))  # TODO: read AnimationData DB to get names
+            action.use_fake_user = True  # TODO: check if this is the best solution
+            rig.animation_data.action = action
+
+            for bone in self.m2.bones:  # TODO <= TBC
+
+                bl_bone = rig.pose.bones[bone.name]
+                try:
+                    rotation_frames = bone.rotation.timestamps[i]
+                    rotation_track = bone.rotation.values[i]
+                except IndexError:
+                    rotation_frames = []
+                    rotation_track = []
+
+                try:
+                    translation_frames = bone.translation.timestamps[i]
+                    translation_track = bone.translation.values[i]
+                except IndexError:
+                    translation_frames = []
+                    translation_track = []
+
+                try:
+                    scale_frames = bone.scale.timestamps[i]
+                    scale_track = bone.scale.values[i]
+                except IndexError:
+                    scale_frames = []
+                    scale_track = []
+
+                for j, frame in enumerate(rotation_frames):
+                    bpy.context.scene.frame_set(frame)
+                    bl_bone.rotation_quaternion = rotation_track[j].to_quaternion()
+                    bl_bone.keyframe_insert(data_path='rotation_quaternion')
+
+                for j, frame in enumerate(translation_frames):
+                    bpy.context.scene.frame_set(frame)
+                    bl_bone.location = translation_track[j]
+                    bl_bone.keyframe_insert(data_path='location')
+
+                for j, frame in enumerate(scale_frames):
+                    bpy.context.scene.frame_set(frame)
+                    bl_bone.scale = scale_track[j]
+                    bl_bone.keyframe_insert(data_path='scale')
+
+        rig.animation_data.action = None
+
+        bpy.ops.object.mode_set(mode='OBJECT')
 
     def load_geosets(self):
         if not len(self.m2.vertices):
@@ -234,6 +299,7 @@ def import_m2(version, file):  # TODO: implement multiversioning
         bl_m2.load_materials(texture_dir)
         bl_m2.load_geosets()
         bl_m2.load_armature()
+        bl_m2.load_animations()
         bl_m2.load_collision()
 
     else:
