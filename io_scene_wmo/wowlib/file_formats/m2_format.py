@@ -225,8 +225,8 @@ class M2CompQuaternion:
         self.w = 0
 
     def read(self, f):
-        self.x = int16.read(f)
         self.y = int16.read(f)
+        self.x = -int16.read(f)
         self.z = int16.read(f)
         self.w = int16.read(f)
 

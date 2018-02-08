@@ -137,7 +137,7 @@ class BlenderM2Scene:
         bpy.ops.object.mode_set(mode='POSE')
 
         for i, sequence in enumerate(self.m2.sequences):
-            action = bpy.data.actions.new('Anim_{}'.format(i))  # TODO: read AnimationData DB to get names
+            action = bpy.data.actions.new('Anim_{}'.format(str(i).zfill(3)))  # TODO: read AnimationData DB to get names
             action.use_fake_user = True  # TODO: check if this is the best solution
             rig.animation_data.action = action
 
@@ -165,22 +165,44 @@ class BlenderM2Scene:
                     scale_frames = []
                     scale_track = []
 
+                done_rot = False
+                done_trans = False
+                done_scale = False
+
                 for j, frame in enumerate(rotation_frames):
-                    bpy.context.scene.frame_set(frame)
+                    bpy.context.scene.frame_set(frame * 0.0266666)
                     bl_bone.rotation_quaternion = rotation_track[j].to_quaternion()
-                    bl_bone.keyframe_insert(data_path='rotation_quaternion')
+                    bl_bone.keyframe_insert(data_path='rotation_quaternion', group=bone.name)
+                    done_rot = True
 
                 for j, frame in enumerate(translation_frames):
-                    bpy.context.scene.frame_set(frame)
+                    bpy.context.scene.frame_set(frame * 0.0266666)
                     bl_bone.location = translation_track[j]
-                    bl_bone.keyframe_insert(data_path='location')
+                    bl_bone.keyframe_insert(data_path='location', group=bone.name)
+                    done_trans = True
 
                 for j, frame in enumerate(scale_frames):
-                    bpy.context.scene.frame_set(frame)
+                    bpy.context.scene.frame_set(frame * 0.0266666)
                     bl_bone.scale = scale_track[j]
+                    bl_bone.keyframe_insert(data_path='scale', group=bone.name)
+                    done_trans = True
+
+                if not done_rot:
+                    bpy.context.scene.frame_set(0)
+                    bl_bone.keyframe_insert(data_path='rotation_quaternion')
+                if not done_trans:
+                    bpy.context.scene.frame_set(0)
+                    bl_bone.keyframe_insert(data_path='location')
+                if not done_scale:
+                    bpy.context.scene.frame_set(0)
                     bl_bone.keyframe_insert(data_path='scale')
 
-        rig.animation_data.action = None
+        rig.animation_data.action = bpy.data.actions['Anim_000']
+        bpy.context.scene.frame_set(0)
+        
+        # Calculate paths for posebones
+        bpy.ops.pose.select_all(action='SELECT')
+        bpy.ops.pose.paths_calculate()
 
         bpy.ops.object.mode_set(mode='OBJECT')
 
