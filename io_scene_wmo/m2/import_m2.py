@@ -268,6 +268,21 @@ class BlenderM2Scene:
 
             self.geosets.append(obj)
 
+    def load_attachments(self):
+        # TODO: store attachment type
+
+        for attachment in self.m2.attachments:
+            bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
+            obj = bpy.context.scene.objects.active
+            bpy.ops.object.constraint_add(type='CHILD_OF')
+            constraint = obj.constraints[-1]
+            constraint.target = self.rig
+            bone = self.m2.bones[attachment.bone]
+            constraint.subtarget = bone.name
+
+            obj.location = attachment.position
+            obj.scale = (0.094431, 0.094431, 0.094431)
+
     def load_collision(self):
 
         if not len(self.m2.collision_vertices):
@@ -329,6 +344,7 @@ def import_m2(version, file):  # TODO: implement multiversioning
         bl_m2.load_geosets()
         bl_m2.load_armature()
         bl_m2.load_animations()
+        bl_m2.load_attachments()
         bl_m2.load_collision()
 
     else:
