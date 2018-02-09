@@ -180,7 +180,7 @@ class BlenderM2Scene:
 
                 for j, frame in enumerate(translation_frames):
                     bpy.context.scene.frame_set(frame * 0.0266666)
-                    bl_bone.location = Vector(bone.pivot) + (rig.matrix_world.inverted() * bl_bone.bone.matrix_local.inverted() * Vector(translation_track[j]))
+                    bl_bone.location = bl_bone.bone.matrix_local.inverted() * (Vector(bone.pivot) + Vector(translation_track[j]))
                     bl_bone.keyframe_insert(data_path='location')
                     done_trans = True
 
@@ -307,15 +307,19 @@ def import_m2(version, file):  # TODO: implement multiversioning
         m2 = m2_file.root
         skins = m2_file.skin_profiles
 
+        '''
         if not game_data:
             print("\n\n### Loading game data ###")
             bpy.ops.scene.load_wow_filesystem()
             game_data = bpy.wow_game_data
+            game_data = None
 
         if game_data.files:
             print("\n\n### Extracting textures ###")
             textures = [m2_texture.filename.value for m2_texture in m2.textures if not m2_texture.type]
             game_data.extract_textures_as_png(texture_dir, textures)
+            
+        '''
 
         print("\n\n### Importing M2 model ###")
 
