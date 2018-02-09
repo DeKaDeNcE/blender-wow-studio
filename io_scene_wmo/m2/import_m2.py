@@ -272,7 +272,6 @@ class BlenderM2Scene:
         # TODO: store attachment type
 
         for attachment in self.m2.attachments:
-            print('Loading new attachment')
             bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
             obj = bpy.context.scene.objects.active
             obj.scale = (0.094431, 0.094431, 0.094431)
