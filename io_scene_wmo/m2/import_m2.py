@@ -272,16 +272,17 @@ class BlenderM2Scene:
         # TODO: store attachment type
 
         for attachment in self.m2.attachments:
-            bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
+            print('Loading new attachment')
+            bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
             obj = bpy.context.scene.objects.active
+            obj.scale = (0.094431, 0.094431, 0.094431)
             bpy.ops.object.constraint_add(type='CHILD_OF')
             constraint = obj.constraints[-1]
             constraint.target = self.rig
             bone = self.m2.bones[attachment.bone]
             constraint.subtarget = bone.name
 
-            obj.location = attachment.position
-            obj.scale = (0.094431, 0.094431, 0.094431)
+            obj.location = self.rig.data.bones[bone.name].matrix_local.inverted() * Vector(attachment.position)
 
     def load_collision(self):
 
