@@ -284,7 +284,7 @@ class BlenderM2Scene:
 
             obj.location = self.rig.data.bones[bone.name].matrix_local.inverted() * Vector(attachment.position)
 
-            obj.name = M2AttachmentTypes.get_attachment_name(attachment, i)
+            obj.name = M2AttachmentTypes.get_attachment_name(attachment.id, i)
 
     def load_collision(self):
 
