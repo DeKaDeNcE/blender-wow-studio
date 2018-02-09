@@ -1,7 +1,7 @@
 import bpy
 import os
 from ..wowlib.m2_file import M2File, M2Externals
-from ..wowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones
+from ..wowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones, M2AttachmentTypes
 from ..utils import parse_bitfield
 from mathutils import Vector, Quaternion
 
@@ -270,8 +270,9 @@ class BlenderM2Scene:
 
     def load_attachments(self):
         # TODO: store attachment type
+        # TODO: unknown field
 
-        for attachment in self.m2.attachments:
+        for i, attachment in enumerate(self.m2.attachments):
             bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
             obj = bpy.context.scene.objects.active
             obj.scale = (0.094431, 0.094431, 0.094431)
@@ -282,6 +283,8 @@ class BlenderM2Scene:
             constraint.subtarget = bone.name
 
             obj.location = self.rig.data.bones[bone.name].matrix_local.inverted() * Vector(attachment.position)
+
+            obj.name = M2AttachmentTypes.get_attachment_name(self.m2.attachment_lookup_table[attachment.id], i)
 
     def load_collision(self):
 

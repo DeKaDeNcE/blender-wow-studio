@@ -178,3 +178,69 @@ class M2KeyBones(Enum):
         print("\nUnknown keybone ID: {}".format(keybone_id))
         return "UNK_Keybone"
 
+class M2AttachmentTypes(Enum):
+    Shield_MountMain_ItemVisual0 = 0
+    HandRight_ItemVisual1 = 1
+    HandLeft_ItemVisual2 = 2
+    ElbowRight_ItemVisual3 = 3
+    ElbowLeft_ItemVisual4 = 4
+    ShoulderRight = 5
+    ShoulderLeft = 6
+    KneeRight = 7
+    KneeLeft = 8
+    HipRight = 9
+    HipLeft = 10
+    Helm = 11
+    Back = 12
+    ShoulderFlapRight = 13
+    ShoulderFlapLeft = 14
+    ChestBloodFront = 15
+    ChestBloodBack = 16
+    Breath = 17
+    PlayerName = 18
+    Base = 19
+    Head = 20
+    SpellLeftHand = 21
+    SpellRightHand = 22
+    Special1 = 23
+    Special2 = 24
+    Special3 = 25
+    SheathMainHand = 26
+    SheathOffHand = 27
+    SheathShield = 28
+    PlayerNameMounted = 29
+    LargeWeaponLeft = 30
+    LargeWeaponRight = 31
+    HipWeaponLeft = 32
+    HipWeaponRight = 33
+    Chest = 34
+    HandArrow = 35
+    Bullet = 36
+    SpellHandOmni = 37
+    SpellHandDirected = 38
+    VehicleSeat1 = 39
+    VehicleSeat2 = 40
+    VehicleSeat3 = 41
+    VehicleSeat4 = 42
+    VehicleSeat5 = 43
+    VehicleSeat6 = 44
+    VehicleSeat7 = 45
+    VehicleSeat8 = 47
+    LeftFoot = 48
+    RightFoot = 49
+    ShieldNoGlove = 50
+    SpineLow = 51
+    AlteredShoulderR = 52
+    AlteredShoulderL = 53
+    BeltBuckle = 54
+    SheathCrossbow = 55
+    HeadTop = 56
+
+    @classmethod
+    def get_attachment_name(cls, attachment_id, idx):
+        for field in cls:
+            if field.value == attachment_id:
+                return field.name
+
+        return "Attachment_{}".format(str(idx).zfill(3))
+
