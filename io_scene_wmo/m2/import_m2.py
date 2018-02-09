@@ -137,6 +137,9 @@ class BlenderM2Scene:
         bpy.ops.object.mode_set(mode='POSE')
 
         for i, sequence in enumerate(self.m2.sequences):
+            if not sequence.flags & 0x20:
+                print('Skipping .anim animation for now.') # TODO: bother implementing this
+
             action = bpy.data.actions.new('Anim_{}'.format(str(i).zfill(3)))  # TODO: read AnimationData DB to get names
             action.use_fake_user = True  # TODO: check if this is the best solution
             rig.animation_data.action = action
@@ -177,14 +180,14 @@ class BlenderM2Scene:
 
                 for j, frame in enumerate(translation_frames):
                     bpy.context.scene.frame_set(frame * 0.0266666)
-                    bl_bone.location = translation_track[j]
-                    bl_bone.keyframe_insert(data_path='location', group=bone.name)
+                    bl_bone.location = Vector(bone.pivot) + (rig.matrix_world.inverted() * bl_bone.bone.matrix_local.inverted() * Vector(translation_track[j]))
+                    bl_bone.keyframe_insert(data_path='location')
                     done_trans = True
 
                 for j, frame in enumerate(scale_frames):
                     bpy.context.scene.frame_set(frame * 0.0266666)
                     bl_bone.scale = scale_track[j]
-                    bl_bone.keyframe_insert(data_path='scale', group=bone.name)
+                    bl_bone.keyframe_insert(data_path='scale')
                     done_trans = True
 
                 if not done_rot:
