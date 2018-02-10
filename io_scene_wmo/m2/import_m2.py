@@ -279,6 +279,7 @@ class BlenderM2Scene:
             bpy.ops.object.constraint_add(type='CHILD_OF')
             constraint = obj.constraints[-1]
             constraint.target = self.rig
+            obj.parent = self.rig
             bone = self.m2.bones[attachment.bone]
             constraint.subtarget = bone.name
 
