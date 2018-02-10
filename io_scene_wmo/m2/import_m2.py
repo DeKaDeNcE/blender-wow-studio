@@ -1,7 +1,8 @@
 import bpy
 import os
 from ..pywowlib.m2_file import M2File, M2Externals
-from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones, M2AttachmentTypes
+from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes
+
 from ..utils import parse_bitfield
 from mathutils import Vector, Quaternion
 
