@@ -1,7 +1,7 @@
 import bpy
 import os
-from ..wowlib.m2_file import M2File, M2Externals
-from ..wowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones, M2AttachmentTypes
+from ..pywowlib.m2_file import M2File, M2Externals
+from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones, M2AttachmentTypes
 from ..utils import parse_bitfield
 from mathutils import Vector, Quaternion
 
@@ -138,7 +138,7 @@ class BlenderM2Scene:
 
         for i, sequence in enumerate(self.m2.sequences):
             if not sequence.flags & 0x20:
-                print('Skipping .anim animation for now.') # TODO: bother implementing this
+                print('Skipping .anim animation for now.')  # TODO: bother implementing this
 
             action = bpy.data.actions.new('Anim_{}'.format(str(i).zfill(3)))  # TODO: read AnimationData DB to get names
             action.use_fake_user = True  # TODO: check if this is the best solution

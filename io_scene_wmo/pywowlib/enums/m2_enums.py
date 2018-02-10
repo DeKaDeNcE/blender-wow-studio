@@ -178,6 +178,7 @@ class M2KeyBones(Enum):
         print("\nUnknown keybone ID: {}".format(keybone_id))
         return "UNK_Keybone"
 
+
 class M2AttachmentTypes(Enum):
     Shield_MountMain_ItemVisual0 = 0
     HandRight_ItemVisual1 = 1
