@@ -2,6 +2,8 @@ import bpy
 import os
 from ..pywowlib.m2_file import M2File, M2Externals
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes
+from ..pywowlib.wdbx.wdbc import DBCFile
+from ..pywowlib.wdbx.definitions.wotlk import AnimationData
 
 from ..utils import parse_bitfield
 from mathutils import Vector, Quaternion
@@ -137,11 +139,16 @@ class BlenderM2Scene:
         bpy.context.scene.objects.active = rig
         bpy.ops.object.mode_set(mode='POSE')
 
+        # TODO: remove hardcoded path
+        anim_data_dbc = DBCFile(AnimationData)
+        anim_data_dbc.read(open('D:\\WoWModding\\World of Warcraft 3.3.5a\\Data\\DBFilesClient\\AnimationData.dbc', 'rb'))
+
         for i, sequence in enumerate(self.m2.sequences):
             if not sequence.flags & 0x20:
                 print('Skipping .anim animation for now.')  # TODO: bother implementing this
 
-            action = bpy.data.actions.new('Anim_{}'.format(str(i).zfill(3)))  # TODO: read AnimationData DB to get names
+            name = 'Anim_{}'.format(str(i).zfill(3)) if not anim_data_dbc else anim_data_dbc.get_field(sequence.id, 'Name')
+            action = bpy.data.actions.new()
             action.use_fake_user = True  # TODO: check if this is the best solution
             rig.animation_data.action = action
 

@@ -1,4 +1,4 @@
-from io_utils.types import *
+from ..io_utils.types import *
 from collections import namedtuple
 
 

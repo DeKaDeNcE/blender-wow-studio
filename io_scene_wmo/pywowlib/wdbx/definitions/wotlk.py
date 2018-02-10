@@ -1,6 +1,6 @@
 from enum import OrderedDict
 from ..wdbc import DBCString
-from io_utils.types import *
+from ...io_utils.types import *
 
 AnimationData = OrderedDict((
     ('ID', uint32),
