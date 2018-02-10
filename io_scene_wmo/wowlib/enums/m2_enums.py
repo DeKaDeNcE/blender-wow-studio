@@ -240,7 +240,7 @@ class M2AttachmentTypes(Enum):
     def get_attachment_name(cls, attachment_id, idx):
         for field in cls:
             if field.value == attachment_id:
-                return field.name
+                return "Att_{}".format(field.name)
 
-        return "Attachment_{}".format(str(idx).zfill(3))
+        return "Att_{}".format(str(idx).zfill(3))
 
