@@ -279,12 +279,30 @@ class BlenderM2Scene:
             bpy.ops.object.constraint_add(type='CHILD_OF')
             constraint = obj.constraints[-1]
             constraint.target = self.rig
+            obj.parent = self.rig
             bone = self.m2.bones[attachment.bone]
             constraint.subtarget = bone.name
 
             obj.location = self.rig.data.bones[bone.name].matrix_local.inverted() * Vector(attachment.position)
 
             obj.name = M2AttachmentTypes.get_attachment_name(attachment.id, i)
+
+    def load_lights(self):
+        # TODO: animate values after UI is implemented
+        print(len(self.m2.lights))
+        for i, light in enumerate(self.m2.lights):
+            bpy.ops.object.lamp_add(type='POINT' if light.type else 'SPOT', location=(0, 0, 0))
+            obj = bpy.context.scene.objects.active
+
+            if self.rig:
+                obj.parent = self.rig
+
+            if light.bone >= 0:
+                bpy.ops.object.constraint_add(type='CHILD_OF')
+                constraint = obj.constraints[-1]
+                constraint.target = self.rig
+                bone = self.m2.bones[light.bone]
+                constraint.subtarget = bone.name
 
     def load_collision(self):
 
@@ -349,6 +367,7 @@ def import_m2(version, file):  # TODO: implement multiversioning
         bl_m2.load_animations()
         bl_m2.load_attachments()
         bl_m2.load_collision()
+        bl_m2.load_lights()
 
     else:
         pass
