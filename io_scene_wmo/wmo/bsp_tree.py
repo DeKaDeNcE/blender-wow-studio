@@ -1,10 +1,4 @@
-from . import wmo_format
-from .wmo_format import *
-
-from . import collision
 from .collision import *
-
-import mathutils
 from mathutils import *
 
 import sys

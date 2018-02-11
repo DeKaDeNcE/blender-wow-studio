@@ -159,3 +159,4 @@ def calculate_bounding_box(vertices):
         elif v[2] > corner2[2]:
             corner2[2] = v[2]
     return corner1, corner2
+

@@ -1201,15 +1201,6 @@ class WoWToolsPanelLiquidFlags(bpy.types.Panel):
                 and context.object.WowLiquid.Enabled
                 )
 
-def render_gamedata_toggle(self, context):
-    game_data_loaded = hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files
-
-    layout = self.layout
-    row = layout.row(align=True)
-    icon = 'COLOR_GREEN' if game_data_loaded else 'COLOR_RED'
-    text = "Disconnect WoW" if game_data_loaded else "Connect WoW"
-    row.operator("scene.load_wow_filesystem", text=text, icon=icon)
-
 
 def register():
     RegisterWowRootProperties()
@@ -1223,7 +1214,7 @@ def register():
     RegisterWoWVisibilityProperties()
     RegisterWowFogProperties()
     bpy.types.INFO_MT_add.prepend(wow_components_add_menu_item)
-    bpy.types.INFO_HT_header.append(render_gamedata_toggle)
+
 
 def unregister():
     UnregisterWowRootProperties()
@@ -1237,7 +1228,5 @@ def unregister():
     UnregisterWoWVisibilityProperties()
     UnregisterWowFogProperties()
     bpy.types.INFO_MT_add.remove(wow_components_add_menu_item)
-    bpy.types.INFO_HT_header.remove(render_gamedata_toggle)
-
 
 

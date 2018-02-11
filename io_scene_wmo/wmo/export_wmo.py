@@ -1,8 +1,8 @@
-from .wmo_file import WMOFile
-from .wmo_group import WMOGroupFile
-
 import bpy
 import time
+
+from .wmo_file import WMOFile
+from .wmo_group import WMOGroupFile
 
 
 def export_wmo_from_blender_scene(filepath, autofill_textures, export_selected):

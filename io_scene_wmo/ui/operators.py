@@ -1,0 +1,132 @@
+import bpy
+from bpy.props import StringProperty, BoolProperty
+from bpy_extras.io_utils import ExportHelper
+
+from ..pywowlib.archives.mpq.wow import WoWFileData
+from ..wmo.import_wmo import import_wmo_to_blender_scene
+from ..wmo.export_wmo import export_wmo_from_blender_scene
+
+
+#############################################################
+######                 Common operators                ######
+#############################################################
+
+
+class LoadWoWFileSystemOP(bpy.types.Operator):
+    bl_idname = 'scene.load_wow_filesystem'
+    bl_label = 'Load WoW filesystem'
+    bl_description = 'Establish connection to World of Warcraft client files'
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+
+        if hasattr(bpy, "wow_game_data"):
+            for storage, type in bpy.wow_game_data.files:
+                if type:
+                    storage.close()
+
+            delattr(bpy, "wow_game_data")
+            self.report({'INFO'}, "WoW game data is unloaded.")
+
+        else:
+
+            preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
+
+            bpy.wow_game_data = WoWFileData(preferences.wow_path, preferences.blp_path)
+
+            if not bpy.wow_game_data.files:
+                self.report({'ERROR'}, "WoW game data is not loaded. Check settings.")
+                return {'CANCELLED'}
+
+            self.report({'INFO'}, "WoW game data is loaded.")
+
+        return {'FINISHED'}
+
+
+#############################################################
+######             Import/Export Operators             ######
+#############################################################
+
+
+class WMOImport(bpy.types.Operator):
+    """Load WMO mesh data"""
+    bl_idname = "import_mesh.wmo"
+    bl_label = "Import WMO"
+    bl_options = {'UNDO', 'REGISTER'}
+
+    filepath = StringProperty(
+        subtype='FILE_PATH',
+        )
+
+    filter_glob = StringProperty(
+        default="*.wmo",
+        options={'HIDDEN'}
+        )
+
+    load_textures = BoolProperty(
+        name="Fetch textures",
+        description="Automatically fetch textures from game data",
+        default=True,
+        )
+
+    import_doodads = BoolProperty(
+        name="Import doodad sets",
+        description="Import WMO doodad set to scene",
+        default=True,
+        )
+
+    group_objects = BoolProperty(
+        name="Group objects",
+        description="Group all objects of this WMO on import",
+        default=False,
+        )
+
+    def execute(self, context):
+        import_wmo_to_blender_scene(self.filepath, self.load_textures, self.import_doodads, self.group_objects)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        wm.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+class WMOExport(bpy.types.Operator, ExportHelper):
+    """Save WMO mesh data"""
+    bl_idname = "export_mesh.wmo"
+    bl_label = "Export WMO"
+    bl_options = {'PRESET', 'REGISTER'}
+
+    filename_ext = ".wmo"
+
+    filter_glob = StringProperty(
+        default="*.wmo",
+        options={'HIDDEN'}
+    )
+
+    export_selected = BoolProperty(
+        name="Export selected objects",
+        description="Makes the exporter export only selected objects on the scene",
+        default=False,
+        )
+
+    autofill_textures = BoolProperty(
+        name="Fill texture paths",
+        description="Automatically fills WoW Material texture paths based on texture filenames",
+        default=True,
+        )
+
+    def execute(self, context):
+        export_wmo_from_blender_scene(self.filepath, self.autofill_textures, self.export_selected)
+
+        return {'FINISHED'}
+
+
+def render_gamedata_toggle(self, context):
+    game_data_loaded = hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files
+
+    layout = self.layout
+    row = layout.row(align=True)
+    icon = 'COLOR_GREEN' if game_data_loaded else 'COLOR_RED'
+    text = "Disconnect WoW" if game_data_loaded else "Connect WoW"
+    row.operator("scene.load_wow_filesystem", text=text, icon=icon)

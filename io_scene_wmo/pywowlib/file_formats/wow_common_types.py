@@ -146,3 +146,17 @@ class M2Array(metaclass=Template):
     def __iter__(self):
         return self.values.__iter__()
 
+
+class ChunkHeader:
+    def __init__(self, magic='', size=0):
+        self.Magic = magic
+        self.Size = size
+
+    def read(self, f):
+        self.Magic = f.read(4)[0:4].decode('ascii')
+        self.Size = struct.unpack("I", f.read(4))[0]
+
+    def write(self, f):
+        f.write(self.Magic[:4].encode('ascii'))
+        f.write(struct.pack('I', self.Size))
+

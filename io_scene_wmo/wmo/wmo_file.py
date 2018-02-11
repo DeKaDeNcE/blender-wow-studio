@@ -1,12 +1,12 @@
-from .wmo_group import *
-from .wmo_format import *
-from ..m2 import import_doodad as m2
-from mathutils.kdtree import KDTree
-
 import bpy
 import operator
 import os
 import time
+
+from .wmo_group import *
+from ..m2 import import_doodad as m2
+from ..pywowlib.file_formats.wmo_format_root import *
+from ..pywowlib.file_formats.wmo_group_format import *
 
 
 class WMOFile:

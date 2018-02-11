@@ -1,6 +1,5 @@
 import re
 import os
-import bpy
 import time
 import subprocess
 from .storm import MPQFile
@@ -191,34 +190,3 @@ class BLPConverter:
             final_command.extend(cur_args)
             if subprocess.call(final_command):
                 print("\nBLP convertion failed. Some textures might not be converted correctly.")
-
-
-class WOW_FILESYSTEM_LOAD_OP(bpy.types.Operator):
-    bl_idname = 'scene.load_wow_filesystem'
-    bl_label = 'Load WoW filesystem'
-    bl_description = 'Establish connection to World of Warcraft client files'
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-
-        if hasattr(bpy, "wow_game_data"):
-            for storage, type in bpy.wow_game_data.files:
-                if type:
-                    storage.close()
-
-            delattr(bpy, "wow_game_data")
-            self.report({'INFO'}, "WoW game data is unloaded.")
-
-        else:
-
-            preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
-
-            bpy.wow_game_data = WoWFileData(preferences.wow_path, preferences.blp_path)
-
-            if not bpy.wow_game_data.files:
-                self.report({'ERROR'}, "WoW game data is not loaded. Check settings.")
-                return {'CANCELLED'}
-
-            self.report({'INFO'}, "WoW game data is loaded.")
-
-        return {'FINISHED'}

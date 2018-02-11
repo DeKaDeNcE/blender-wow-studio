@@ -8,7 +8,7 @@ from ..pywowlib.io_utils.types import uint32, vec3D
 from ..pywowlib.file_formats.m2_format import M2CompQuaternion
 
 from ..utils import parse_bitfield
-from mathutils import Vector, Quaternion
+from mathutils import Vector
 
 
 class BlenderM2Scene:
@@ -257,13 +257,11 @@ class BlenderM2Scene:
             return
 
         else:
-            print("\nImporting geosets...")
+            print("\nImporting geosets.")
 
         skin = self.skins[0]
 
         for smesh_i, smesh in enumerate(skin.submeshes):
-
-            # TODO: correctly name geosets
 
             vertices = [self.m2.vertices[skin.vertex_indices[i]].pos
                         for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
