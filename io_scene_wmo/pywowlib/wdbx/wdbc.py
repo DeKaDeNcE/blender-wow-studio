@@ -46,8 +46,7 @@ class DBCString:
                 break
         f.seek(pos)
 
-        strng.decode('utf-8')
-        return str(strng)
+        return strng.decode('utf-8')
 
     '''
     @staticmethod
