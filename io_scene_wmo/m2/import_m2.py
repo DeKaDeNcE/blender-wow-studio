@@ -234,7 +234,7 @@ class BlenderM2Scene:
                     bpy.context.scene.frame_set(frame * 0.0266666)
                     bl_bone.scale = scale_track[j]
                     bl_bone.keyframe_insert(data_path='scale')
-                    done_trans = True
+                    done_scale = True
 
                 if not done_rot:
                     bpy.context.scene.frame_set(0)
