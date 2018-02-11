@@ -144,14 +144,14 @@ class BlenderM2Scene:
         anim_data_dbc.read(open('D:\\WoWModding\\World of Warcraft 3.3.5a\\Data\\DBFilesClient\\AnimationData.dbc', 'rb'))
 
         for i, sequence in enumerate(self.m2.sequences):
-            if not sequence.flags & 0x20:
-                print('Skipping .anim animation for now.')  # TODO: bother implementing this
 
             field_name = None
             if anim_data_dbc:
                 field_name = anim_data_dbc.get_field(sequence.id, 'Name')
 
-            name = 'Anim_{}'.format(str(i).zfill(3)) if not field_name else field_name
+            name = '{}_UnkAnim'.format(str(i).zfill(3)) if not field_name \
+                else "{}_{}_({})".format(str(i).zfill(3), field_name, sequence.variation_index)
+
             action = bpy.data.actions.new(name=name)
             action.use_fake_user = True  # TODO: check if this is the best solution
             rig.animation_data.action = action
@@ -214,10 +214,6 @@ class BlenderM2Scene:
 
         rig.animation_data.action = bpy.data.actions[0]
         bpy.context.scene.frame_set(0)
-        
-        # Calculate paths for posebones
-        bpy.ops.pose.select_all(action='SELECT')
-        bpy.ops.pose.paths_calculate()
 
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -295,9 +291,11 @@ class BlenderM2Scene:
             bone = self.m2.bones[attachment.bone]
             constraint.subtarget = bone.name
 
-            obj.location = self.rig.data.bones[bone.name].matrix_local.inverted() * Vector(attachment.position)
+            bl_edit_bone = self.rig.data.bones[bone.name]
+            obj.location = bl_edit_bone.matrix_local.inverted() * Vector(attachment.position)
 
             obj.name = M2AttachmentTypes.get_attachment_name(attachment.id, i)
+            bl_edit_bone.name = obj.name
 
     def load_lights(self):
         # TODO: animate values after UI is implemented
@@ -355,19 +353,15 @@ def import_m2(version, file):  # TODO: implement multiversioning
         m2 = m2_file.root
         skins = m2_file.skin_profiles
 
-        '''
         if not game_data:
             print("\n\n### Loading game data ###")
             bpy.ops.scene.load_wow_filesystem()
             game_data = bpy.wow_game_data
-            game_data = None
 
         if game_data.files:
             print("\n\n### Extracting textures ###")
             textures = [m2_texture.filename.value for m2_texture in m2.textures if not m2_texture.type]
             game_data.extract_textures_as_png(texture_dir, textures)
-            
-        '''
 
         print("\n\n### Importing M2 model ###")
 

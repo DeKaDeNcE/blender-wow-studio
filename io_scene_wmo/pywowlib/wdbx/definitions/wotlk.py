@@ -1,4 +1,4 @@
-from enum import OrderedDict
+from collections import OrderedDict
 from ..wdbc import DBCString
 from ...io_utils.types import *
 
