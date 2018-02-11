@@ -99,7 +99,7 @@ class M2Array(metaclass=Template):
             else:
                 self.values = [self.type().read(f) for _ in range(self.n_elements)]
         except EOFError:
-            self.values = [self.type_()]
+            self.values = [self.type()]
 
         f.seek(pos)
 
@@ -154,9 +154,9 @@ class ChunkHeader:
 
     def read(self, f):
         self.Magic = f.read(4)[0:4].decode('ascii')
-        self.Size = struct.unpack("I", f.read(4))[0]
+        self.Size = unpack("I", f.read(4))[0]
 
     def write(self, f):
         f.write(self.Magic[:4].encode('ascii'))
-        f.write(struct.pack('I', self.Size))
+        f.write(pack('I', self.Size))
 

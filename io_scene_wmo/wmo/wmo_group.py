@@ -1,10 +1,10 @@
-from .bsp_tree import *
-
-from math import *
-
+import bpy
 import os
-import sys
 import mathutils
+
+from math import floor, ceil, pi
+from .bsp_tree import *
+from ..pywowlib.file_formats.wmo_group_format import *
 
 
 class WMOGroupFile:
