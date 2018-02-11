@@ -47,7 +47,7 @@ class DBCString:
         f.seek(pos)
 
         strng.decode('utf-8')
-        return strng
+        return str(strng)
 
     '''
     @staticmethod
@@ -66,13 +66,12 @@ class DBCFile:
     def read(self, f):
         self.header.read(f)
         str_block_ofs = 20 + self.header.record_count * self.header.record_size
-        print(self.field_types)
         for _ in range(self.header.record_count):
             self.records.append(self.field_names(*[f_type.read(f, str_block_ofs) if f_type is DBCString else f_type.read(f) for f_type in self.field_types]))
-            print(self.records[-1].Name)
 
     def get_field(self, id, name):
         for record in self.records:
             if record.ID == id:
                 return getattr(record, name)
+
 

@@ -14,7 +14,7 @@ class M2Bounds:
         self.radius = 0.0
 
     def read(self, f):
-        self.extent = CAaBox.read(f)
+        self.extent.read(f)
         self.radius = float32.read(f)
         return self
 
@@ -354,7 +354,7 @@ class M2Sequence:
         self.flags = uint32.read(f)
         self.frequency = int16.read(f)
         self.padding = uint16.read(f)
-        self.replay = M2Range()
+        self.replay.read(f)
 
         if VERSION < M2Versions.WOD:
             self.blend_time = uint32.read(f)
@@ -362,7 +362,7 @@ class M2Sequence:
             self.blend_time_in = uint16.read(f)
             self.blend_time_out = uint16.read(f)
 
-        self.bounds = M2Bounds()
+        self.bounds.read(f)
         self.variation_next = int16.read(f)
         self.alias_next = uint16.read(f)
 
@@ -1131,7 +1131,7 @@ class M2Header:
         self.global_flags = 0
         self.global_loops = M2Array(uint32)
         self.sequences = M2Array(M2Sequence)
-        self.sequence_loopkup = M2Array(uint16)
+        self.sequence_lookup = M2Array(uint16)
 
         if VERSION <= M2Versions.TBC:
             self.playable_animation_lookup = M2Array(uint32)
@@ -1196,7 +1196,7 @@ class M2Header:
         self.global_flags = uint32.read(f)
         self.global_loops.read(f)
         self.sequences.read(f)
-        self.sequence_loopkup.read(f)
+        self.sequence_lookup.read(f)
 
         if VERSION <= M2Versions.TBC:
             self.playable_animation_lookup.read(f)

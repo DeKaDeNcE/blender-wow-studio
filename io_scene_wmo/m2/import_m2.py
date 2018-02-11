@@ -147,8 +147,12 @@ class BlenderM2Scene:
             if not sequence.flags & 0x20:
                 print('Skipping .anim animation for now.')  # TODO: bother implementing this
 
-            name = 'Anim_{}'.format(str(i).zfill(3)) if not anim_data_dbc else anim_data_dbc.get_field(sequence.id, 'Name')
-            action = bpy.data.actions.new()
+            field_name = None
+            if anim_data_dbc:
+                field_name = anim_data_dbc.get_field(sequence.id, 'Name')
+
+            name = 'Anim_{}'.format(str(i).zfill(3)) if not field_name else field_name
+            action = bpy.data.actions.new(name=name)
             action.use_fake_user = True  # TODO: check if this is the best solution
             rig.animation_data.action = action
 
@@ -208,7 +212,7 @@ class BlenderM2Scene:
                     bpy.context.scene.frame_set(0)
                     bl_bone.keyframe_insert(data_path='scale')
 
-        rig.animation_data.action = bpy.data.actions['Anim_000']
+        rig.animation_data.action = bpy.data.actions[0]
         bpy.context.scene.frame_set(0)
         
         # Calculate paths for posebones
