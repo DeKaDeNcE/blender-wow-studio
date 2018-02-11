@@ -1,23 +1,15 @@
 import os
-from collections import namedtuple
 
 from .file_formats.m2_format import M2Header, M2Versions
 from .file_formats.skin_format import M2SkinProfile
 
-M2Externals = namedtuple('M2Externals',
-                         [
-                            "skin_files",
-                            "anim_files",
-                            "skel_files",
-                            "phys_files"
-                         ])
-
 
 class M2File:
-    def __init__(self, version, filepath=None, file=None, externals=None):
+    def __init__(self, version, filepath=None):
         self.version = version
 
         if filepath:
+            self.filepath = filepath
             with open(filepath, 'rb') as f:
                 self.root = M2Header()
                 self.root.read(f)
@@ -32,21 +24,8 @@ class M2File:
                 else:
                     self.skin_profiles = self.root.skin_profiles
 
-        elif file:
-            self.root = M2Header.read(file)
-            if not externals:
-                raise FileNotFoundError("\nExternal M2 dependencies are missing in the constructor call.")
-
-            self.skin_profiles = externals.skin_profiles
-            self.anim_files = externals.anim_files
-
-            if version >= M2Versions.MOP:
-                self.phys_files = externals.phys_files
-
-            if version >= M2Versions.LEGION:
-                self.skel_files = externals.skel_files
-
         else:
+            self.filepath = None
             self.root = M2Header()
             self.skin_profiles = [M2SkinProfile()]
 

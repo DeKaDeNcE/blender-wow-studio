@@ -78,22 +78,29 @@ fixed16 = int16
 class M2Array(metaclass=Template):
 
     def __init__(self, type_):
+        self.n_elements = 0
+        self.ofs_elements = 0
         self.type = type_
         self.values = []
 
     def read(self, f):
-        n_elements = uint32.read(f)
-        ofs_elements = uint32.read(f)
+        self.n_elements = uint32.read(f)
+        self.ofs_elements = uint32.read(f)
 
         pos = f.tell()
-        f.seek(ofs_elements)
 
-        type_t = type(self.type)
+        try:
+            f.seek(self.ofs_elements)
 
-        if type_t is GenericType:
-            self.values = [self.type.read(f) for _ in range(n_elements)]
-        else:
-            self.values = [self.type().read(f) for _ in range(n_elements)]
+            type_t = type(self.type)
+
+            if type_t is GenericType:
+                self.values = [self.type.read(f) for _ in range(self.n_elements)]
+            else:
+                self.values = [self.type().read(f) for _ in range(self.n_elements)]
+        except EOFError:
+            self.values = [self.type_()]
+
         f.seek(pos)
 
         return self

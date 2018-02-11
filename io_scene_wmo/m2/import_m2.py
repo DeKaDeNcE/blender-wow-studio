@@ -1,9 +1,11 @@
 import bpy
 import os
-from ..pywowlib.m2_file import M2File, M2Externals
+from ..pywowlib.m2_file import M2File
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes
 from ..pywowlib.wdbx.wdbc import DBCFile
 from ..pywowlib.wdbx.definitions.wotlk import AnimationData
+from ..pywowlib.io_utils.types import uint32, vec3D
+from ..pywowlib.file_formats.m2_format import M2CompQuaternion
 
 from ..utils import parse_bitfield
 from mathutils import Vector, Quaternion
@@ -156,33 +158,64 @@ class BlenderM2Scene:
             action.use_fake_user = True  # TODO: check if this is the best solution
             rig.animation_data.action = action
 
+            done_rot = False
+            done_trans = False
+            done_scale = False
+
+            anim_file = None
+            if not sequence.flags & 0x130:
+                anim_path = "{}{}-{}.anim".format(os.path.splitext(self.m2.filepath)[0],
+                                                  str(sequence.id).zfill(4), str(sequence.variation_index).zfill(2))
+
+                # TODO: implement game-data loading
+                anim_file = open(anim_path, 'rb')
+
             for bone in self.m2.bones:  # TODO <= TBC
 
                 bl_bone = rig.pose.bones[bone.name]
-                try:
+
+                if bone.rotation.timestamps.n_elements > i:
                     rotation_frames = bone.rotation.timestamps[i]
                     rotation_track = bone.rotation.values[i]
-                except IndexError:
+                else:
                     rotation_frames = []
                     rotation_track = []
 
-                try:
+                if bone.translation.timestamps.n_elements > i:
                     translation_frames = bone.translation.timestamps[i]
                     translation_track = bone.translation.values[i]
-                except IndexError:
+                else:
                     translation_frames = []
                     translation_track = []
 
-                try:
+                if bone.scale.timestamps.n_elements > i:
                     scale_frames = bone.scale.timestamps[i]
                     scale_track = bone.scale.values[i]
-                except IndexError:
+                else:
                     scale_frames = []
                     scale_track = []
 
-                done_rot = False
-                done_trans = False
-                done_scale = False
+                if anim_file:
+                    if len(rotation_frames):
+                        anim_file.seek(rotation_frames.ofs_elements)
+                        rotation_frames.values = [uint32.read(anim_file) for _ in range(rotation_frames.n_elements)]
+
+                        anim_file.seek(rotation_track.ofs_elements)
+                        rotation_track.values = [M2CompQuaternion().read(anim_file) for _ in range(rotation_track.n_elements)]
+
+                    if len(translation_frames):
+                        anim_file.seek(translation_frames.ofs_elements)
+                        translation_frames.values = [uint32.read(anim_file) for _ in range(translation_frames.n_elements)]
+
+                        anim_file.seek(translation_track.ofs_elements)
+                        translation_track.values = [vec3D.read(anim_file) for _ in range(translation_track.n_elements)]
+
+                    if len(scale_frames):
+                        anim_file.seek(scale_frames.ofs_elements)
+                        scale_frames.values = [uint32.read(anim_file) for _ in range(scale_frames.n_elements)]
+
+                        anim_file.seek(scale_track.ofs_elements)
+                        scale_track.values = [vec3D.read(anim_file) for _ in range(scale_track.n_elements)]
 
                 for j, frame in enumerate(rotation_frames):
                     bpy.context.scene.frame_set(frame * 0.0266666)
@@ -192,7 +225,8 @@ class BlenderM2Scene:
 
                 for j, frame in enumerate(translation_frames):
                     bpy.context.scene.frame_set(frame * 0.0266666)
-                    bl_bone.location = bl_bone.bone.matrix_local.inverted() * (Vector(bone.pivot) + Vector(translation_track[j]))
+                    bl_bone.location = bl_bone.bone.matrix_local.inverted() * (Vector(bone.pivot) +
+                                                                               Vector(translation_track[j]))
                     bl_bone.keyframe_insert(data_path='location')
                     done_trans = True
 
@@ -351,6 +385,7 @@ def import_m2(version, file):  # TODO: implement multiversioning
     if type(file) is str:
         m2_file = M2File(version, filepath=file)
         m2 = m2_file.root
+        m2.filepath = file # TODO: HACK
         skins = m2_file.skin_profiles
 
         if not game_data:
