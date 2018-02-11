@@ -5,6 +5,7 @@ import mathutils
 from math import floor, ceil, pi
 from .bsp_tree import *
 from ..pywowlib.file_formats.wmo_group_format import *
+from ..pywowlib.file_formats.wmo_format_root import MVER_chunk
 
 
 class WMOGroupFile:
