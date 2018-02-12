@@ -52,14 +52,12 @@ class BlenderM2Scene:
             except RuntimeError:
                 pass
 
-            ''' NEEDS UI
             # filling material settings
             parse_bitfield(tex_unit.flags, blender_mat.WowM2Material.Flags, 0x80)  # texture unit flags
             parse_bitfield(m2_mat.flags, blender_mat.WowM2Material.RenderFlags, 0x800)  # render flags
 
-            blender_mat.WowM2Material.BlendingMode = m2_mat.blending_mode  # TODO: ? bitfield
-            blender_mat.WowM2Material.Shader = tex_unit.shader_id
-            '''
+            blender_mat.WowM2Material.BlendingMode = str(m2_mat.blending_mode)  # TODO: ? bitfield
+            blender_mat.WowM2Material.Shader = str(tex_unit.shader_id)
 
             # TODO: other settings
 

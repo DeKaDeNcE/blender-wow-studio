@@ -5,24 +5,24 @@ import bpy
 ###############################
 
 SHADERS = [
-    ('0', "Diffuse", ""),
-    ('1', "Specular", ""),
-    ('2', "Metal", ""),
-    ('3', "Env", ""),
-    ('4', "Opaque", ""),
-    ('5', "EnvMetal", ""),
-    ('6', "TwoLayerDiffuse", ""),
-    ('7', "TwoLayerEnvMetal", ""),
-    ('8', "TwoLayerTerrain", ""),
-    ('9', "DiffuseEmissive", ""),
-    ('10', "Tangent", ""),
-    ('11', "MaskedEnvMetal", ""),
-    ('12', "EnvMetalEmissive", ""),
-    ('13', "TwoLayerDiffuseOpaque", ""),
-    ('14', "TwoLayerDiffuseEmissive", "")
+    ('0', "Diffuse", ""), ('1', "Specular", ""), ('2', "Metal", ""),
+    ('3', "Env", ""), ('4', "Opaque", ""), ('5', "EnvMetal", ""),
+    ('6', "TwoLayerDiffuse", ""), ('7', "TwoLayerEnvMetal", ""), ('8', "TwoLayerTerrain", ""),
+    ('9', "DiffuseEmissive", ""), ('10', "Tangent", ""), ('11', "MaskedEnvMetal", ""),
+    ('12', "EnvMetalEmissive", ""), ('13', "TwoLayerDiffuseOpaque", ""), ('14', "TwoLayerDiffuseEmissive", "")
 ]
 
 TEX_UNIT_FLAGS = [
+    ("1", "Invert", "", 'PMARKER', 0x1),
+    ("2", "Transform", "", 'FORCE_TURBULENCE', 0x2),
+    ("4", "Projected Texture", "", 'ARROW_LEFTRIGHT', 0x4),
+    ("8", "Unknown", "", 'ARROW_LEFTRIGHT', 0x8),
+    ("16", "Batch Compatible", "", 'PMARKER_SEL', 0x10),
+    ("32", "Projected Texture 2", "", 'PMARKER_ACT', 0x20),
+    ("64", "Use Texture Weights", "", 'PMARKER_ACT', 0x40)
+]
+
+RENDER_FLAGS = [
     ("1", "Unlit", "Disable lighting", 'PMARKER', 0x1),
     ("2", "Unfogged", "Disable fog", 'FORCE_TURBULENCE', 0x2),
     ("4", "Two-sided", "Render from both sides", 'ARROW_LEFTRIGHT', 0x4),
@@ -32,12 +32,12 @@ TEX_UNIT_FLAGS = [
 
 BLENDING_MODES = [
     ("0", "Opaque", "Blending disabled", 'PMARKER', 1),
-    ("1", "Mod", "", 'PMARKER', 2),
-    ("2", "Decal", "", 'FORCE_TURBULENCE', 3),
-    ("3", "Add", "", 'ARROW_LEFTRIGHT', 4),
-    ("4", "Mod2x", "", 'PMARKER_SEL', 5),
-    ("5", "Fade", "", 'PMARKER_ACT', 6),
-    ("6", "Deeeprun Tram", "", 'PMARKER_ACT', 7)
+    ("1", "Mod", "Unknown", 'PMARKER', 2),
+    ("2", "Decal", "Unknown", 'FORCE_TURBULENCE', 3),
+    ("3", "Add", "Unknown", 'ARROW_LEFTRIGHT', 4),
+    ("4", "Mod2x", "Unknown", 'PMARKER_SEL', 5),
+    ("5", "Fade", "Unknown", 'PMARKER_ACT', 6),
+    ("6", "Deeeprun Tram", "Unknown", 'PMARKER_ACT', 7)
 ]
 
 
@@ -54,11 +54,14 @@ class WowM2MaterialPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
+        col.label('Flags:')
+        col.prop(context.material.WowM2Material, "Flags")
+        col.separator()
+        col.label('Render Flags:')
         col.prop(context.material.WowM2Material, "RenderFlags")
+        col.separator()
         col.prop(context.material.WowM2Material, "BlendingMode")
         col.prop(context.material.WowM2Material, "Shader")
-
-
 
     @classmethod
     def poll(cls, context):
@@ -67,10 +70,17 @@ class WowM2MaterialPanel(bpy.types.Panel):
 
 class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
 
-    RenderFlags = bpy.props.EnumProperty(
+    Flags = bpy.props.EnumProperty(
         name="Material flags",
         description="WoW  M2 material flags",
         items=TEX_UNIT_FLAGS,
+        options={"ENUM_FLAG"}
+        )
+
+    RenderFlags = bpy.props.EnumProperty(
+        name="Render flags",
+        description="WoW  M2 render flags",
+        items=RENDER_FLAGS,
         options={"ENUM_FLAG"}
         )
 
@@ -87,11 +97,10 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         )
 
 
-def register_wow_m2_material_properties():
+def RegisterWowM2MaterialProperties():
     bpy.types.Material.WowM2Material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
 
-
-def unregister_wow_m2_material_properties():
+def UnregisterWowM2MaterialProperties():
     bpy.types.Material.WowM2Material = None
 
 
@@ -116,25 +125,23 @@ class M2CollisionMesh(bpy.types.Panel):
                 )
 
 
-class WowM2MeshPropertyGroup(bpy.types.PropertyGroup):
+class WowM2VertexInfoPropertyGroup(bpy.types.PropertyGroup):
     CollisionMesh = bpy.props.BoolProperty(default=False, name='Collision mesh')
 
 
-def register_wow_m2_mesh_properties():
-    bpy.types.Object.WowM2VertexInfo = bpy.props.PointerProperty(type=WowM2MeshPropertyGroup)
+def RegisterWowM2VertexInfoProperties():
+    bpy.types.Object.WowM2VertexInfo = bpy.props.PointerProperty(type=WowM2VertexInfoPropertyGroup)
 
-
-def unregister_wow_m2_mesh_properties():
+def UnregisterWowM2VertexInfoProperties():
     bpy.types.Object.WowM2VertexInfo = None
 
 
 def register():
-    register_wow_m2_material_properties()
-    register_wow_m2_mesh_properties()
-
+    RegisterWowM2MaterialProperties()
+    RegisterWowM2VertexInfoProperties()
 
 def unregister():
-    unregister_wow_m2_material_properties()
-    unregister_wow_m2_mesh_properties()
+    UnregisterWowM2MaterialProperties()
+    UnregisterWowM2VertexInfoProperties()
 
 

@@ -1,7 +1,8 @@
-from .collision import *
-from mathutils import *
-
 import sys
+from mathutils import Vector
+
+from ..pywowlib.file_formats.wmo_format_group import BSP_Node, BSP_PLANE_TYPE
+from .collision import *
 
 
 class BSPTree:
