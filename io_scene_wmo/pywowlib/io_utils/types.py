@@ -6,6 +6,35 @@ from functools import partial
 ######                 Parsing helpers                 ######
 #############################################################
 
+class Template(type):
+    def __lshift__(cls, other):
+        args = []
+        kwargs = None
+
+        if type(other) is tuple:
+            for arg in other:
+                if type(arg) is not dict:
+                    if kwargs is None:
+                        args.append(arg)
+                    else:
+                        raise SyntaxError("Keyword argument followed by a positional argument.")
+                else:
+                    if kwargs is not None:
+                        raise SyntaxError("Only one set of keyword arguments is supported.")
+                    kwargs = arg
+
+        elif type(other) is dict:
+            kwargs = other
+
+        else:
+            return partial(cls, other)
+
+        if kwargs is not None:
+            return partial(cls, *args, **kwargs)
+        else:
+            return partial(cls, *args)
+
+
 class GenericType:
     __slots__ = ('format', 'size', 'default_value')
 
@@ -41,67 +70,6 @@ class GenericType:
 
     def __call__(self, *args, **kwargs):
         return self.default_value
-
-
-class Template(type):
-    def __lshift__(cls, other):
-        args = []
-        kwargs = None
-
-        if type(other) is tuple:
-            for arg in other:
-                if type(arg) is not dict:
-                    if kwargs is None:
-                        args.append(arg)
-                    else:
-                        raise SyntaxError("Keyword argument followed by a positional argument.")
-                else:
-                    if kwargs is not None:
-                        raise SyntaxError("Only one set of keyword arguments is supported.")
-                    kwargs = arg
-
-        elif type(other) is dict:
-            kwargs = other
-
-        else:
-            return partial(cls, other)
-
-        if kwargs is not None:
-            return partial(cls, *args, **kwargs)
-        else:
-            return partial(cls, *args)
-
-
-class Array(metaclass=Template):
-    __slots__ = ('type', 'length', 'values')
-
-    def __init__(self, type_, length):
-        self.type = type_
-        self.length = length
-        self.values = [type_ for _ in range(length)]
-
-    def read(self, f):
-        type_ = type(self.type)
-
-        if type_ is GenericType:
-            self.values = [self.type.read(f) for _ in range(self.length)]
-        else:
-            for val in self.values:
-                val.read(f)
-
-        return self
-
-    def write(self, f):
-        type_ = type(self.type)
-
-        if type_ is GenericType:
-            for val in self.values:
-                self.type.write(f, val)
-        else:
-            for val in self.values:
-                val.write(f)
-
-        return self
 
 
 ###### Common binary types ######

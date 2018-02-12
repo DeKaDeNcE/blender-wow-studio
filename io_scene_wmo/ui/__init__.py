@@ -25,4 +25,4 @@ def register_ui():
 def unregister_ui():
     unregister_m2_ui()
     unregister_wmo_ui()
-    bpy.types.INFO_HT_header.append(render_gamedata_toggle)
+    bpy.types.INFO_HT_header.remove(render_gamedata_toggle)
