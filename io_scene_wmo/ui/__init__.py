@@ -6,6 +6,10 @@ from ..wmo.ui.panels import register as register_wmo_ui
 from ..wmo.ui.panels import unregister as unregister_wmo_ui
 
 
+def get_addon_prefs():
+    return bpy.context.user_preferences.addons[__package__[:-3]].preferences
+
+
 def render_gamedata_toggle(self, context):
     game_data_loaded = hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files
 

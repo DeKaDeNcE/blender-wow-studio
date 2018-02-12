@@ -3,8 +3,8 @@ import os
 import time
 
 from .wmo_file import WMOFile
-from .. import ADDON_PREFERENCES
 
+from ..ui import get_addon_prefs
 
 def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_objects):
     """ Read and import WoW WMO object to Blender scene"""
@@ -28,9 +28,10 @@ def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_o
 
         if game_data.files:
             if load_textures:
+                addon_prefs = get_addon_prefs()
                 print("\n\n### Extracting textures ###")
-                game_data.extract_textures_as_png(ADDON_PREFERENCES.cache_dir_path
-                                                  if ADDON_PREFERENCES.use_cache_dir else os.path.dirname(filepath),
+                game_data.extract_textures_as_png(addon_prefs.cache_dir_path
+                                                  if addon_prefs.use_cache_dir else os.path.dirname(filepath),
                                                   wmo.motx.get_all_strings())
         else:
             print("\nFailed to load textures because game data was not loaded.")
@@ -64,7 +65,8 @@ def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_o
     print("\n\n### Importing WMO doodad sets ###")
 
     if import_doodads and game_data.files:
-        wmo.load_doodads(ADDON_PREFERENCES.cache_dir_path if ADDON_PREFERENCES.use_cache_dir
+        addon_prefs = get_addon_prefs()
+        wmo.load_doodads(addon_prefs.cache_dir_path if addon_prefs.use_cache_dir
                          else os.path.dirname(filepath), game_data)
     else:
         wmo.load_doodads()

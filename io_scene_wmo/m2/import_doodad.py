@@ -3,11 +3,10 @@ import os
 import io
 from struct import unpack
 
-from .. import ADDON_PREFERENCES
+from ..ui import get_addon_prefs
 
 
 # This file is implementing basic M2 geometry parsing in prodedural style for the sake of performance.
-
 class Submesh:
     __slots__ = (
         "start_vertex",
@@ -209,9 +208,10 @@ def m2_to_blender_mesh(dir, filepath, filedata):
 def wmv_get_last_m2():
     """Get the path of last M2 model from WoWModelViewer or similar log."""
 
-    if ADDON_PREFERENCES.wmv_path:
+    addon_preferences = get_addon_prefs()
+    if addon_preferences.wmv_path:
 
-        lines = open(ADDON_PREFERENCES.wmv_path).readlines()
+        lines = open(addon_preferences.wmv_path).readlines()
 
         for line in reversed(lines):
             if 'Loading model:' in line:
@@ -232,7 +232,8 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
             return {'CANCELLED'}
 
-        dir = ADDON_PREFERENCES.cache_dir_path if ADDON_PREFERENCES.use_cache_dir else \
+        addon_preferences = get_addon_prefs()
+        dir = addon_preferences.cache_dir_path if addon_preferences.use_cache_dir else \
               bpy.path.abspath("//") if bpy.data.is_saved else None
         m2_path = wmv_get_last_m2()
 

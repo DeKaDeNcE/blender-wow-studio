@@ -123,9 +123,6 @@ class WMOPreferences(bpy.types.AddonPreferences):
         addon_updater_ops.update_settings_ui(self, context)
 
 
-ADDON_PREFERENCES = bpy.context.user_preferences.addons[__package__].preferences.use_cache_dir
-
-
 def register():
     register_updater(bl_info)
     bpy.utils.register_module(__name__)

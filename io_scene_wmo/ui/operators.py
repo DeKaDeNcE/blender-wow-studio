@@ -6,8 +6,7 @@ from ..pywowlib.archives.mpq.wow import WoWFileData
 from ..wmo.import_wmo import import_wmo_to_blender_scene
 from ..wmo.export_wmo import export_wmo_from_blender_scene
 from ..m2.import_m2 import import_m2
-from .. import ADDON_PREFERENCES as PREFERENCES
-
+from . import get_addon_prefs
 
 #############################################################
 ######                 Common operators                ######
@@ -31,8 +30,8 @@ class LoadWoWFileSystemOP(bpy.types.Operator):
             self.report({'INFO'}, "WoW game data is unloaded.")
 
         else:
-
-            bpy.wow_game_data = WoWFileData(PREFERENCES.wow_path, PREFERENCES.blp_path)
+            addon_preferences = get_addon_prefs()
+            bpy.wow_game_data = WoWFileData(addon_preferences.wow_path, addon_preferences.blp_path)
 
             if not bpy.wow_game_data.files:
                 self.report({'ERROR'}, "WoW game data is not loaded. Check settings.")
