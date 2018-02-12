@@ -370,6 +370,70 @@ class BlenderM2Scene:
 
         # TODO: add transparent material
 
+    def save_geosets(self, selected_only):
+        objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
+        if not objects:
+            raise Exception('Error: no mesh found on the scene or selected.')
+
+        proxy_objects = []
+        for obj in filter(lambda ob: not ob.WowM2Geoset.CollisionMesh and obj.type == 'MESH' and not obj.hide, objects):
+            bpy.ops.object.select_all(action='DESELECT')
+
+            new_obj = obj.copy()
+            new_obj.data = obj.data.copy()
+
+            bpy.context.scene.objects.link(new_obj)
+
+            bpy.context.scene.objects.active = new_obj
+            mesh = new_obj.data
+
+            if not mesh.uv_layers.active:
+                raise EnvironmentError("Mesh <<{}>> has no UV map.".format(obj.name))
+
+            # apply all modifiers
+            if len(obj.modifiers):
+                for modifier in obj.modifiers:
+                    bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.reveal()
+            bpy.ops.mesh.quads_convert_to_tris()
+            bpy.ops.mesh.delete_loose()
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+            # prepare scene
+
+            # perform edge split
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.uv.seams_from_islands(mark_seams=False, mark_sharp=True)
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+            bpy.ops.object.modifier_add(type='EDGE_SPLIT')
+            bpy.context.object.modifiers["EdgeSplit"].use_edge_angle = False
+            bpy.ops.object.modifier_apply(apply_as='DATA', modifier="EdgeSplit")
+
+            # smooth edges
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.mark_sharp(clear=True)
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+            # split object by materials
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.separate(type='MATERIAL')
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+            new_obj.select = True
+
+        for obj in proxy_objects:
+            bpy.data.objects.remove(obj, do_unlink=True)
 
 
 

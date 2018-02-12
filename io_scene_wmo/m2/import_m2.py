@@ -18,7 +18,6 @@ def import_m2(version, file, load_textures):  # TODO: implement multiversioning
         m2_file = M2File(version, filepath=file)
         m2 = m2_file.root
         m2.filepath = file  # TODO: HACK
-        skins = m2_file.skins
 
         if load_textures:
             if not game_data:
