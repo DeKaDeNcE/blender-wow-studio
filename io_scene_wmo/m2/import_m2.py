@@ -2,10 +2,9 @@ import bpy
 import os
 
 from ..pywowlib.m2_file import M2File
-from .m2_file import BlenderM2Scene
+from .m2_scene import BlenderM2Scene
 
 from ..ui import get_addon_prefs
-
 
 
 def import_m2(version, file, load_textures):  # TODO: implement multiversioning
@@ -19,7 +18,7 @@ def import_m2(version, file, load_textures):  # TODO: implement multiversioning
         m2_file = M2File(version, filepath=file)
         m2 = m2_file.root
         m2.filepath = file  # TODO: HACK
-        skins = m2_file.skin_profiles
+        skins = m2_file.skins
 
         if load_textures:
             if not game_data:
@@ -34,7 +33,7 @@ def import_m2(version, file, load_textures):  # TODO: implement multiversioning
 
         print("\n\n### Importing M2 model ###")
 
-        bl_m2 = BlenderM2Scene(m2, skins, addon_preferences)
+        bl_m2 = BlenderM2Scene(m2_file, addon_preferences)
 
         bl_m2.load_materials(texture_dir)
         bl_m2.load_geosets()
