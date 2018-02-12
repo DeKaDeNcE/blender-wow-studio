@@ -116,7 +116,7 @@ class M2GeosetPanel(bpy.types.Panel):
     bl_label = "WoW M2 Collision"
 
     def draw(self, context):
-        self.layout.prop(context.object.WowM2Geoset, "CollisionOnly")
+        self.layout.prop(context.object.WowM2Geoset, "CollisionMesh")
 
     @classmethod
     def poll(cls, context):

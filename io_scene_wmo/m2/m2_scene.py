@@ -365,7 +365,7 @@ class BlenderM2Scene:
         # create object
         obj = bpy.data.objects.new('Collision', mesh)
         bpy.context.scene.objects.link(obj)
-        obj.WowM2Geoset.CollisionOnly = True
+        obj.WowM2Geoset.CollisionMesh = True
         obj.hide = True
 
         # TODO: add transparent material
