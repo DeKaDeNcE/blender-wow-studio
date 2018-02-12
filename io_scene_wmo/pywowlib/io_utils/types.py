@@ -35,7 +35,6 @@ class Template(type):
             return partial(cls, *args)
 
 
-
 class GenericType:
     __slots__ = ('format', 'size', 'default_value')
 
@@ -101,7 +100,6 @@ class Array(metaclass=Template):
                 val.write(f)
 
         return self
-
 
 
 ###### Common binary types ######

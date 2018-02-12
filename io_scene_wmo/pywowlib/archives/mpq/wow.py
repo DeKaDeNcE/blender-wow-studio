@@ -117,7 +117,34 @@ class WoWFileData:
 
         dir_files.sort(key=lambda s: os.path.splitext(s)[0])
 
-        return dir_files
+        locales = (
+            'frFR', 'deDE', 'enGB',
+            'enUS', 'itIT', 'koKR',
+            'zhCN', 'zhTW', 'ruRU',
+            'esES', 'esMX', 'ptBR'
+        )
+
+        for locale in locales:
+            locale_path = os.path.join(path, locale)
+            token = locale
+            if os.path.exists(locale_path):
+                break
+        else:
+            raise NotADirectoryError('\nFailed to load game data. WoW client appears to be missing a locale folder.')
+
+        locale_dir_files = []
+        for f in os.listdir(locale_path):
+            cur_path = os.path.join(locale_path, f)
+
+            if os.path.isfile(cur_path) \
+            and os.path.splitext(f)[1].lower() == '.mpq' \
+            or not os.path.isfile(cur_path) \
+            and re.match(r'patch-{}-\w.mpq'.format(token), f.lower()):
+                locale_dir_files.append(cur_path)
+
+        map(lambda x: x.lower(), locale_dir_files)
+
+        return dir_files + locale_dir_files
 
     @staticmethod
     def is_wow_path_valid(wow_path):
