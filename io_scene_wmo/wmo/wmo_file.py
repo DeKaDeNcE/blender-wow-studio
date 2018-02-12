@@ -1,7 +1,9 @@
 import bpy
 import operator
-import os
 import time
+
+from math import sqrt
+from mathutils import Vector
 
 from .wmo_group import *
 from ..m2 import import_doodad as m2
@@ -378,7 +380,6 @@ class WMOFile:
             if self.parent:
                 obj.parent = self.parent
 
-
     def load_fogs(self):
         """ Load WoW WMO fog objects """
         for i in range(len(self.mfog.Fogs)):
@@ -476,7 +477,7 @@ class WMOFile:
                         try:
                             obj = m2.m2_to_blender_mesh(dir, doodad_path, game_data)
                         except Exception as e:
-                            bpy.ops.mesh.primitive_cube_add()
+                            bpy.ops.mesh.primitive_cube_add(name='ERR_' + os.path.splitext(os.path.basename(doodad_path))[0])
                             obj = bpy.context.scene.objects.active
                             print("\n{}\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(e, doodad_path))
 
@@ -635,7 +636,7 @@ class WMOFile:
             if v[2] > corner2[2]:
                 corner2[2] = v[2]
 
-        return (corner1, corner2)
+        return corner1, corner2
 
     def get_global_bounding_box(self):
         """ Calculate bounding box of an entire scene """
@@ -687,7 +688,7 @@ class WMOFile:
                         doodad_def.NameOfs = self.modn.AddString(path)
                         doodad_paths[path] = doodad_def.NameOfs
 
-                    doodad_def.Position = doodad.matrix_world * mathutils.Vector((0,0,0))
+                    doodad_def.Position = doodad.matrix_world * Vector((0, 0, 0))
 
                     doodad.rotation_mode = 'QUATERNION'
 
@@ -863,7 +864,7 @@ class WMOFile:
                     v_D = -v[0][0] * v[1][1] * v[2][2] + v[0][0] * v[2][1] * v[1][2] + v[1][0] * v[0][1] * v[2][2] - v[1][0] * \
                           v[2][1] * v[0][2] - v[2][0] * v[0][1] * v[1][2] + v[2][0] * v[1][1] * v[0][2]
 
-                    portal_info.Unknown = v_D / math.sqrt(v_A * v_A + v_B * v_B + v_C * v_C)
+                    portal_info.Unknown = v_D / sqrt(v_A * v_A + v_B * v_B + v_C * v_C)
                     portal_info.nVertices = len(self.mopv.PortalVertices) - portal_info.StartVertex
                     portal_info.Normal = tuple(portal_mesh.polygons[0].normal)
 
