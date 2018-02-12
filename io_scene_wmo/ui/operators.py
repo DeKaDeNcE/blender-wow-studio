@@ -1,10 +1,11 @@
 import bpy
-from bpy.props import StringProperty, BoolProperty
+from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy_extras.io_utils import ExportHelper
 
 from ..pywowlib.archives.mpq.wow import WoWFileData
 from ..wmo.import_wmo import import_wmo_to_blender_scene
 from ..wmo.export_wmo import export_wmo_from_blender_scene
+from ..m2.import_m2 import import_m2
 
 
 #############################################################
@@ -120,6 +121,44 @@ class WMOExport(bpy.types.Operator, ExportHelper):
         export_wmo_from_blender_scene(self.filepath, self.autofill_textures, self.export_selected)
 
         return {'FINISHED'}
+
+
+class M2Import(bpy.types.Operator):
+    """Load M2 data"""
+    bl_idname = "import_mesh.m2"
+    bl_label = "Import M2"
+    bl_options = {'UNDO', 'REGISTER'}
+
+    filepath = StringProperty(
+        subtype='FILE_PATH',
+        )
+
+    filter_glob = StringProperty(
+        default="*.m2",
+        options={'HIDDEN'}
+        )
+
+    load_textures = BoolProperty(
+        name="Fetch textures",
+        description="Automatically fetch textures from game data",
+        default=True,
+        )
+
+    version = EnumProperty(
+        name="Version",
+        description="Version of World of Warcraft",
+        items=[('264', 'WOTLK', "")],
+        default='264'
+    )
+
+    def execute(self, context):
+        import_m2(int(self.version), self.filepath, self.load_textures)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        wm.fileselect_add(self)
+        return {'RUNNING_MODAL'}
 
 
 def render_gamedata_toggle(self, context):

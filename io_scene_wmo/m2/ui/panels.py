@@ -86,11 +86,11 @@ def UnregisterWowM2MaterialProperties():
 ## Vertex Info
 ###############################
 
-class M2Mesh(bpy.types.Panel):
+class M2CollisionMesh(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
-    bl_label = "WoW M2 Geoset"
+    bl_label = "WoW M2 Collision"
 
     def draw(self, context):
         self.layout.prop(context.object.WowM2VertexInfo, "CollisionOnly")
@@ -112,11 +112,6 @@ def RegisterWowM2VertexInfoProperties():
 
 def UnregisterWowM2VertexInfoProperties():
     bpy.types.Object.WowM2VertexInfo = None
-    
-    
-###############################
-## 
-###############################
 
 
 def register():

@@ -373,7 +373,7 @@ class BlenderM2Scene:
         # TODO: add transparent material
 
 
-def import_m2(version, file):  # TODO: implement multiversioning
+def import_m2(version, file, load_textures):  # TODO: implement multiversioning
 
     # get global variables
     game_data = getattr(bpy, "wow_game_data", None)
@@ -386,15 +386,16 @@ def import_m2(version, file):  # TODO: implement multiversioning
         m2.filepath = file # TODO: HACK
         skins = m2_file.skin_profiles
 
-        if not game_data:
-            print("\n\n### Loading game data ###")
-            bpy.ops.scene.load_wow_filesystem()
-            game_data = bpy.wow_game_data
+        if load_textures:
+            if not game_data:
+                print("\n\n### Loading game data ###")
+                bpy.ops.scene.load_wow_filesystem()
+                game_data = bpy.wow_game_data
 
-        if game_data.files:
-            print("\n\n### Extracting textures ###")
-            textures = [m2_texture.filename.value for m2_texture in m2.textures if not m2_texture.type]
-            game_data.extract_textures_as_png(texture_dir, textures)
+            if game_data.files:
+                print("\n\n### Extracting textures ###")
+                textures = [m2_texture.filename.value for m2_texture in m2.textures if not m2_texture.type]
+                game_data.extract_textures_as_png(texture_dir, textures)
 
         print("\n\n### Importing M2 model ###")
 

@@ -123,23 +123,15 @@ class WMOPreferences(bpy.types.AddonPreferences):
         addon_updater_ops.update_settings_ui(self, context)
 
 
-menu_import = lambda self, ctx: self.layout.operator("import_mesh.wmo", text="WoW WMO (.wmo)")
-menu_export = lambda self, ctx: self.layout.operator("import_mesh.wmo", text="WoW WMO (.wmo)")
-
-
 def register():
     register_updater(bl_info)
     bpy.utils.register_module(__name__)
     register_ui()
-    bpy.types.INFO_MT_file_import.append(menu_import)
-    bpy.types.INFO_MT_file_export.append(menu_export)
 
 
 def unregister():
     bpy.utils.unregister_module(__name__)
     unregister_ui()
-    bpy.types.INFO_MT_file_import.remove(menu_import)
-    bpy.types.INFO_MT_file_export.remove(menu_export)
     unregister_updater()
 
 

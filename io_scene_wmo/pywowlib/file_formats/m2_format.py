@@ -1,4 +1,5 @@
-from .wow_common_types import *
+from .wow_common_types import CAaBox, CRange, VERSION, M2Array, M2Versions, fixed16, fixed_point
+from ..io_utils.types import *
 from .skin_format import M2SkinProfile
 from ..enums.m2_enums import M2KeyBones
 

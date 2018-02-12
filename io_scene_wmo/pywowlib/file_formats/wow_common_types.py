@@ -1,36 +1,6 @@
 from ..io_utils.types import *
 
 
-class Array(metaclass=Template):
-    __slots__ = ('type', 'length', 'values')
-
-    def __init__(self, type_, length):
-        self.type = type_
-        self.length = length
-        self.values = [type_() for _ in range(length)]
-
-    def read(self, f):
-        if type(self.type) is GenericType:
-            self.values = [self.type.read(f) for _ in range(self.length)]
-        else:
-            print(type(self.type), id(type(self.type)), id(GenericType))
-            for val in self.values:
-                val.read(f)
-
-        return self
-
-    def write(self, f):
-        type_ = type(self.type)
-
-        if type_ is GenericType:
-            for val in self.values:
-                self.type.write(f, val)
-        else:
-            for val in self.values:
-                val.write(f)
-
-        return self
-
 ###### M2 file versions ######
 VERSION = 264
 

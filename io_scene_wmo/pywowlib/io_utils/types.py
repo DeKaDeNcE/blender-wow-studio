@@ -35,6 +35,7 @@ class Template(type):
             return partial(cls, *args)
 
 
+
 class GenericType:
     __slots__ = ('format', 'size', 'default_value')
 
@@ -72,6 +73,37 @@ class GenericType:
         return self.default_value
 
 
+class Array(metaclass=Template):
+    __slots__ = ('type', 'length', 'values')
+
+    def __init__(self, type_, length):
+        self.type = type_
+        self.length = length
+        self.values = [type_() for _ in range(length)]
+
+    def read(self, f):
+        if type(self.type).__name__ == "GenericType":
+            self.values = [self.type.read(f) for _ in range(self.length)]
+        else:
+            for val in self.values:
+                val.read(f)
+
+        return self
+
+    def write(self, f):
+        type_ = type(self.type)
+
+        if type_ is GenericType:
+            for val in self.values:
+                self.type.write(f, val)
+        else:
+            for val in self.values:
+                val.write(f)
+
+        return self
+
+
+
 ###### Common binary types ######
 
 int8 = GenericType('b', 1)
@@ -90,3 +122,5 @@ vec3D = GenericType('fff', 12, (0.0, 0.0, 0.0))
 vec2D = GenericType('ff', 8, (0.0, 0.0))
 quat = GenericType('ffff', 16, (0.0, 0.0, 0.0, 0.0))
 string = char
+
+
