@@ -5,11 +5,21 @@ import bpy
 ###############################
 
 SHADERS = [
-    ('0', "Diffuse", ""), ('1', "Specular", ""), ('2', "Metal", ""),
-    ('3', "Env", ""), ('4', "Opaque", ""), ('5', "EnvMetal", ""),
-    ('6', "TwoLayerDiffuse", ""), ('7', "TwoLayerEnvMetal", ""), ('8', "TwoLayerTerrain", ""),
-    ('9', "DiffuseEmissive", ""), ('10', "Tangent", ""), ('11', "MaskedEnvMetal", ""),
-    ('12', "EnvMetalEmissive", ""), ('13', "TwoLayerDiffuseOpaque", ""), ('14', "TwoLayerDiffuseEmissive", "")
+    ('0', "Diffuse", ""),
+    ('1', "Specular", ""),
+    ('2', "Metal", ""),
+    ('3', "Env", ""),
+    ('4', "Opaque", ""),
+    ('5', "EnvMetal", ""),
+    ('6', "TwoLayerDiffuse", ""),
+    ('7', "TwoLayerEnvMetal", ""),
+    ('8', "TwoLayerTerrain", ""),
+    ('9', "DiffuseEmissive", ""),
+    ('10', "Tangent", ""),
+    ('11', "MaskedEnvMetal", ""),
+    ('12', "EnvMetalEmissive", ""),
+    ('13', "TwoLayerDiffuseOpaque", ""),
+    ('14', "TwoLayerDiffuseEmissive", "")
 ]
 
 TEX_UNIT_FLAGS = [
@@ -22,12 +32,12 @@ TEX_UNIT_FLAGS = [
 
 BLENDING_MODES = [
     ("0", "Opaque", "Blending disabled", 'PMARKER', 1),
-    ("1", "Mod", "Unknown", 'PMARKER', 2),
-    ("2", "Decal", "Unknown", 'FORCE_TURBULENCE', 3),
-    ("3", "Add", "Unknown", 'ARROW_LEFTRIGHT', 4),
-    ("4", "Mod2x", "Unknown", 'PMARKER_SEL', 5),
-    ("5", "Fade", "Unknown", 'PMARKER_ACT', 6),
-    ("6", "Deeeprun Tram", "Unknown", 'PMARKER_ACT', 7)
+    ("1", "Mod", "", 'PMARKER', 2),
+    ("2", "Decal", "", 'FORCE_TURBULENCE', 3),
+    ("3", "Add", "", 'ARROW_LEFTRIGHT', 4),
+    ("4", "Mod2x", "", 'PMARKER_SEL', 5),
+    ("5", "Fade", "", 'PMARKER_ACT', 6),
+    ("6", "Deeeprun Tram", "", 'PMARKER_ACT', 7)
 ]
 
 
@@ -44,9 +54,11 @@ class WowM2MaterialPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(context.material.WowM2Material, "Flags")
-        col.prop(context.material.WowM2Material, "Shader")
+        col.prop(context.material.WowM2Material, "RenderFlags")
         col.prop(context.material.WowM2Material, "BlendingMode")
+        col.prop(context.material.WowM2Material, "Shader")
+
+
 
     @classmethod
     def poll(cls, context):
@@ -55,7 +67,7 @@ class WowM2MaterialPanel(bpy.types.Panel):
 
 class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
 
-    Flags = bpy.props.EnumProperty(
+    RenderFlags = bpy.props.EnumProperty(
         name="Material flags",
         description="WoW  M2 material flags",
         items=TEX_UNIT_FLAGS,
@@ -75,10 +87,11 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         )
 
 
-def RegisterWowM2MaterialProperties():
+def register_wow_m2_material_properties():
     bpy.types.Material.WowM2Material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
 
-def UnregisterWowM2MaterialProperties():
+
+def unregister_wow_m2_material_properties():
     bpy.types.Material.WowM2Material = None
 
 
@@ -103,23 +116,25 @@ class M2CollisionMesh(bpy.types.Panel):
                 )
 
 
-class WowM2VertexInfoPropertyGroup(bpy.types.PropertyGroup):
+class WowM2MeshPropertyGroup(bpy.types.PropertyGroup):
     CollisionMesh = bpy.props.BoolProperty(default=False, name='Collision mesh')
 
 
-def RegisterWowM2VertexInfoProperties():
-    bpy.types.Object.WowM2VertexInfo = bpy.props.PointerProperty(type=WowM2VertexInfoPropertyGroup)
+def register_wow_m2_mesh_properties():
+    bpy.types.Object.WowM2VertexInfo = bpy.props.PointerProperty(type=WowM2MeshPropertyGroup)
 
-def UnregisterWowM2VertexInfoProperties():
+
+def unregister_wow_m2_mesh_properties():
     bpy.types.Object.WowM2VertexInfo = None
 
 
 def register():
-    RegisterWowM2MaterialProperties()
-    RegisterWowM2VertexInfoProperties()
+    register_wow_m2_material_properties()
+    register_wow_m2_mesh_properties()
+
 
 def unregister():
-    UnregisterWowM2MaterialProperties()
-    UnregisterWowM2VertexInfoProperties()
+    unregister_wow_m2_material_properties()
+    unregister_wow_m2_mesh_properties()
 
 

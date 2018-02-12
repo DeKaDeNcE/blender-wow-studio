@@ -1,5 +1,6 @@
 import bpy
 import os
+from io import BytesIO
 from ..pywowlib.m2_file import M2File
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes
 from ..pywowlib.wdbx.wdbc import DBCFile
@@ -141,12 +142,14 @@ class BlenderM2Scene:
         bpy.context.scene.objects.active = rig
         bpy.ops.object.mode_set(mode='POSE')
 
-        # TODO: remove hardcoded path
+        game_data = getattr(bpy, "wow_game_data", None)
+        if not game_data:
+            bpy.ops.scene.load_wow_filesystem()
+
         anim_data_dbc = DBCFile(AnimationData)
-        anim_data_dbc.read(open('D:\\WoWModding\\World of Warcraft 3.3.5a\\Data\\DBFilesClient\\AnimationData.dbc', 'rb'))
+        anim_data_dbc.read(BytesIO(game_data.read_file('DBFilesClient\\AnimationData.dbc')))
 
         for i, sequence in enumerate(self.m2.sequences):
-
             field_name = None
             if anim_data_dbc:
                 field_name = anim_data_dbc.get_field(sequence.id, 'Name')
@@ -331,7 +334,6 @@ class BlenderM2Scene:
 
     def load_lights(self):
         # TODO: animate values after UI is implemented
-        print(len(self.m2.lights))
         for i, light in enumerate(self.m2.lights):
             bpy.ops.object.lamp_add(type='POINT' if light.type else 'SPOT', location=(0, 0, 0))
             obj = bpy.context.scene.objects.active
@@ -383,7 +385,7 @@ def import_m2(version, file, load_textures):  # TODO: implement multiversioning
     if type(file) is str:
         m2_file = M2File(version, filepath=file)
         m2 = m2_file.root
-        m2.filepath = file # TODO: HACK
+        m2.filepath = file  # TODO: HACK
         skins = m2_file.skin_profiles
 
         if load_textures:
