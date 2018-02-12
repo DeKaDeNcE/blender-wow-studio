@@ -118,9 +118,12 @@ class WMOPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "use_cache_dir")
         row = self.layout.row()
         row.prop(self, "cache_dir_path")
-        if not context.user_preferences.addons['io_scene_wmo'].preferences.use_cache_dir:
+        if not context.user_preferences.addons[__package__].preferences.use_cache_dir:
             row.enabled = False
         addon_updater_ops.update_settings_ui(self, context)
+
+
+ADDON_PREFERENCES = bpy.context.user_preferences.addons[__package__].preferences.use_cache_dir
 
 
 def register():

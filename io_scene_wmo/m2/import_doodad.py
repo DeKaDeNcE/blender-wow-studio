@@ -3,6 +3,8 @@ import os
 import io
 from struct import unpack
 
+from .. import ADDON_PREFERENCES
+
 
 # This file is implementing basic M2 geometry parsing in prodedural style for the sake of performance.
 
@@ -207,18 +209,16 @@ def m2_to_blender_mesh(dir, filepath, filedata):
 def wmv_get_last_m2():
     """Get the path of last M2 model from WoWModelViewer or similar log."""
 
-    preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
+    if ADDON_PREFERENCES.wmv_path:
 
-    if preferences.wmv_path:
-
-        lines = open(preferences.wmv_path).readlines()
+        lines = open(ADDON_PREFERENCES.wmv_path).readlines()
 
         for line in reversed(lines):
             if 'Loading model:' in line:
                 return line[25:].split(",", 1)[0].rstrip("\n")
 
 
-class WoW_WMO_Import_Doodad_WMV(bpy.types.Operator):
+class WowWMOImportDoodadWMV(bpy.types.Operator):
     bl_idname = 'scene.wow_wmo_import_doodad_from_wmv'
     bl_label = 'Import last M2 from WMV'
     bl_description = 'Import last M2 from WoW Model Viewer'
@@ -232,9 +232,7 @@ class WoW_WMO_Import_Doodad_WMV(bpy.types.Operator):
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
             return {'CANCELLED'}
 
-        preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
-
-        dir = preferences.cache_dir_path if preferences.use_cache_dir else \
+        dir = ADDON_PREFERENCES.cache_dir_path if ADDON_PREFERENCES.use_cache_dir else \
               bpy.path.abspath("//") if bpy.data.is_saved else None
         m2_path = wmv_get_last_m2()
 

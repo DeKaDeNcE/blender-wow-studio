@@ -100,6 +100,7 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
 def register_wow_m2_material_properties():
     bpy.types.Material.WowM2Material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
 
+
 def unregister_wow_m2_material_properties():
     bpy.types.Material.WowM2Material = None
 

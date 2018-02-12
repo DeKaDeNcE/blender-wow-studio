@@ -6,6 +6,7 @@ from ..pywowlib.archives.mpq.wow import WoWFileData
 from ..wmo.import_wmo import import_wmo_to_blender_scene
 from ..wmo.export_wmo import export_wmo_from_blender_scene
 from ..m2.import_m2 import import_m2
+from .. import ADDON_PREFERENCES as PREFERENCES
 
 
 #############################################################
@@ -22,8 +23,8 @@ class LoadWoWFileSystemOP(bpy.types.Operator):
     def execute(self, context):
 
         if hasattr(bpy, "wow_game_data"):
-            for storage, type in bpy.wow_game_data.files:
-                if type:
+            for storage, type_ in bpy.wow_game_data.files:
+                if type_:
                     storage.close()
 
             delattr(bpy, "wow_game_data")
@@ -31,9 +32,7 @@ class LoadWoWFileSystemOP(bpy.types.Operator):
 
         else:
 
-            preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
-
-            bpy.wow_game_data = WoWFileData(preferences.wow_path, preferences.blp_path)
+            bpy.wow_game_data = WoWFileData(PREFERENCES.wow_path, PREFERENCES.blp_path)
 
             if not bpy.wow_game_data.files:
                 self.report({'ERROR'}, "WoW game data is not loaded. Check settings.")

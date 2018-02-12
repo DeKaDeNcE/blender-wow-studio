@@ -7,10 +7,10 @@ import mathutils
 import operator
 import math
 import os
-import sys
-import time
 import struct
-import shutil
+
+from ... import ADDON_PREFERENCES as PREFERENCES
+
 
 ###############################
 ## WMO operators
@@ -99,9 +99,7 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
             return {'CANCELLED'}
 
-        preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
-
-        save_dir = preferences.cache_dir_path if preferences.use_cache_dir else \
+        save_dir = PREFERENCES.cache_dir_path if PREFERENCES.use_cache_dir else \
                    bpy.path.abspath("//") if bpy.data.is_saved else None
 
         if not save_dir:
@@ -113,7 +111,7 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
         if not dir:
             return {'FINISHED'}
 
-        fileinfo_path = preferences.fileinfo_path
+        fileinfo_path = PREFERENCES.fileinfo_path
 
         instance_cache = {}
         uid_cache = set()
@@ -341,12 +339,10 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
             return {'CANCELLED'}
 
-        preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
-
-        dir = preferences.cache_dir_path if preferences.use_cache_dir else \
+        dir = PREFERENCES.cache_dir_path if PREFERENCES.use_cache_dir else \
                    bpy.path.abspath("//") if bpy.data.is_saved else None
 
-        wmo_path = self.wmv_get_last_wmo(preferences.wmv_path)
+        wmo_path = self.wmv_get_last_wmo(PREFERENCES.wmv_path)
 
         if not wmo_path:
             self.report({'ERROR'}, """WoW Model Viewer log contains no WMO entries.
@@ -606,8 +602,7 @@ class DOODAD_SET_CLEAR_PRESERVED(bpy.types.Operator):
                 print("\n\n### Loading game data ###")
                 bpy.ops.scene.load_wow_filesystem()
 
-            preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
-            dir = preferences.cache_dir_path if preferences.use_cache_dir else \
+            dir = PREFERENCES.cache_dir_path if PREFERENCES.use_cache_dir else \
                   bpy.path.abspath("//") if bpy.data.is_saved else None
 
             if dir:

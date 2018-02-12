@@ -7,6 +7,7 @@ from mathutils import Vector
 
 from .wmo_group import *
 from ..m2 import import_doodad as m2
+from .. import ADDON_PREFERENCES
 from ..pywowlib.file_formats.wmo_format_root import *
 from ..pywowlib.file_formats.wmo_format_group import *
 
@@ -225,8 +226,7 @@ class WMOFile:
         """ Load materials from WoW WMO root file """
         self.material_lookup = {}
 
-        preferences = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
-        texture_path = preferences.cache_dir_path if preferences.use_cache_dir else os.path.dirname(self.filepath)
+        texture_path = ADDON_PREFERENCES.cache_dir_path if ADDON_PREFERENCES.use_cache_dir else os.path.dirname(self.filepath)
 
         images = []
         image_names = []

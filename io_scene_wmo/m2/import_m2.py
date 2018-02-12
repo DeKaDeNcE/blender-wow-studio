@@ -1,15 +1,17 @@
 import bpy
 import os
 from io import BytesIO
+from mathutils import Vector
+
 from ..pywowlib.m2_file import M2File
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes
 from ..pywowlib.wdbx.wdbc import DBCFile
 from ..pywowlib.wdbx.definitions.wotlk import AnimationData
 from ..pywowlib.io_utils.types import uint32, vec3D
 from ..pywowlib.file_formats.m2_format import M2CompQuaternion
-
+from .. import ADDON_PREFERENCES
 from ..utils import parse_bitfield
-from mathutils import Vector
+
 
 
 class BlenderM2Scene:
@@ -378,8 +380,7 @@ def import_m2(version, file, load_textures):  # TODO: implement multiversioning
 
     # get global variables
     game_data = getattr(bpy, "wow_game_data", None)
-    prefs = bpy.context.user_preferences.addons.get("io_scene_wmo").preferences
-    texture_dir = prefs.cache_dir_path if prefs.use_cache_dir else os.path.dirname(file)
+    texture_dir = ADDON_PREFERENCES.cache_dir_path if ADDON_PREFERENCES.use_cache_dir else os.path.dirname(file)
 
     if type(file) is str:
         m2_file = M2File(version, filepath=file)
@@ -400,7 +401,7 @@ def import_m2(version, file, load_textures):  # TODO: implement multiversioning
 
         print("\n\n### Importing M2 model ###")
 
-        bl_m2 = BlenderM2Scene(m2, skins, prefs)
+        bl_m2 = BlenderM2Scene(m2, skins, ADDON_PREFERENCES)
 
         bl_m2.load_materials(texture_dir)
         bl_m2.load_geosets()
