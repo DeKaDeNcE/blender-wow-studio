@@ -97,10 +97,10 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         )
 
 
-def RegisterWowM2MaterialProperties():
+def register_wow_m2_material_properties():
     bpy.types.Material.WowM2Material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
 
-def UnregisterWowM2MaterialProperties():
+def unregister_wow_m2_material_properties():
     bpy.types.Material.WowM2Material = None
 
 
@@ -108,14 +108,14 @@ def UnregisterWowM2MaterialProperties():
 ## Vertex Info
 ###############################
 
-class M2CollisionMesh(bpy.types.Panel):
+class M2GeosetPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
     bl_label = "WoW M2 Collision"
 
     def draw(self, context):
-        self.layout.prop(context.object.WowM2VertexInfo, "CollisionOnly")
+        self.layout.prop(context.object.WowM2Geoset, "CollisionOnly")
 
     @classmethod
     def poll(cls, context):
@@ -125,23 +125,25 @@ class M2CollisionMesh(bpy.types.Panel):
                 )
 
 
-class WowM2VertexInfoPropertyGroup(bpy.types.PropertyGroup):
+class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
     CollisionMesh = bpy.props.BoolProperty(default=False, name='Collision mesh')
 
 
-def RegisterWowM2VertexInfoProperties():
-    bpy.types.Object.WowM2VertexInfo = bpy.props.PointerProperty(type=WowM2VertexInfoPropertyGroup)
+def register_wow_m2_geoset_properties():
+    bpy.types.Object.WowM2Geoset = bpy.props.PointerProperty(type=WowM2GeosetPropertyGroup)
 
-def UnregisterWowM2VertexInfoProperties():
-    bpy.types.Object.WowM2VertexInfo = None
+
+def unregister_wow_m2_geoset_properties():
+    bpy.types.Object.WowM2Geoset = None
 
 
 def register():
-    RegisterWowM2MaterialProperties()
-    RegisterWowM2VertexInfoProperties()
+    register_wow_m2_material_properties()
+    register_wow_m2_geoset_properties()
+
 
 def unregister():
-    UnregisterWowM2MaterialProperties()
-    UnregisterWowM2VertexInfoProperties()
+    unregister_wow_m2_material_properties()
+    unregister_wow_m2_geoset_properties()
 
 
