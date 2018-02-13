@@ -1,6 +1,6 @@
 import os
 
-from .file_formats.m2_format import M2Header, M2Versions, M2Vertex
+from .file_formats.m2_format import M2Header, M2Versions, M2Vertex, M2Material
 from .file_formats.skin_format import M2SkinProfile, M2SkinSubmesh, M2SkinTextureUnit
 
 
@@ -103,6 +103,33 @@ class M2File:
         for i, tri in enumerate(tris):
             for idx in tri:
                 skin.triangle_indices.append(start_index + idx)
+
+        geoset_index = skin.submeshes.add(submesh)
+        texture_unit.geoset_index = geoset_index
+        skin.texture_units.append(texture_unit)
+
+    def add_material_to_geoeset(self, geoset_id, render_flags, blending, flags, shader_id, color_id,
+                                texture, texture2=None, texture3=None, texture4=None):  #TODO: Add extra params
+        skin = self.skins[0]
+        tex_unit = skin.texture_units[geoset_id]
+        tex_unit.flags = flags
+        tex_unit.shader_id = shader_id
+        tex_unit.color_index = color_id
+
+        # check if we already have that render flag else create it
+        for i, material in enumerate(self.root.materials):
+            if material.flags == render_flags and material.blending_mode == blending:
+                tex_unit.material_index = i
+                break
+        else:
+            m2_mat = M2Material()
+            m2_mat.flags = render_flags
+            m2_mat.blending_mode = blending
+            tex_unit.material_index = self.root.materials.add(m2_mat)
+
+        
+
+
 
 
 
