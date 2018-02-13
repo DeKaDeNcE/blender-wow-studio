@@ -367,7 +367,6 @@ class BlenderM2Scene:
         bpy.context.scene.objects.link(obj)
         obj.WowM2Geoset.CollisionMesh = True
         obj.hide = True
-
         # TODO: add transparent material
 
     def save_geosets(self, selected_only):
@@ -431,6 +430,9 @@ class BlenderM2Scene:
             bpy.ops.object.mode_set(mode='OBJECT')
 
             new_obj.select = True
+
+            # export vertices
+
 
         for obj in proxy_objects:
             bpy.data.objects.remove(obj, do_unlink=True)

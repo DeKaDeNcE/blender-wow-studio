@@ -132,6 +132,10 @@ class M2Array(metaclass=Template):
     def append(self, value):
         self.values.append(value)
 
+    def add(self, value):
+        self.values.append(value)
+        return len(self.values) - 1
+
     def extend(self, itrbl):
         self.values.extend(itrbl)
 

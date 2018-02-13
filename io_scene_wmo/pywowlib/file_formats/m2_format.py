@@ -1160,7 +1160,9 @@ class M2Header:
         self.texture_lookup_table = M2Array(uint16)
         self.tex_unit_lookup_table = M2Array(uint16)
         self.transparency_lookup_table = M2Array(uint16)
+
         self.texture_transforms_lookup_table = M2Array(uint16)
+        self.texture_transforms_lookup_table.append(-1)     # first element can be -1 for convenience.
         
         self.bounding_box = CAaBox()
         self.bounding_sphere_radius = 0.0
