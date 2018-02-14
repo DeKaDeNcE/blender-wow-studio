@@ -25,12 +25,13 @@ class BlenderM2Scene:
         skin = self.m2.skins[0]  # assuming first skin is the most detailed one
 
         for tex_unit in skin.texture_units:
-            texture = self.m2.root.textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index]].filename.value
-            texture_png = os.path.splitext(texture)[0] + '.png'
+            texture = self.m2.root.textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index]]
+            tex_path_blp = texture.filename.value
+            tex_path_png = os.path.splitext(tex_path_blp)[0] + '.png'
             m2_mat = self.m2.root.materials[tex_unit.material_index]
 
             # creating material
-            blender_mat = bpy.data.materials.new(os.path.basename(texture_png))
+            blender_mat = bpy.data.materials.new(os.path.basename(tex_path_png))
 
             tex1_slot = blender_mat.texture_slots.create(0)
             tex1_slot.uv_layer = "UVMap"
@@ -38,21 +39,23 @@ class BlenderM2Scene:
 
             tex1_name = blender_mat.name + "_Tex_02"
             tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
+            tex1.WowM2Texture.Flags = parse_bitfield(texture.flags, 0x2)
+            tex1.WowM2Texture.TextureType = str(texture.type)
             tex1_slot.texture = tex1
 
             # loading images
-            if os.name != 'nt': texture_png = texture_png.replace('\\', '/')  # reverse slahes for unix
+            if os.name != 'nt': tex_path_png = tex_path_png.replace('\\', '/')  # reverse slahes for unix
 
             try:
-                tex1_img = bpy.data.images.load(os.path.join(texture_dir, texture_png))
+                tex1_img = bpy.data.images.load(os.path.join(texture_dir, tex_path_png))
                 tex1.image = tex1_img
                 blender_mat.active_texture = tex1
             except RuntimeError:
                 pass
 
             # filling material settings
-            parse_bitfield(tex_unit.flags, blender_mat.WowM2Material.Flags, 0x80)  # texture unit flags
-            parse_bitfield(m2_mat.flags, blender_mat.WowM2Material.RenderFlags, 0x800)  # render flags
+            blender_mat.WowM2Material.Flags = parse_bitfield(tex_unit.flags, 0x80)  # texture unit flags
+            blender_mat.WowM2Material.RenderFlags = parse_bitfield(m2_mat.flags, 0x800)  # render flags
 
             blender_mat.WowM2Material.BlendingMode = str(m2_mat.blending_mode)  # TODO: ? bitfield
             blender_mat.WowM2Material.Shader = str(tex_unit.shader_id)

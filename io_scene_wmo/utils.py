@@ -1,4 +1,4 @@
-def parse_bitfield(bitfield, ui_enum_prop, last_flag=0x1000):
+def parse_bitfield(bitfield, last_flag=0x1000):
 
     flags = set()
     bit = 1
@@ -6,7 +6,8 @@ def parse_bitfield(bitfield, ui_enum_prop, last_flag=0x1000):
         if bitfield & bit:
             flags.add(str(bit))
         bit <<= 1
-    ui_enum_prop = flags
+
+    return flags
 
 
 def get_material_viewport_image(material):
