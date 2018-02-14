@@ -109,7 +109,7 @@ class M2File:
         skin.texture_units.append(texture_unit)
 
     def add_material_to_geoeset(self, geoset_id, render_flags, blending, flags, shader_id, color_id,
-                                texture, texture2=None, texture3=None, texture4=None):  #TODO: Add extra params
+                                texture, texture2=None, texture3=None, texture4=None):  # TODO: Add extra params
         skin = self.skins[0]
         tex_unit = skin.texture_units[geoset_id]
         tex_unit.flags = flags
@@ -126,6 +126,8 @@ class M2File:
             m2_mat.flags = render_flags
             m2_mat.blending_mode = blending
             tex_unit.material_index = self.root.materials.add(m2_mat)
+
+            
 
         
 

@@ -1,44 +1,6 @@
 import bpy
 
-###############################
-## Constants
-###############################
-
-SHADERS = [
-    ('0', "Diffuse", ""), ('1', "Specular", ""), ('2', "Metal", ""),
-    ('3', "Env", ""), ('4', "Opaque", ""), ('5', "EnvMetal", ""),
-    ('6', "TwoLayerDiffuse", ""), ('7', "TwoLayerEnvMetal", ""), ('8', "TwoLayerTerrain", ""),
-    ('9', "DiffuseEmissive", ""), ('10', "Tangent", ""), ('11', "MaskedEnvMetal", ""),
-    ('12', "EnvMetalEmissive", ""), ('13', "TwoLayerDiffuseOpaque", ""), ('14', "TwoLayerDiffuseEmissive", "")
-]
-
-TEX_UNIT_FLAGS = [
-    ("1", "Invert", "", 'PMARKER', 0x1),
-    ("2", "Transform", "", 'FORCE_TURBULENCE', 0x2),
-    ("4", "Projected Texture", "", 'ARROW_LEFTRIGHT', 0x4),
-    ("8", "Unknown", "", 'ARROW_LEFTRIGHT', 0x8),
-    ("16", "Batch Compatible", "", 'PMARKER_SEL', 0x10),
-    ("32", "Projected Texture 2", "", 'PMARKER_ACT', 0x20),
-    ("64", "Use Texture Weights", "", 'PMARKER_ACT', 0x40)
-]
-
-RENDER_FLAGS = [
-    ("1", "Unlit", "Disable lighting", 'PMARKER', 0x1),
-    ("2", "Unfogged", "Disable fog", 'FORCE_TURBULENCE', 0x2),
-    ("4", "Two-sided", "Render from both sides", 'ARROW_LEFTRIGHT', 0x4),
-    ("8", "Depth-Test", "Unknown", 'PMARKER_SEL', 0x8),
-    ("16", "Depth-Write", "Unknown", 'PMARKER_ACT', 0x10)
-]
-
-BLENDING_MODES = [
-    ("0", "Opaque", "Blending disabled", 'PMARKER', 1),
-    ("1", "Mod", "Unknown", 'PMARKER', 2),
-    ("2", "Decal", "Unknown", 'FORCE_TURBULENCE', 3),
-    ("3", "Add", "Unknown", 'ARROW_LEFTRIGHT', 4),
-    ("4", "Mod2x", "Unknown", 'PMARKER_SEL', 5),
-    ("5", "Fade", "Unknown", 'PMARKER_ACT', 6),
-    ("6", "Deeeprun Tram", "Unknown", 'PMARKER_ACT', 7)
-]
+from .enums import *
 
 
 ###############################
