@@ -100,13 +100,61 @@ def unregister_wow_m2_geoset_properties():
     bpy.types.Object.WowM2Geoset = None
 
 
+###############################
+## Texture
+###############################
+
+class WowM2TexturePanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "texture"
+    bl_label = "M2 Texture"
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(context.texture.WowM2Texture, "Flags")
+        col.separator()
+        col.prop(context.texture.WowM2Texture, "TextureType")
+
+    @classmethod
+    def poll(cls, context):
+        return context.texture is not None
+
+
+class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
+
+    Flags = bpy.props.EnumProperty(
+        name="Texture flags",
+        description="WoW  M2 texture flags",
+        items=TEXTURE_FLAGS,
+        options={"ENUM_FLAG"}  # TODO: default
+        )
+
+    TextureType = bpy.props.EnumProperty(
+        name="Texture type",
+        description="WoW  M2 texture type",
+        items=TEXTURE_TYPES
+        )
+
+
+def register_wow_m2_texture_properties():
+    bpy.types.ImageTexture.WowM2Texture = bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)
+
+
+def unregister_wow_m2_texture_properties():
+    bpy.types.ImageTexture.WowM2Texture = None
+
+
 def register():
     register_wow_m2_material_properties()
     register_wow_m2_geoset_properties()
+    register_wow_m2_texture_properties()
 
 
 def unregister():
     unregister_wow_m2_material_properties()
     unregister_wow_m2_geoset_properties()
+    unregister_wow_m2_texture_properties()
 
 
