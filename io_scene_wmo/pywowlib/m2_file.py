@@ -1,6 +1,6 @@
 import os
 
-from .file_formats.m2_format import M2Header, M2Versions, M2Vertex, M2Material
+from .file_formats.m2_format import M2Header, M2Versions, M2Vertex, M2Material, M2Texture
 from .file_formats.skin_format import M2SkinProfile, M2SkinSubmesh, M2SkinTextureUnit
 
 
@@ -71,8 +71,7 @@ class M2File:
         skin.bone_indices.append(bone_indices)
         return vertex_index
 
-    def add_geoset(self, vertices, normals, tex_coords, tris, origin, mesh_part_id,
-                   bone_weights=None, bone_indices=None, tex_coords2=None):
+    def add_geoset(self, vertices, normals, uv, uv2, tris, origin, mesh_part_id, b_weights=None, b_indices=None):
         submesh = M2SkinSubmesh()
         texture_unit = M2SkinTextureUnit()
         skin = self.skins[0]
@@ -80,15 +79,15 @@ class M2File:
         # add vertices
         start_index = len(self.root.vertices)
         for i, vertex_pos in enumerate(vertices):
-            args = [vertex_pos, normals[i], tex_coords[i]]  # fill essentials
-            if bone_weights:
-                args.append(bone_weights[i])
+            args = [vertex_pos, normals[i], uv[i]]  # fill essentials
+            if b_weights:
+                args.append(b_weights[i])
 
-            if bone_indices:
-                args.append(bone_indices[i])
+            if b_indices:
+                args.append(b_indices[i])
 
-            if tex_coords2:
-                args.append(tex_coords2[i])
+            if uv2:
+                args.append(uv2[i])
 
             self.add_vertex(*args)
 
@@ -108,8 +107,7 @@ class M2File:
         texture_unit.geoset_index = geoset_index
         skin.texture_units.append(texture_unit)
 
-    def add_material_to_geoeset(self, geoset_id, render_flags, blending, flags, shader_id, color_id,
-                                texture, texture2=None, texture3=None, texture4=None):  # TODO: Add extra params
+    def add_material_to_geoeset(self, geoset_id, render_flags, blending, flags, shader_id, color_id, tex_id, tex_id2=None):  # TODO: Add extra params & cata +
         skin = self.skins[0]
         tex_unit = skin.texture_units[geoset_id]
         tex_unit.flags = flags
@@ -127,7 +125,21 @@ class M2File:
             m2_mat.blending_mode = blending
             tex_unit.material_index = self.root.materials.add(m2_mat)
 
-            
+    def add_texture(self, path, flags, tex_type):
+
+        # check if this texture was already added
+        for i, tex in enumerate(self.root.textures):
+            if tex.path == path and tex.flags == flags and tex.type == tex_type:
+                return i
+
+        texture = M2Texture()
+        texture.path = path
+        texture.flags = flags
+        texture.type = tex_type
+
+        return self.root.textures.add(texture)
+
+
 
         
 

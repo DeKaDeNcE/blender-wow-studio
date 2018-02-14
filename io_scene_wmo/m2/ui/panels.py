@@ -80,6 +80,9 @@ class M2GeosetPanel(bpy.types.Panel):
     def draw(self, context):
         self.layout.prop(context.object.WowM2Geoset, "CollisionMesh")
 
+        if not context.object.WowM2Geoset.CollisionMesh:
+            self.layout.prop(context.object.WowM2Geoset, "MeshPartID")
+
     @classmethod
     def poll(cls, context):
         return (context.object is not None
@@ -89,7 +92,16 @@ class M2GeosetPanel(bpy.types.Panel):
 
 
 class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
-    CollisionMesh = bpy.props.BoolProperty(default=False, name='Collision mesh')
+    CollisionMesh = bpy.props.BoolProperty(
+        name='Collision mesh',
+        default=False
+    )
+
+    MeshPartID = bpy.props.EnumProperty(
+        items=SHADERS,
+        name="Shader",
+        description="WoW shader assigned to this material"
+    )
 
 
 def register_wow_m2_geoset_properties():

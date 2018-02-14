@@ -1,3 +1,5 @@
+from ...pywowlib.enums.m2_enums import M2SkinMeshPartID
+
 ###############################
 ## Enumerated constants
 ###############################
@@ -65,3 +67,33 @@ TEXTURE_FLAGS = [
     ("1", "Wrap X", "Texture wrap X", 'PMARKER', 0x1),
     ("2", "Wrap Y", "Texture wrap Y", 'FORCE_TURBULENCE', 0x2),
 ]
+
+MESH_PART_IDS = [
+    ("Skin", "Skin", "Character body geoset", 'PMARKER', 1),
+    ("Hair", "Hair", "Character hair geosets", 'PMARKER', 2),
+    ("Facial1", "Facial1", "Usually beard geosets", 'PMARKER', 3),
+    ("Facial2", "Facial2", "Usually mustache geosets", 'PMARKER', 4),
+    ("Facial3", "Facial3", "Usually sideburns geosets", 'PMARKER', 5),
+    ("Glove", "Glove", "Glove geosets", 'PMARKER', 6),
+    ("Boots", "Boots", "Boots geosets", 'PMARKER', 7),
+    ("Unknown", "Unknown", "", 'PMARKER', 8),
+    ("Ears", "Ears", "Ears geosets", 'PMARKER', 9),
+    ("Wristbands", "Wristbands", "Wristbands / Sleeves geosets", 'PMARKER', 10),
+    ("Kneepads", "Kneepads", "Kneepad geosets", 'PMARKER', 11),
+    ("Chest", "Chest", "Chest geosets", 'PMARKER', 12),
+    ("Pants", "Pants", "Pants geosets", 'PMARKER', 13),
+    ("Tabard", "Tabard", "Tabard geosets", 'PMARKER', 14),
+    ("Trousers", "Trousers", "Trousers geosets", 'PMARKER', 15),
+    ("Unknown2", "Unknown 2", "", 'PMARKER', 16),
+    ("Cloak", "Cloak", "Cloak geosets", 'PMARKER', 17),
+    ("Unknown3", "Unknown 3", "", 'PMARKER', 18),
+    ("Eyeglows", "Eyeglows geosets", "", 'PMARKER', 19),
+    ("Belt", "Belt", "Belt / Bellypack geosets", 'PMARKER', 20),
+    ("Trail", "Trail", "Trail geosets / Undead bones (Legion+)", 'PMARKER', 21),
+    ("Feet", "Feet", "Feet geosets", 'PMARKER', 22),
+    ("Hands", "BE Hands", "Hands for Blood Elf / Night Elf (Legion+)", 'PMARKER', 23)
+]
+
+def mesh_part_id_menu(self, context):
+    pass
+

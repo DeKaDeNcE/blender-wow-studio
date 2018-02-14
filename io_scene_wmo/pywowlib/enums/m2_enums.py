@@ -94,14 +94,14 @@ class M2CompBoneFlags(IntEnum):
 
 
 class M2SkinMeshPartID(Enum):
-    Geoset = range(0, 1)
+    Skin = range(0, 1)
     Hair = range(1, 20)
     Facial1 = range(101, 109)
     Facial2 = range(201, 207)
     Facial3 = range(301, 306)
     Glove = range(401, 405)
     Boots = range(501, 506)
-    Unknown1 = range(601, 615)
+    Unknown = range(601, 615)
     Ears = range(701, 703)
     Wristbands = range(801, 804)
     Kneepads = range(901, 904)

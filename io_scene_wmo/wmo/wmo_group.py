@@ -216,7 +216,7 @@ class WMOGroupFile:
         mesh.update(calc_edges=True)
         mesh.validate()
 
-        #create uv map if liquid is lava
+        # create uv map if liquid is lava
         if self.mogp.LiquidType in {3, 4, 7, 8, 11, 12}:
             uvMap = {}
 

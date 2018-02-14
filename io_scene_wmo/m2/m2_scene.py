@@ -390,7 +390,7 @@ class BlenderM2Scene:
             mesh = new_obj.data
 
             if not mesh.uv_layers.active:
-                raise EnvironmentError("Mesh <<{}>> has no UV map.".format(obj.name))
+                raise Exception("Mesh <<{}>> has no UV map.".format(obj.name))
 
             # apply all modifiers
             if len(obj.modifiers):
@@ -432,9 +432,23 @@ class BlenderM2Scene:
             bpy.ops.mesh.select_all(action='DESELECT')
             bpy.ops.object.mode_set(mode='OBJECT')
 
-            new_obj.select = True
+
 
             # export vertices
+            vertices = [new_obj.matrix_world * vertex.co for vertex in mesh.vertices]
+            normals = [vertex.normal for vertex in mesh.vertices]
+            tex_coords = [mesh.uv_layers.active.data[loop.vertex_index].uv for loop in mesh.loops]
+            tris = [poly.vertices for poly in mesh.polygons]
+
+            tex_coords2 = []
+            if len(mesh.uv_layers) >= 2:
+                tex_coords2 = [mesh.uv_layers[1].data[loop.vertex_index].uv for loop in mesh.loops]
+
+            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY') # TODO: find a better way to do this
+            bpy.ops.view3d.snap_cursor_to_selected()
+            origin = bpy.context.scene.cursor_location
+
+            self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, )  # TODO: bone stuff
 
 
         for obj in proxy_objects:
