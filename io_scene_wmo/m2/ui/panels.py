@@ -128,7 +128,8 @@ class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
         name="Texture flags",
         description="WoW  M2 texture flags",
         items=TEXTURE_FLAGS,
-        options={"ENUM_FLAG"}  # TODO: default
+        options={"ENUM_FLAG"},
+        default={'1', '2'}
         )
 
     TextureType = bpy.props.EnumProperty(
