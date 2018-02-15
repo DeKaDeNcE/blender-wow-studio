@@ -95,5 +95,46 @@ MESH_PART_IDS = [
 ]
 
 def mesh_part_id_menu(self, context):
-    pass
+
+    geoset_group = context.object.WowM2Geoset.MeshPartID
+    if geoset_group == 'Skin':
+        return []
+
+    elif geoset_group == 'Hair':
+        return ["{}_{}".format('Hairstyle', i) for i in M2SkinMeshPartID.Hair.value]
+
+    elif geoset_group == 'Facial1':
+        return ["{}_{}".format('Facial', i) for i in M2SkinMeshPartID.Facial1.value]
+
+    elif geoset_group == 'Facial2':
+        return ["{}_{}".format('Facial', i) for i in M2SkinMeshPartID.Facial2.value]
+
+    elif geoset_group == 'Facial3':
+        return ["{}_{}".format('Facial', i) for i in M2SkinMeshPartID.Facial3.value]
+
+    elif geoset_group == 'Glove': # TODO: describe
+        return ["{}_{}".format('Glove', i) for i in M2SkinMeshPartID.Glove.value]
+
+    elif geoset_group == 'Boots':
+        return ["{}_{}".format('Boots', i) for i in M2SkinMeshPartID.Boots.value]
+
+    elif geoset_group in ('Unknown1', 'Unknown2', 'Unknown3'):
+        return []
+
+    elif geoset_group == 'Ears':
+        return [("1", "None (DNE)", "No ears"), ("2", "Ears", "Ears geoset")]
+
+    elif geoset_group == 'Wristbands':
+        return [("1", "None (DNE)", "No wristbands"),
+                ("2", "Normal", "Normal wristbands"),
+                ("3", "Ruffled", "Ruffled wristbands")]
+
+    elif geoset_group == 'Kneepads':
+        return [("1", "None (DNE)", "No kneepads"),
+                ("2", "Long", "Long kneepads"),
+                ("3", "Short", "Short kneepads")]
+
+
+
+
 
