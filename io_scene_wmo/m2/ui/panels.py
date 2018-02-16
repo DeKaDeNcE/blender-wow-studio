@@ -190,7 +190,7 @@ class WowM2LightPanel(bpy.types.Panel):
 
 
 def update_lamp_type(self, context):
-    context.object.data.type = 'POINT' if int(context.object.WowM2Light.Type) else 'SPOT'
+    context.object.data.type = 'POINT' if int(context.object.data.WowM2Light.Type) else 'SPOT'
 
 
 class WowM2LightPropertyGroup(bpy.types.PropertyGroup):

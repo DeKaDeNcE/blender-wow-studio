@@ -803,6 +803,7 @@ class WowFogPanel(bpy.types.Panel):
                 and context.object.WowFog.Enabled
                 )
 
+
 def UpdateFogColor(self, context):
     bpy.context.scene.objects.active.color = (self.Color1[0], self.Color1[1], self.Color1[2], 0.5)
 
