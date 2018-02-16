@@ -316,7 +316,8 @@ class WowM2AnimationPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        
+        col.prop(context.object.animation_data.action.WowM2Animation, 'AnimationID')
+
     @classmethod
     def poll(cls, context):
         try:
@@ -326,14 +327,12 @@ class WowM2AnimationPanel(bpy.types.Panel):
 
 
 class WowM2AnimationPropertyGroup(bpy.types.PropertyGroup):
-    Flags = bpy.props.EnumProperty(
-        name="Bone flags",
-        description="WoW bone flags",
-        items=BONE_FLAGS,
-        options={"ENUM_FLAG"}
+    AnimationID = bpy.props.EnumProperty(
+        name="AnimationID",
+        description="WoW Animation ID",
+        items=get_anim_ids
     )
 
-    
 
 def register_wow_m2_animation_properties():
     bpy.types.Action.WowM2Animation = bpy.props.PointerProperty(type=WowM2AnimationPropertyGroup)
@@ -349,7 +348,7 @@ def register():
     register_wow_m2_texture_properties()
     register_wow_m2_light_properties()
     register_wow_m2_bone_properties()
-    register_wow_m2_animation_properties
+    register_wow_m2_animation_properties()
 
 
 def unregister():
@@ -358,6 +357,6 @@ def unregister():
     unregister_wow_m2_texture_properties()
     unregister_wow_m2_light_properties()
     unregister_wow_m2_bone_properties()
-    unregister_wow_m2_animation_properties
+    unregister_wow_m2_animation_properties()
 
 
