@@ -211,7 +211,7 @@ class WowM2LightPropertyGroup(bpy.types.PropertyGroup):
 
     AmbientIntensity = bpy.props.FloatProperty(
         name="Ambient intensity",
-        description="Ambient intensity ntensity of the light",
+        description="Ambient intensity of the light",
         default=1.0,
         min=0.0,
         max=1.0
@@ -227,7 +227,7 @@ class WowM2LightPropertyGroup(bpy.types.PropertyGroup):
 
     DiffuseIntensity = bpy.props.FloatProperty(
         name="Diffuse intensity",
-        description="Diffuse intensity ntensity of the light",
+        description="Diffuse intensity of the light",
         default=1.0,
         min=0.0,
         max=1.0
