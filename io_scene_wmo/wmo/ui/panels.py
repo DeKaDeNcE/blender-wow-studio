@@ -336,7 +336,7 @@ class WowLightPropertyGroup(bpy.types.PropertyGroup):
     Color = bpy.props.FloatVectorProperty(
         name="Color",
         subtype='COLOR',
-        default=(1,1,1),
+        default=(1, 1, 1),
         min=0.0,
         max=1.0
         )

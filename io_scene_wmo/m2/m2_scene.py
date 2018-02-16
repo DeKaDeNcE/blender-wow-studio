@@ -308,6 +308,7 @@ class BlenderM2Scene:
             obj = bpy.data.objects.new(name if name else 'Geoset', mesh)
             bpy.context.scene.objects.link(obj)
 
+            obj.WowM2Geoset.MeshPartID = smesh.skin_section_id
             self.geosets.append(obj)
 
     def load_attachments(self):
