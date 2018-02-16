@@ -73,13 +73,14 @@ TEXTURE_FLAGS = [
 ]
 
 BONE_FLAGS = [
-    ("1", "Spherical Billboard", "", 'PMARKER', 0x8),
-    ("2", "Cylindrical Billboard Lock X", "", 'PMARKER', 0x10),
-    ("3", "Cylindrical Billboard Lock Y", "", 'PMARKER', 0x20),
-    ("4", "Cylindrical Billboard Lock Z", "", 'PMARKER', 0x40),
-    ("5", "Transformed", "", 'PMARKER', 0x200),
-    ("6", "Kinematic Bone", "", 'PMARKER', 0x400),
-    ("7", "Helmet Anim Scaled", "", 'PMARKER', 0x1000),
+    ("4", "Unknown flag", "", 'PMARKER', 0x4),
+    ("8", "Spherical Billboard", "", 'PMARKER', 0x8),
+    ("16", "Cylindrical Billboard Lock X", "", 'PMARKER', 0x10),
+    ("32", "Cylindrical Billboard Lock Y", "", 'PMARKER', 0x20),
+    ("64", "Cylindrical Billboard Lock Z", "", 'PMARKER', 0x40),
+    ("512", "Transformed", "", 'PMARKER', 0x200),
+    ("1024", "Kinematic Bone", "", 'PMARKER', 0x400),
+    ("4096", "Helmet Anim Scaled", "", 'PMARKER', 0x1000),
 ]
 
 MESH_PART_TYPES = [

@@ -1,5 +1,9 @@
 import bpy
+
+from io import BytesIO
 from .pywowlib.archives.mpq.wow import WoWFileData
+from .pywowlib.wdbx.wdbc import DBFilesClient, DBCFile
+from .pywowlib.wdbx.definitions.wotlk import AnimationData
 
 
 def parse_bitfield(bitfield, last_flag=0x1000):
@@ -32,5 +36,12 @@ def load_game_data():
 
         if not bpy.wow_game_data.files:
             raise ChildProcessError("WoW game data is not loaded. Check settings.")
+
+        bpy.db_files_client = DBFilesClient()
+
+        # list of all DB tables that we need to load
+        anim_data_dbc = DBCFile(AnimationData, 'AnimationData')
+        anim_data_dbc.read(BytesIO(bpy.wow_game_data.read_file('DBFilesClient\\AnimationData.dbc')))
+        bpy.db_files_client.add(anim_data_dbc)
 
     return bpy.wow_game_data

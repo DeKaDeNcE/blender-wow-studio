@@ -146,9 +146,8 @@ class BlenderM2Scene:
         bpy.ops.object.mode_set(mode='POSE')
 
         game_data = load_game_data()
+        anim_data_dbc = bpy.db_files_client.AnimationData
 
-        anim_data_dbc = DBCFile(AnimationData)
-        anim_data_dbc.read(BytesIO(game_data.read_file('DBFilesClient\\AnimationData.dbc')))
 
         for i, sequence in enumerate(self.m2.root.sequences):
             field_name = None

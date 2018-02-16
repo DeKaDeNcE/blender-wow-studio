@@ -56,8 +56,9 @@ class DBCString:
 
 
 class DBCFile:
-    def __init__(self, definition):
+    def __init__(self, definition, name):
         self.header = DBCHeader()
+        self.name = name
         self.field_names = namedtuple('RecordGen', [name for name in definition.keys()])
         self.field_types = tuple([type_ for type_ in definition.values()])
         self.records = []
@@ -73,4 +74,14 @@ class DBCFile:
             if record.ID == id:
                 return getattr(record, name)
 
+
+class DBFilesClient:
+    def __init__(self):
+        self.tables = {}
+
+    def __getattr__(self, item):
+        return self.tables[item]
+
+    def add(self, wdb):
+        self.tables[wdb.name] = wdb
 
