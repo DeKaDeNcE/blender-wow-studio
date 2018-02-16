@@ -32,12 +32,12 @@ RENDER_FLAGS = [
 
 BLENDING_MODES = [
     ("0", "Opaque", "Blending disabled", 'PMARKER', 1),
-    ("1", "Mod", "Unknown", 'PMARKER', 2),
-    ("2", "Decal", "Unknown", 'FORCE_TURBULENCE', 3),
-    ("3", "Add", "Unknown", 'ARROW_LEFTRIGHT', 4),
-    ("4", "Mod2x", "Unknown", 'PMARKER_SEL', 5),
-    ("5", "Fade", "Unknown", 'PMARKER_ACT', 6),
-    ("6", "Deeeprun Tram", "Unknown", 'PMARKER_ACT', 7)
+    ("1", "AlphaTesting", "All pixels are fully opaque or transparent, leading to aliasing (“jaggies”)", 'PMARKER', 2),
+    ("2", "AlphaBlending", "All pixels can support full transparency range. Sometimes thus can produce some rendering issues", 'FORCE_TURBULENCE', 3),
+    ("3", "Add", "Takes the pixels of the Material and adds them to the pixels of the background. This means that there is no darkening; since all pixel values are added together, blacks will just render as transparent", 'ARROW_LEFTRIGHT', 4),
+    ("4", "AddAlpha", "This Blend Mode works by taking in an Opacity value or texture and applying it to the surface such that black areas are completely transparent, white areas are completely opaque, and the varying shades of gradation between result in corresponding transparency levels", 'PMARKER_SEL', 5),
+    ("5", "Modulate", "The Modulate Blend Mode simply multiplies the value of the Material against the pixels of the background", 'PMARKER_ACT', 6),
+    ("6", "DeeeprunTram", "Probably is used in particles. Needs to be researched", 'PMARKER_ACT', 7)
 ]
 
 TEXTURE_TYPES = [

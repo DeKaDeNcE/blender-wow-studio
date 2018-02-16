@@ -178,7 +178,6 @@ class WowM2LightPanel(bpy.types.Panel):
         col.prop(context.object.data.WowM2Light, "AmbientIntensity")
         col.prop(context.object.data.WowM2Light, "DiffuseColor")
         col.prop(context.object.data.WowM2Light, "DiffuseIntensity")
-        col.prop(context.object.data.WowM2Light, "DiffuseIntensity")
         col.prop(context.object.data.WowM2Light, "AttenuationStart")
         col.prop(context.object.data.WowM2Light, "AttenuationEnd")
         col.prop(context.object.data.WowM2Light, "Enabled")
@@ -190,7 +189,7 @@ class WowM2LightPanel(bpy.types.Panel):
 
 
 def update_lamp_type(self, context):
-    context.object.data.type = 'POINT' if int(context.object.data.WowM2Light.Type) else 'SPOT'
+    context.object.data.type = 'POINT' if int(context.object.WowM2Light.Type) else 'SPOT'
 
 
 class WowM2LightPropertyGroup(bpy.types.PropertyGroup):
@@ -212,7 +211,7 @@ class WowM2LightPropertyGroup(bpy.types.PropertyGroup):
 
     AmbientIntensity = bpy.props.FloatProperty(
         name="Ambient intensity",
-        description="Ambient intensity ntensity of the light",
+        description="Ambient intensity of the light",
         default=1.0,
         min=0.0,
         max=1.0
@@ -228,7 +227,7 @@ class WowM2LightPropertyGroup(bpy.types.PropertyGroup):
 
     DiffuseIntensity = bpy.props.FloatProperty(
         name="Diffuse intensity",
-        description="Diffuse intensity ntensity of the light",
+        description="Diffuse intensity of the light",
         default=1.0,
         min=0.0,
         max=1.0
