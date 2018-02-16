@@ -97,10 +97,11 @@ class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
         default=False
     )
 
-    MeshPartID = bpy.props.EnumProperty(
-        items=MESH_PART_IDS,
-        name="Geoset type",
-        description="Type of this geoset"
+    MeshPartID = bpy.props.IntProperty(
+        name="Geoset ID",
+        description="Mesh part ID of this geoset",
+        min=0,
+        max=2500
     )
 
 

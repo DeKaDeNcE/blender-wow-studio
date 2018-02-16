@@ -68,7 +68,7 @@ TEXTURE_FLAGS = [
     ("2", "Wrap Y", "Texture wrap Y", 'FORCE_TURBULENCE', 0x2),
 ]
 
-MESH_PART_IDS = [
+MESH_PART_TYPES = [
     ("Skin", "Skin", "Character body geoset", 'PMARKER', 1),
     ("Hair", "Hair", "Character hair geosets", 'PMARKER', 2),
     ("Facial1", "Facial1", "Usually beard geosets", 'PMARKER', 3),
@@ -98,28 +98,28 @@ MESH_PART_IDS = [
 def mesh_part_id_menu(self, context):
     geoset_group = context.object.WowM2Geoset.MeshPartID
     if geoset_group == 'Skin':
-        return []
+        return [('0', 'No subtype', "")]
 
     elif geoset_group == 'Hair':
-        return [(i, "{}_{}".format('Hairstyle', i), "") for i in M2SkinMeshPartID.Hairstyle.value]
+        return [(str(i), "{}_{}".format('Hairstyle', i), "") for i in M2SkinMeshPartID.Hairstyle.value]
 
     elif geoset_group == 'Facial1':
-        return [(i, "{}_{}".format('Facial', i), "") for i in M2SkinMeshPartID.Facial1.value]
+        return [(str(i), "{}_{}".format('Facial', i), "") for i in M2SkinMeshPartID.Facial1.value]
 
     elif geoset_group == 'Facial2':
-        return [(i, "{}_{}".format('Facial', i), "") for i in M2SkinMeshPartID.Facial2.value]
+        return [(str(i), "{}_{}".format('Facial', i), "") for i in M2SkinMeshPartID.Facial2.value]
 
     elif geoset_group == 'Facial3':
-        return [(i, "{}_{}".format('Facial', i), "") for i in M2SkinMeshPartID.Facial3.value]
+        return [(str(i), "{}_{}".format('Facial', i), "") for i in M2SkinMeshPartID.Facial3.value]
 
     elif geoset_group == 'Glove':  # TODO: describe
-        return [(i, "{}_{}".format('Glove', i), "") for i in M2SkinMeshPartID.Glove.value]
+        return [(str(i), "{}_{}".format('Glove', i), "") for i in M2SkinMeshPartID.Glove.value]
 
     elif geoset_group == 'Boots':
-        return [(i, "{}_{}".format('Boots', i), "") for i in M2SkinMeshPartID.Boots.value]
+        return [(str(i), "{}_{}".format('Boots', i), "") for i in M2SkinMeshPartID.Boots.value]
 
     elif geoset_group in ('Unknown1', 'Unknown2', 'Unknown3'):
-        return []
+        return [('0', 'No subtype', "")]
 
     elif geoset_group == 'Ears':
         return [("701", "None (DNE)", "No ears"),
@@ -153,7 +153,7 @@ def mesh_part_id_menu(self, context):
                ("1302", "Dress", "Tabard")]
 
     elif geoset_group == 'Cloak':
-        return [(i, "{}_{}".format('Cloak', i), "") for i in M2SkinMeshPartID.Cloak.value]
+        return [(str(i), "{}_{}".format('Cloak', i), "") for i in M2SkinMeshPartID.Cloak.value]
 
     elif geoset_group == 'Eyeglows':
         return [("1701", "None (DNE)", "No eyeglow"),
@@ -165,7 +165,7 @@ def mesh_part_id_menu(self, context):
                 ("1802", "Bulky", "Bulky belt")]
 
     elif geoset_group == 'Tail':
-        return []
+        return [('0', 'No subtype', "")]
 
     elif geoset_group == 'Feet':
         return [("2001", "None (DNE)", "No feet"),
@@ -173,6 +173,9 @@ def mesh_part_id_menu(self, context):
 
     elif geoset_group == 'Hands':
         return [("1", "BE / NE Hands", 'Hands for Blood Elf / Night Elf')]
+
+    else:
+        return [('0', 'No subtype', "")]
 
 
 
