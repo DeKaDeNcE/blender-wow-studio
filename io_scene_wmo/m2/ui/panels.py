@@ -272,7 +272,7 @@ class WowM2BonePanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(context.object.data)
+        col.prop(context.object.data.bones.WowM2Bone, "Flags")
 
     @classmethod
     def poll(cls, context):
