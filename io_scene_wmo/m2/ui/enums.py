@@ -1,8 +1,7 @@
 import bpy
-from io import BytesIO
 from ...pywowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones
-from ...pywowlib.wdbx.wdbc import DBCFile
-from ...pywowlib.wdbx.definitions.wotlk import AnimationData
+from ...utils import load_game_data
+
 
 ###############################
 ## Enumerated constants
@@ -73,7 +72,7 @@ TEXTURE_FLAGS = [
 ]
 
 BONE_FLAGS = [
-    ("4", "Unknown flag", "", 'PMARKER', 0x4),
+    ("4", "Unknown", "", 'PMARKER', 0x4),
     ("8", "Spherical Billboard", "", 'PMARKER', 0x8),
     ("16", "Cylindrical Billboard Lock X", "", 'PMARKER', 0x10),
     ("32", "Cylindrical Billboard Lock Y", "", 'PMARKER', 0x20),
@@ -200,9 +199,9 @@ def get_keybone_ids(self, context):
     return keybone_ids
 
 
-KEY_BONE_IDS = []
-
-
+def get_anim_ids(self, context):
+    load_game_data()
+    return [(str(record.ID), record.Name, '') for record in bpy.db_files_client.AnimationData.records]
 
 
 

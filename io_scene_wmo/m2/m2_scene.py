@@ -148,7 +148,6 @@ class BlenderM2Scene:
         game_data = load_game_data()
         anim_data_dbc = bpy.db_files_client.AnimationData
 
-
         for i, sequence in enumerate(self.m2.root.sequences):
             field_name = None
             if anim_data_dbc:
