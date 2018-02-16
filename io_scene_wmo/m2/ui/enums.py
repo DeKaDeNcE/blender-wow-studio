@@ -94,45 +94,87 @@ MESH_PART_IDS = [
     ("Hands", "BE Hands", "Hands for Blood Elf / Night Elf (Legion+)", 'PMARKER', 23)
 ]
 
-def mesh_part_id_menu(self, context):
 
+def mesh_part_id_menu(self, context):
     geoset_group = context.object.WowM2Geoset.MeshPartID
     if geoset_group == 'Skin':
         return []
 
     elif geoset_group == 'Hair':
-        return ["{}_{}".format('Hairstyle', i) for i in M2SkinMeshPartID.Hair.value]
+        return [(i, "{}_{}".format('Hairstyle', i), "") for i in M2SkinMeshPartID.Hairstyle.value]
 
     elif geoset_group == 'Facial1':
-        return ["{}_{}".format('Facial', i) for i in M2SkinMeshPartID.Facial1.value]
+        return [(i, "{}_{}".format('Facial', i), "") for i in M2SkinMeshPartID.Facial1.value]
 
     elif geoset_group == 'Facial2':
-        return ["{}_{}".format('Facial', i) for i in M2SkinMeshPartID.Facial2.value]
+        return [(i, "{}_{}".format('Facial', i), "") for i in M2SkinMeshPartID.Facial2.value]
 
     elif geoset_group == 'Facial3':
-        return ["{}_{}".format('Facial', i) for i in M2SkinMeshPartID.Facial3.value]
+        return [(i, "{}_{}".format('Facial', i), "") for i in M2SkinMeshPartID.Facial3.value]
 
-    elif geoset_group == 'Glove': # TODO: describe
-        return ["{}_{}".format('Glove', i) for i in M2SkinMeshPartID.Glove.value]
+    elif geoset_group == 'Glove':  # TODO: describe
+        return [(i, "{}_{}".format('Glove', i), "") for i in M2SkinMeshPartID.Glove.value]
 
     elif geoset_group == 'Boots':
-        return ["{}_{}".format('Boots', i) for i in M2SkinMeshPartID.Boots.value]
+        return [(i, "{}_{}".format('Boots', i), "") for i in M2SkinMeshPartID.Boots.value]
 
     elif geoset_group in ('Unknown1', 'Unknown2', 'Unknown3'):
         return []
 
     elif geoset_group == 'Ears':
-        return [("1", "None (DNE)", "No ears"), ("2", "Ears", "Ears geoset")]
+        return [("701", "None (DNE)", "No ears"),
+                ("702", "Ears", "Ears geoset")]
 
     elif geoset_group == 'Wristbands':
-        return [("1", "None (DNE)", "No wristbands"),
-                ("2", "Normal", "Normal wristbands"),
-                ("3", "Ruffled", "Ruffled wristbands")]
+        return [("801", "None (DNE)", "No wristbands"),
+                ("802", "Normal", "Normal wristbands"),
+                ("803", "Ruffled", "Ruffled wristbands")]
 
     elif geoset_group == 'Kneepads':
-        return [("1", "None (DNE)", "No kneepads"),
-                ("2", "Long", "Long kneepads"),
-                ("3", "Short", "Short kneepads")]
+        return [("901", "None (DNE)", "No kneepads"),
+                ("902", "Long", "Long kneepads"),
+                ("903", "Short", "Short kneepads")]
+
+    elif geoset_group == 'Chest':
+        return [("1001", "None (DNE)", "No chest"),
+                ("1002", "Chest", "Purpose is unknown")]
+
+    elif geoset_group == 'Pants':
+        return [("1101", "Regular", "Regular pants"),
+                ("1102", "Skirt", "Short skirt"),
+                ("1103", "Armored", "Armored pants")]
+
+    elif geoset_group == 'Tabard':
+        return [("1201", "None (DNE)", "No tabard"),
+                ("1202", "Tabard", "Tabard")]
+
+    elif geoset_group == 'Trousers':
+        return [("1301", "Legs", "Legs"),
+               ("1302", "Dress", "Tabard")]
+
+    elif geoset_group == 'Cloak':
+        return [(i, "{}_{}".format('Cloak', i), "") for i in M2SkinMeshPartID.Cloak.value]
+
+    elif geoset_group == 'Eyeglows':
+        return [("1701", "None (DNE)", "No eyeglow"),
+                ("1702", "Racial", "Racial eyeglow"),
+                ("1703", "DK", "Death Knight eyeglow")]
+
+    elif geoset_group == 'Belt':
+        return [("1801", "None (DNE)", "No belt / bellypack"),
+                ("1802", "Bulky", "Bulky belt")]
+
+    elif geoset_group == 'Tail':
+        return []
+
+    elif geoset_group == 'Feet':
+        return [("2001", "None (DNE)", "No feet"),
+                ("2002", "Feet", "Feet")]
+
+    elif geoset_group == 'Hands':
+        return [("1", "BE / NE Hands", 'Hands for Blood Elf / Night Elf')]
+
+
 
 
 

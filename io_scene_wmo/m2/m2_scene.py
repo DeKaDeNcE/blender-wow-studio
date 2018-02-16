@@ -432,8 +432,6 @@ class BlenderM2Scene:
             bpy.ops.mesh.select_all(action='DESELECT')
             bpy.ops.object.mode_set(mode='OBJECT')
 
-
-
             # export vertices
             vertices = [new_obj.matrix_world * vertex.co for vertex in mesh.vertices]
             normals = [vertex.normal for vertex in mesh.vertices]
@@ -449,7 +447,6 @@ class BlenderM2Scene:
             origin = bpy.context.scene.cursor_location
 
             self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, )  # TODO: bone stuff
-
 
         for obj in proxy_objects:
             bpy.data.objects.remove(obj, do_unlink=True)
