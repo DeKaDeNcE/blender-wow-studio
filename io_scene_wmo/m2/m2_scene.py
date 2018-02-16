@@ -145,9 +145,10 @@ class BlenderM2Scene:
         bpy.context.scene.objects.active = rig
         bpy.ops.object.mode_set(mode='POSE')
 
-        game_data = getattr(bpy, "wow_game_data", None)
-        if not game_data:
+        if not hasattr(bpy, 'wow_game_data'):
             bpy.ops.scene.load_wow_filesystem()
+
+        game_data = bpy.wow_game_data
 
         anim_data_dbc = DBCFile(AnimationData)
         anim_data_dbc.read(BytesIO(game_data.read_file('DBFilesClient\\AnimationData.dbc')))
