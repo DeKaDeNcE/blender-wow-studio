@@ -99,13 +99,8 @@ class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
 
     MeshPartID = bpy.props.EnumProperty(
         items=MESH_PART_IDS,
-<<<<<<< HEAD
-        name="Shader",
-        description="WoW shader assigned to this material"
-=======
         name="Geoset type",
         description="Type of this geoset"
->>>>>>> 51c5537ce62a38a0f1f88c52ec2d7bec4ce650b2
     )
 
 
