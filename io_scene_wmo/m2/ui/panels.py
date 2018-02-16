@@ -178,7 +178,6 @@ class WowM2LightPanel(bpy.types.Panel):
         col.prop(context.object.data.WowM2Light, "AmbientIntensity")
         col.prop(context.object.data.WowM2Light, "DiffuseColor")
         col.prop(context.object.data.WowM2Light, "DiffuseIntensity")
-        col.prop(context.object.data.WowM2Light, "DiffuseIntensity")
         col.prop(context.object.data.WowM2Light, "AttenuationStart")
         col.prop(context.object.data.WowM2Light, "AttenuationEnd")
         col.prop(context.object.data.WowM2Light, "Enabled")
@@ -258,6 +257,44 @@ def register_wow_m2_light_properties():
 
 def unregister_wow_m2_light_properties():
     bpy.types.Lamp.WowM2Light = None
+    
+    
+###############################
+## Bone
+###############################
+
+class WowM2BonePanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "bone"
+    bl_label = "M2 Bone"
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(context.object.data)
+
+    @classmethod
+    def poll(cls, context):
+        return context.object is not None \
+            and context.object.type == 'ARMATURE'
+
+
+class WowM2BonePropertyGroup(bpy.types.PropertyGroup):
+    Flags = bpy.props.EnumProperty(
+        name="Bone flags",
+        description="WoW bone flags",
+        items=BONE_FLAGS,
+        options={"ENUM_FLAG"}
+        )
+    
+
+def register_wow_m2_bone_properties():
+    bpy.types.EditBone.WowM2Bone = bpy.props.PointerProperty(type=WowM2BonePropertyGroup)
+
+
+def unregister_wow_m2_bone_properties():
+    bpy.types.EditBone.WowM2Bone = None
 
 
 def register():
@@ -265,6 +302,7 @@ def register():
     register_wow_m2_geoset_properties()
     register_wow_m2_texture_properties()
     register_wow_m2_light_properties()
+    register_wow_m2_bone_properties()
 
 
 def unregister():
@@ -272,5 +310,6 @@ def unregister():
     unregister_wow_m2_geoset_properties()
     unregister_wow_m2_texture_properties()
     unregister_wow_m2_light_properties()
+    unregister_wow_m2_bone_properties()
 
 

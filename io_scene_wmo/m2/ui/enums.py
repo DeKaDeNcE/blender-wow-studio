@@ -68,6 +68,16 @@ TEXTURE_FLAGS = [
     ("2", "Wrap Y", "Texture wrap Y", 'FORCE_TURBULENCE', 0x2),
 ]
 
+BONE_FLAGS = [
+    ("1", "Spherical Billboard", "", 'PMARKER', 0x8),
+    ("2", "Cylindrical Billboard Lock X", "", 'PMARKER', 0x10),
+    ("3", "Cylindrical Billboard Lock Y", "", 'PMARKER', 0x20),
+    ("4", "Cylindrical Billboard Lock Z", "", 'PMARKER', 0x40),
+    ("5", "Transformed", "", 'PMARKER', 0x200),
+    ("6", "Kinematic Bone", "", 'PMARKER', 0x400),
+    ("7", "Helmet Anim Scaled", "", 'PMARKER', 0x1000),
+]
+
 MESH_PART_TYPES = [
     ("Skin", "Skin", "Character body geoset", 'PMARKER', 1),
     ("Hair", "Hair", "Character hair geosets", 'PMARKER', 2),
