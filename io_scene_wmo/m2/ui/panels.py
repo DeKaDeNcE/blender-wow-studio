@@ -285,8 +285,7 @@ class WowM2BonePropertyGroup(bpy.types.PropertyGroup):
     KeyBoneID = bpy.props.EnumProperty(
         name="Keybone",
         description="WoW bone keybone ID",
-        items=get_keybone_ids,
-        default='-1'
+        items=get_keybone_ids
     )
 
     Flags = bpy.props.EnumProperty(
@@ -303,6 +302,45 @@ def register_wow_m2_bone_properties():
 
 def unregister_wow_m2_bone_properties():
     bpy.types.EditBone.WowM2Bone = None
+    
+    
+###############################
+## Animation
+###############################
+
+class WowM2AnimationPanel(bpy.types.Panel):
+    bl_space_type = "DOPESHEET_EDITOR"
+    bl_region_type = "UI"
+    bl_label = "M2 Animation"
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        
+    @classmethod
+    def poll(cls, context):
+        try:
+            return context.object.animation_data.action is not None
+        except AttributeError:
+            return False
+
+
+class WowM2AnimationPropertyGroup(bpy.types.PropertyGroup):
+    Flags = bpy.props.EnumProperty(
+        name="Bone flags",
+        description="WoW bone flags",
+        items=BONE_FLAGS,
+        options={"ENUM_FLAG"}
+    )
+
+    
+
+def register_wow_m2_animation_properties():
+    bpy.types.Action.WowM2Animation = bpy.props.PointerProperty(type=WowM2AnimationPropertyGroup)
+
+
+def unregister_wow_m2_animation_properties():
+    bpy.types.Action.WowM2Animation = None
 
 
 def register():
@@ -311,6 +349,7 @@ def register():
     register_wow_m2_texture_properties()
     register_wow_m2_light_properties()
     register_wow_m2_bone_properties()
+    register_wow_m2_animation_properties
 
 
 def unregister():
@@ -319,5 +358,6 @@ def unregister():
     unregister_wow_m2_texture_properties()
     unregister_wow_m2_light_properties()
     unregister_wow_m2_bone_properties()
+    unregister_wow_m2_animation_properties
 
 

@@ -1,4 +1,8 @@
+import bpy
+from io import BytesIO
 from ...pywowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones
+from ...pywowlib.wdbx.wdbc import DBCFile
+from ...pywowlib.wdbx.definitions.wotlk import AnimationData
 
 ###############################
 ## Enumerated constants
@@ -193,6 +197,17 @@ def get_keybone_ids(self, context):
     keybone_ids.extend([(str(field.value), field.name, '') for field in M2KeyBones])
 
     return keybone_ids
+
+
+if not hasattr(bpy, 'wow_game_data'):
+    bpy.ops.scene.load_wow_filesystem()
+
+game_data = bpy.wow_game_data
+
+anim_data_dbc = DBCFile(AnimationData)
+anim_data_dbc.read(BytesIO(game_data.read_file('DBFilesClient\\AnimationData.dbc')))
+
+KEY_BONE_IDS = []
 
 
 

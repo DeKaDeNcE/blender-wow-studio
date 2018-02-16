@@ -804,7 +804,7 @@ class WowFogPanel(bpy.types.Panel):
                 )
 
 
-def UpdateFogColor(self, context):
+def update_fog_color(self, context):
     bpy.context.scene.objects.active.color = (self.Color1[0], self.Color1[1], self.Color1[2], 0.5)
 
 
@@ -863,7 +863,7 @@ class WowFogPropertyGroup(bpy.types.PropertyGroup):
         default=(1,1,1),
         min=0.0,
         max=1.0,
-        update=UpdateFogColor
+        update=update_fog_color
         )
 
     EndDist2 = bpy.props.FloatProperty(
@@ -1066,19 +1066,19 @@ class WMOToolsPanelObjectModeAddToScene(bpy.types.Panel):
         box1 = col.box().column(align=True)
         box1_col = box1.column(align=True)
         box1_row1 = box1_col.row(align=True)
-        box1_row1.operator("scene.wow_add_fog", text = 'Fog', icon = 'GROUP_VERTEX')
-        box1_row1.operator("scene.wow_add_water", text = 'Water', icon = 'MOD_WAVE')
+        box1_row1.operator("scene.wow_add_fog", text='Fog', icon = 'GROUP_VERTEX')
+        box1_row1.operator("scene.wow_add_water", text='Water', icon = 'MOD_WAVE')
         box1_row2 = box1_col.row(align=True)
         box1_row3 = box1_col.row(align=True)
         if game_data_loaded:
             if not has_sets:
                 box1_row2.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2', icon = 'LOAD_FACTORY')
-                box1_row2.operator("scene.wow_import_last_wmo_from_wmv", text = 'WMO', icon = 'APPEND_BLEND')
+                box1_row2.operator("scene.wow_import_last_wmo_from_wmv", text='WMO', icon = 'APPEND_BLEND')
             box1_row3.operator("scene.wow_import_adt_scene", text='ADT', icon='OUTLINER_OB_GROUP_INSTANCE')
             box1_row3.operator("scene.wow_add_scale_reference", text='Scale', icon='OUTLINER_OB_ARMATURE')
 
         else:
-            box1_col.operator("scene.wow_add_scale_reference", text = 'Scale', icon = 'OUTLINER_OB_ARMATURE')
+            box1_col.operator("scene.wow_add_scale_reference", text='Scale', icon = 'OUTLINER_OB_ARMATURE')
 
 
 class WMOToolsPanelObjectModeActions(bpy.types.Panel):
@@ -1151,6 +1151,7 @@ class ConvertOperators(bpy.types.Menu):
         col.operator("scene.wow_selected_objects_to_portals", text='To WMO portal', icon='MOD_MIRROR')
         col.operator("scene.wow_texface_to_material", text='Texface to material', icon='TEXTURE_DATA')
 
+
 class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
     bl_label = "WoW"
     bl_idname = "view3D.add_wow_components_menu"
@@ -1167,6 +1168,7 @@ class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
             col.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2', icon='LOAD_FACTORY')
             col.operator("scene.wow_import_last_wmo_from_wmv", text='WMO', icon='APPEND_BLEND')
             col.operator("scene.wow_import_adt_scene", text='ADT', icon='OUTLINER_OB_GROUP_INSTANCE')
+
 
 def wow_components_add_menu_item(self, context):
     self.layout.menu("view3D.add_wow_components_menu", icon = 'SOLO_ON')
