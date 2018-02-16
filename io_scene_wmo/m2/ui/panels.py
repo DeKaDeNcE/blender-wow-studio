@@ -272,12 +272,11 @@ class WowM2BonePanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(context.object.data.bones.WowM2Bone, "Flags")
+        col.prop(context.edit_bone.WowM2Bone, "Flags")
 
     @classmethod
     def poll(cls, context):
-        return context.object is not None \
-            and context.object.type == 'ARMATURE'
+        return context.edit_bone is not None
 
 
 class WowM2BonePropertyGroup(bpy.types.PropertyGroup):
