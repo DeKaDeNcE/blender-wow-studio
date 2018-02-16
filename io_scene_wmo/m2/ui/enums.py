@@ -1,4 +1,4 @@
-from ...pywowlib.enums.m2_enums import M2SkinMeshPartID
+from ...pywowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones
 
 ###############################
 ## Enumerated constants
@@ -187,6 +187,12 @@ def mesh_part_id_menu(self, context):
     else:
         return [('0', 'No subtype', "")]
 
+
+def get_keybone_ids(self, context):
+    keybone_ids = [('-1', 'Not a keybone', '')]
+    keybone_ids.extend([(str(field.value), field.name, '') for field in M2KeyBones])
+
+    return keybone_ids
 
 
 

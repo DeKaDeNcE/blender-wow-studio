@@ -272,6 +272,8 @@ class WowM2BonePanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
+        col.prop(context.edit_bone.WowM2Bone, "KeyBoneID")
+        col.separator()
         col.prop(context.edit_bone.WowM2Bone, "Flags")
 
     @classmethod
@@ -280,6 +282,13 @@ class WowM2BonePanel(bpy.types.Panel):
 
 
 class WowM2BonePropertyGroup(bpy.types.PropertyGroup):
+    KeyBoneID = bpy.props.EnumProperty(
+        name="Keybone",
+        description="WoW bone keybone ID",
+        items=get_keybone_ids,
+        default='-1'
+    )
+
     Flags = bpy.props.EnumProperty(
         name="Bone flags",
         description="WoW bone flags",
