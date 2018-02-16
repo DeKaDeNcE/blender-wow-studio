@@ -75,7 +75,7 @@ class M2GeosetPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
-    bl_label = "WoW M2 Collision"
+    bl_label = "WoW M2 Geoset"
 
     def draw(self, context):
         self.layout.prop(context.object.WowM2Geoset, "CollisionMesh")
@@ -98,9 +98,9 @@ class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
     )
 
     MeshPartID = bpy.props.EnumProperty(
-        items=SHADERS,
-        name="Shader",
-        description="WoW shader assigned to this material"
+        items=MESH_PART_IDS,
+        name="Geoset type",
+        description="Type of this geoset"
     )
 
 
