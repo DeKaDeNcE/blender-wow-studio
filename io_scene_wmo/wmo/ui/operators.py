@@ -9,6 +9,7 @@ import struct
 from .panels import *
 from ...m2 import import_doodad as m2
 from ...ui import get_addon_prefs
+from ...utils import load_game_data
 
 
 ###############################
@@ -92,7 +93,7 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
     def execute(self, context):
 
-        game_data = getattr(bpy, "wow_game_data", None)
+        game_data = load_game_data()
 
         if not game_data or not game_data.files:
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
@@ -333,7 +334,7 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
 
     def execute(self, context):
 
-        game_data = getattr(bpy, "wow_game_data", None)
+        game_data = load_game_data()
 
         if not game_data or not game_data.files:
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
@@ -599,9 +600,7 @@ class DOODAD_SET_CLEAR_PRESERVED(bpy.types.Operator):
 
     def execute(self, context):
         if self.Action == '0':
-            if not hasattr(bpy, "wow_game_data"):
-                print("\n\n### Loading game data ###")
-                bpy.ops.scene.load_wow_filesystem()
+            game_data = load_game_data()
 
             addon_prefs = get_addon_prefs()
             dir = addon_prefs.cache_dir_path if addon_prefs.use_cache_dir else \
@@ -609,7 +608,7 @@ class DOODAD_SET_CLEAR_PRESERVED(bpy.types.Operator):
 
             if dir:
                 try:
-                    LoadDoodadsFromPreserved(dir, bpy.wow_game_data)
+                    LoadDoodadsFromPreserved(dir, game_data)
                 except:
                     self.report({'ERROR'}, "An error occured while importing doodads.")
                     return {'CANCELLED'}
@@ -1185,12 +1184,7 @@ class OBJECT_OP_Fill_Textures(bpy.types.Operator):
 
     def execute(self, context):
 
-        if not hasattr(bpy, "wow_game_data"):
-            print("\n\n### Loading game data ###")
-            bpy.ops.scene.load_wow_filesystem()
-
-        game_data = bpy.wow_game_data
-
+        game_data = load_game_data()
         for ob in bpy.context.selected_objects:
             mesh = ob.data
             for material in mesh.materials:

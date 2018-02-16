@@ -13,10 +13,10 @@ from . import get_addon_prefs
 #############################################################
 
 
-class LoadWoWFileSystemOP(bpy.types.Operator):
-    bl_idname = 'scene.load_wow_filesystem'
-    bl_label = 'Load WoW filesystem'
-    bl_description = 'Establish connection to World of Warcraft client files'
+class ReloadWoWFileSystemOP(bpy.types.Operator):
+    bl_idname = 'scene.reload_wow_filesystem'
+    bl_label = 'Reoad WoW filesystem'
+    bl_description = 'Re-establish connection to World of Warcraft client files'
     bl_options = {'REGISTER'}
 
     def execute(self, context):
@@ -27,17 +27,15 @@ class LoadWoWFileSystemOP(bpy.types.Operator):
                     storage.close()
 
             delattr(bpy, "wow_game_data")
-            self.report({'INFO'}, "WoW game data is unloaded.")
 
-        else:
-            addon_preferences = get_addon_prefs()
-            bpy.wow_game_data = WoWFileData(addon_preferences.wow_path, addon_preferences.blp_path)
+        addon_preferences = get_addon_prefs()
+        bpy.wow_game_data = WoWFileData(addon_preferences.wow_path, addon_preferences.blp_path)
 
-            if not bpy.wow_game_data.files:
-                self.report({'ERROR'}, "WoW game data is not loaded. Check settings.")
-                return {'CANCELLED'}
+        if not bpy.wow_game_data.files:
+            self.report({'ERROR'}, "WoW game data is not loaded. Check settings.")
+            return {'CANCELLED'}
 
-            self.report({'INFO'}, "WoW game data is loaded.")
+        self.report({'INFO'}, "WoW game data is reloaded.")
 
         return {'FINISHED'}
 
@@ -165,5 +163,5 @@ def render_gamedata_toggle(self, context):
     layout = self.layout
     row = layout.row(align=True)
     icon = 'COLOR_GREEN' if game_data_loaded else 'COLOR_RED'
-    text = "Disconnect WoW" if game_data_loaded else "Connect WoW"
-    row.operator("scene.load_wow_filesystem", text=text, icon=icon)
+    text = "Reload WoW" if game_data_loaded else "Connect WoW"
+    row.operator("scene.reload_wow_filesystem", text=text, icon=icon)

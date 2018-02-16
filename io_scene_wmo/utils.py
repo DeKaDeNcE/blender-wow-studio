@@ -1,3 +1,7 @@
+import bpy
+from .pywowlib.archives.mpq.wow import WoWFileData
+
+
 def parse_bitfield(bitfield, last_flag=0x1000):
 
     flags = set()
@@ -21,3 +25,12 @@ def get_material_viewport_image(material):
     return None
 
 
+def load_game_data():
+    if not hasattr(bpy, 'wow_game_data'):
+        addon_preferences = bpy.context.user_preferences.addons[__package__].preferences
+        bpy.wow_game_data = WoWFileData(addon_preferences.wow_path, addon_preferences.blp_path)
+
+        if not bpy.wow_game_data.files:
+            raise ChildProcessError("WoW game data is not loaded. Check settings.")
+
+    return bpy.wow_game_data

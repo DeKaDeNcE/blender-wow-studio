@@ -8,7 +8,7 @@ from ..pywowlib.wdbx.wdbc import DBCFile
 from ..pywowlib.wdbx.definitions.wotlk import AnimationData
 from ..pywowlib.io_utils.types import uint32, vec3D
 from ..pywowlib.file_formats.m2_format import M2CompQuaternion
-from ..utils import parse_bitfield
+from ..utils import parse_bitfield, load_game_data
 
 
 class BlenderM2Scene:
@@ -145,10 +145,7 @@ class BlenderM2Scene:
         bpy.context.scene.objects.active = rig
         bpy.ops.object.mode_set(mode='POSE')
 
-        if not hasattr(bpy, 'wow_game_data'):
-            bpy.ops.scene.load_wow_filesystem()
-
-        game_data = bpy.wow_game_data
+        game_data = load_game_data()
 
         anim_data_dbc = DBCFile(AnimationData)
         anim_data_dbc.read(BytesIO(game_data.read_file('DBFilesClient\\AnimationData.dbc')))

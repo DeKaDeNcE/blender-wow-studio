@@ -5,6 +5,7 @@ from ..pywowlib.m2_file import M2File
 from .m2_scene import BlenderM2Scene
 
 from ..ui import get_addon_prefs
+from ..utils import load_game_data
 
 
 def import_m2(version, file, load_textures):  # TODO: implement multiversioning
@@ -20,15 +21,12 @@ def import_m2(version, file, load_textures):  # TODO: implement multiversioning
         m2.filepath = file  # TODO: HACK
 
         if load_textures:
-            if not game_data:
-                print("\n\n### Loading game data ###")
-                bpy.ops.scene.load_wow_filesystem()
-                game_data = bpy.wow_game_data
 
-            if game_data.files:
-                print("\n\n### Extracting textures ###")
-                textures = [m2_texture.filename.value for m2_texture in m2.textures if not m2_texture.type]
-                game_data.extract_textures_as_png(texture_dir, textures)
+            game_data = load_game_data()
+
+            print("\n\n### Extracting textures ###")
+            textures = [m2_texture.filename.value for m2_texture in m2.textures if not m2_texture.type]
+            game_data.extract_textures_as_png(texture_dir, textures)
 
         print("\n\n### Importing M2 model ###")
 

@@ -5,6 +5,7 @@ import time
 from .wmo_file import WMOFile
 
 from ..ui import get_addon_prefs
+from ..utils import load_game_data
 
 def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_objects):
     """ Read and import WoW WMO object to Blender scene"""
@@ -16,25 +17,15 @@ def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_o
 
     print("\n\n### Importing WMO components ###")
 
-    game_data = None
-
     if load_textures or import_doodads:
-        game_data = getattr(bpy, "wow_game_data", None)
+        game_data = load_game_data()
 
-        if not game_data:
-            print("\n\n### Loading game data ###")
-            bpy.ops.scene.load_wow_filesystem()
-            game_data = bpy.wow_game_data
-
-        if game_data.files:
-            if load_textures:
-                addon_prefs = get_addon_prefs()
-                print("\n\n### Extracting textures ###")
-                game_data.extract_textures_as_png(addon_prefs.cache_dir_path
-                                                  if addon_prefs.use_cache_dir else os.path.dirname(filepath),
-                                                  wmo.motx.get_all_strings())
-        else:
-            print("\nFailed to load textures because game data was not loaded.")
+        if load_textures:
+            addon_prefs = get_addon_prefs()
+            print("\n\n### Extracting textures ###")
+            game_data.extract_textures_as_png(addon_prefs.cache_dir_path
+                                              if addon_prefs.use_cache_dir else os.path.dirname(filepath),
+                                              wmo.motx.get_all_strings())
 
     # group objects if required
     parent = None

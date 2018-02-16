@@ -4,6 +4,7 @@ import io
 from struct import unpack
 
 from ..ui import get_addon_prefs
+from ..utils import load_game_data
 
 
 # This file is implementing basic M2 geometry parsing in prodedural style for the sake of performance.
@@ -226,7 +227,7 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
 
     def execute(self, context):
 
-        game_data = getattr(bpy, "wow_game_data", None)
+        game_data = load_game_data()
 
         if not game_data or not game_data.files:
             self.report({'ERROR'}, "Failed to import model. Connect to game client first.")

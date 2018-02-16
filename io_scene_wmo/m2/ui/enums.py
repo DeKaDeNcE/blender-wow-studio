@@ -199,14 +199,6 @@ def get_keybone_ids(self, context):
     return keybone_ids
 
 
-if not hasattr(bpy, 'wow_game_data'):
-    bpy.ops.scene.load_wow_filesystem()
-
-game_data = bpy.wow_game_data
-
-anim_data_dbc = DBCFile(AnimationData)
-anim_data_dbc.read(BytesIO(game_data.read_file('DBFilesClient\\AnimationData.dbc')))
-
 KEY_BONE_IDS = []
 
 
