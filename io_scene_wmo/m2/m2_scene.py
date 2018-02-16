@@ -93,7 +93,11 @@ class BlenderM2Scene:
             bl_edit_bone.tail.y = bl_edit_bone.head.y
             bl_edit_bone.tail.z = bl_edit_bone.head.z
 
-        for i, bone in enumerate(self.m2.root.bones):  # link children to parents
+            bl_edit_bone.WowM2Bone.Flags = parse_bitfield(bone.flags)
+            bl_edit_bone.WowM2Bone.KeyBoneID = str(bone.key_bone_id)
+
+        # link children to parents
+        for i, bone in enumerate(self.m2.root.bones):
             if bone.parent_bone >= 0:
                 bl_edit_bone = armature.edit_bones[bone.name]
                 parent = armature.edit_bones[self.m2.root.bones[bone.parent_bone].name]
