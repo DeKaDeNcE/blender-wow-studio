@@ -29,8 +29,6 @@ bl_info = {
 }
 
 import bpy
-from .addon_updater_ops import register as register_updater
-from .addon_updater_ops import unregister as unregister_updater
 from bpy.props import StringProperty, BoolProperty
 from .ui import register_ui, unregister_ui
 
@@ -75,40 +73,6 @@ class WMOPreferences(bpy.types.AddonPreferences):
         subtype="DIR_PATH"
     )
 
-    # addon updater preferences
-    auto_check_update = bpy.props.BoolProperty(
-        name = "Auto-check for Update",
-        description = "If enabled, auto-check for updates using an interval",
-        default = True,
-        )
-
-    updater_intrval_months = bpy.props.IntProperty(
-        name='Months',
-        description = "Number of months between checking for updates",
-        default=0,
-        min=0
-        )
-    updater_intrval_days = bpy.props.IntProperty(
-        name='Days',
-        description = "Number of days between checking for updates",
-        default=7,
-        min=0,
-        )
-    updater_intrval_hours = bpy.props.IntProperty(
-        name='Hours',
-        description = "Number of hours between checking for updates",
-        default=0,
-        min=0,
-        max=23
-        )
-    updater_intrval_minutes = bpy.props.IntProperty(
-        name='Minutes',
-        description = "Number of minutes between checking for updates",
-        default=0,
-        min=0,
-        max=59
-        )
-
     def draw(self, context):
         self.layout.prop(self, "wow_path")
         self.layout.prop(self, "wmv_path")
@@ -120,11 +84,9 @@ class WMOPreferences(bpy.types.AddonPreferences):
         row.prop(self, "cache_dir_path")
         if not context.user_preferences.addons[__package__].preferences.use_cache_dir:
             row.enabled = False
-        addon_updater_ops.update_settings_ui(self, context)
 
 
 def register():
-    register_updater(bl_info)
     bpy.utils.register_module(__name__)
     register_ui()
 
@@ -132,7 +94,6 @@ def register():
 def unregister():
     bpy.utils.unregister_module(__name__)
     unregister_ui()
-    unregister_updater()
 
 
 if __name__ == "__main__":
