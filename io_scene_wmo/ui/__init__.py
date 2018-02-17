@@ -5,7 +5,7 @@ from ..m2.ui.panels import unregister as unregister_m2_ui
 from ..wmo.ui.panels import register as register_wmo_ui
 from ..wmo.ui.panels import unregister as unregister_wmo_ui
 from .handlers import register_handlers, unregister_handlers
-from.icon_manager import register_icon_manager, unregister_icon_manager, get_ui_icons
+from .icon_manager import register_icon_manager, unregister_icon_manager, get_ui_icons
 
 
 def get_addon_prefs():
@@ -18,7 +18,7 @@ def render_gamedata_toggle(self, context):
     layout = self.layout
     row = layout.row(align=True)
     ui_icons = get_ui_icons()
-    icon = ui_icons['RELOAD']
+    icon = ui_icons['WOW_STUDIO_RELOAD']
     text = "Reload WoW" if game_data_loaded else "Connect WoW"
     row.operator("scene.reload_wow_filesystem", text=text, icon_value=icon)
 

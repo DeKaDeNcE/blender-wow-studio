@@ -31,6 +31,9 @@ bl_info = {
 import bpy
 from bpy.props import StringProperty, BoolProperty
 from .ui import register_ui, unregister_ui
+from .ui.icon_manager import get_ui_icons
+
+get_ui_icons()
 
 # load and reload submodules
 ##################################

@@ -1,5 +1,6 @@
 import bpy
 from .enums import *
+from ...ui.icon_manager import get_ui_icons
 
 
 ###############################
@@ -980,14 +981,17 @@ def switch_doodad_set(self, context):
 
 
 def RegisterWoWVisibilityProperties():
+    
+    ui_icons = get_ui_icons()
+    
     bpy.types.Scene.WoWVisibility = bpy.props.EnumProperty(
         items=[
-            ('0', "Outdoor", "Display outdoor groups", 'BBOX', 0x1),
-            ('1', "Indoor", "Display indoor groups", 'ROTATE', 0x2),
-            ('2', "Portals", "Display portals", 'MOD_PARTICLES', 0x4),
-            ('3', "Fogs", "Display fogs", 'FORCE_TURBULENCE', 0x8),
-            ('4', "Liquids", "Display liquids", 'MOD_FLUIDSIM', 0x10),
-            ('5', "Lights", "Display lights", 'LAMP_SPOT', 0x20)],
+            ('0', "Outdoor", "Display outdoor groups", 'OBJECT_DATA', 0x1),
+            ('1', "Indoor", "Display indoor groups", 'MOD_SUBSURF', 0x2),
+            ('2', "Portals", "Display portals", ui_icons['WOW_STUDIO_CONVERT_PORTAL'], 0x4),
+            ('3', "Fogs", "Display fogs", ui_icons['WOW_STUDIO_FOG'], 0x8),
+            ('4', "Liquids", "Display liquids", 'MOD_WAVE', 0x10),
+            ('5', "Lights", "Display lights", 'OUTLINER_OB_LAMP', 0x20)],
         options={'ENUM_FLAG'},
         default={'0', '1', '2', '3', '4', '5'},
         update=update_wow_visibility
@@ -1062,23 +1066,25 @@ class WMOToolsPanelObjectModeAddToScene(bpy.types.Panel):
         game_data_loaded = hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files
 
         col = layout.column(align=True)
-
+        
+        ui_icons = get_ui_icons()
+        
         box1 = col.box().column(align=True)
         box1_col = box1.column(align=True)
         box1_row1 = box1_col.row(align=True)
-        box1_row1.operator("scene.wow_add_fog", text='Fog', icon='GROUP_VERTEX')
-        box1_row1.operator("scene.wow_add_water", text='Water', icon='MOD_WAVE')
+        box1_row1.operator("scene.wow_add_fog", text='Fog', icon_value=ui_icons['WOW_STUDIO_FOG_ADD'])
+        box1_row1.operator("scene.wow_add_water", text='Water', icon_value=ui_icons['WOW_STUDIO_WATER_ADD'])
         box1_row2 = box1_col.row(align=True)
         box1_row3 = box1_col.row(align=True)
         if game_data_loaded:
             if not has_sets:
-                box1_row2.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2', icon='LOAD_FACTORY')
-                box1_row2.operator("scene.wow_import_last_wmo_from_wmv", text='WMO', icon='APPEND_BLEND')
-            box1_row3.operator("scene.wow_import_adt_scene", text='ADT', icon='OUTLINER_OB_GROUP_INSTANCE')
-            box1_row3.operator("scene.wow_add_scale_reference", text='Scale', icon='OUTLINER_OB_ARMATURE')
+                box1_row2.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2', icon_value=ui_icons['WOW_STUDIO_DOODADS_ADD'])
+                box1_row2.operator("scene.wow_import_last_wmo_from_wmv", text='WMO', icon_value=ui_icons['WOW_STUDIO_WMO_ADD'])
+            box1_row3.operator("scene.wow_import_adt_scene", text='ADT', icon_value=ui_icons['WOW_STUDIO_ADT_ADD'])
+            box1_row3.operator("scene.wow_add_scale_reference", text='Scale', icon_value=ui_icons['WOW_STUDIO_SCALE_ADD'])
 
         else:
-            box1_col.operator("scene.wow_add_scale_reference", text='Scale', icon = 'OUTLINER_OB_ARMATURE')
+            box1_col.operator("scene.wow_add_scale_reference", text='Scale', icon_value=ui_icons['WOW_STUDIO_SCALE_ADD'])
 
 
 class WMOToolsPanelObjectModeActions(bpy.types.Panel):
@@ -1158,20 +1164,26 @@ class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
     bl_options = {'REGISTER'}
 
     def draw(self, context):
+        
+        ui_icons = get_ui_icons()
+        
         layout = self.layout
         col = layout.column()
-        col.operator("scene.wow_add_fog", text ='Fog', icon='GROUP_VERTEX')
-        col.operator("scene.wow_add_water", text='Water', icon='MOD_WAVE')
-        col.operator("scene.wow_add_scale_reference", text='Scale', icon='OUTLINER_OB_ARMATURE')
+        col.operator("scene.wow_add_fog", text ='Fog', icon_value=ui_icons['WOW_STUDIO_FOG_ADD'])
+        col.operator("scene.wow_add_water", text='Water', icon_value=ui_icons['WOW_STUDIO_WATER_ADD'])
+        col.operator("scene.wow_add_scale_reference", text='Scale', icon_value=ui_icons['WOW_STUDIO_SCALE_ADD'])
 
         if hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files:
-            col.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2', icon='LOAD_FACTORY')
-            col.operator("scene.wow_import_last_wmo_from_wmv", text='WMO', icon='APPEND_BLEND')
-            col.operator("scene.wow_import_adt_scene", text='ADT', icon='OUTLINER_OB_GROUP_INSTANCE')
+            col.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2', icon_value=ui_icons['WOW_STUDIO_DOODADS_ADD'])
+            col.operator("scene.wow_import_last_wmo_from_wmv", text='WMO', icon_value=ui_icons['WOW_STUDIO_WMO_ADD'])
+            col.operator("scene.wow_import_adt_scene", text='ADT', icon_value=ui_icons['WOW_STUDIO_ADT_ADD'])
 
 
 def wow_components_add_menu_item(self, context):
-    self.layout.menu("view3D.add_wow_components_menu", icon='SOLO_ON')
+    
+    ui_icons = get_ui_icons()
+    
+    self.layout.menu("view3D.add_wow_components_menu", icon_value=ui_icons['WOW_STUDIO_WOW_ADD'])
 
 
 class WoWToolsPanelLiquidFlags(bpy.types.Panel):
