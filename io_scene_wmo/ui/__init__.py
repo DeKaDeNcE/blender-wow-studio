@@ -20,7 +20,7 @@ def render_gamedata_toggle(self, context):
     
     layout = self.layout
     row = layout.row(align=True)
-    icon = ui_icons['RELOAD'] if game_data_loaded else 'COLOR_RED'
+    icon = ui_icons['RELOAD']
     text = "Reload WoW" if game_data_loaded else "Connect WoW"
     row.operator("scene.reload_wow_filesystem", text=text, icon_value=icon)
 
