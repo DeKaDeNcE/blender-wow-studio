@@ -1066,8 +1066,8 @@ class WMOToolsPanelObjectModeAddToScene(bpy.types.Panel):
         box1 = col.box().column(align=True)
         box1_col = box1.column(align=True)
         box1_row1 = box1_col.row(align=True)
-        box1_row1.operator("scene.wow_add_fog", text='Fog', icon = 'GROUP_VERTEX')
-        box1_row1.operator("scene.wow_add_water", text='Water', icon = 'MOD_WAVE')
+        box1_row1.operator("scene.wow_add_fog", text='Fog', icon='GROUP_VERTEX')
+        box1_row1.operator("scene.wow_add_water", text='Water', icon='MOD_WAVE')
         box1_row2 = box1_col.row(align=True)
         box1_row3 = box1_col.row(align=True)
         if game_data_loaded:
@@ -1160,9 +1160,9 @@ class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.operator("scene.wow_add_fog", text = 'Fog', icon = 'GROUP_VERTEX')
-        col.operator("scene.wow_add_water", text = 'Water', icon = 'MOD_WAVE')
-        col.operator("scene.wow_add_scale_reference", text = 'Scale', icon = 'OUTLINER_OB_ARMATURE')
+        col.operator("scene.wow_add_fog", text ='Fog', icon='GROUP_VERTEX')
+        col.operator("scene.wow_add_water", text='Water', icon='MOD_WAVE')
+        col.operator("scene.wow_add_scale_reference", text='Scale', icon='OUTLINER_OB_ARMATURE')
 
         if hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files:
             col.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2', icon='LOAD_FACTORY')
@@ -1171,7 +1171,7 @@ class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
 
 
 def wow_components_add_menu_item(self, context):
-    self.layout.menu("view3D.add_wow_components_menu", icon = 'SOLO_ON')
+    self.layout.menu("view3D.add_wow_components_menu", icon='SOLO_ON')
 
 
 class WoWToolsPanelLiquidFlags(bpy.types.Panel):
