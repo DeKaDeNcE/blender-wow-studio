@@ -155,13 +155,3 @@ class M2Import(bpy.types.Operator):
         wm = context.window_manager
         wm.fileselect_add(self)
         return {'RUNNING_MODAL'}
-
-
-def render_gamedata_toggle(self, context):
-    game_data_loaded = hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files
-
-    layout = self.layout
-    row = layout.row(align=True)
-    icon = 'COLOR_GREEN' if game_data_loaded else 'COLOR_RED'
-    text = "Reload WoW" if game_data_loaded else "Connect WoW"
-    row.operator("scene.reload_wow_filesystem", text=text, icon=icon)

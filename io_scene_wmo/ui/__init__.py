@@ -16,9 +16,11 @@ def get_addon_prefs():
 def render_gamedata_toggle(self, context):
     game_data_loaded = hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files
 
+    global ui_icons
+    
     layout = self.layout
     row = layout.row(align=True)
-    icon = 'COLOR_GREEN' if game_data_loaded else 'COLOR_RED'
+    icon = ui_icons['RELOAD'] if game_data_loaded else 'COLOR_RED'
     text = "Reload WoW" if game_data_loaded else "Connect WoW"
     row.operator("scene.reload_wow_filesystem", text=text, icon=icon)
 
@@ -35,7 +37,7 @@ def register_ui():
     icons_dir = os.path.join(os.path.dirname(__file__), "icons")
 
     for file in os.listdir(icons_dir):
-        icon_file_dict.load(file.capitalize(), os.path.join(icons_dir, file), 'IMAGE')
+        icon_file_dict.load(os.path.splitext(file)[0].capitalize(), os.path.join(icons_dir, file), 'IMAGE')
 
     for name, icon_file in icon_file_dict.items():
         ui_icons[name] = icon_file.icon_id
