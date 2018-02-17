@@ -22,22 +22,23 @@ def render_gamedata_toggle(self, context):
     row = layout.row(align=True)
     icon = ui_icons['RELOAD'] if game_data_loaded else 'COLOR_RED'
     text = "Reload WoW" if game_data_loaded else "Connect WoW"
-    row.operator("scene.reload_wow_filesystem", text=text, icon=icon)
+    row.operator("scene.reload_wow_filesystem", text=text, icon_value=icon)
 
 
 menu_import_wmo = lambda self, ctx: self.layout.operator("import_mesh.wmo", text="WoW WMO (.wmo)")
 menu_export_wmo = lambda self, ctx: self.layout.operator("export_mesh.wmo", text="WoW WMO (.wmo)")
 menu_import_m2 = lambda self, ctx: self.layout.operator("import_mesh.m2", text="WoW M2 (.m2)")
 
+icon_file_dict = bpy.utils.previews.new()
 ui_icons = {}
 
 def register_ui():
     global ui_icons
-    icon_file_dict = bpy.utils.previews.new()
+    
     icons_dir = os.path.join(os.path.dirname(__file__), "icons")
 
     for file in os.listdir(icons_dir):
-        icon_file_dict.load(os.path.splitext(file)[0].capitalize(), os.path.join(icons_dir, file), 'IMAGE')
+        icon_file_dict.load(os.path.splitext(file)[0].upper(), os.path.join(icons_dir, file), 'IMAGE')
 
     for name, icon_file in icon_file_dict.items():
         ui_icons[name] = icon_file.icon_id
@@ -59,3 +60,4 @@ def unregister_ui():
     bpy.types.INFO_MT_file_import.remove(menu_import_m2)
     bpy.types.INFO_MT_file_export.remove(menu_export_wmo)
     bpy.types.INFO_HT_header.remove(render_gamedata_toggle)
+    bpy.utils.previews.remove(icon_file_dict)
