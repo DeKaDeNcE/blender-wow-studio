@@ -9,17 +9,6 @@ from ..wmo.ui.panels import unregister as unregister_wmo_ui
 from .handlers import register_handlers, unregister_handlers
 
 
-ui_icons = {}
-icon_file_dict = bpy.utils.previews.new()
-icons_dir = os.path.join(os.path.dirname(__file__), "icons")
-
-for file in os.listdir(icons_dir):
-    icon_file_dict.load(file.capitalize(), os.path.join(icons_dir, file), 'IMAGE')
-
-for name, icon_file in icon_file_dict.items():
-    ui_icons[name] = icon_file.icon_id
-
-
 def get_addon_prefs():
     return bpy.context.user_preferences.addons[__package__[:-3]].preferences
 
@@ -38,8 +27,19 @@ menu_import_wmo = lambda self, ctx: self.layout.operator("import_mesh.wmo", text
 menu_export_wmo = lambda self, ctx: self.layout.operator("export_mesh.wmo", text="WoW WMO (.wmo)")
 menu_import_m2 = lambda self, ctx: self.layout.operator("import_mesh.m2", text="WoW M2 (.m2)")
 
+ui_icons = {}
 
 def register_ui():
+    global ui_icons
+    icon_file_dict = bpy.utils.previews.new()
+    icons_dir = os.path.join(os.path.dirname(__file__), "icons")
+
+    for file in os.listdir(icons_dir):
+        icon_file_dict.load(file.capitalize(), os.path.join(icons_dir, file), 'IMAGE')
+
+    for name, icon_file in icon_file_dict.items():
+        ui_icons[name] = icon_file.icon_id
+
     register_handlers()
     register_m2_ui()
     register_wmo_ui()
