@@ -362,6 +362,8 @@ class WowM2AnimationPropertyGroup(bpy.types.PropertyGroup):
     )
 
 
+
+
 def register_wow_m2_animation_properties():
     bpy.types.Action.WowM2Animation = bpy.props.PointerProperty(type=WowM2AnimationPropertyGroup)
 
