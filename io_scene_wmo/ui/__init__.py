@@ -9,7 +9,7 @@ from ..wmo.ui.panels import unregister as unregister_wmo_ui
 from .handlers import register_handlers, unregister_handlers
 
 
-icons = {}
+ui_icons = {}
 icon_file_dict = bpy.utils.previews.new()
 icons_dir = os.path.join(os.path.dirname(__file__), "icons")
 
@@ -17,7 +17,7 @@ for file in os.listdir(icons_dir):
     icon_file_dict.load(file.capitalize(), os.path.join(icons_dir, file), 'IMAGE')
 
 for name, icon_file in icon_file_dict.items():
-    icons[name] = icon_file.icon_id
+    ui_icons[name] = icon_file.icon_id
 
 
 def get_addon_prefs():
