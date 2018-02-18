@@ -1121,7 +1121,7 @@ class WMOToolsPanelObjectModeDoodads(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return True if bpy.context.scene.WoWRoot.MODS_Sets else False
+        return not bpy.context.scene.WoWRoot.MODS_Sets and bpy.context.selected_objects
 
     def draw(self, context):
         layout = self.layout.split()
@@ -1131,14 +1131,13 @@ class WMOToolsPanelObjectModeDoodads(bpy.types.Panel):
         box = col.box()
         box_col2 = box.column(align=True)
 
-        if bpy.context.selected_objects:
-            if not has_sets:
-                box_col2.operator("scene.wow_doodad_set_add", text='Add to doodadset', icon='ZOOMIN')
-                box_col2.operator("scene.wow_doodads_bake_color", text='Bake color', icon='GROUP_VCOL')
-                box_col2.operator("scene.wow_doodad_set_color", text='Set color', icon='COLOR')
-                box_col2.operator("scene.wow_doodad_set_template_action", text='Template action', icon='FORCE_MAGNETIC')
-            else:
-                box_col2.operator("scene.wow_clear_preserved_doodad_sets", text='Clear doodad sets', icon='CANCEL')
+        if not has_sets:
+            box_col2.operator("scene.wow_doodad_set_add", text='Add to doodadset', icon='ZOOMIN')
+            box_col2.operator("scene.wow_doodads_bake_color", text='Bake color', icon='GROUP_VCOL')
+            box_col2.operator("scene.wow_doodad_set_color", text='Set color', icon='COLOR')
+            box_col2.operator("scene.wow_doodad_set_template_action", text='Template action', icon='FORCE_MAGNETIC')
+        else:
+            box_col2.operator("scene.wow_clear_preserved_doodad_sets", text='Clear doodad sets', icon='CANCEL')
 
 
 class ConvertOperators(bpy.types.Menu):
