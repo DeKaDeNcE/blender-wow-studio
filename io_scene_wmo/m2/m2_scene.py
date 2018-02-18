@@ -330,7 +330,6 @@ class BlenderM2Scene:
             self.geosets.append(obj)
 
     def load_attachments(self):
-        # TODO: store attachment type
         # TODO: unknown field
 
         for i, attachment in enumerate(self.m2.root.attachments):
