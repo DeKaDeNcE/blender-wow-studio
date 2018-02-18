@@ -108,7 +108,7 @@ class M2SkinMeshPartID(Enum):
     Chest = range(1001, 1005)
     Pants = range(1101, 1105)
     Tabard = range(1201, 1203)
-    Trousers = range(1301, 1303)
+    Legs = range(1301, 1303)
     Unknown2 = range(1401, 1415)
     Cloak = range(1501, 1511)
     Unknown3 = range(1601, 1615)

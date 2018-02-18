@@ -325,7 +325,15 @@ class BlenderM2Scene:
             obj = bpy.data.objects.new(name if name else 'Geoset', mesh)
             bpy.context.scene.objects.link(obj)
 
-            obj.WowM2Geoset.MeshPartID = smesh.skin_section_id
+            obj.WowM2Geoset.MeshPartGroup = name
+
+            # refresh UI after setting the property
+            for region in bpy.context.area.regions:
+                if region.type == "UI":
+                    region.tag_redraw()
+
+            obj.WowM2Geoset.MeshPartID = str(smesh.skin_section_id)
+
             self.geosets.append(obj)
 
     def load_attachments(self):

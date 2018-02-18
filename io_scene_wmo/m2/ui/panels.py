@@ -81,6 +81,7 @@ class M2GeosetPanel(bpy.types.Panel):
         self.layout.prop(context.object.WowM2Geoset, "CollisionMesh")
 
         if not context.object.WowM2Geoset.CollisionMesh:
+            self.layout.prop(context.object.WowM2Geoset, "MeshPartGroup")
             self.layout.prop(context.object.WowM2Geoset, "MeshPartID")
 
     @classmethod
@@ -97,11 +98,16 @@ class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
         default=False
     )
 
-    MeshPartID = bpy.props.IntProperty(
+    MeshPartGroup = bpy.props.EnumProperty(
+        name="Geoset group",
+        description="Group of this geoset",
+        items=MESH_PART_TYPES
+    )
+
+    MeshPartID = bpy.props.EnumProperty(
         name="Geoset ID",
         description="Mesh part ID of this geoset",
-        min=0,
-        max=2500
+        items=mesh_part_id_menu
     )
 
 

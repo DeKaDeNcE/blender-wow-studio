@@ -98,11 +98,11 @@ MESH_PART_TYPES = [
     ("Chest", "Chest", "Chest geosets", 'PMARKER', 12),
     ("Pants", "Pants", "Pants geosets", 'PMARKER', 13),
     ("Tabard", "Tabard", "Tabard geosets", 'PMARKER', 14),
-    ("Trousers", "Trousers", "Trousers geosets", 'PMARKER', 15),
+    ("Legs", "Trousers", "Trousers geosets", 'PMARKER', 15),
     ("Unknown2", "Unknown 2", "", 'PMARKER', 16),
     ("Cloak", "Cloak", "Cloak geosets", 'PMARKER', 17),
     ("Unknown3", "Unknown 3", "", 'PMARKER', 18),
-    ("Eyeglows", "Eyeglows geosets", "", 'PMARKER', 19),
+    ("Eyeglows", "Eyeglows", "Eyeglows geosets", 'PMARKER', 19),
     ("Belt", "Belt", "Belt / Bellypack geosets", 'PMARKER', 20),
     ("Trail", "Trail", "Trail geosets / Undead bones (Legion+)", 'PMARKER', 21),
     ("Feet", "Feet", "Feet geosets", 'PMARKER', 22),
@@ -125,31 +125,41 @@ ANIMATION_FLAGS = [
 ]
 
 
+def generate_enumerated_list(irange, name):
+    return list([(str(i), "{}_{}".format(name, i), "") for i in irange])
+
+
 def mesh_part_id_menu(self, context):
-    geoset_group = context.object.WowM2Geoset.MeshPartID
+
+    geoset_group = self.MeshPartGroup
     if geoset_group == 'Skin':
         return [('0', 'No subtype', "")]
 
     elif geoset_group == 'Hair':
-        return [(str(i), "{}_{}".format('Hairstyle', i), "") for i in M2SkinMeshPartID.Hairstyle.value]
+        return generate_enumerated_list(M2SkinMeshPartID.Hair.value, 'Hairstyle')
 
     elif geoset_group == 'Facial1':
-        return [(str(i), "{}_{}".format('Facial', i), "") for i in M2SkinMeshPartID.Facial1.value]
+        return generate_enumerated_list(M2SkinMeshPartID.Facial1.value, 'Facial')
 
     elif geoset_group == 'Facial2':
-        return [(str(i), "{}_{}".format('Facial', i), "") for i in M2SkinMeshPartID.Facial2.value]
+        return generate_enumerated_list(M2SkinMeshPartID.Facial2.value, 'Facial')
 
     elif geoset_group == 'Facial3':
-        return [(str(i), "{}_{}".format('Facial', i), "") for i in M2SkinMeshPartID.Facial3.value]
+        return generate_enumerated_list(M2SkinMeshPartID.Facial3.value, 'Facial')
 
-    elif geoset_group == 'Glove':  # TODO: describe
-        return [(str(i), "{}_{}".format('Glove', i), "") for i in M2SkinMeshPartID.Glove.value]
+    elif geoset_group == 'Glove':
+        return [("401", "Skin", ""),
+                ("402", "Regular", ""),
+                ("403", "Jackgloves", ""),
+                ("404", "Armored", "")]
 
     elif geoset_group == 'Boots':
-        return [(str(i), "{}_{}".format('Boots', i), "") for i in M2SkinMeshPartID.Boots.value]
-
-    elif geoset_group in ('Unknown1', 'Unknown2', 'Unknown3'):
-        return [('0', 'No subtype', "")]
+        return [("501", "Skin", ""),
+                ("502", "Short", ""),
+                ("503", "Jackboots", ""),
+                ("504", "Regular", ""),
+                ("505", "Plate", "")
+                ]
 
     elif geoset_group == 'Ears':
         return [("701", "None (DNE)", "No ears"),
@@ -167,23 +177,28 @@ def mesh_part_id_menu(self, context):
 
     elif geoset_group == 'Chest':
         return [("1001", "None (DNE)", "No chest"),
-                ("1002", "Chest", "Purpose is unknown")]
+                ("1002", "Plate", "Downside of a plate chest")]
 
     elif geoset_group == 'Pants':
         return [("1101", "Regular", "Regular pants"),
                 ("1102", "Skirt", "Short skirt"),
-                ("1103", "Armored", "Armored pants")]
+                ("1104", "Armored", "Armored pants")]
 
     elif geoset_group == 'Tabard':
         return [("1201", "None (DNE)", "No tabard"),
                 ("1202", "Tabard", "Tabard")]
 
-    elif geoset_group == 'Trousers':
-        return [("1301", "Legs", "Legs"),
-               ("1302", "Dress", "Tabard")]
+    elif geoset_group == 'Legs':
+        return [("1301", "Trousers", ""),
+               ("1302", "Dress", "")]
 
     elif geoset_group == 'Cloak':
-        return [(str(i), "{}_{}".format('Cloak', i), "") for i in M2SkinMeshPartID.Cloak.value]
+        return [("1501", "Scarf", "Shortest cloak"),
+                ("1502", "Knight", "Usually the longest cloak"),
+                ("1503", "Normal", ""),
+                ("1504", "Double-tail", ""),
+                ("1505", "Small", ""),
+                ("1506", "Small double-tail", "")]
 
     elif geoset_group == 'Eyeglows':
         return [("1701", "None (DNE)", "No eyeglow"),
@@ -194,15 +209,12 @@ def mesh_part_id_menu(self, context):
         return [("1801", "None (DNE)", "No belt / bellypack"),
                 ("1802", "Bulky", "Bulky belt")]
 
-    elif geoset_group == 'Tail':
-        return [('0', 'No subtype', "")]
-
     elif geoset_group == 'Feet':
         return [("2001", "None (DNE)", "No feet"),
                 ("2002", "Feet", "Feet")]
 
     elif geoset_group == 'Hands':
-        return [("1", "BE / NE Hands", 'Hands for Blood Elf / Night Elf')]
+        return [("2301", "BE / NE Hands", 'Hands for Blood Elf / Night Elf')]
 
     else:
         return [('0', 'No subtype', "")]
