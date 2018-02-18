@@ -108,6 +108,21 @@ MESH_PART_TYPES = [
     ("Hands", "BE Hands", "Hands for Blood Elf / Night Elf (Legion+)", 'PMARKER', 23)
 ]
 
+ANIMATION_FLAGS = [
+    ("1", "Init Blend", "Sets Blended flag on M2 init", 'PMARKER', 0x1),
+    ("2", "Unknown", "", 'QUESTION', 0x2),
+    ("4", "Unknown", "", 'QUESTION', 0x4),
+    ("8", "Unknown", "", 'QUESTION', 0x8),
+    ("16", "Unknown", "apparently set during runtime in CM2Shared::LoadLowPrioritySequence for all entries of a loaded sequence (including aliases)", 'QUESTION', 0x10),
+    ("32", "Primary Sequence", " If set, the animation data is in the .m2 file, else in an .anim file", 'MOD_WIREFRAME', 0x20),
+    ("64", "Is Alias", "To find the animation data, the client skips these by following aliasNext until an animation without 0x40 is found.", 'TRIA_RIGHT', 0x40),
+    ("128", "Blended animation", "", 'TRIA_RIGHT', 0x80),
+    ("256", "Unknown", "Sequence stored in model?", 'QUESTION', 0x100),
+    ("512", "Unknown", "", 'QUESTION', 0x200),
+    ("512", "Unknown", "", 'QUESTION', 0x400),
+    ("512", "Unknown", "Seen in Legion 24500 models", 'QUESTION', 0x800)
+]
+
 
 def mesh_part_id_menu(self, context):
     geoset_group = context.object.WowM2Geoset.MeshPartID

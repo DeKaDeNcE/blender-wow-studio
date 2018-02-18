@@ -361,7 +361,19 @@ class WowM2AnimationPropertyGroup(bpy.types.PropertyGroup):
         items=get_anim_ids
     )
 
+    Movespeed = bpy.props.FloatProperty(
+        name="Move speed",
+        description="The speed the character moves with in this animation",
+        min=0.0,
+        default=1.0
+    )
 
+    Flags = bpy.props.EnumProperty(
+        name='Flags',
+        description="WoW M2 Animation Flags",
+        items=ANIMATION_FLAGS,
+        options={"ENUM_FLAG"}
+    )
 
 
 def register_wow_m2_animation_properties():
