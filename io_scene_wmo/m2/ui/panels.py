@@ -316,7 +316,7 @@ def unregister_wow_m2_bone_properties():
 
 class WowM2AnimationIDSearch(bpy.types.Operator):
     bl_idname = "scene.wow_m2_animation_id_search"
-    bl_label = "Search"
+    bl_label = "Search animation ID"
     bl_description = "Select WoW M2 animation ID"
     bl_options = {'REGISTER', 'INTERNAL'}
     bl_property = "AnimationID"
@@ -336,6 +336,23 @@ class WowM2AnimationIDSearch(bpy.types.Operator):
 
     def invoke(self, context, event):
         context.window_manager.invoke_search_popup(self)
+        return {"FINISHED"}
+
+
+class WowM2AnimationSwitchActiveAction(bpy.types.Operator):
+    bl_idname = "scene.wow_m2_animation_switch_active_action"
+    bl_label = "Switch active action"
+    bl_description = "Switch to this animation"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    attr_name = bpy.props.StringProperty()
+
+    def execute(self, context):
+        action = getattr(context.object.animation_data.action.WowM2Animation, self.attr_name)
+
+        if action:
+            context.object.animation_data.action = action
+
         return {"FINISHED"}
 
 
@@ -362,8 +379,14 @@ class WowM2AnimationPanel(bpy.types.Panel):
         col.prop(context.object.animation_data.action.WowM2Animation, 'ReplayMax', text="Max")
 
         col.label(text='Relations:')
-        col.prop(context.object.animation_data.action.WowM2Animation, 'VariationNext', text="Next")
-        col.prop(context.object.animation_data.action.WowM2Animation, 'AliasNext', text="Next alias")
+
+        row = col.row(align=True)
+        row.prop(context.object.animation_data.action.WowM2Animation, 'VariationNext', text="Next")
+        row.operator("scene.wow_m2_animation_switch_active_action", text="", icon='ZOOM_SELECTED').attr_name = 'VariationNext'
+
+        row = col.row(align=True)
+        row.prop(context.object.animation_data.action.WowM2Animation, 'AliasNext', text="Next alias")
+        row.operator("scene.wow_m2_animation_switch_active_action", text="", icon='ZOOM_SELECTED').attr_name = 'AliasNext'
 
     @classmethod
     def poll(cls, context):
