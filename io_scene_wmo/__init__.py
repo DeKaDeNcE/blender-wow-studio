@@ -82,27 +82,31 @@ class WMOPreferences(bpy.types.AddonPreferences):
             row.enabled = False
 
 
-# load custom icons
-##################################
 ui_icons = {}
-
-pcoll = bpy.utils.previews.new()
-
-icons_dir = os.path.join(os.path.dirname(__file__), "ui", "icons")
-
-for file in os.listdir(icons_dir):
-    pcoll.load(os.path.splitext(file)[0].upper(), os.path.join(icons_dir, file), 'IMAGE')
-
-for name, icon_file in pcoll.items():
-    ui_icons[name] = icon_file.icon_id
-
-# load and reload submodules
-##################################
-from .developer_utils import setup_addon_modules
-setup_addon_modules(__path__, __name__, True)
+pcoll = None
 
 
 def register():
+    # load custom icons
+    ##################################
+    global ui_icons
+    global pcoll
+
+    pcoll = bpy.utils.previews.new()
+
+    icons_dir = os.path.join(os.path.dirname(__file__), "ui", "icons")
+
+    for file in os.listdir(icons_dir):
+        pcoll.load(os.path.splitext(file)[0].upper(), os.path.join(icons_dir, file), 'IMAGE')
+
+    for name, icon_file in pcoll.items():
+        ui_icons[name] = icon_file.icon_id
+
+    # load and reload submodules
+    ##################################
+    from .developer_utils import setup_addon_modules
+    setup_addon_modules(__path__, __name__, True)
+
     bpy.utils.register_module(__name__)
 
     from .ui import register_ui
@@ -114,6 +118,7 @@ def unregister():
     from .ui import unregister_ui
     unregister_ui()
 
+    global pcoll
     bpy.utils.previews.remove(pcoll)
 
 

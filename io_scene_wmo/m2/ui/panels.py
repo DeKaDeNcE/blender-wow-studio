@@ -345,6 +345,13 @@ class WowM2AnimationPanel(bpy.types.Panel):
         row = col.row(align=True)
         row.prop(context.object.animation_data.action.WowM2Animation, 'AnimationID', text="")
         row.operator("scene.wow_m2_animation_id_search", text="", icon='VIEWZOOM')
+        col.label(text='Flags:')
+        col.prop(context.object.animation_data.action.WowM2Animation, 'Flags', text="Flags")
+        col.prop(context.object.animation_data.action.WowM2Animation, 'Movespeed', text="Move speed")
+        col.prop(context.object.animation_data.action.WowM2Animation, 'BlendTime', text="Blend time")
+        col.prop(context.object.animation_data.action.WowM2Animation, 'Frequency', text="Frequency")
+        col.prop(context.object.animation_data.action.WowM2Animation, 'VariationNext', text="Next")
+        col.prop(context.object.animation_data.action.WowM2Animation, 'AliasNext', text="Next alias")
 
     @classmethod
     def poll(cls, context):
@@ -354,11 +361,43 @@ class WowM2AnimationPanel(bpy.types.Panel):
             return False
 
 
+def animation_chain_poll(self, action):
+    if action == bpy.context.object.animation_data.action:
+        return False
+
+    next_variation = action
+    while next_variation is not None:
+        next_variation = next_variation.WowM2Animation.VariationNext
+
+        if next_variation == bpy.context.object.animation_data.action:
+            return False
+
+    return True
+
+
+def update_animation_chain(self, context):
+    if self.VariationNext:
+            self.VariationNext.WowM2Animation.VariationIndex += self.VariationIndex
+
+
+def update_anim_variation_index(self, context):
+    if self.VariationNext:
+        self.VariationNext.WowM2Animation.VariationIndex = self.VariationIndex + 1
+
+
+
 class WowM2AnimationPropertyGroup(bpy.types.PropertyGroup):
     AnimationID = bpy.props.EnumProperty(
         name="AnimationID",
         description="WoW Animation ID",
         items=get_anim_ids
+    )
+
+    Flags = bpy.props.EnumProperty(
+        name='Flags',
+        description="WoW M2 Animation Flags",
+        items=ANIMATION_FLAGS,
+        options={"ENUM_FLAG"}
     )
 
     Movespeed = bpy.props.FloatProperty(
@@ -368,11 +407,37 @@ class WowM2AnimationPropertyGroup(bpy.types.PropertyGroup):
         default=1.0
     )
 
-    Flags = bpy.props.EnumProperty(
-        name='Flags',
-        description="WoW M2 Animation Flags",
-        items=ANIMATION_FLAGS,
-        options={"ENUM_FLAG"}
+    BlendTime = bpy.props.IntProperty(
+        name="Blend time",
+        description="",
+        min=0
+    )
+
+    Frequency = bpy.props.IntProperty(
+        name="Frequency",
+        description="This is used to determine how often the animation is played.",
+        min=0,
+        max=32767
+    )
+
+    AliasNext = bpy.props.PointerProperty(
+        type=bpy.types.Action,
+        name="Next alias",
+        poll=lambda self, action: action != bpy.context.object.animation_data.action
+    )
+
+    VariationIndex = bpy.props.IntProperty(
+        name="Variation index",
+        description="For internal use only",
+        min=0,
+        update=update_anim_variation_index
+    )
+
+    VariationNext = bpy.props.PointerProperty(
+        type=bpy.types.Action,
+        name="Next alias",
+        poll=animation_chain_poll,
+        update=update_animation_chain
     )
 
 

@@ -642,6 +642,7 @@ class WowPortalPlanePanel(bpy.types.Panel):
                 and not context.object.WoWDoodad.Enabled
                 )
 
+
 def portal_validator(self, context):
     if self.Second and not self.Second.WowWMOGroup.Enabled:
         self.Second = None
