@@ -1,3 +1,5 @@
+from ... import ui_icons
+
 shader_enum = [
     ('0', "Diffuse", ""), ('1', "Specular", ""), ('2', "Metal", ""),
     ('3', "Env", ""), ('4', "Opaque", ""), ('5', "EnvMetal", ""),

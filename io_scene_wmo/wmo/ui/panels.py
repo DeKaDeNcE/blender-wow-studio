@@ -1,6 +1,6 @@
 import bpy
 from .enums import *
-from ...ui.icon_manager import get_ui_icons
+from ... import ui_icons
 
 
 ###############################
@@ -982,8 +982,6 @@ def switch_doodad_set(self, context):
 
 def RegisterWoWVisibilityProperties():
     
-    ui_icons = get_ui_icons()
-    
     bpy.types.Scene.WoWVisibility = bpy.props.EnumProperty(
         items=[
             ('0', "Outdoor", "Display outdoor groups", 'OBJECT_DATA', 0x1),
@@ -1066,8 +1064,6 @@ class WMOToolsPanelObjectModeAddToScene(bpy.types.Panel):
         game_data_loaded = hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files
 
         col = layout.column(align=True)
-        
-        ui_icons = get_ui_icons()
         
         box1 = col.box().column(align=True)
         box1_col = box1.column(align=True)
@@ -1165,8 +1161,6 @@ class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
 
     def draw(self, context):
         
-        ui_icons = get_ui_icons()
-        
         layout = self.layout
         col = layout.column()
         col.operator("scene.wow_add_fog", text ='Fog', icon_value=ui_icons['WOW_STUDIO_FOG_ADD'])
@@ -1180,8 +1174,6 @@ class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
 
 
 def wow_components_add_menu_item(self, context):
-    
-    ui_icons = get_ui_icons()
     
     self.layout.menu("view3D.add_wow_components_menu", icon_value=ui_icons['WOW_STUDIO_WOW_ADD'])
 

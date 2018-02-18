@@ -29,16 +29,9 @@ bl_info = {
 }
 
 import bpy
+import bpy.utils.previews
+import os
 from bpy.props import StringProperty, BoolProperty
-from .ui import register_ui, unregister_ui
-from .ui.icon_manager import get_ui_icons
-
-get_ui_icons()
-
-# load and reload submodules
-##################################
-from .developer_utils import setup_addon_modules
-setup_addon_modules(__path__, __name__, True)
 
 
 class WMOPreferences(bpy.types.AddonPreferences):
@@ -89,14 +82,39 @@ class WMOPreferences(bpy.types.AddonPreferences):
             row.enabled = False
 
 
+# load custom icons
+##################################
+ui_icons = {}
+
+pcoll = bpy.utils.previews.new()
+
+icons_dir = os.path.join(os.path.dirname(__file__), "ui", "icons")
+
+for file in os.listdir(icons_dir):
+    pcoll.load(os.path.splitext(file)[0].upper(), os.path.join(icons_dir, file), 'IMAGE')
+
+for name, icon_file in pcoll.items():
+    ui_icons[name] = icon_file.icon_id
+
+# load and reload submodules
+##################################
+from .developer_utils import setup_addon_modules
+setup_addon_modules(__path__, __name__, True)
+
+
 def register():
     bpy.utils.register_module(__name__)
+
+    from .ui import register_ui
     register_ui()
 
 
 def unregister():
     bpy.utils.unregister_module(__name__)
+    from .ui import unregister_ui
     unregister_ui()
+
+    bpy.utils.previews.remove(pcoll)
 
 
 if __name__ == "__main__":
