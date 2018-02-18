@@ -243,7 +243,7 @@ class WMOGroupFile:
                         vc_layer.data[loop].color = (0, 0, 255)
             bit <<= 1
 
-        #set mesh location
+        # set mesh location
         obj.location = pos
         bpy.context.scene.objects.link(obj)
 

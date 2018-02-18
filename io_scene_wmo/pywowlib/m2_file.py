@@ -139,6 +139,12 @@ class M2File:
 
         return self.root.textures.add(texture)
 
+    def add_dummy_bone(self, origin):
+        bone = self.root.bones.new()
+        bone.pivot = origin
+
+
+
 
 
         

@@ -18,6 +18,16 @@ def parse_bitfield(bitfield, last_flag=0x1000):
     return flags
 
 
+def construct_bitfield(flag_set):
+
+    bitfiled = 0
+
+    for flag in flag_set:
+        bitfiled |= int(flag)
+
+    return bitfiled
+
+
 def get_material_viewport_image(material):
     """ Get viewport image assigned to a material """
     for i in range(3):
@@ -45,3 +55,5 @@ def load_game_data():
         bpy.db_files_client.add(anim_data_dbc)
 
     return bpy.wow_game_data
+
+

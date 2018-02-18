@@ -142,6 +142,10 @@ class M2Array(metaclass=Template):
     def prepend(self, itrbl):
         self.values = itrbl[:].extend(self.values)
 
+    def new(self):
+        self.values.append(self.type())
+        return self.values[-1]
+
     def set(self, itrbl):
         self.values = itrbl
 

@@ -13,7 +13,8 @@ SHADERS = [
     ('3', "Env", ""), ('4', "Opaque", ""), ('5', "EnvMetal", ""),
     ('6', "TwoLayerDiffuse", ""), ('7', "TwoLayerEnvMetal", ""), ('8', "TwoLayerTerrain", ""),
     ('9', "DiffuseEmissive", ""), ('10', "Tangent", ""), ('11', "MaskedEnvMetal", ""),
-    ('12', "EnvMetalEmissive", ""), ('13', "TwoLayerDiffuseOpaque", ""), ('14', "TwoLayerDiffuseEmissive", "")
+    ('12', "EnvMetalEmissive", ""), ('13', "TwoLayerDiffuseOpaque", ""), ('14', "TwoLayerDiffuseEmissive", ""),
+    ('15', "Unknown", ""), ('16', "Unknown", "")
 ]
 
 TEX_UNIT_FLAGS = [

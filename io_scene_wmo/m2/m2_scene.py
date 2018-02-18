@@ -1,14 +1,11 @@
 import bpy
 import os
-from io import BytesIO
 from mathutils import Vector
 
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes
-from ..pywowlib.wdbx.wdbc import DBCFile
-from ..pywowlib.wdbx.definitions.wotlk import AnimationData
 from ..pywowlib.io_utils.types import uint32, vec3D
 from ..pywowlib.file_formats.m2_format import M2CompQuaternion
-from ..utils import parse_bitfield, load_game_data
+from ..utils import parse_bitfield, construct_bitfield, load_game_data
 
 
 class BlenderM2Scene:
@@ -16,6 +13,7 @@ class BlenderM2Scene:
         self.m2 = m2
         self.materials = {}
         self.geosets = []
+        self.animations = []
         self.rig = None
         self.collision_mesh = None
         self.settings = prefs
@@ -158,6 +156,7 @@ class BlenderM2Scene:
             action = bpy.data.actions.new(name=name)
             action.use_fake_user = True  # TODO: check if this is the best solution
             rig.animation_data.action = action
+            self.animations.append(action)
 
             done_rot = False
             done_trans = False
@@ -247,7 +246,7 @@ class BlenderM2Scene:
                     bpy.context.scene.frame_set(0)
                     bl_bone.keyframe_insert(data_path='scale')
 
-        rig.animation_data.action = bpy.data.actions[0]
+        rig.animation_data.action = self.animations[0]
         bpy.context.scene.frame_set(0)
 
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -353,10 +352,32 @@ class BlenderM2Scene:
             bl_edit_bone.name = obj.name
 
     def load_lights(self):
-        # TODO: animate values after UI is implemented
+
+        def animate_light_properties(obj, prop_path, m2_track):
+            panel, prop = prop_path.split('.')
+            obj.animation_data_create()
+
+            for i, action in enumerate(self.animations):
+                obj.animation_data.action = action
+
+                try:
+                    frames = m2_track.timestamps[i]
+                except IndexError:
+                    continue
+
+                for j, frame in enumerate(frames):
+                    bpy.context.scene.frame_set(frame * 0.0266666)
+
+                    setattr(getattr(obj.data, panel), prop, m2_track.values[i][j])
+
+                    obj.data.keyframe_insert(data_path='["{}"]["{}"]'.format(panel, prop))
+
+            obj.animation_data.action = self.animations[0]
+
         for i, light in enumerate(self.m2.root.lights):
             bpy.ops.object.lamp_add(type='POINT' if light.type else 'SPOT', location=(0, 0, 0))
             obj = bpy.context.scene.objects.active
+            obj.data.WowM2Light.Type = str(light.type)
 
             if self.rig:
                 obj.parent = self.rig
@@ -367,6 +388,15 @@ class BlenderM2Scene:
                 constraint.target = self.rig
                 bone = self.m2.root.bones[light.bone]
                 constraint.subtarget = bone.name
+
+            # import animated values
+            animate_light_properties(obj, 'WowM2Light.AmbientColor', light.ambient_color)
+            animate_light_properties(obj, 'WowM2Light.AmbientIntensity', light.ambient_intensity)
+            animate_light_properties(obj, 'WowM2Light.DiffuseColor', light.diffuse_color)
+            animate_light_properties(obj, 'WowM2Light.DiffuseIntensity', light.diffuse_intensity)
+            animate_light_properties(obj, 'WowM2Light.AttenuationStart', light.attenuation_start)
+            animate_light_properties(obj, 'WowM2Light.AttenuationEnd', light.attenuation_end)
+            animate_light_properties(obj, 'WowM2Light.Enabled', light.visibility)
 
     def load_collision(self):
 
@@ -393,14 +423,44 @@ class BlenderM2Scene:
         obj.hide = True
         # TODO: add transparent material
 
+    def save_bones(self):
+        rigs = list(filter(lambda ob: ob.type == 'ARMATURE' and not ob.hide, bpy.context.scene.objects))
+
+        if len(rigs) > 1:
+            raise Exception('Error: M2 exporter does not support more than one armature. Hide or remove the extra one.')
+
+        for rig in rigs:
+            self.rig = rig
+            bpy.context.scene.objects.active = rig
+            bpy.ops.object.mode_set(mode='EDIT')
+
+            armature = rig.data
+
+            for bone in armature.edit_bones:
+                m2_bone = self.m2.root.bones.new()
+                m2_bone.key_bone_id = bone.WowM2Bone.KeyBoneID
+                m2_bone.flags = construct_bitfield(bone.WowM2Bone.Flags)
+                m2_bone.parent_bone = armature.edit_bones.index(bone.parent) if bone.parent else -1
+                m2_bone.pivot = bone.head
+
+                # TODO: submesh id ???, u_dist, u_zratio
+
+            break
+
+        else:
+            # Add an empty bone, if the model is not animated
+            self.m2.add_dummy_bone((0, 0, 0))  # TODO: calculate center of mass here ???
+
     def save_geosets(self, selected_only):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
         if not objects:
             raise Exception('Error: no mesh found on the scene or selected.')
 
+        # deselect all objects before saving geosets
+        bpy.ops.object.select_all(action='DESELECT')
+
         proxy_objects = []
         for obj in filter(lambda ob: not ob.WowM2Geoset.CollisionMesh and obj.type == 'MESH' and not obj.hide, objects):
-            bpy.ops.object.select_all(action='DESELECT')
 
             new_obj = obj.copy()
             new_obj.data = obj.data.copy()
@@ -427,6 +487,7 @@ class BlenderM2Scene:
             bpy.ops.object.mode_set(mode='OBJECT')
 
             # prepare scene
+            ###################################
 
             # perform edge split
             bpy.ops.object.mode_set(mode='EDIT')
@@ -446,13 +507,6 @@ class BlenderM2Scene:
             bpy.ops.mesh.select_all(action='DESELECT')
             bpy.ops.object.mode_set(mode='OBJECT')
 
-            # split object by materials
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.select_all(action='SELECT')
-            bpy.ops.mesh.separate(type='MATERIAL')
-            bpy.ops.mesh.select_all(action='DESELECT')
-            bpy.ops.object.mode_set(mode='OBJECT')
-
             # export vertices
             vertices = [new_obj.matrix_world * vertex.co for vertex in mesh.vertices]
             normals = [vertex.normal for vertex in mesh.vertices]
@@ -463,7 +517,7 @@ class BlenderM2Scene:
             if len(mesh.uv_layers) >= 2:
                 tex_coords2 = [mesh.uv_layers[1].data[loop.vertex_index].uv for loop in mesh.loops]
 
-            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY') # TODO: find a better way to do this
+            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')  # TODO: find a better way to do this
             bpy.ops.view3d.snap_cursor_to_selected()
             origin = bpy.context.scene.cursor_location
 
