@@ -11,7 +11,6 @@ from ..utils import load_game_data
 def import_m2(version, file, load_textures):  # TODO: implement multiversioning
 
     # get global variables
-    game_data = getattr(bpy, "wow_game_data", None)
     addon_preferences = get_addon_prefs()
     texture_dir = addon_preferences.cache_dir_path if addon_preferences.use_cache_dir else os.path.dirname(file)
 

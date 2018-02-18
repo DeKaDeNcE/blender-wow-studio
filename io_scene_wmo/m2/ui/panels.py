@@ -385,7 +385,6 @@ def update_anim_variation_index(self, context):
         self.VariationNext.WowM2Animation.VariationIndex = self.VariationIndex + 1
 
 
-
 class WowM2AnimationPropertyGroup(bpy.types.PropertyGroup):
     AnimationID = bpy.props.EnumProperty(
         name="AnimationID",
