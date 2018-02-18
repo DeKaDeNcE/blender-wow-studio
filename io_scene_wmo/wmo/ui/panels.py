@@ -1106,8 +1106,8 @@ class WMOToolsPanelObjectModeActions(bpy.types.Panel):
             box_col = box.column(align=True)
             box_col.operator("scene.wow_quick_collision", text='Quick collision', icon='STYLUS_PRESSURE')
             box_col.operator("scene.wow_fill_textures", text='Fill texture paths', icon='FILE_IMAGE')
-            box_col.operator("scene.wow_set_portal_dir_alg", text='Set portal dir.', icon='FILE_REFRESH')
-            box_col.operator("scene.wow_bake_portal_relations", text='Bake portal rels.', icon='LINKED')
+            box_col.operator("scene.wow_set_portal_dir_alg", text='Set portal dir.', icon_value=ui_icons['WOW_STUDIO_APPLY_DIRECTION'])
+            box_col.operator("scene.wow_bake_portal_relations", text='Bake portal rels.', icon_value=ui_icons['WOW_STUDIO_APPLY_RELATIONS'])
 
 
 class WMOToolsPanelObjectModeDoodads(bpy.types.Panel):

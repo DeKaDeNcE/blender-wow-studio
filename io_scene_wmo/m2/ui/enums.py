@@ -1,6 +1,7 @@
 import bpy
 from ...pywowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones
 from ...utils import load_game_data
+from ... import ui_icons
 
 
 ###############################
@@ -16,31 +17,31 @@ SHADERS = [
 ]
 
 TEX_UNIT_FLAGS = [
-    ("1", "Invert", "", 'PMARKER', 0x1),
-    ("2", "Transform", "", 'FORCE_TURBULENCE', 0x2),
-    ("4", "Projected Texture", "", 'ARROW_LEFTRIGHT', 0x4),
-    ("8", "Unknown", "", 'ARROW_LEFTRIGHT', 0x8),
-    ("16", "Batch Compatible", "", 'PMARKER_SEL', 0x10),
-    ("32", "Projected Texture 2", "", 'PMARKER_ACT', 0x20),
-    ("64", "Use Texture Weights", "", 'PMARKER_ACT', 0x40)
+    ("1", "Invert", "", 'MOD_DATA_TRANSFER', 0x1),
+    ("2", "Transform", "", 'SCULPTMODE_HLT', 0x2),
+    ("4", "Projected Texture", "", 'MOD_UVPROJECT', 0x4),
+    ("8", "Unknown", "", 'QUESTION', 0x8),
+    ("16", "Batch Compatible", "", 'SETTINGS', 0x10),
+    ("32", "Projected Texture 2", "", 'MOD_UVPROJECT', 0x20),
+    ("64", "Use Texture Weights", "", 'WPAINT_HLT', 0x40)
 ]
 
 RENDER_FLAGS = [
-    ("1", "Unlit", "Disable lighting", 'PMARKER', 0x1),
-    ("2", "Unfogged", "Disable fog", 'FORCE_TURBULENCE', 0x2),
-    ("4", "Two-sided", "Render from both sides", 'ARROW_LEFTRIGHT', 0x4),
-    ("8", "Depth-Test", "Unknown", 'PMARKER_SEL', 0x8),
-    ("16", "Depth-Write", "Unknown", 'PMARKER_ACT', 0x10)
+    ("1", "Unlit", "Disable lighting", 'SNAP_VOLUME', 0x1),
+    ("2", "Unfogged", "Disable fog", ui_icons['MAT_UNFOGGED'], 0x2),
+    ("4", "Two-sided", "Render from both sides", 'MOD_UVPROJECT', 0x4),
+    ("8", "Depth-Test", "Unknown", 'SPACE3', 0x8),
+    ("16", "Depth-Write", "Unknown", 'SPACE2', 0x10)
 ]
 
 BLENDING_MODES = [
-    ("0", "Opaque", "Blending disabled", 'PMARKER', 1),
-    ("1", "AlphaTesting", "All pixels are fully opaque or transparent, leading to aliasing (“jaggies”)", 'PMARKER', 2),
-    ("2", "AlphaBlending", "All pixels can support full transparency range. Sometimes thus can produce some rendering issues", 'FORCE_TURBULENCE', 3),
-    ("3", "Add", "Takes the pixels of the Material and adds them to the pixels of the background. This means that there is no darkening; since all pixel values are added together, blacks will just render as transparent", 'ARROW_LEFTRIGHT', 4),
-    ("4", "AddAlpha", "This Blend Mode works by taking in an Opacity value or texture and applying it to the surface such that black areas are completely transparent, white areas are completely opaque, and the varying shades of gradation between result in corresponding transparency levels", 'PMARKER_SEL', 5),
-    ("5", "Modulate", "The Modulate Blend Mode simply multiplies the value of the Material against the pixels of the background", 'PMARKER_ACT', 6),
-    ("6", "DeeeprunTram", "Probably is used in particles. Needs to be researched", 'PMARKER_ACT', 7)
+    ("0", "Opaque", "Blending disabled", 'MESH_CUBE', 1),
+    ("1", "AlphaTesting", "All pixels are fully opaque or transparent, leading to aliasing (“jaggies”)", 'MOD_BEVEL', 2),
+    ("2", "AlphaBlending", "All pixels can support full transparency range. Sometimes thus can produce some rendering issues", 'MOD_CAST', 3),
+    ("3", "Add", "Takes the pixels of the Material and adds them to the pixels of the background. This means that there is no darkening; since all pixel values are added together, blacks will just render as transparent", 'FORCE_TEXTURE', 4),
+    ("4", "AddAlpha", "This Blend Mode works by taking in an Opacity value or texture and applying it to the surface such that black areas are completely transparent, white areas are completely opaque, and the varying shades of gradation between result in corresponding transparency levels", 'TPAINT_HLT', 5),
+    ("5", "Modulate", "The Modulate Blend Mode simply multiplies the value of the Material against the pixels of the background", 'FACESEL', 6),
+    ("6", "DeeeprunTram", "Probably is used in particles. Needs to be researched", 'MOD_PARTICLES', 7)
 ]
 
 TEXTURE_TYPES = [
@@ -67,8 +68,8 @@ TEXTURE_TYPES = [
 ]
 
 TEXTURE_FLAGS = [
-    ("1", "Wrap X", "Texture wrap X", 'PMARKER', 0x1),
-    ("2", "Wrap Y", "Texture wrap Y", 'FORCE_TURBULENCE', 0x2),
+    ("1", "Wrap X", "Texture wrap X", 'TRIA_RIGHT', 0x1),
+    ("2", "Wrap Y", "Texture wrap Y", 'TRIA_UP', 0x2),
 ]
 
 BONE_FLAGS = [

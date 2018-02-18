@@ -24,25 +24,25 @@ blending_enum = [
 ]
 
 material_flag_enum = [
-    ("1", "Unlit", "Disable lighting", 'PMARKER', 0x1),
-    ("2", "Unfogged", "Disable fog", 'FORCE_TURBULENCE', 0x2),
-    ("4", "Two-sided", "Render from both sides", 'ARROW_LEFTRIGHT', 0x4),
-    ("8", "Exterior light", "Ignore local WMO lighting, use world lighting instead", 'PMARKER_SEL', 0x8),
-    ("16", "Night Glow", "Used for windows to glow at nighttime", 'PMARKER_ACT', 0x10),
-    ("32", "Window", "Unknown, used for windows", 'MOD_WIREFRAME', 0x20),
-    ("64", "Clamp_S", "Force texture to use clamp _s adressing", 'TRIA_RIGHT', 0x40),
-    ("128", "Clamp_T", "Force texture to use clamp _t adressing", 'TRIA_RIGHT', 0x80)
+    ("1", "Unlit", "Disable lighting", 'SNAP_VOLUME', 0x1),
+    ("2", "Unfogged", "Disable fog", ui_icons['MAT_UNFOGGED'], 0x2),
+    ("4", "Two-sided", "Render from both sides", 'MOD_UVPROJECT', 0x4),
+    ("8", "Exterior light", "Ignore local WMO lighting, use world lighting instead", ui_icons['MAT_EXT_LIGHT'], 0x8),
+    ("16", "Night Glow", "Used for windows to glow at nighttime", ui_icons['MAT_NIGHT_GLOW'], 0x10),
+    ("32", "Window", "Unknown, used for windows", ui_icons['MAT_WINDOW'], 0x20),
+    ("64", "Clamp_S", "Force texture to use clamp _s adressing", 'SPACE3', 0x40),
+    ("128", "Clamp_T", "Force texture to use clamp _t adressing", 'SPACE2', 0x80)
 ]
 
 group_flag_enum = [
     ('0', "Vertex color", "Check if you need vertex color in this group", 'COLOR', 0x1),
-    ('1', "No local lighting", "Use world-defined lighting in a group", 'PMARKER_SEL', 0x2),
-    ('2', "Always draw", "Always draw the model. Disable portal-based geometry culling", 'MOD_PARTICLES', 0x4),
-    ('3', "Mounts allowed", "Allow mounts in this indoor group", 'RESTRICT_VIEW_OFF', 0x8),
-    ('4', "Use Skybox", "Display WMO skybox in this indoor group", 'WIRE', 0x10)
+    ('1', "No local lighting", "Use world-defined lighting in a group", 'LAMP_HEMI', 0x2),
+    ('2', "Always draw", "Always draw the model. Disable portal-based geometry culling", 'BBOX', 0x4),
+    ('3', "Mounts allowed", "Allow mounts in this indoor group", ui_icons['WOW_STUDIO_MOUNT'], 0x8),
+    ('4', "Use Skybox", "Display WMO skybox in this indoor group", 'SURFACE_NSPHERE', 0x10)
 ]
 
-place_type_enum = [('8', "Outdoor", "", 'CURVE_NCIRCLE', 0), ('8192', "Indoor", "", 'FORCE_FORCE', 1)]
+place_type_enum = [('8', "Outdoor", "", 'OBJECT_DATA', 0), ('8192', "Indoor", "", 'MOD_SUBSURF', 1)]
 
 liquid_type_enum = [
     ('0', "No liquid", ""), ('1', "Water", ""), ('2', "Ocean", ""),
