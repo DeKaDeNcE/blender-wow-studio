@@ -1,5 +1,5 @@
 import bpy
-from ...pywowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones
+from ...pywowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones, M2AttachmentTypes
 from ...utils import load_game_data
 from ... import ui_icons
 
@@ -231,6 +231,9 @@ def get_anim_ids(self, context):
     load_game_data()
     return [(str(record.ID), record.Name, '') for record in bpy.db_files_client.AnimationData.records]
 
+
+def get_attachment_types(self, context):
+    return [(str(field.value), field.name, "") for field in M2AttachmentTypes]
 
 
 

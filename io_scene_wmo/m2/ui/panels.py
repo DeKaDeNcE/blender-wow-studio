@@ -474,6 +474,43 @@ def unregister_wow_m2_animation_properties():
     bpy.types.Action.WowM2Animation = None
 
 
+###############################
+## Attachments
+###############################
+
+class WowM2AttachmentPanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_label = "M2 Attachment"
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(context.object.WowM2Attachment, 'Type', text="Type")
+
+    @classmethod
+    def poll(cls, context):
+        return context.object is not None \
+               and context.object.type == 'EMPTY'
+
+
+class WowM2AttachmentPropertyGroup(bpy.types.PropertyGroup):
+    Type = bpy.props.EnumProperty(
+        name="Type",
+        description="WoW Attachment Type",
+        items=get_attachment_types
+    )
+
+
+def register_wow_m2_attachment_properties():
+    bpy.types.Object.WowM2Attachment = bpy.props.PointerProperty(type=WowM2AttachmentPropertyGroup)
+
+
+def unregister_wow_m2_attachment_properties():
+    bpy.types.Object.WowM2Attachment = None
+
+
 def register():
     register_wow_m2_material_properties()
     register_wow_m2_geoset_properties()
@@ -481,6 +518,7 @@ def register():
     register_wow_m2_light_properties()
     register_wow_m2_bone_properties()
     register_wow_m2_animation_properties()
+    register_wow_m2_attachment_properties()
 
 
 def unregister():
@@ -490,5 +528,6 @@ def unregister():
     unregister_wow_m2_light_properties()
     unregister_wow_m2_bone_properties()
     unregister_wow_m2_animation_properties()
+    unregister_wow_m2_attachment_properties()
 
 

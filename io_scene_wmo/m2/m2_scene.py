@@ -349,6 +349,7 @@ class BlenderM2Scene:
             obj.location = bl_edit_bone.matrix_local.inverted() * Vector(attachment.position)
 
             obj.name = M2AttachmentTypes.get_attachment_name(attachment.id, i)
+            obj.WowM2Attachment.Type = str(attachment.id)
             bl_edit_bone.name = obj.name
 
     def load_lights(self):
