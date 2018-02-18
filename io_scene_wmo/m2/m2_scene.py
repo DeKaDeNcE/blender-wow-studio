@@ -266,7 +266,9 @@ class BlenderM2Scene:
 
             if m2_sequence.variation_next > 0:
                 action.WowM2Animation.VariationNext = bpy.data.actions[m2_sequence.variation_next]
-            action.WowM2Animation.AliasNext = bpy.data.actions[m2_sequence.alias_next]
+
+            if m2_sequence.alias_next != i:
+                action.WowM2Animation.AliasNext = bpy.data.actions[m2_sequence.alias_next]
 
     def load_geosets(self):
         if not len(self.m2.root.vertices):
