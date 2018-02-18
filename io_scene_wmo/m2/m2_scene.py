@@ -326,12 +326,6 @@ class BlenderM2Scene:
             bpy.context.scene.objects.link(obj)
 
             obj.WowM2Geoset.MeshPartGroup = name
-
-            # refresh UI after setting the property
-            for region in bpy.context.area.regions:
-                if region.type == "UI":
-                    region.tag_redraw()
-
             obj.WowM2Geoset.MeshPartID = str(smesh.skin_section_id)
 
             self.geosets.append(obj)
