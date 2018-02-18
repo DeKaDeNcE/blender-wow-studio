@@ -145,13 +145,12 @@ class BlenderM2Scene:
         bpy.context.scene.objects.active = rig
         bpy.ops.object.mode_set(mode='POSE')
 
-        game_data = load_game_data()
+        load_game_data()
         anim_data_dbc = bpy.db_files_client.AnimationData
 
+        # import animation sequences
         for i, sequence in enumerate(self.m2.root.sequences):
-            field_name = None
-            if anim_data_dbc:
-                field_name = anim_data_dbc.get_field(sequence.id, 'Name')
+            field_name = anim_data_dbc.get_field(sequence.id, 'Name')
 
             name = '{}_UnkAnim'.format(str(i).zfill(3)) if not field_name \
                 else "{}_{}_({})".format(str(i).zfill(3), field_name, sequence.variation_index)
@@ -252,6 +251,22 @@ class BlenderM2Scene:
         bpy.context.scene.frame_set(0)
 
         bpy.ops.object.mode_set(mode='OBJECT')
+
+        # set animation properties
+        for i, action in enumerate(bpy.data.actions):
+            m2_sequence = self.m2.root.sequences[i]
+
+            action.WowM2Animation.AnimationID = str(m2_sequence.id)
+            action.WowM2Animation.Flags = parse_bitfield(m2_sequence.flags, 0x800)
+            action.WowM2Animation.Movespeed = m2_sequence.movespeed
+            action.WowM2Animation.Frequency = m2_sequence.frequency
+            action.WowM2Animation.ReplayMin = m2_sequence.replay.minimum
+            action.WowM2Animation.ReplayMax = m2_sequence.replay.maximum
+            action.WowM2Animation.BlendTime = m2_sequence.blend_time
+
+            if m2_sequence.variation_next > 0:
+                action.WowM2Animation.VariationNext = bpy.data.actions[m2_sequence.variation_next]
+            action.WowM2Animation.AliasNext = bpy.data.actions[m2_sequence.alias_next]
 
     def load_geosets(self):
         if not len(self.m2.root.vertices):

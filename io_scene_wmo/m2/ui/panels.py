@@ -350,6 +350,12 @@ class WowM2AnimationPanel(bpy.types.Panel):
         col.prop(context.object.animation_data.action.WowM2Animation, 'Movespeed', text="Move speed")
         col.prop(context.object.animation_data.action.WowM2Animation, 'BlendTime', text="Blend time")
         col.prop(context.object.animation_data.action.WowM2Animation, 'Frequency', text="Frequency")
+
+        col.label(text='Random repeat:')
+        col.prop(context.object.animation_data.action.WowM2Animation, 'ReplayMin', text="Min")
+        col.prop(context.object.animation_data.action.WowM2Animation, 'ReplayMax', text="Max")
+
+        col.label(text='Relations:')
         col.prop(context.object.animation_data.action.WowM2Animation, 'VariationNext', text="Next")
         col.prop(context.object.animation_data.action.WowM2Animation, 'AliasNext', text="Next alias")
 
@@ -437,6 +443,20 @@ class WowM2AnimationPropertyGroup(bpy.types.PropertyGroup):
         name="Next alias",
         poll=animation_chain_poll,
         update=update_animation_chain
+    )
+
+    ReplayMin = bpy.props.IntProperty(
+        name="Replay Min",
+        description="Client will pick a random number of repetitions within bounds if given.",
+        min=0,
+        max=65535
+    )
+
+    ReplayMax = bpy.props.IntProperty(
+        name="Replay Max",
+        description="Client will pick a random number of repetitions within bounds if given.",
+        min=0,
+        max=65535
     )
 
 
