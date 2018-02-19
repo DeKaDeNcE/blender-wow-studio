@@ -588,20 +588,41 @@ class WowM2EventPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(context.object.WowM2Event, 'Type')
+        col.prop(context.object.WowM2Event, 'Token')
+        col.prop(context.object.WowM2Event, 'Enabled')
+
+        event_name = M2EventTokens.get_event_name(context.object.WowM2Event.Token)
+        if event_name in ('PlayEmoteSound', 'DoodadSoundUnknown', 'DoodadSoundOneShot', 'GOPlaySoundKitCustom'):
+            col.label(text='SoundEntryID')
+            col.prop(context.object.WowM2Event, 'Data')
+        elif event_name == 'GOAddShake':
+            col.label(text='SpellEffectCameraShakesID')
+            col.prop(context.object.WowM2Event, 'Data')
 
     @classmethod
     def poll(cls, context):
         return context.object is not None \
             and context.object.type == 'EMPTY' \
-            and context.object.data.empty_draw_type == 'CUBE'
+            and context.object.empty_draw_type == 'CUBE'
 
 
 class WowM2EventPropertyGroup(bpy.types.PropertyGroup):
     Token = bpy.props.EnumProperty(
         name='Token',
         description='This token defines the purpose of the event',
-        items=
+        items=get_event_names
+    )
+
+    Data = bpy.props.IntProperty(
+        name='Data',
+        description='Data passed when this event is fired',
+        min=0
+    )
+
+    Enabled = bpy.props.BoolProperty(
+        name='Enabled',
+        description='Enable this event in this specific animation keyframe',
+        default=True
     )
 
 

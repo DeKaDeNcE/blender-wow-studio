@@ -410,25 +410,6 @@ class M2EventTokens(Enum):
         return None
 
 
-class M2EventTokenDataReferences(Enum):
-    PlayEmoteSound = 'SoundEntryID'
-    DoodadSoundUnknown = 'SoundEntryID'
-    DoodadSoundOneShot = 'SoundEntryID'
-    GOAddShake = 'SpellEffectCameraShakesID'
-    GOPlaySoundKitCustom = 'SoundEntryID'
-
-    @classmethod
-    def get_event_data_type(cls, token):
-        name = M2EventTokens.get_event_name(token)
-
-        for field in cls.fields:
-            if field.name == name:
-                return field.value
-
-        return None
-
-
-
 
 
 

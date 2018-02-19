@@ -1,5 +1,5 @@
 import bpy
-from ...pywowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones, M2AttachmentTypes, M2ParticleFlags
+from ...pywowlib.enums.m2_enums import *
 from ...utils import load_game_data
 from ... import ui_icons
 
@@ -239,6 +239,10 @@ def get_attachment_types(self, context):
 
 def get_particle_flags(self, context):
     return [(str(field.value), field.name, "", hex(field.value)) for field in M2ParticleFlags]
+
+
+def get_event_names(self, context):
+    return [(field.value, field.name, "") for field in M2EventTokens]
 
 
 
