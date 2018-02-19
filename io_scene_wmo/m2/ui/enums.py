@@ -121,8 +121,8 @@ ANIMATION_FLAGS = [
     ("128", "Blended animation", "", 'TRIA_RIGHT', 0x80),
     ("256", "Unknown", "Sequence stored in model?", 'QUESTION', 0x100),
     ("512", "Unknown", "", 'QUESTION', 0x200),
-    ("512", "Unknown", "", 'QUESTION', 0x400),
-    ("512", "Unknown", "Seen in Legion 24500 models", 'QUESTION', 0x800)
+    ("1024", "Unknown", "", 'QUESTION', 0x400),
+    ("2048", "Unknown", "Seen in Legion 24500 models", 'QUESTION', 0x800)
 ]
 
 
