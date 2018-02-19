@@ -75,7 +75,7 @@ class M2GeosetPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
-    bl_label = "WoW M2 Geoset"
+    bl_label = "M2 Geoset"
 
     def draw(self, context):
         self.layout.prop(context.object.WowM2Geoset, "CollisionMesh")
@@ -511,11 +511,13 @@ class WowM2AttachmentPanel(bpy.types.Panel):
         layout = self.layout
         col = layout.column()
         col.prop(context.object.WowM2Attachment, 'Type', text="Type")
+        col.prop(context.object.WowM2Attachment, 'Animate', text="Animate")
 
     @classmethod
     def poll(cls, context):
         return context.object is not None \
-               and context.object.type == 'EMPTY'
+               and context.object.type == 'EMPTY' \
+               and context.object.empty_draw_type == 'SPHERE'
 
 
 class WowM2AttachmentPropertyGroup(bpy.types.PropertyGroup):
@@ -523,6 +525,12 @@ class WowM2AttachmentPropertyGroup(bpy.types.PropertyGroup):
         name="Type",
         description="WoW Attachment Type",
         items=get_attachment_types
+    )
+
+    Animate = bpy.props.BoolProperty(
+        name='Animate',
+        description='Animate attached object at this keyframe',
+        default=True
     )
 
 
@@ -567,6 +575,44 @@ def unregister_wow_m2_particle_properties():
     bpy.types.ParticleSettings.WowM2Particle = None
 
 
+###############################
+## Event
+###############################
+
+class WowM2EventPanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_label = "M2 Event"
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(context.object.WowM2Event, 'Type')
+
+    @classmethod
+    def poll(cls, context):
+        return context.object is not None \
+            and context.object.type == 'EMPTY' \
+            and context.object.data.empty_draw_type == 'CUBE'
+
+
+class WowM2EventPropertyGroup(bpy.types.PropertyGroup):
+    Token = bpy.props.EnumProperty(
+        name='Token',
+        description='This token defines the purpose of the event',
+        items=
+    )
+
+
+def register_wow_m2_event_properties():
+    bpy.types.Object.WowM2Event = bpy.props.PointerProperty(type=WowM2EventPropertyGroup)
+
+
+def unregister_wow_m2_event_properties():
+    bpy.types.Object.WowM2Event = None
+
+
 def register():
     register_wow_m2_material_properties()
     register_wow_m2_geoset_properties()
@@ -576,6 +622,7 @@ def register():
     register_wow_m2_animation_properties()
     register_wow_m2_attachment_properties()
     register_wow_m2_particle_properties()
+    register_wow_m2_event_properties()
 
 
 def unregister():
@@ -587,5 +634,6 @@ def unregister():
     unregister_wow_m2_animation_properties()
     unregister_wow_m2_attachment_properties()
     unregister_wow_m2_particle_properties()
+    unregister_wow_m2_event_properties()
 
 
