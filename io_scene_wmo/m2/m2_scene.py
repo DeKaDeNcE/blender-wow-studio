@@ -407,7 +407,7 @@ class BlenderM2Scene:
         for event in self.m2.root.events:
             bpy.ops.object.empty_add(type='CUBE', location=(0, 0, 0))
             obj = bpy.context.scene.objects.active
-            obj.scale = (0.094431, 0.094431, 0.094431)
+            obj.scale = (0.019463, 0.019463, 0.019463)
             bpy.ops.object.constraint_add(type='CHILD_OF')
             constraint = obj.constraints[-1]
             constraint.target = self.rig
