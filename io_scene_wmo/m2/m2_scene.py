@@ -397,6 +397,13 @@ class BlenderM2Scene:
             animate_light_properties(obj, 'WowM2Light.AttenuationEnd', light.attenuation_end)
             animate_light_properties(obj, 'WowM2Light.Enabled', light.visibility)
 
+    def load_particles(self):
+        if not len(self.m2.root.particles):
+            print("\nNo particles found to import.")
+            return
+        else:
+            print("\nImport particles.")
+
     def load_collision(self):
 
         if not len(self.m2.root.collision_vertices):
@@ -469,8 +476,13 @@ class BlenderM2Scene:
             bpy.context.scene.objects.active = new_obj
             mesh = new_obj.data
 
+            # security checks
+
             if not mesh.uv_layers.active:
                 raise Exception("Mesh <<{}>> has no UV map.".format(obj.name))
+
+            if len(mesh.materials) > 1:
+                raise Exception("Mesh <<{}>> has more than one material applied.".format(obj.name))
 
             # apply all modifiers
             if len(obj.modifiers):
