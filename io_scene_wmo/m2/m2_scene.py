@@ -362,7 +362,7 @@ class BlenderM2Scene:
                 try:
                     frames = m2_track.timestamps[i]
                 except IndexError:
-                    continue
+                    break
 
                 for j, frame in enumerate(frames):
                     bpy.context.scene.frame_set(frame * 0.0266666)
@@ -538,7 +538,6 @@ class BlenderM2Scene:
             origin = bpy.context.scene.cursor_location
 
             self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, )  # TODO: bone stuff
-
 
         for obj in proxy_objects:
             bpy.data.objects.remove(obj, do_unlink=True)
