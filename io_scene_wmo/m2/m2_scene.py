@@ -162,10 +162,17 @@ class BlenderM2Scene:
             done_trans = False
             done_scale = False
 
+            # handles alias animations
+            real_anim = sequence
+            anim_idx = real_anim.alias_next
+            while real_anim.flags & 0x40:
+                real_anim = self.m2.root.sequences[real_anim.alias_next]
+                anim_idx = real_anim.alias_next
+
             anim_file = None
             if not sequence.flags & 0x130:
                 anim_path = "{}{}-{}.anim".format(os.path.splitext(self.m2.root.filepath)[0],
-                                                  str(sequence.id).zfill(4), str(sequence.variation_index).zfill(2))
+                                                  str(real_anim.id).zfill(4), str(sequence.variation_index).zfill(2))
 
                 # TODO: implement game-data loading
                 anim_file = open(anim_path, 'rb')
@@ -174,23 +181,23 @@ class BlenderM2Scene:
 
                 bl_bone = rig.pose.bones[bone.name]
 
-                if bone.rotation.timestamps.n_elements > i:
-                    rotation_frames = bone.rotation.timestamps[i]
-                    rotation_track = bone.rotation.values[i]
+                if bone.rotation.timestamps.n_elements > anim_idx:
+                    rotation_frames = bone.rotation.timestamps[anim_idx]
+                    rotation_track = bone.rotation.values[anim_idx]
                 else:
                     rotation_frames = []
                     rotation_track = []
 
-                if bone.translation.timestamps.n_elements > i:
-                    translation_frames = bone.translation.timestamps[i]
-                    translation_track = bone.translation.values[i]
+                if bone.translation.timestamps.n_elements > anim_idx:
+                    translation_frames = bone.translation.timestamps[anim_idx]
+                    translation_track = bone.translation.values[anim_idx]
                 else:
                     translation_frames = []
                     translation_track = []
 
-                if bone.scale.timestamps.n_elements > i:
-                    scale_frames = bone.scale.timestamps[i]
-                    scale_track = bone.scale.values[i]
+                if bone.scale.timestamps.n_elements > anim_idx:
+                    scale_frames = bone.scale.timestamps[anim_idx]
+                    scale_track = bone.scale.values[anim_idx]
                 else:
                     scale_frames = []
                     scale_track = []
