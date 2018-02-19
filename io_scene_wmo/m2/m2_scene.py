@@ -252,7 +252,7 @@ class BlenderM2Scene:
         bpy.ops.object.mode_set(mode='OBJECT')
 
         # set animation properties
-        for i, action in enumerate(bpy.data.actions):
+        for i, action in enumerate(self.animations):
             m2_sequence = self.m2.root.sequences[i]
 
             action.WowM2Animation.AnimationID = str(m2_sequence.id)
