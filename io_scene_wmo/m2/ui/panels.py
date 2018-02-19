@@ -534,6 +534,39 @@ def unregister_wow_m2_attachment_properties():
     bpy.types.Object.WowM2Attachment = None
 
 
+###############################
+## Partciles
+###############################
+
+class WowM2ParticlePanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "particle"
+    bl_label = "M2 Particle"
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(context.object.particle_systems.active.settings.WowM2Particle, 'Type')
+
+    @classmethod
+    def poll(cls, context):
+        return context.object is not None \
+            and context.object.particle_systems.active
+
+
+class WowM2ParticlePropertyGroup(bpy.types.PropertyGroup):
+    Type = bpy.props.IntProperty()
+
+
+def register_wow_m2_particle_properties():
+    bpy.types.ParticleSettings.WowM2Particle = bpy.props.PointerProperty(type=WowM2ParticlePropertyGroup)
+
+
+def unregister_wow_m2_particle_properties():
+    bpy.types.ParticleSettings.WowM2Particle = None
+
+
 def register():
     register_wow_m2_material_properties()
     register_wow_m2_geoset_properties()
@@ -542,6 +575,7 @@ def register():
     register_wow_m2_bone_properties()
     register_wow_m2_animation_properties()
     register_wow_m2_attachment_properties()
+    register_wow_m2_particle_properties()
 
 
 def unregister():
@@ -552,5 +586,6 @@ def unregister():
     unregister_wow_m2_bone_properties()
     unregister_wow_m2_animation_properties()
     unregister_wow_m2_attachment_properties()
+    unregister_wow_m2_particle_properties()
 
 

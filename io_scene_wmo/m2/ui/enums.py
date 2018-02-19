@@ -1,5 +1,5 @@
 import bpy
-from ...pywowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones, M2AttachmentTypes
+from ...pywowlib.enums.m2_enums import M2SkinMeshPartID, M2KeyBones, M2AttachmentTypes, M2ParticleFlags
 from ...utils import load_game_data
 from ... import ui_icons
 
@@ -235,6 +235,11 @@ def get_anim_ids(self, context):
 
 def get_attachment_types(self, context):
     return [(str(field.value), field.name, "") for field in M2AttachmentTypes]
+
+
+def get_particle_flags(self, context):
+    return [(str(field.value), field.name, "", hex(field.value)) for field in M2ParticleFlags]
+
 
 
 
