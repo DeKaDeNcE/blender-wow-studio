@@ -429,7 +429,7 @@ class BlenderM2Scene:
         obj.hide = True
         # TODO: add transparent material
 
-    def save_bones(self):
+    def save_bones(self, selected_only):
         rigs = list(filter(lambda ob: ob.type == 'ARMATURE' and not ob.hide, bpy.context.scene.objects))
 
         if len(rigs) > 1:
@@ -449,13 +449,18 @@ class BlenderM2Scene:
                 m2_bone.parent_bone = armature.edit_bones.index(bone.parent) if bone.parent else -1
                 m2_bone.pivot = bone.head
 
-                # TODO: submesh id ???, u_dist, u_zratio
-
             break
 
         else:
             # Add an empty bone, if the model is not animated
-            self.m2.add_dummy_bone((0, 0, 0))  # TODO: calculate center of mass here ???
+            if selected_only:
+                bpy.ops.view3d.snap_cursor_to_selected()
+                self.m2.add_dummy_bone(bpy.context.scene.cursor_location.to_tuple())
+            else:
+                bpy.ops.object.select_all(action='SELECT')
+                bpy.ops.view3d.snap_cursor_to_selected()
+                self.m2.add_dummy_bone(bpy.context.scene.cursor_location.to_tuple())
+                bpy.ops.object.select_all(action='DESELECT')
 
     def save_geosets(self, selected_only):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
@@ -533,6 +538,7 @@ class BlenderM2Scene:
             origin = bpy.context.scene.cursor_location
 
             self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, )  # TODO: bone stuff
+
 
         for obj in proxy_objects:
             bpy.data.objects.remove(obj, do_unlink=True)
