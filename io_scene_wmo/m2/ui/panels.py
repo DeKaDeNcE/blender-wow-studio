@@ -622,7 +622,7 @@ class WowM2EventPropertyGroup(bpy.types.PropertyGroup):
     Enabled = bpy.props.BoolProperty(
         name='Enabled',
         description='Enable this event in this specific animation keyframe',
-        default=True
+        default=False
     )
 
 

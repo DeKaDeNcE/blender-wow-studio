@@ -1094,14 +1094,14 @@ class M2Attachment:
 class M2Event:
 
     def __init__(self):
-        self.identifier = 0
+        self.identifier = ""
         self.data = 0
         self.bone = 0
         self.position = (0.0, 0.0, 0.0)
         self.enabled = M2TrackBase()
 
     def read(self, f):
-        self.identifier = uint32.read(f)
+        self.identifier = string.read(f, 4).decode('utf-8')
         self.data = uint32.read(f)
         self.bone = uint32.read(f)
         self.position = vec3D.read(f)   
@@ -1110,7 +1110,7 @@ class M2Event:
         return self
 
     def write(self, f):
-        uint32.write(f, self.identifier)
+        string.write(f, self.identifier.encode('utf-8'), 4)
         uint32.write(f, self.data)
         uint32.write(f, self.bone)  
         vec3D.write(f, self.position)

@@ -316,7 +316,7 @@ class M2EventTokens(Enum):
     Breath = '$BTH'                                             # All situations, where nothing happens or breathing.
     PlayRangedItemPull = '$BWP'                                 # LoadRifle, LoadBow
     BowRelease = '$BWR'                                         # AttackRifle, AttackBow, AttackThrown
-    AttackHold = 'CAH'                                          # Attack*, *Unarmed, ShieldBash, Special*
+    AttackHold = '$CAH'                                          # Attack*, *Unarmed, ShieldBash, Special*
     AttackThrown = '$CCH'                                       # CEffect::DrawFishingString needs this on the model for getting the string attachments.
     UpdateMountHeightOrOffset = '$CFM'                          # CGCamera::UpdateMountHeightOrOffset: Only z is used. Non-animated. Not used if $CMA
     Unknown1 = '$CHD'                                           # Does not exist?

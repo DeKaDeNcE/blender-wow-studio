@@ -2,7 +2,7 @@ import bpy
 import os
 from mathutils import Vector
 
-from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes
+from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
 from ..pywowlib.io_utils.types import uint32, vec3D
 from ..pywowlib.file_formats.m2_format import M2CompQuaternion
 from ..utils import parse_bitfield, construct_bitfield, load_game_data
@@ -396,6 +396,50 @@ class BlenderM2Scene:
             animate_light_properties(obj, 'WowM2Light.AttenuationStart', light.attenuation_start)
             animate_light_properties(obj, 'WowM2Light.AttenuationEnd', light.attenuation_end)
             animate_light_properties(obj, 'WowM2Light.Enabled', light.visibility)
+
+    def load_events(self):
+        if not len(self.m2.root.events):
+            print("\nNo events found to import.")
+            return
+        else:
+            print("\nImport events.")
+
+        for event in self.m2.root.events:
+            bpy.ops.object.empty_add(type='CUBE', location=(0, 0, 0))
+            obj = bpy.context.scene.objects.active
+            obj.scale = (0.094431, 0.094431, 0.094431)
+            bpy.ops.object.constraint_add(type='CHILD_OF')
+            constraint = obj.constraints[-1]
+            constraint.target = self.rig
+            obj.parent = self.rig
+            bone = self.m2.root.bones[event.bone]
+            constraint.subtarget = bone.name
+
+            bl_edit_bone = self.rig.data.bones[bone.name]
+            obj.location = bl_edit_bone.matrix_local.inverted() * Vector(event.position)
+            obj.name = M2EventTokens.get_event_name(event.identifier)
+            obj.WowM2Event.Token = event.identifier
+            obj.WowM2Event.Data = event.data
+
+            # animate event firing
+            obj.animation_data_create()
+
+            for i, action in enumerate(self.animations):
+                obj.animation_data.action = action
+
+                try:
+                    frames = event.enabled.timestamps[i]
+                except IndexError:
+                    break
+
+                for j, frame in enumerate(frames):
+                    bpy.context.scene.frame_set(frame * 0.0266666)
+
+                    obj.WowM2Event.Enabled = True
+
+                    obj.keyframe_insert(data_path='["WowM2Event"]["Enabled"]')
+
+            obj.animation_data.action = self.animations[0]
 
     def load_particles(self):
         if not len(self.m2.root.particles):
