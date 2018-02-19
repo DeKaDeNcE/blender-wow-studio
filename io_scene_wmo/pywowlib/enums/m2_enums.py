@@ -12,14 +12,21 @@ class M2GlobalFlags(IntEnum):
 
 class M2ParticleFlags(IntEnum):
     EffectedByLight = 0x1                                       # Particles are affected by lighting;
+    Unknown1 = 0x2
+    Unknown2 = 0x4
     UseWorldMatrix = 0x8                                        # Particles travel "up" in world space, rather than model.
     DoNotTrail = 0x10                                           # Do not Trail
     Unlightning = 0x20                                          # Unlightning
+    Unknown3 = 0x40
     UseModelMatrix = 0x80                                       # Particles in Model Space
+    Unknown4 = 0x100
     SpawnPosRandom = 0x200                                      # spawn position randomized in some way?
     PinParticle = 0x400                                         # Pinned Particles, their quad enlarges from their creation position to where they expand.
+    Unknown5 = 0x800
     XYQuad = 0x1000                                             # XYQuad Particles. They align to XY axis facing Z axis direction.
     ClampToGround = 0x2000                                      # clamp to ground
+    Unknown6 = 0x4000
+    Unknown7 = 0x8000
     ChooseRandomTexture = 0x10000                               # ChooseRandomTexture
     OutwardParticle = 0x20000                                   # "Outward" particles, most emitters have this and their particles move away from the origin, when they don't the particles start at origin+(speed*life) and move towards the origin.
     Unknown = 0x40000                                           # unknown. In a large proportion of particles this seems to be simply the opposite of the above flag, but in some (e.g. voidgod.m2 or wingedlionmount.m2) both flags are true.
