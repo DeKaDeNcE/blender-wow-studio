@@ -164,10 +164,10 @@ class BlenderM2Scene:
 
             # handles alias animations
             real_anim = sequence
-            anim_idx = real_anim.alias_next
-            while real_anim.flags & 0x40:
-                real_anim = self.m2.root.sequences[real_anim.alias_next]
+            anim_idx = i
+            while real_anim.flags & 0x40 and real_anim.alias_next != anim_idx:
                 anim_idx = real_anim.alias_next
+                real_anim = self.m2.root.sequences[real_anim.alias_next]
 
             anim_file = None
             if not sequence.flags & 0x130:
