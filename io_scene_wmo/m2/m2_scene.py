@@ -368,8 +368,8 @@ class BlenderM2Scene:
 
             bl_edit_bone = self.rig.data.bones[bone.name]
             obj.location = bl_edit_bone.matrix_local.inverted() * Vector(event.position)
-            obj.name = M2EventTokens.get_event_name(event.identifier)
-            bl_edit_bone.name = "Event_{}".format(obj.name)
+            obj.name = "Event_{}".format(M2EventTokens.get_event_name(event.identifier))
+            bl_edit_bone.name = obj.name
             obj.WowM2Event.Token = event.identifier
             obj.WowM2Event.Data = event.data
 

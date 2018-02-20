@@ -46,7 +46,7 @@ BLENDING_MODES = [
 ]
 
 TEXTURE_TYPES = [
-    ("0", "None", "Texture given in filename", 'PMARKER', 1),
+    ("0", "Hardcoded", "Texture given in filename", 'PMARKER', 1),
     ("1", "Skin", "Body and clothes", 'PMARKER', 2),
     ("2", "Object Skin", "Items, Capes", 'PMARKER', 3),
     ("3", "Weapon Blade", "Armor reflect", 'PMARKER', 4),
