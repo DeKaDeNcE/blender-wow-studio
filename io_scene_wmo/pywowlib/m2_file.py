@@ -48,30 +48,36 @@ class M2File:
                                     track = bone.rotation.values[a_idx]
 
                                     anim_file.seek(frames.ofs_elements)
-                                    frames.values = [uint32.read(anim_file) for _ in range(frames.n_elements)]
+                                    bone.rotation.timestamps[i].values = \
+                                        [uint32.read(anim_file) for _ in range(frames.n_elements)]
 
                                     anim_file.seek(track.ofs_elements)
-                                    track.values = [M2CompQuaternion().read(anim_file) for _ in range(track.n_elements)]
+                                    bone.rotation.values[i].values = \
+                                        [M2CompQuaternion().read(anim_file) for _ in range(track.n_elements)]
 
                                 if bone.translation.timestamps.n_elements > a_idx:
                                     frames = bone.translation.timestamps[a_idx]
                                     track = bone.translation.values[a_idx]
 
                                     anim_file.seek(frames.ofs_elements)
-                                    frames.values = [uint32.read(anim_file) for _ in range(frames.n_elements)]
+                                    bone.translation.timestamps[i].values = \
+                                        [uint32.read(anim_file) for _ in range(frames.n_elements)]
 
                                     anim_file.seek(track.ofs_elements)
-                                    track.values = [vec3D.read(anim_file) for _ in range(track.n_elements)]
+                                    bone.translation.values[i].values = \
+                                        [vec3D.read(anim_file) for _ in range(track.n_elements)]
 
                                 if bone.scale.timestamps.n_elements > a_idx:
                                     frames = bone.scale.timestamps[a_idx]
                                     track = bone.scale.values[a_idx]
 
                                     anim_file.seek(frames.ofs_elements)
-                                    frames.values = [uint32.read(anim_file) for _ in range(frames.n_elements)]
+                                    bone.scale.timestamps[i].values = \
+                                        [uint32.read(anim_file) for _ in range(frames.n_elements)]
 
                                     anim_file.seek(track.ofs_elements)
-                                    track.values = [vec3D.read(anim_file) for _ in range(track.n_elements)]
+                                    bone.scale.values[i].values = \
+                                        [vec3D.read(anim_file) for _ in range(track.n_elements)]
 
                 else:
                     self.skins = self.root.skin_profiles

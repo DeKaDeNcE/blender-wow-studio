@@ -156,13 +156,14 @@ class BlenderM2Scene:
             rig.animation_data.action = action
             self.animations.append(action)
 
-            done_rot = False
-            done_trans = False
-            done_scale = False
-
             for bone in self.m2.root.bones:  # TODO <= TBC
 
                 bl_bone = rig.pose.bones[bone.name]
+
+                bpy.context.scene.frame_set(0)
+                bl_bone.keyframe_insert(data_path='rotation_quaternion')
+                bl_bone.keyframe_insert(data_path='location')
+                bl_bone.keyframe_insert(data_path='scale')
 
                 if bone.rotation.timestamps.n_elements > i:
                     rotation_frames = bone.rotation.timestamps[i]
@@ -172,7 +173,6 @@ class BlenderM2Scene:
                         bpy.context.scene.frame_set(frame * 0.0266666)
                         bl_bone.rotation_quaternion = rotation_track[j].to_quaternion()
                         bl_bone.keyframe_insert(data_path='rotation_quaternion', group=bone.name)
-                        done_rot = True
 
                 if bone.translation.timestamps.n_elements > i:
                     translation_frames = bone.translation.timestamps[i]
@@ -183,7 +183,6 @@ class BlenderM2Scene:
                         bl_bone.location = bl_bone.bone.matrix_local.inverted() * (Vector(bone.pivot) +
                                                                                    Vector(translation_track[j]))
                         bl_bone.keyframe_insert(data_path='location')
-                        done_trans = True
 
                 if bone.scale.timestamps.n_elements > i:
                     scale_frames = bone.scale.timestamps[i]
@@ -193,17 +192,6 @@ class BlenderM2Scene:
                         bpy.context.scene.frame_set(frame * 0.0266666)
                         bl_bone.scale = scale_track[j]
                         bl_bone.keyframe_insert(data_path='scale')
-                        done_scale = True
-
-                if not done_rot:
-                    bpy.context.scene.frame_set(0)
-                    bl_bone.keyframe_insert(data_path='rotation_quaternion')
-                if not done_trans:
-                    bpy.context.scene.frame_set(0)
-                    bl_bone.keyframe_insert(data_path='location')
-                if not done_scale:
-                    bpy.context.scene.frame_set(0)
-                    bl_bone.keyframe_insert(data_path='scale')
 
         rig.animation_data.action = self.animations[0]
         bpy.context.scene.frame_set(0)
