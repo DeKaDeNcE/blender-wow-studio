@@ -176,7 +176,7 @@ class BlenderM2Scene:
                     for j, frame in enumerate(rotation_frames):
                         bpy.context.scene.frame_set(frame * 0.0266666)
                         bl_bone.rotation_quaternion = rotation_track[j].to_quaternion()
-                        bl_bone.keyframe_insert(data_path='rotation_quaternion', group=bone.name)
+                        bl_bone.keyframe_insert(data_path='rotation_quaternion')
 
                 if bone.translation.timestamps.n_elements > i:
                     translation_frames = bone.translation.timestamps[i]
@@ -369,6 +369,7 @@ class BlenderM2Scene:
             bl_edit_bone = self.rig.data.bones[bone.name]
             obj.location = bl_edit_bone.matrix_local.inverted() * Vector(event.position)
             obj.name = M2EventTokens.get_event_name(event.identifier)
+            bl_edit_bone.name = obj.name
             obj.WowM2Event.Token = event.identifier
             obj.WowM2Event.Data = event.data
 
