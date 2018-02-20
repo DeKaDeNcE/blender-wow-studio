@@ -3,8 +3,6 @@ import os
 from mathutils import Vector
 
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
-from ..pywowlib.io_utils.types import uint32, vec3D
-from ..pywowlib.file_formats.m2_format import M2CompQuaternion
 from ..utils import parse_bitfield, construct_bitfield, load_game_data
 
 
@@ -162,86 +160,40 @@ class BlenderM2Scene:
             done_trans = False
             done_scale = False
 
-            # handles alias animations
-            real_anim = sequence
-            anim_idx = i
-            while real_anim.flags & 0x40 and real_anim.alias_next != anim_idx:
-                anim_idx = real_anim.alias_next
-                real_anim = self.m2.root.sequences[real_anim.alias_next]
-
-            anim_file = None
-            if not sequence.flags & 0x130:
-                anim_path = "{}{}-{}.anim".format(os.path.splitext(self.m2.root.filepath)[0],
-                                                  str(real_anim.id).zfill(4), str(sequence.variation_index).zfill(2))
-
-                # TODO: implement game-data loading
-                anim_file = open(anim_path, 'rb')
-
             for bone in self.m2.root.bones:  # TODO <= TBC
 
                 bl_bone = rig.pose.bones[bone.name]
 
-                if bone.rotation.timestamps.n_elements > anim_idx:
-                    rotation_frames = bone.rotation.timestamps[anim_idx]
-                    rotation_track = bone.rotation.values[anim_idx]
-                else:
-                    rotation_frames = []
-                    rotation_track = []
+                if bone.rotation.timestamps.n_elements > i:
+                    rotation_frames = bone.rotation.timestamps[i]
+                    rotation_track = bone.rotation.values[i]
 
-                if bone.translation.timestamps.n_elements > anim_idx:
-                    translation_frames = bone.translation.timestamps[anim_idx]
-                    translation_track = bone.translation.values[anim_idx]
-                else:
-                    translation_frames = []
-                    translation_track = []
+                    for j, frame in enumerate(rotation_frames):
+                        bpy.context.scene.frame_set(frame * 0.0266666)
+                        bl_bone.rotation_quaternion = rotation_track[j].to_quaternion()
+                        bl_bone.keyframe_insert(data_path='rotation_quaternion', group=bone.name)
+                        done_rot = True
 
-                if bone.scale.timestamps.n_elements > anim_idx:
-                    scale_frames = bone.scale.timestamps[anim_idx]
-                    scale_track = bone.scale.values[anim_idx]
-                else:
-                    scale_frames = []
-                    scale_track = []
+                if bone.translation.timestamps.n_elements > i:
+                    translation_frames = bone.translation.timestamps[i]
+                    translation_track = bone.translation.values[i]
 
-                if anim_file:
-                    if len(rotation_frames):
-                        anim_file.seek(rotation_frames.ofs_elements)
-                        rotation_frames.values = [uint32.read(anim_file) for _ in range(rotation_frames.n_elements)]
+                    for j, frame in enumerate(translation_frames):
+                        bpy.context.scene.frame_set(frame * 0.0266666)
+                        bl_bone.location = bl_bone.bone.matrix_local.inverted() * (Vector(bone.pivot) +
+                                                                                   Vector(translation_track[j]))
+                        bl_bone.keyframe_insert(data_path='location')
+                        done_trans = True
 
-                        anim_file.seek(rotation_track.ofs_elements)
-                        rotation_track.values = [M2CompQuaternion().read(anim_file) for _ in range(rotation_track.n_elements)]
+                if bone.scale.timestamps.n_elements > i:
+                    scale_frames = bone.scale.timestamps[i]
+                    scale_track = bone.scale.values[i]
 
-                    if len(translation_frames):
-                        anim_file.seek(translation_frames.ofs_elements)
-                        translation_frames.values = [uint32.read(anim_file) for _ in range(translation_frames.n_elements)]
-
-                        anim_file.seek(translation_track.ofs_elements)
-                        translation_track.values = [vec3D.read(anim_file) for _ in range(translation_track.n_elements)]
-
-                    if len(scale_frames):
-                        anim_file.seek(scale_frames.ofs_elements)
-                        scale_frames.values = [uint32.read(anim_file) for _ in range(scale_frames.n_elements)]
-
-                        anim_file.seek(scale_track.ofs_elements)
-                        scale_track.values = [vec3D.read(anim_file) for _ in range(scale_track.n_elements)]
-
-                for j, frame in enumerate(rotation_frames):
-                    bpy.context.scene.frame_set(frame * 0.0266666)
-                    bl_bone.rotation_quaternion = rotation_track[j].to_quaternion()
-                    bl_bone.keyframe_insert(data_path='rotation_quaternion', group=bone.name)
-                    done_rot = True
-
-                for j, frame in enumerate(translation_frames):
-                    bpy.context.scene.frame_set(frame * 0.0266666)
-                    bl_bone.location = bl_bone.bone.matrix_local.inverted() * (Vector(bone.pivot) +
-                                                                               Vector(translation_track[j]))
-                    bl_bone.keyframe_insert(data_path='location')
-                    done_trans = True
-
-                for j, frame in enumerate(scale_frames):
-                    bpy.context.scene.frame_set(frame * 0.0266666)
-                    bl_bone.scale = scale_track[j]
-                    bl_bone.keyframe_insert(data_path='scale')
-                    done_scale = True
+                    for j, frame in enumerate(scale_frames):
+                        bpy.context.scene.frame_set(frame * 0.0266666)
+                        bl_bone.scale = scale_track[j]
+                        bl_bone.keyframe_insert(data_path='scale')
+                        done_scale = True
 
                 if not done_rot:
                     bpy.context.scene.frame_set(0)

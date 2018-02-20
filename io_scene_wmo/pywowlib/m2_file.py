@@ -1,7 +1,8 @@
 import os
 
-from .file_formats.m2_format import M2Header, M2Versions, M2Vertex, M2Material, M2Texture
+from .file_formats.m2_format import M2Header, M2Versions, M2Vertex, M2Material, M2Texture, M2CompQuaternion
 from .file_formats.skin_format import M2SkinProfile, M2SkinSubmesh, M2SkinTextureUnit
+from ..pywowlib.io_utils.types import uint32, vec3D
 
 
 class M2File:
@@ -16,10 +17,61 @@ class M2File:
                 self.skins = []
 
                 if version >= M2Versions.WOTLK:
+                    # load skins
+
                     raw_path = os.path.splitext(filepath)[0]
                     for i in range(self.root.num_skin_profiles):
                         with open("{}{}.skin".format(raw_path, str(i).zfill(2)), 'rb') as skin_file:
                             self.skins.append(M2SkinProfile().read(skin_file))
+
+                    # load anim files
+                    for i, sequence in enumerate(self.root.sequences):
+
+                        # handle alias animations
+                        real_anim = sequence
+                        a_idx = i
+                        while real_anim.flags & 0x40 and real_anim.alias_next != a_idx:
+                            a_idx = real_anim.alias_next
+                            real_anim = self.root.sequences[real_anim.alias_next]
+
+                        if not sequence.flags & 0x130:
+                            anim_path = "{}{}-{}.anim".format(os.path.splitext(filepath)[0],
+                                                              str(real_anim.id).zfill(4),
+                                                              str(sequence.variation_index).zfill(2))
+
+                            # TODO: implement game-data loading
+                            anim_file = open(anim_path, 'rb')
+
+                            for bone in self.root.bones:
+                                if bone.rotation.timestamps.n_elements > a_idx:
+                                    frames = bone.rotation.timestamps[a_idx]
+                                    track = bone.rotation.values[a_idx]
+
+                                    anim_file.seek(frames.ofs_elements)
+                                    frames.values = [uint32.read(anim_file) for _ in range(frames.n_elements)]
+
+                                    anim_file.seek(track.ofs_elements)
+                                    track.values = [M2CompQuaternion().read(anim_file) for _ in range(track.n_elements)]
+
+                                if bone.translation.timestamps.n_elements > a_idx:
+                                    frames = bone.translation.timestamps[a_idx]
+                                    track = bone.translation.values[a_idx]
+
+                                    anim_file.seek(frames.ofs_elements)
+                                    frames.values = [uint32.read(anim_file) for _ in range(frames.n_elements)]
+
+                                    anim_file.seek(track.ofs_elements)
+                                    track.values = [vec3D.read(anim_file) for _ in range(track.n_elements)]
+
+                                if bone.scale.timestamps.n_elements > a_idx:
+                                    frames = bone.scale.timestamps[a_idx]
+                                    track = bone.scale.values[a_idx]
+
+                                    anim_file.seek(frames.ofs_elements)
+                                    frames.values = [uint32.read(anim_file) for _ in range(frames.n_elements)]
+
+                                    anim_file.seek(track.ofs_elements)
+                                    track.values = [vec3D.read(anim_file) for _ in range(track.n_elements)]
 
                 else:
                     self.skins = self.root.skin_profiles
