@@ -161,6 +161,10 @@ class BlenderM2Scene:
                 bl_bone = rig.pose.bones[bone.name]
 
                 bpy.context.scene.frame_set(0)
+                bl_bone.location = bl_bone.bone.matrix_local.inverted() * Vector(bone.pivot)
+                bl_bone.rotation_quaternion = (1, 0, 0, 0)
+                bl_bone.scale = (1, 1, 1)
+
                 bl_bone.keyframe_insert(data_path='rotation_quaternion')
                 bl_bone.keyframe_insert(data_path='location')
                 bl_bone.keyframe_insert(data_path='scale')
