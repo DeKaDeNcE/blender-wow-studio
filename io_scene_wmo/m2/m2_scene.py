@@ -4,6 +4,7 @@ from mathutils import Vector
 
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
 from ..utils import parse_bitfield, construct_bitfield, load_game_data
+from .ui.enums import mesh_part_id_menu
 
 
 class BlenderM2Scene:
@@ -277,6 +278,10 @@ class BlenderM2Scene:
 
             obj.WowM2Geoset.MeshPartGroup = name
             obj.WowM2Geoset.MeshPartID = str(smesh.skin_section_id)
+
+            for item in mesh_part_id_menu(obj.WowM2Geoset, None):
+                if item[0] == smesh.skin_section_id:
+                    obj.name = item[1]
 
             self.geosets.append(obj)
 
