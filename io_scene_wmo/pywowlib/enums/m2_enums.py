@@ -102,10 +102,10 @@ class M2CompBoneFlags(IntEnum):
 
 class M2SkinMeshPartID(Enum):
     Skin = range(0, 1)
-    Hair = range(1, 20)
+    Hair = range(1, 22)
     Facial1 = range(101, 109)
     Facial2 = range(201, 207)
-    Facial3 = range(301, 306)
+    Facial3 = range(301, 312)
     Glove = range(401, 405)
     Boots = range(501, 506)
     Unknown = range(601, 615)
