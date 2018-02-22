@@ -344,6 +344,9 @@ class BlenderM2Scene:
                 bone = self.m2.root.bones[light.bone]
                 constraint.subtarget = bone.name
 
+                bl_edit_bone = self.rig.data.bones[bone.name]
+                obj.location = bl_edit_bone.matrix_local.inverted() * Vector(light.position)
+
             # import animated values
             animate_light_properties(obj, 'WowM2Light.AmbientColor', light.ambient_color)
             animate_light_properties(obj, 'WowM2Light.AmbientIntensity', light.ambient_intensity)
