@@ -1185,16 +1185,6 @@ class M2Header:
         if VERSION >= M2Versions.WOTLK:
             self.texture_combiner_combos = M2Array(uint16)
 
-        # TODO: implement on-demand fields
-        '''
-        #if ≥ Wrath                                              # TODO: verify version
-        if (flag_use_texture_combiner_combos)
-        {
-            M2Array << uint16 | textureCombinerCombos,           # When set, textures blending is overriden by the associated array.
-        }
-        #endif
-        '''
-
     def read(self, f):
         self.magic = string.read(f, 4)
         self.version = uint32.read(f)
