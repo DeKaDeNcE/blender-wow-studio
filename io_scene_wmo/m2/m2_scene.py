@@ -414,6 +414,21 @@ class BlenderM2Scene:
         else:
             print("\nImport particles.")
 
+        for particle in self.m2.root.particles:
+            if particle.emitter_type == 1:
+                bpy.ops.mesh.primitive_plane_add(radius=1, location=(0, 0, 0))
+                emitter = bpy.context.scene.objects.active
+                emitter.dimensions[0] = particle.emission_area_length
+                emitter.dimensions[1] = particle.emission_area_width
+
+            elif particle.emitter_type == 2:
+                bpy.ops.mesh.primitive_uv_sphere_add(size=particle.emission_area_length, location=(0, 0, 0))
+                emitter = bpy.context.scene.objects.active
+                # TODO: emission_area_with
+
+            elif particle.emitter_type == 3:
+                pass
+
     def load_collision(self):
 
         if not len(self.m2.root.collision_vertices):
@@ -459,6 +474,8 @@ class BlenderM2Scene:
                 m2_bone.parent_bone = armature.edit_bones.index(bone.parent) if bone.parent else -1
                 m2_bone.pivot = bone.head
 
+            bpy.ops.object.mode_set(mode='OBJECT')
+
             break
 
         else:
@@ -481,7 +498,7 @@ class BlenderM2Scene:
         bpy.ops.object.select_all(action='DESELECT')
 
         proxy_objects = []
-        for obj in filter(lambda ob: not ob.WowM2Geoset.CollisionMesh and obj.type == 'MESH' and not obj.hide, objects):
+        for obj in filter(lambda ob: not ob.WowM2Geoset.CollisionMesh and ob.type == 'MESH' and not ob.hide, objects):
 
             new_obj = obj.copy()
             new_obj.data = obj.data.copy()
@@ -547,10 +564,12 @@ class BlenderM2Scene:
             bpy.ops.view3d.snap_cursor_to_selected()
             origin = bpy.context.scene.cursor_location
 
-            self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, )  # TODO: bone stuff
+            self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, int(new_obj.WowM2Geoset.MeshPartID))  # TODO: bone stuff
 
         for obj in proxy_objects:
             bpy.data.objects.remove(obj, do_unlink=True)
+
+
 
 
 
