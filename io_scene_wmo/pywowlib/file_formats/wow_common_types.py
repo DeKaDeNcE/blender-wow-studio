@@ -1,4 +1,5 @@
 from ..io_utils.types import *
+from ...utils import singleton
 
 
 ###### M2 file versions ######
@@ -76,6 +77,20 @@ class fixed_point:
 fixed16 = int16
 
 
+@singleton
+class MemoryManager:
+    free_ofs = 0
+
+    def mem_reserve(self, f, n_bytes):
+        self.free_ofs = f.tell() + n_bytes
+
+    def ofs_request(self):
+        return self.free_ofs
+
+    def ofs_update(self, f):
+        self.free_ofs = f.tell()
+
+
 class M2Array(metaclass=Template):
 
     def __init__(self, type_):
@@ -107,21 +122,27 @@ class M2Array(metaclass=Template):
         return self
 
     def write(self, f):
-        ofs = request_offset()
+        mem_manager = MemoryManager()
+        ofs = mem_manager.ofs_request()
         uint32.write(f, len(self.values))
         uint32.write(f, ofs)
-
-        type_t = type(self.type)
 
         pos = f.tell()
         f.seek(ofs)
 
+        type_t = type(self.type)
+
+        if type_t is M2Array:
+            mem_manager.mem_reserve(f, len(self.values) * 8)
+
         if type_t is GenericType:
             for value in self.values:
                 type_t.write(f, value)
+                mem_manager.ofs_update(f)
         else:
             for value in self.values:
                 value.write(f)
+                mem_manager.ofs_update(f)
         f.seek(pos)
 
         return self
@@ -158,14 +179,14 @@ class M2Array(metaclass=Template):
 
 class ChunkHeader:
     def __init__(self, magic='', size=0):
-        self.Magic = magic
-        self.Size = size
+        self.magic = magic
+        self.size = size
 
     def read(self, f):
-        self.Magic = f.read(4)[0:4].decode('ascii')
-        self.Size = unpack("I", f.read(4))[0]
+        self.magic = f.read(4)[0:4].decode('ascii')
+        self.size = unpack("I", f.read(4))[0]
 
     def write(self, f):
-        f.write(self.Magic[:4].encode('ascii'))
-        f.write(pack('I', self.Size))
+        f.write(self.magic[:4].encode('ascii'))
+        f.write(pack('I', self.size))
 
