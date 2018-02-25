@@ -1,7 +1,7 @@
 from .wow_common_types import CAaBox, CRange, VERSION, M2Array, M2Versions, fixed16, fixed_point
 from ..io_utils.types import *
 from .skin_format import M2SkinProfile
-from ..enums.m2_enums import M2KeyBones
+from ..enums.m2_enums import M2KeyBones, M2GlobalFlags
 
 
 #############################################################
@@ -1182,6 +1182,9 @@ class M2Header:
         self.ribbon_emitters = M2Array(M2Ribbon)
         self.particle_emitters = M2Array(M2Particle)
 
+        if VERSION >= M2Versions.WOTLK:
+            self.texture_combiner_combos = M2Array(uint16)
+
         # TODO: implement on-demand fields
         '''
         #if ≥ Wrath                                              # TODO: verify version
@@ -1254,6 +1257,9 @@ class M2Header:
         self.camera_lookup_table.read(f)
         self.ribbon_emitters.read(f)
         self.particle_emitters.read(f)
+
+        if VERSION >= M2Versions.WOTLK and self.global_flags & M2GlobalFlags.UseTextureCombinerCombos:
+            self.texture_combiner_combos.read(f)
 
         return self
 

@@ -4,7 +4,7 @@ from enum import IntEnum, Enum
 class M2GlobalFlags(IntEnum):
     TILT_X = 0x1
     TILT_Y = 0x2
-    UseTextureCombiner_Combos = 0x8
+    UseTextureCombinerCombos = 0x8
     LoadPhysData = 0x20
     UNK = 0x80
     CameraRelated = 0x100
