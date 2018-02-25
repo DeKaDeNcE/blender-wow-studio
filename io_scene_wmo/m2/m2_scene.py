@@ -379,7 +379,13 @@ class BlenderM2Scene:
             obj.name = "Event_{}".format(M2EventTokens.get_event_name(event.identifier))
             bl_edit_bone.name = obj.name
             obj.WowM2Event.Token = event.identifier
-            obj.WowM2Event.Data = event.data
+
+            if obj.name in ('PlayEmoteSound',
+                            'DoodadSoundUnknown',
+                            'DoodadSoundOneShot',
+                            'GOPlaySoundKitCustom',
+                            'GOAddShake'):
+                obj.WowM2Event.Data = event.data
 
             # animate event firing
             obj.animation_data_create()
