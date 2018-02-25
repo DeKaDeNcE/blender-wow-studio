@@ -1,4 +1,4 @@
-from .wow_common_types import CAaBox, CRange, VERSION, M2Array, M2Versions, fixed16, fixed_point
+from .wow_common_types import CAaBox, CRange, VERSION, M2Array, M2Versions, fixed16, fixed_point, MemoryManager
 from ..io_utils.types import *
 from .skin_format import M2SkinProfile
 from ..enums.m2_enums import M2KeyBones, M2GlobalFlags
@@ -42,13 +42,16 @@ class M2String:
         return self
 
     def write(self, f):
-        ofs = request_offset()
+        mem_manager = MemoryManager()
+        ofs = mem_manager.ofs_request()
+
         uint32.write(f, len(self.value) + 1)
         uint32.write(f, ofs)
 
         pos = f.tell()
         f.seek(ofs)
         self.value = f.write(self.value + '\0'.encode('utf-8'))
+        mem_manager.ofs_update(f)
         f.seek(pos)
         
         return self
@@ -62,6 +65,7 @@ class M2SplineKey(metaclass=Template):
         self.out_tan = type_()
 
         self.type = type_
+        self._size = type_.size * 3
    
     def read(self, f):
         if type(self.type) is GenericType:
@@ -110,6 +114,7 @@ class M2Range:
 class M2TrackBase:
     
     def __init__(self):
+
         self.interpolation_type = 0
         self.global_sequence = 0
 
@@ -118,7 +123,7 @@ class M2TrackBase:
             self.timestamps = M2Array(uint32)
         else:
             self.timestamps = M2Array(M2Array << uint32)
-   
+
     def read(self, f):
         self.interpolation_type = uint16.read(f)
         self.global_sequence = uint16.read(f)
@@ -140,6 +145,10 @@ class M2TrackBase:
 
         return self
 
+    @staticmethod
+    def size():
+        return 12 if VERSION >= M2Versions.WOTLK else 20
+
 
 class M2Track(M2TrackBase, metaclass=Template):
 
@@ -159,6 +168,10 @@ class M2Track(M2TrackBase, metaclass=Template):
 
         return self
 
+    @staticmethod
+    def size():
+        return 20 if VERSION >= M2Versions.WOTLK else 28
+
 
 class FBlock:
 
@@ -177,6 +190,10 @@ class FBlock:
         self.keys.write(f)
 
         return self
+
+    @staticmethod
+    def size():
+        return 16
 
 
 class Vector_2fp_6_9:
@@ -199,6 +216,7 @@ class Vector_2fp_6_9:
     
 
 class M2Box:
+    size = 24
     
     def __init__(self):
         self.model_rotation_speed_min = (0.0, 0.0, 0.0)
@@ -315,6 +333,7 @@ class M2SequenceFlags:
 
 
 class M2Sequence:
+
     def __init__(self):
         self.id = 0                                             # Animation id in AnimationData.dbc
         self.variation_index = 0                                # Sub-animation id: Which number in a row of animations this one is.
@@ -348,6 +367,8 @@ class M2Sequence:
         if VERSION <= M2Versions.TBC:
             self.start_timestamp = uint32.read(f)
             self.end_timestamp = uint32.read(f)
+
+            self.size += 4
         else:
             self.duration = uint32.read(f)
         
@@ -416,10 +437,7 @@ class M2CompBone:
         # unionend
 
         self.translation = M2Track(vec3D)
-        if VERSION <= M2Versions.CLASSIC:
-            self.rotation = M2Track(quat)
-        else:
-            self.rotation = M2Track(M2CompQuaternion)       # compressed values, default is (32767,32767,32767,65535) == (0,0,0,1) == identity
+        self.rotation = M2Track(quat if VERSION <= M2Versions.CLASSIC else M2CompQuaternion)  # compressed values, default is (32767,32767,32767,65535) == (0,0,0,1) == identity
 
         self.scale = M2Track(vec3D)
         self.pivot = (0.0, 0.0, 0.0)                            # The pivot point of that bone.
@@ -452,7 +470,7 @@ class M2CompBone:
         int16.write(f, self.u_dist_to_furth_desc)
         uint16.write(f, self.u_zratio_of_chain)
         self.translation.write(f)
-        quat.write(f, self.rotation)
+        self.rotation.write(f)
         self.scale.write(f)
         vec3D.write(f, self.pivot)
 
@@ -471,6 +489,10 @@ class M2CompBone:
         if not self.children:
             return 0
         return sum(map(lambda x: x.get_depth(), self.children)) + len(self.children)
+
+    @staticmethod
+    def size():
+        return 86 if VERSION >= M2Versions.WOTLK else 110
 
 
 #############################################################
@@ -553,6 +575,10 @@ class M2Color:
 
         return self
 
+    @staticmethod
+    def size():
+        return 40 if VERSION >= M2Versions.WOTLK else 56
+
 
 class M2Texture:
 
@@ -574,6 +600,10 @@ class M2Texture:
         self.filename.write(f)
 
         return self
+
+    @staticmethod
+    def size():
+        return 16
 
 
 #############################################################
@@ -600,6 +630,10 @@ class M2TextureTransform:
         self.scaling.write(f)
 
         return self
+
+    @staticmethod
+    def size():
+        return 60 if VERSION >= M2Versions.WOTLK else 84
 
 
 class M2Ribbon:
@@ -641,10 +675,12 @@ class M2Ribbon:
         self.gravity = float32.read(f)
         self.texture_rows = uint16.read(f)
         self.texture_cols = uint16.read(f)
+        self.tex_slot_track.read(f)
+        self.visibility_track.read(f)
 
         if VERSION >= M2Versions.WOTLK:
-            self.tex_slot_track.read(f)
-            self.visibility_track.read(f)
+            self.priority_plane = int16.read(f)
+            self.padding = uint16.read(f)
 
         return self
 
@@ -671,6 +707,10 @@ class M2Ribbon:
             uint16.write(f, self.padding)
 
         return self
+
+    @staticmethod
+    def size():
+        return 176 if VERSION >= M2Versions.WOTLK else 220
 
 
 class M2Particle:
@@ -1001,10 +1041,9 @@ class M2Light:
 
         return self
 
-
-class M2LightTypes:
-    Directional = 0                                             # Directional light type is not used (at least in 3.3.5) outside login screen, and doesn't seem to be taken into account in world.
-    Point = 1
+    @staticmethod
+    def size():
+        return 156 if VERSION >= M2Versions.WOTLK else 212
 
 
 ###### Cameras ######
@@ -1058,6 +1097,11 @@ class M2Camera:
 
         return self
 
+    @staticmethod
+    def size():
+        tracks = 60 if VERSION >= M2Versions.WOTLK else 84
+        return tracks + 40 if VERSION < M2Versions.CATA else tracks + 64
+
 
 ###### Attachments ######
 
@@ -1087,6 +1131,10 @@ class M2Attachment:
         self.animate_attached.write(f)
 
         return self
+
+    @staticmethod
+    def size():
+        return 40 if VERSION >= M2Versions.WOTLK else 48
 
 
 ###### Events ######
@@ -1118,6 +1166,10 @@ class M2Event:
 
         return self
 
+    @staticmethod
+    def size():
+        return 36 if VERSION >= M2Versions.WOTLK else 44
+
 
 #############################################################
 ######                  M2 Header                      ######
@@ -1126,6 +1178,8 @@ class M2Event:
 class M2Header:
 
     def __init__(self):
+        self._size = 324 if VERSION <= M2Versions.TBC else 304
+
         self.magic = 'MD20' if VERSION < M2Versions.LEGION else 'MD21'
         self.version = VERSION
         self.name = M2String()
@@ -1184,6 +1238,7 @@ class M2Header:
 
         if VERSION >= M2Versions.WOTLK:
             self.texture_combiner_combos = M2Array(uint16)
+            self._size += 8
 
     def read(self, f):
         self.magic = string.read(f, 4)
@@ -1254,5 +1309,72 @@ class M2Header:
         return self
 
     def write(self, f):
-        return self
+        MemoryManager().mem_reserve(f, self._size)
+
+        string.write(f, self.magic, 4)
+        uint32.write(f, self.version)
+        self.name.write(f)
+        uint32.write(f, self.global_flags)
+        self.global_loops.write(f)
+        self.sequences.write(f)
+        self.sequence_lookup.write(f)
+
+        if VERSION <= M2Versions.TBC:
+            self.playable_animation_lookup.write(f)
+
+        self.bones.write(f)
+
+        self.key_bone_lookup.write(f)
+        self.vertices.write(f)
+
+        if VERSION <= M2Versions.TBC:
+            self.skin_profiles.write(f)
+        else:
+            uint32.write(f, self.num_skin_profiles)
+
+        self.colors.write(f)
+        self.textures.write(f)
+        self.texture_weights.write(f)
+
+        if VERSION <= M2Versions.TBC:
+            self.unknown.write(f)
+
+        self.texture_transforms.write(f)
+        self.replacable_texture_lookup.write(f)
+        self.materials.write(f)
+        self.bone_lookup_table.write(f)
+        self.texture_lookup_table.write(f)
+        self.tex_unit_lookup_table.write(f)
+        self.transparency_lookup_table.write(f)
+        self.texture_transforms_lookup_table.write(f)
+
+        self.bounding_box.write(f)
+        float32.write(f, self.bounding_sphere_radius)
+        self.collision_box.write(f)
+        float32.write(f, self.collision_sphere_radius)
+
+        self.collision_triangles.write(f)
+        self.collision_vertices.write(f)
+        self.collision_normals.write(f)
+        self.attachments.write(f)
+
+        self.attachment_lookup_table.write(f)
+        self.events.write(f)
+        self.lights.write(f)
+        self.cameras.write(f)
+
+        self.camera_lookup_table.write(f)
+        self.ribbon_emitters.write(f)
+        self.particle_emitters.write(f)
+
+        if VERSION >= M2Versions.WOTLK and self.global_flags & M2GlobalFlags.UseTextureCombinerCombos:
+            self.texture_combiner_combos.write(f)
+
+
+
+        
+        
+
+        
+
 

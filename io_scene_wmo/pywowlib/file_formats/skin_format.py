@@ -156,6 +156,8 @@ class M2ShadowBatch:
 class M2SkinProfile:
 
     def __init__(self):
+        self._size = 48 if VERSION >= M2Versions.WOTLK else 44
+
         if VERSION >= M2Versions.WOTLK:
             self.magic = 'SKIN'
 
@@ -168,8 +170,11 @@ class M2SkinProfile:
 
         if VERSION >= M2Versions.CATA:
             self.shadow_batches = M2Array(M2ShadowBatch)
+            self._size += 8
 
     def read(self, f):
+        MemoryManager().mem_reserve(f, self._size)
+
         self.magic = string.read(f, 4)
         self.vertex_indices.read(f)
         self.triangle_indices.read(f)

@@ -132,8 +132,8 @@ class M2Array(metaclass=Template):
 
         type_t = type(self.type)
 
-        if type_t is M2Array:
-            mem_manager.mem_reserve(f, len(self.values) * 8)
+        if hasattr(type_t, 'size'):
+            mem_manager.mem_reserve(f, len(self.values) * type_t.size())
 
         if type_t is GenericType:
             for value in self.values:
@@ -175,6 +175,10 @@ class M2Array(metaclass=Template):
 
     def __iter__(self):
         return self.values.__iter__()
+
+    @staticmethod
+    def size():
+        return 8
 
 
 class ChunkHeader:

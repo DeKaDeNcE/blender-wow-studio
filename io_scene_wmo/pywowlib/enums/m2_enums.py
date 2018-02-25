@@ -63,6 +63,11 @@ class M2TextureTypes(IntEnum):
     GUILD_EMBLEM = 18
 
 
+class M2LightTypes(IntEnum):
+    Directional = 0                                             # Directional light type is not used (at least in 3.3.5) outside login screen, and doesn't seem to be taken into account in world.
+    Point = 1
+
+
 class M2TextureFlags(IntEnum):
     T_WRAP_X = 0x1
     T_WRAP_Y = 0x2
