@@ -1,5 +1,4 @@
 from ..io_utils.types import *
-from ...utils import singleton
 
 
 ###### M2 file versions ######
