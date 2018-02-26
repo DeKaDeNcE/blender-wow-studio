@@ -11,7 +11,7 @@ class M2Versions:
     WOTLK = 264
     CATA = 272
     MOP = 272
-    WOD = 273 # ?
+    WOD = 273  # ?
     LEGION = 274
     # BFA - ?
 

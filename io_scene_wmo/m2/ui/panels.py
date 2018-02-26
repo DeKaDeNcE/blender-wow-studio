@@ -136,6 +136,10 @@ class WowM2TexturePanel(bpy.types.Panel):
         col.separator()
         col.prop(context.texture.WowM2Texture, "TextureType")
 
+        if context.texture.WowM2Texture.TextureType == '0':
+            col.separator()
+            col.prop(context.texture.WowM2Texture, "Path", text='Path')
+
     @classmethod
     def poll(cls, context):
         return context.texture is not None
@@ -156,6 +160,11 @@ class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
         description="WoW  M2 texture type",
         items=TEXTURE_TYPES
         )
+
+    Path = bpy.props.StringProperty(
+        name='Path',
+        description='Path to .blp file in wow file system.'
+    )
 
 
 def register_wow_m2_texture_properties():
