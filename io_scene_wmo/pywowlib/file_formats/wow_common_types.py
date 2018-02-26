@@ -126,7 +126,7 @@ class M2Array(metaclass=Template):
     def write(self, f):
         ofs = MemoryManager.ofs_request(f)
         uint32.write(f, len(self.values))
-        uint32.write(f, ofs)
+        uint32.write(f, ofs if len(self.values) else 0)
 
         pos = f.tell()
         f.seek(ofs)
