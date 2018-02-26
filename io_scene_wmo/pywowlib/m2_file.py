@@ -1,6 +1,6 @@
 import os
 
-from .file_formats.m2_format import M2Header, M2Versions, M2Vertex, M2Material, M2Texture, M2CompQuaternion
+from .file_formats.m2_format import M2Header, M2Versions, M2Vertex, M2Material, M2Texture, M2CompQuaternion, M2CompBone
 from .file_formats.skin_format import M2SkinProfile, M2SkinSubmesh, M2SkinTextureUnit
 from ..pywowlib.io_utils.types import uint32, vec3D
 
@@ -199,11 +199,28 @@ class M2File:
         texture.flags = flags
         texture.type = tex_type
 
-        return self.root.textures.add(texture)
+        tex_id = self.root.textures.add(texture)
+        self.root.texture_lookup_table.append(tex_id)
+
+        return tex_id
+
+    def add_bone(self, pivot, key_bone_id, flags, parent_bone):
+        m2_bone = M2CompBone()
+        m2_bone.key_bone_id = key_bone_id
+        m2_bone.flags = flags
+        m2_bone.parent_bone = parent_bone
+        m2_bone.pivot = tuple(pivot)
+
+        bone_id = self.root.bones.add(m2_bone)
+        self.root.bone_lookup_table.append(bone_id)
+
+        return bone_id
 
     def add_dummy_bone(self, origin):
         bone = self.root.bones.new()
         bone.pivot = origin
+
+
 
 
 
