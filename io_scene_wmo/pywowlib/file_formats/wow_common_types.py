@@ -158,14 +158,70 @@ class M2Array(metaclass=Template):
 
 class ChunkHeader:
     def __init__(self, magic='', size=0):
-        self.Magic = magic
-        self.Size = size
+        self.magic = magic
+        self.size = size
 
     def read(self, f):
-        self.Magic = f.read(4)[0:4].decode('ascii')
-        self.Size = unpack("I", f.read(4))[0]
+        self.magic = f.read(4)[0:4].decode('ascii')
+        self.size = unpack("I", f.read(4))[0]
 
     def write(self, f):
-        f.write(self.Magic[:4].encode('ascii'))
-        f.write(pack('I', self.Size))
+        f.write(self.magic[:4].encode('ascii'))
+        f.write(pack('I', self.size))
+
+
+class StringBlock:
+    """A block of zero terminated strings."""
+
+    def __init__(self, size=0, padding=0):
+        self.strings = []
+        self.size = size
+        self.padding = padding
+
+    def read(self, f):
+        cur_str = ""
+
+        for _ in range(self.size):
+            byte = f.read(1)
+            if byte:
+                cur_str += chr(byte)
+            elif cur_str:
+                self.strings.append(cur_str)
+                self.size += len(cur_str)
+                cur_str = ""
+                f.skip(self.padding)
+
+        return self
+
+    def write(self, f):
+        for str_ in self.strings:
+            string.write(f, str_, len(str_))
+            f.skip(self.padding)
+
+    def add(self, str_):
+        self.strings.append(str_)
+        self.size += len(str_)
+
+    def __getitem__(self, index):
+        return self.strings[index]
+
+
+class StringBlockChunk:
+    magic = ""
+
+    def __init__(self):
+        self.header = ChunkHeader(self.magic)
+        self.filenames = StringBlock()
+
+    def read(self, f):
+        self.header.read(f)
+        self.filenames.size = self.header.size
+        self.filenames.read(f)
+
+    def write(self, f):
+        self.header.size = self.filenames.size
+        self.header.write(f)
+        self.filenames.write(f)
+
+
 

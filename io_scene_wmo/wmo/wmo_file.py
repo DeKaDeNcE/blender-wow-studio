@@ -57,7 +57,7 @@ class WMOFile:
             hdr.read(f)
             f.seek(0)
 
-            if hdr.Magic == "DHOM":
+            if hdr.magic == "DHOM":
                 self.mver.read(f)
                 self.mohd.read(f)
                 self.motx.read(f)
@@ -92,7 +92,7 @@ class WMOFile:
                     group.read(open(group_name, 'rb'))
                     self.groups.append(group)
 
-            elif hdr.Magic == "PGOM":
+            elif hdr.magic == "PGOM":
                 raise NotImplementedError("\nImport of separate WMO group files is not supported. "
                                           "Please import the root file.\a")
 

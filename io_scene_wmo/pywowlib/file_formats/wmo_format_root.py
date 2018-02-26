@@ -18,8 +18,8 @@ class MVER_chunk:
         self.Version = unpack("I", f.read(4))[0]
 
     def write(self, f):
-        self.Header.Magic = 'REVM'
-        self.Header.Size = 4
+        self.Header.magic = 'REVM'
+        self.Header.size = 4
         self.Header.write(f)
         f.write(pack('I', self.Version))
 
@@ -58,8 +58,8 @@ class MOHD_chunk:
         self.Flags = unpack("I", f.read(4))[0]
 
     def write(self, f):
-        self.Header.Magic = 'DHOM'
-        self.Header.Size = 64
+        self.Header.magic = 'DHOM'
+        self.Header.size = 64
 
         self.Header.write(f)
         f.write(pack('I', self.nMaterials))
@@ -85,11 +85,11 @@ class MOTX_chunk:
     def read(self, f):
         # read header
         self.Header.read(f)
-        self.StringTable = f.read(self.Header.Size)
+        self.StringTable = f.read(self.Header.size)
 
     def write(self, f):
-        self.Header.Magic = 'XTOM'
-        self.Header.Size = len(self.StringTable)
+        self.Header.magic = 'XTOM'
+        self.Header.size = len(self.StringTable)
 
         self.Header.write(f)
         f.write(self.StringTable)
@@ -185,14 +185,14 @@ class MOMT_chunk:
         self.Header.read(f)
 
         self.Materials = []
-        for i in range(self.Header.Size // 64):
+        for i in range(self.Header.size // 64):
             mat = WMO_Material()
             mat.read(f)
             self.Materials.append(mat)
 
     def write(self, f):
-        self.Header.Magic = 'TMOM'
-        self.Header.Size = len(self.Materials) * 64
+        self.Header.magic = 'TMOM'
+        self.Header.size = len(self.Materials) * 64
 
         self.Header.write(f)
         for mat in self.Materials:
@@ -207,10 +207,10 @@ class MOGN_chunk:
     def read(self, f):
         # read header
         self.Header.read(f)
-        self.StringTable = f.read(self.Header.Size)
+        self.StringTable = f.read(self.Header.size)
 
     def write(self, f):
-        self.Header.Magic = 'NGOM'
+        self.Header.magic = 'NGOM'
 
         # padd 4 bytes after
         padding = len(self.StringTable) % 4
@@ -218,7 +218,7 @@ class MOGN_chunk:
             for iPad in range(4 - padding):
                 self.StringTable.append(0)
 
-        self.Header.Size = len(self.StringTable)
+        self.Header.size = len(self.StringTable)
 
         self.Header.write(f)
         f.write(self.StringTable)
@@ -268,7 +268,7 @@ class MOGI_chunk:
         # read header
         self.Header.read(f)
 
-        count = self.Header.Size // 32
+        count = self.Header.size // 32
 
         self.Infos = []
         for i in range(count):
@@ -277,8 +277,8 @@ class MOGI_chunk:
             self.Infos.append(info)
 
     def write(self, f):
-        self.Header.Magic = 'IGOM'
-        self.Header.Size = len(self.Infos) * 32
+        self.Header.magic = 'IGOM'
+        self.Header.size = len(self.Infos) * 32
 
         self.Header.write(f)
         for info in self.Infos:
@@ -293,15 +293,15 @@ class MOSB_chunk:
     def read(self, f):
         # read header
         self.Header.read(f)
-        self.Skybox = f.read(self.Header.Size).decode('ascii')
+        self.Skybox = f.read(self.Header.size).decode('ascii')
 
     def write(self, f):
-        self.Header.Magic = 'BSOM'
+        self.Header.magic = 'BSOM'
 
         if not self.Skybox:
             self.Skybox = '\x00\x00\x00'
 
-        self.Header.Size = len(self.Skybox) + 1
+        self.Header.size = len(self.Skybox) + 1
 
         self.Header.write(f)
         f.write(self.Skybox.encode('ascii') + b'\x00')
@@ -318,7 +318,7 @@ class MOPV_chunk:
         # read header
         self.Header.read(f)
 
-        count = self.Header.Size // 12
+        count = self.Header.size // 12
         self.PortalVertices = []
         #self.Portals = []
 
@@ -331,8 +331,8 @@ class MOPV_chunk:
             #self.Portals.append(self.PortalVertices)
 
     def write(self, f):
-        self.Header.Magic = 'VPOM'
-        self.Header.Size = len(self.PortalVertices) * 12
+        self.Header.magic = 'VPOM'
+        self.Header.size = len(self.PortalVertices) * 12
 
         self.Header.write(f)
         for v in self.PortalVertices:
@@ -371,14 +371,14 @@ class MOPT_chunk:
         self.Infos = []
 
         # 20 = sizeof(PortalInfo)
-        for i in range(self.Header.Size // 20):
+        for i in range(self.Header.size // 20):
             info = PortalInfo()
             info.read(f)
             self.Infos.append(info)
 
     def write(self, f):
-        self.Header.Magic = 'TPOM'
-        self.Header.Size = len(self.Infos) * 20
+        self.Header.magic = 'TPOM'
+        self.Header.size = len(self.Infos) * 20
 
         self.Header.write(f)
         for info in self.Infos:
@@ -415,14 +415,14 @@ class MOPR_chunk:
 
         self.Relationships = []
 
-        for i in range(self.Header.Size // 8):
+        for i in range(self.Header.size // 8):
             relationship = PortalRelationship()
             relationship.read(f)
             self.Relationships.append(relationship)
 
     def write(self, f):
-        self.Header.Magic = 'RPOM'
-        self.Header.Size = len(self.Relationships) * 8
+        self.Header.magic = 'RPOM'
+        self.Header.size = len(self.Relationships) * 8
 
         self.Header.write(f)
 
@@ -442,12 +442,12 @@ class MOVV_chunk:
 
         self.VisibleVertices = []
 
-        for i in range(self.Header.Size // 12):
+        for i in range(self.Header.size // 12):
             self.VisibleVertices.append(unpack("fff", f.read(12)))
 
     def write(self, f):
-        self.Header.Magic = 'VVOM'
-        self.Header.Size = len(self.VisibleVertices) * 12
+        self.Header.magic = 'VVOM'
+        self.Header.size = len(self.VisibleVertices) * 12
 
         self.Header.write(f)
 
@@ -477,7 +477,7 @@ class MOVB_chunk:
         # read header
         self.Header.read(f)
 
-        count = self.Header.Size // 4
+        count = self.Header.size // 4
 
         self.Batches = []
 
@@ -487,8 +487,8 @@ class MOVB_chunk:
             self.Batches.append(batch)
 
     def write(self, f):
-        self.Header.Magic = 'BVOM'
-        self.Header.Size = len(self.Batches) * 4
+        self.Header.magic = 'BVOM'
+        self.Header.size = len(self.Batches) * 4
 
         self.Header.write(f)
         for batch in self.Batches:
@@ -552,7 +552,7 @@ class MOLT_chunk:
         self.Header.read(f)
 
         # 48 = sizeof(Light)
-        count = self.Header.Size // 48
+        count = self.Header.size // 48
 
         self.Lights = []
         for i in range(count):
@@ -561,8 +561,8 @@ class MOLT_chunk:
             self.Lights.append(light)
 
     def write(self, f):
-        self.Header.Magic = 'TLOM'
-        self.Header.Size = len(self.Lights) * 48
+        self.Header.magic = 'TLOM'
+        self.Header.size = len(self.Lights) * 48
 
         self.Header.write(f)
         for light in self.Lights:
@@ -597,7 +597,7 @@ class MODS_chunk:
         # read header
         self.Header.read(f)
 
-        count = self.Header.Size // 32
+        count = self.Header.size // 32
 
         self.Sets = []
 
@@ -607,8 +607,8 @@ class MODS_chunk:
             self.Sets.append(set)
 
     def write(self, f):
-        self.Header.Magic = 'SDOM'
-        self.Header.Size = len(self.Sets) * 32
+        self.Header.magic = 'SDOM'
+        self.Header.size = len(self.Sets) * 32
 
         self.Header.write(f)
         for set in self.Sets:
@@ -624,11 +624,11 @@ class MODN_chunk:
     def read(self, f):
         # read header
         self.Header.read(f)
-        self.StringTable = f.read(self.Header.Size)
+        self.StringTable = f.read(self.Header.size)
 
     def write(self, f):
-        self.Header.Magic = 'NDOM'
-        self.Header.Size = len(self.StringTable)
+        self.Header.magic = 'NDOM'
+        self.Header.size = len(self.StringTable)
 
         self.Header.write(f)
         f.write(self.StringTable)
@@ -689,7 +689,7 @@ class MODD_chunk:
         # read header
         self.Header.read(f)
 
-        count = self.Header.Size // 40
+        count = self.Header.size // 40
 
         self.Definitions = []
         for i in range(count):
@@ -698,8 +698,8 @@ class MODD_chunk:
             self.Definitions.append(defi)
 
     def write(self, f):
-        self.Header.Magic = 'DDOM'
-        self.Header.Size = len(self.Definitions) * 40
+        self.Header.magic = 'DDOM'
+        self.Header.size = len(self.Definitions) * 40
 
         self.Header.write(f)
         for defi in self.Definitions:
@@ -752,7 +752,7 @@ class MFOG_chunk:
         # read header
         self.Header.read(f)
 
-        count = self.Header.Size // 48
+        count = self.Header.size // 48
 
         self.Fogs = []
         for i in range(count):
@@ -761,8 +761,8 @@ class MFOG_chunk:
             self.Fogs.append(fog)
 
     def write(self, f):
-        self.Header.Magic = 'GOFM'
-        self.Header.Size = len(self.Fogs) * 48
+        self.Header.magic = 'GOFM'
+        self.Header.size = len(self.Fogs) * 48
 
         self.Header.write(f)
         for fog in self.Fogs:
@@ -777,14 +777,14 @@ class MCVP_chunk:
     def read(self, f):
         self.Header.read(f)
 
-        count = self.Header.Size // 16
+        count = self.Header.size // 16
 
         for i in range(0, count):
             self.convex_volume_planes.append(unpack('ffff', f.read(16)))
 
     def write(self, f):
-        self.Header.Magic = 'PVCM'
-        self.Header.Size = len(self.convex_volume_planes) * 16
+        self.Header.magic = 'PVCM'
+        self.Header.size = len(self.convex_volume_planes) * 16
 
         self.Header.write(f)
         for i in self.convex_volume_planes:
