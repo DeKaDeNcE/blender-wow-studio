@@ -42,8 +42,7 @@ class M2String:
         return self
 
     def write(self, f):
-        mem_manager = MemoryManager()
-        ofs = mem_manager.ofs_request()
+        ofs = MemoryManager.ofs_request(f)
 
         uint32.write(f, len(self.value) + 1)
         uint32.write(f, ofs)
@@ -51,7 +50,6 @@ class M2String:
         pos = f.tell()
         f.seek(ofs)
         self.value = f.write((self.value + '\0').encode('utf-8'))
-        mem_manager.ofs_update(f)
         f.seek(pos)
         
         return self
@@ -467,7 +465,8 @@ class M2CompBone:
         int32.write(f, self.key_bone_id)
         uint32.write(f, self.flags)
         int16.write(f, self.parent_bone)
-        int16.write(f, self.u_dist_to_furth_desc)
+        uint16.write(f, self.submesh_id)
+        uint16.write(f, self.u_dist_to_furth_desc)
         uint16.write(f, self.u_zratio_of_chain)
         self.translation.write(f)
         self.rotation.write(f)
@@ -1309,7 +1308,7 @@ class M2Header:
         return self
 
     def write(self, f):
-        MemoryManager().mem_reserve(f, self._size)
+        MemoryManager.mem_reserve(f, self._size)
 
         f.write(self.magic.encode('utf-8'))
         uint32.write(f, self.version)
@@ -1369,6 +1368,8 @@ class M2Header:
 
         if VERSION >= M2Versions.WOTLK and self.global_flags & M2GlobalFlags.UseTextureCombinerCombos:
             self.texture_combiner_combos.write(f)
+
+        return self
 
 
 

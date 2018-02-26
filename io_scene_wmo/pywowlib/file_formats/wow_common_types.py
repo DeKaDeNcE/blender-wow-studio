@@ -77,18 +77,20 @@ class fixed_point:
 fixed16 = int16
 
 
-@singleton
 class MemoryManager:
-    free_ofs = 0
+    @staticmethod
+    def mem_reserve(f, n_bytes):
+        pos = f.tell()
+        f.seek(pos + n_bytes - 1)
+        f.write(b'\0')
+        f.seek(pos)
 
-    def mem_reserve(self, f, n_bytes):
-        self.free_ofs = f.tell() + n_bytes
-
-    def ofs_request(self):
-        return self.free_ofs
-
-    def ofs_update(self, f):
-        self.free_ofs = f.tell()
+    @staticmethod
+    def ofs_request(f):
+        pos = f.tell()
+        ofs = f.seek(0, 2)
+        f.seek(pos)
+        return ofs
 
 
 class M2Array(metaclass=Template):
@@ -122,8 +124,7 @@ class M2Array(metaclass=Template):
         return self
 
     def write(self, f):
-        mem_manager = MemoryManager()
-        ofs = mem_manager.ofs_request()
+        ofs = MemoryManager.ofs_request(f)
         uint32.write(f, len(self.values))
         uint32.write(f, ofs)
 
@@ -132,17 +133,15 @@ class M2Array(metaclass=Template):
 
         type_t = type(self.type)
 
-        if type_t is M2Array:
-            mem_manager.mem_reserve(f, len(self.values) * 8)
+        if hasattr(self.type, 'size'):
+            MemoryManager.mem_reserve(f, len(self.values) * self.type.size())
 
         if type_t is GenericType:
             for value in self.values:
                 self.type.write(f, value)
-                mem_manager.ofs_update(f)
         else:
             for value in self.values:
                 value.write(f)
-                mem_manager.ofs_update(f)
         f.seek(pos)
 
         return self
