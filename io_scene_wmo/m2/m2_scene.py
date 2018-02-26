@@ -38,6 +38,7 @@ class BlenderM2Scene:
             tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
             tex1.WowM2Texture.Flags = parse_bitfield(texture.flags, 0x2)
             tex1.WowM2Texture.TextureType = str(texture.type)
+            tex1.WowM2Texture.Path = texture.filename.value
             tex1_slot.texture = tex1
 
             # loading images
@@ -568,6 +569,7 @@ class BlenderM2Scene:
             origin = new_obj.location.to_tuple()
 
             self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, int(new_obj.WowM2Geoset.MeshPartID))  # TODO: bone stuff
+
 
         for obj in proxy_objects:
             bpy.data.objects.remove(obj, do_unlink=True)
