@@ -184,6 +184,12 @@ class M2Export(bpy.types.Operator, ExportHelper):
         default='264'
     )
 
+    autofill_textures = BoolProperty(
+        name="Fill texture paths",
+        description="Automatically assign texture paths based on texture filenames",
+        default=True,
+        )
+
     def execute(self, context):
-        export_m2(int(self.version), self.filepath, self.export_selected)
+        export_m2(int(self.version), self.filepath, self.export_selected, self.autofill_textures)
         return {'FINISHED'}

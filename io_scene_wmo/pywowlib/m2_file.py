@@ -165,12 +165,16 @@ class M2File:
         texture_unit.geoset_index = geoset_index
         skin.texture_units.append(texture_unit)
 
-    def add_material_to_geoeset(self, geoset_id, render_flags, blending, flags, shader_id, color_id, tex_id, tex_id2=None):  # TODO: Add extra params & cata +
+        return geoset_index
+
+    def add_material_to_geoeset(self, geoset_id, render_flags, blending, flags, shader_id, tex_id):  # TODO: Add extra params & cata +
         skin = self.skins[0]
         tex_unit = skin.texture_units[geoset_id]
         tex_unit.flags = flags
         tex_unit.shader_id = shader_id
-        tex_unit.color_index = color_id
+        tex_unit.texture_count = 1 # TODO: multitexturing
+        tex_unit.texture_combo_index = tex_id
+        # tex_unit.color_index = color_id
 
         # check if we already have that render flag else create it
         for i, material in enumerate(self.root.materials):

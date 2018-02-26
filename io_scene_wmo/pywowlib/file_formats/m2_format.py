@@ -63,7 +63,6 @@ class M2SplineKey(metaclass=Template):
         self.out_tan = type_()
 
         self.type = type_
-        self._size = type_.size * 3
    
     def read(self, f):
         if type(self.type) is GenericType:

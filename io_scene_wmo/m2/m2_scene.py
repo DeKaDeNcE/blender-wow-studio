@@ -2,6 +2,7 @@ import bpy
 import os
 from mathutils import Vector
 
+from ..utils import resolve_texture_path
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
 from ..utils import parse_bitfield, construct_bitfield, load_game_data
 from .ui.enums import mesh_part_id_menu
@@ -494,7 +495,7 @@ class BlenderM2Scene:
                 self.m2.add_dummy_bone(bpy.context.scene.cursor_location.to_tuple())
                 bpy.ops.object.select_all(action='DESELECT')
 
-    def save_geosets(self, selected_only):
+    def save_geosets(self, selected_only, fill_textures):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
         if not objects:
             raise Exception('Error: no mesh found on the scene or selected.')
@@ -568,7 +569,27 @@ class BlenderM2Scene:
             bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
             origin = new_obj.location.to_tuple()
 
-            self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, int(new_obj.WowM2Geoset.MeshPartID))  # TODO: bone stuff
+            g_index = self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, int(new_obj.WowM2Geoset.MeshPartID))  # TODO: bone stuff
+
+            material = mesh.materials[0]
+            bl_texture = material.active_texture
+            wow_path = bl_texture.WowM2Texture.Path
+
+            if fill_textures and not wow_path:
+                wow_path = resolve_texture_path(bl_texture.image.filepath)
+
+            tex_id = self.m2.add_texture(wow_path,
+                                         construct_bitfield(bl_texture.WowM2Texture.Flags),
+                                         int(bl_texture.WowM2Texture.TextureType)
+                                         )
+
+            render_flags = construct_bitfield(material.WowM2Material.RenderFlags)
+            flags = construct_bitfield(material.WowM2Material.Flags)
+            bl_mode = int(material.WowM2Material.BlendingMode)
+            shader_id = int(material.WowM2Material.Shader)
+
+            self.m2.add_material_to_geoset(g_index, render_flags, bl_mode, flags, shader_id, tex_id)
+
 
 
         for obj in proxy_objects:
