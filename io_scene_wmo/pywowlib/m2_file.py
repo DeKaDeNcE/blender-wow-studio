@@ -167,7 +167,7 @@ class M2File:
 
         return geoset_index
 
-    def add_material_to_geoeset(self, geoset_id, render_flags, blending, flags, shader_id, tex_id):  # TODO: Add extra params & cata +
+    def add_material_to_geoset(self, geoset_id, render_flags, blending, flags, shader_id, tex_id):  # TODO: Add extra params & cata +
         skin = self.skins[0]
         tex_unit = skin.texture_units[geoset_id]
         tex_unit.flags = flags
