@@ -454,12 +454,16 @@ class BlenderM2Scene:
         obj.hide = True
         # TODO: add transparent material
 
+    def set_name(self, filepath):
+        self.m2.root.name.value = os.path.basename(filepath)
+
     def save_bones(self, selected_only):
         rigs = list(filter(lambda ob: ob.type == 'ARMATURE' and not ob.hide, bpy.context.scene.objects))
 
         if len(rigs) > 1:
             raise Exception('Error: M2 exporter does not support more than one armature. Hide or remove the extra one.')
 
+        # TODO: move bone adding to the library
         for rig in rigs:
             self.rig = rig
             bpy.context.scene.objects.active = rig
@@ -469,10 +473,10 @@ class BlenderM2Scene:
 
             for bone in armature.edit_bones:
                 m2_bone = self.m2.root.bones.new()
-                m2_bone.key_bone_id = bone.WowM2Bone.KeyBoneID
+                m2_bone.key_bone_id = int(bone.WowM2Bone.KeyBoneID)
                 m2_bone.flags = construct_bitfield(bone.WowM2Bone.Flags)
                 m2_bone.parent_bone = armature.edit_bones.index(bone.parent) if bone.parent else -1
-                m2_bone.pivot = bone.head
+                m2_bone.pivot = bone.head.to_tuple()
 
             bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -560,9 +564,8 @@ class BlenderM2Scene:
             if len(mesh.uv_layers) >= 2:
                 tex_coords2 = [mesh.uv_layers[1].data[loop.vertex_index].uv for loop in mesh.loops]
 
-            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')  # TODO: find a better way to do this
-            bpy.ops.view3d.snap_cursor_to_selected()
-            origin = bpy.context.scene.cursor_location
+            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
+            origin = new_obj.location.to_tuple()
 
             self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, int(new_obj.WowM2Geoset.MeshPartID))  # TODO: bone stuff
 

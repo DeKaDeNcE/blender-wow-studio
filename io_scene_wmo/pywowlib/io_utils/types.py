@@ -1,5 +1,6 @@
 from struct import pack, unpack
 from functools import partial
+from collections import Iterable
 
 
 #############################################################
@@ -64,7 +65,10 @@ class GenericType:
             raise TypeError('Length should be an integer value above 0.')
 
         if n == 1:
-            f.write(pack(self.format, value))
+            if isinstance(value, Iterable):
+                f.write(pack(self.format, *value))
+            else:
+                f.write(pack(self.format, value))
         else:
             f.write(pack(str(n) + self.format, *value))
 

@@ -44,8 +44,8 @@ class CRange:
 class CAaBox:
     """An axis aligned box described by the minimum and maximum point."""
     def __init__(self):
-        self.min = 0.9
-        self.max = 0.0
+        self.min = (0.0, 0.0, 0.0)
+        self.max = (0.0, 0.0, 0.0)
 
     def read(self, f):
         self.min = vec3D.read(f)
@@ -132,12 +132,12 @@ class M2Array(metaclass=Template):
 
         type_t = type(self.type)
 
-        if hasattr(type_t, 'size'):
-            mem_manager.mem_reserve(f, len(self.values) * type_t.size())
+        if type_t is M2Array:
+            mem_manager.mem_reserve(f, len(self.values) * 8)
 
         if type_t is GenericType:
             for value in self.values:
-                type_t.write(f, value)
+                self.type.write(f, value)
                 mem_manager.ofs_update(f)
         else:
             for value in self.values:

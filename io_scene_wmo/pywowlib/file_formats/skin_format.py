@@ -175,7 +175,7 @@ class M2SkinProfile:
     def read(self, f):
         MemoryManager().mem_reserve(f, self._size)
 
-        self.magic = string.read(f, 4)
+        self.magic = f.read(4).decode('utf-8')
         self.vertex_indices.read(f)
         self.triangle_indices.read(f)
         self.bone_indices.read(f)
@@ -189,7 +189,7 @@ class M2SkinProfile:
         return self
 
     def write(self, f):
-        string.read(f, self.magic)
+        f.write(self.magic.encode('utf-8'))
         self.vertex_indices.write(f)
         self.triangle_indices.write(f)
         self.bone_indices.write(f)

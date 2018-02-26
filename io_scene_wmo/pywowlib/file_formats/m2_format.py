@@ -50,7 +50,7 @@ class M2String:
 
         pos = f.tell()
         f.seek(ofs)
-        self.value = f.write(self.value + '\0'.encode('utf-8'))
+        self.value = f.write((self.value + '\0').encode('utf-8'))
         mem_manager.ofs_update(f)
         f.seek(pos)
         
@@ -139,9 +139,9 @@ class M2TrackBase:
         uint16.write(f, self.global_sequence)
 
         if VERSION < M2Versions.WOTLK:
-            self.interpolation_ranges.read(f)
+            self.interpolation_ranges.write(f)
 
-        self.timestamps.read(f)
+        self.timestamps.write(f)
 
         return self
 
@@ -1215,7 +1215,7 @@ class M2Header:
         self.tex_unit_lookup_table = M2Array(uint16)
         self.transparency_lookup_table = M2Array(uint16)
 
-        self.texture_transforms_lookup_table = M2Array(uint16)
+        self.texture_transforms_lookup_table = M2Array(int16)
         self.texture_transforms_lookup_table.append(-1)     # first element can be -1 for convenience.
         
         self.bounding_box = CAaBox()
@@ -1241,7 +1241,7 @@ class M2Header:
             self._size += 8
 
     def read(self, f):
-        self.magic = string.read(f, 4)
+        self.magic = f.read(4).decode('utf-8')
         self.version = uint32.read(f)
         self.name.read(f)
         self.global_flags = uint32.read(f)
@@ -1311,7 +1311,7 @@ class M2Header:
     def write(self, f):
         MemoryManager().mem_reserve(f, self._size)
 
-        string.write(f, self.magic, 4)
+        f.write(self.magic.encode('utf-8'))
         uint32.write(f, self.version)
         self.name.write(f)
         uint32.write(f, self.global_flags)

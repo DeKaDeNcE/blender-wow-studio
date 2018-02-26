@@ -88,7 +88,7 @@ class M2File:
             self.skins = [M2SkinProfile()]
 
     def write(self, filepath):
-        with open(filepath, 'rb') as f:
+        with open(filepath, 'wb') as f:
             if self.version < M2Versions.WOTLK:
                 self.root.skin_profiles = self.skins
             else:
@@ -110,7 +110,9 @@ class M2File:
         vertex = M2Vertex()
         vertex.pos = tuple(pos)
         vertex.normal = tuple(normal)
-        vertex.tex_coords = tex_coords
+        vertex.tex_coords = tuple(tex_coords)
+
+        skin = self.skins[0]
 
         # handle optional properties
         if tex_coords2:
@@ -121,12 +123,10 @@ class M2File:
 
         if bone_indices:
             vertex.bone_indices = bone_indices
+            skin.bone_indices.append(bone_indices)
 
         vertex_index = self.root.vertices.add(vertex)
-
-        skin = self.skins[0]
         skin.vertex_indices.append(vertex_index)
-        skin.bone_indices.append(bone_indices)
         return vertex_index
 
     def add_geoset(self, vertices, normals, uv, uv2, tris, origin, mesh_part_id, b_weights=None, b_indices=None):
