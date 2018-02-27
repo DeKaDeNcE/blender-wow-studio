@@ -1,4 +1,5 @@
 import bpy
+import os
 
 from io import BytesIO
 from .pywowlib.archives.mpq.wow import WoWFileData
@@ -55,5 +56,57 @@ def load_game_data():
         bpy.db_files_client.add(anim_data_dbc)
 
     return bpy.wow_game_data
+
+
+def singleton(class_):
+    instances = {}
+
+    def getinstance(*args, **kwargs):
+        if class_ not in instances:
+            instances[class_] = class_(*args, **kwargs)
+        return instances[class_]
+    return getinstance
+
+
+def resolve_texture_path(filepath):
+    filepath = os.path.splitext(bpy.path.abspath(filepath))[0] + ".blp"
+    prefs = bpy.context.user_preferences.addons[__package__].preferences
+
+    # TODO: project folder
+    if prefs.use_cache_dir and prefs.cache_dir_path:
+        rel_path = os.path.relpath(filepath, start=prefs.cache_dir_path)
+        test_path = os.path.join(prefs.cache_dir_path, rel_path)
+        if os.path.exists(test_path) and os.path.isfile(test_path):
+            return rel_path.replace('/', '\\')
+
+    game_data = load_game_data()
+
+    path = (filepath, "")
+    rest_path = ""
+
+    while True:
+        path = os.path.split(path[0])
+
+        if not path[1]:
+            print("\nTexture <<{}>> not found.".format(path))
+            break
+
+        rest_path = os.path.join(path[1], rest_path)
+        rest_path = rest_path[:-1] if rest_path.endswith('\\') else rest_path
+
+        if os.name != 'nt':
+            rest_path_n = rest_path.replace('/', '\\')
+        else:
+            rest_path_n = rest_path
+
+        rest_path_n = rest_path_n[:-1] if rest_path_n.endswith('\\') else rest_path_n
+
+        if game_data.has_file(rest_path_n)[0]:
+            return rest_path_n
+
+
+
+
+
 
 

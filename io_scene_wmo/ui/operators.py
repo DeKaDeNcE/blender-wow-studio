@@ -6,6 +6,7 @@ from ..pywowlib.archives.mpq.wow import WoWFileData
 from ..wmo.import_wmo import import_wmo_to_blender_scene
 from ..wmo.export_wmo import export_wmo_from_blender_scene
 from ..m2.import_m2 import import_m2
+from ..m2.export_m2 import export_m2
 from . import get_addon_prefs
 
 #############################################################
@@ -103,13 +104,13 @@ class WMOExport(bpy.types.Operator, ExportHelper):
 
     export_selected = BoolProperty(
         name="Export selected objects",
-        description="Makes the exporter export only selected objects on the scene",
+        description="Export only selected objects on the scene",
         default=False,
         )
 
     autofill_textures = BoolProperty(
         name="Fill texture paths",
-        description="Automatically fills WoW Material texture paths based on texture filenames",
+        description="Automatically assign texture paths based on texture filenames",
         default=True,
         )
 
@@ -155,3 +156,40 @@ class M2Import(bpy.types.Operator):
         wm = context.window_manager
         wm.fileselect_add(self)
         return {'RUNNING_MODAL'}
+
+
+class M2Export(bpy.types.Operator, ExportHelper):
+    """Save M2 mesh data"""
+    bl_idname = "export_mesh.m2"
+    bl_label = "Export M2"
+    bl_options = {'PRESET', 'REGISTER'}
+
+    filename_ext = ".m2"
+
+    filter_glob = StringProperty(
+        default="*.m2",
+        options={'HIDDEN'}
+    )
+
+    export_selected = BoolProperty(
+        name="Export selected objects",
+        description="Export only selected objects on the scene",
+        default=False,
+        )
+
+    version = EnumProperty(
+        name="Version",
+        description="Version of World of Warcraft",
+        items=[('264', 'WOTLK', "")],
+        default='264'
+    )
+
+    autofill_textures = BoolProperty(
+        name="Fill texture paths",
+        description="Automatically assign texture paths based on texture filenames",
+        default=True,
+        )
+
+    def execute(self, context):
+        export_m2(int(self.version), self.filepath, self.export_selected, self.autofill_textures)
+        return {'FINISHED'}

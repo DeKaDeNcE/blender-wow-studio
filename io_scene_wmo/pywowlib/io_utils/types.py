@@ -1,5 +1,6 @@
 from struct import pack, unpack
 from functools import partial
+from collections import Iterable
 
 
 #############################################################
@@ -36,11 +37,11 @@ class Template(type):
 
 
 class GenericType:
-    __slots__ = ('format', 'size', 'default_value')
+    __slots__ = ('format', 'size_', 'default_value')
 
     def __init__(self, format, size, default_value=0):
         self.format = format
-        self.size = size
+        self.size_ = size
         self.default_value = 0
 
     def read(self, f, n=1):
@@ -51,9 +52,9 @@ class GenericType:
             raise TypeError('Length should be an integer value above 0.')
 
         if n == 1:
-            ret = unpack(self.format, f.read(self.size))
+            ret = unpack(self.format, f.read(self.size_))
         else:
-            ret = unpack(str(n) + self.format, f.read(self.size * n))
+            ret = unpack(str(n) + self.format, f.read(self.size_ * n))
         return ret[0] if len(ret) == 1 else ret
 
     def write(self, f, value, n=1):
@@ -64,7 +65,10 @@ class GenericType:
             raise TypeError('Length should be an integer value above 0.')
 
         if n == 1:
-            f.write(pack(self.format, value))
+            if isinstance(value, Iterable):
+                f.write(pack(self.format, *value))
+            else:
+                f.write(pack(self.format, value))
         else:
             f.write(pack(str(n) + self.format, *value))
 

@@ -2,8 +2,10 @@ import bpy
 import os
 from mathutils import Vector
 
+from ..utils import resolve_texture_path
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
 from ..utils import parse_bitfield, construct_bitfield, load_game_data
+from .ui.enums import mesh_part_id_menu
 
 
 class BlenderM2Scene:
@@ -37,6 +39,7 @@ class BlenderM2Scene:
             tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
             tex1.WowM2Texture.Flags = parse_bitfield(texture.flags, 0x2)
             tex1.WowM2Texture.TextureType = str(texture.type)
+            tex1.WowM2Texture.Path = texture.filename.value
             tex1_slot.texture = tex1
 
             # loading images
@@ -278,6 +281,10 @@ class BlenderM2Scene:
             obj.WowM2Geoset.MeshPartGroup = name
             obj.WowM2Geoset.MeshPartID = str(smesh.skin_section_id)
 
+            for item in mesh_part_id_menu(obj.WowM2Geoset, None):
+                if item[0] == smesh.skin_section_id:
+                    obj.name = item[1]
+
             self.geosets.append(obj)
 
     def load_attachments(self):
@@ -339,6 +346,9 @@ class BlenderM2Scene:
                 bone = self.m2.root.bones[light.bone]
                 constraint.subtarget = bone.name
 
+                bl_edit_bone = self.rig.data.bones[bone.name]
+                obj.location = bl_edit_bone.matrix_local.inverted() * Vector(light.position)
+
             # import animated values
             animate_light_properties(obj, 'WowM2Light.AmbientColor', light.ambient_color)
             animate_light_properties(obj, 'WowM2Light.AmbientIntensity', light.ambient_intensity)
@@ -371,7 +381,13 @@ class BlenderM2Scene:
             obj.name = "Event_{}".format(M2EventTokens.get_event_name(event.identifier))
             bl_edit_bone.name = obj.name
             obj.WowM2Event.Token = event.identifier
-            obj.WowM2Event.Data = event.data
+
+            if obj.name in ('PlayEmoteSound',
+                            'DoodadSoundUnknown',
+                            'DoodadSoundOneShot',
+                            'GOPlaySoundKitCustom',
+                            'GOAddShake'):
+                obj.WowM2Event.Data = event.data
 
             # animate event firing
             obj.animation_data_create()
@@ -400,6 +416,21 @@ class BlenderM2Scene:
         else:
             print("\nImport particles.")
 
+        for particle in self.m2.root.particles:
+            if particle.emitter_type == 1:
+                bpy.ops.mesh.primitive_plane_add(radius=1, location=(0, 0, 0))
+                emitter = bpy.context.scene.objects.active
+                emitter.dimensions[0] = particle.emission_area_length
+                emitter.dimensions[1] = particle.emission_area_width
+
+            elif particle.emitter_type == 2:
+                bpy.ops.mesh.primitive_uv_sphere_add(size=particle.emission_area_length, location=(0, 0, 0))
+                emitter = bpy.context.scene.objects.active
+                # TODO: emission_area_with
+
+            elif particle.emitter_type == 3:
+                pass
+
     def load_collision(self):
 
         if not len(self.m2.root.collision_vertices):
@@ -425,12 +456,16 @@ class BlenderM2Scene:
         obj.hide = True
         # TODO: add transparent material
 
+    def set_name(self, filepath):
+        self.m2.root.name.value = os.path.basename(filepath)
+
     def save_bones(self, selected_only):
         rigs = list(filter(lambda ob: ob.type == 'ARMATURE' and not ob.hide, bpy.context.scene.objects))
 
         if len(rigs) > 1:
             raise Exception('Error: M2 exporter does not support more than one armature. Hide or remove the extra one.')
 
+        # TODO: move bone adding to the library
         for rig in rigs:
             self.rig = rig
             bpy.context.scene.objects.active = rig
@@ -440,10 +475,12 @@ class BlenderM2Scene:
 
             for bone in armature.edit_bones:
                 m2_bone = self.m2.root.bones.new()
-                m2_bone.key_bone_id = bone.WowM2Bone.KeyBoneID
+                m2_bone.key_bone_id = int(bone.WowM2Bone.KeyBoneID)
                 m2_bone.flags = construct_bitfield(bone.WowM2Bone.Flags)
                 m2_bone.parent_bone = armature.edit_bones.index(bone.parent) if bone.parent else -1
-                m2_bone.pivot = bone.head
+                m2_bone.pivot = bone.head.to_tuple()
+
+            bpy.ops.object.mode_set(mode='OBJECT')
 
             break
 
@@ -458,7 +495,7 @@ class BlenderM2Scene:
                 self.m2.add_dummy_bone(bpy.context.scene.cursor_location.to_tuple())
                 bpy.ops.object.select_all(action='DESELECT')
 
-    def save_geosets(self, selected_only):
+    def save_geosets(self, selected_only, fill_textures):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
         if not objects:
             raise Exception('Error: no mesh found on the scene or selected.')
@@ -467,7 +504,7 @@ class BlenderM2Scene:
         bpy.ops.object.select_all(action='DESELECT')
 
         proxy_objects = []
-        for obj in filter(lambda ob: not ob.WowM2Geoset.CollisionMesh and obj.type == 'MESH' and not obj.hide, objects):
+        for obj in filter(lambda ob: not ob.WowM2Geoset.CollisionMesh and ob.type == 'MESH' and not ob.hide, objects):
 
             new_obj = obj.copy()
             new_obj.data = obj.data.copy()
@@ -529,14 +566,36 @@ class BlenderM2Scene:
             if len(mesh.uv_layers) >= 2:
                 tex_coords2 = [mesh.uv_layers[1].data[loop.vertex_index].uv for loop in mesh.loops]
 
-            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')  # TODO: find a better way to do this
-            bpy.ops.view3d.snap_cursor_to_selected()
-            origin = bpy.context.scene.cursor_location
+            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
+            origin = new_obj.location.to_tuple()
 
-            self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, )  # TODO: bone stuff
+            g_index = self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, int(new_obj.WowM2Geoset.MeshPartID))  # TODO: bone stuff
+
+            material = mesh.materials[0]
+            bl_texture = material.active_texture
+            wow_path = bl_texture.WowM2Texture.Path
+
+            if fill_textures and not wow_path:
+                wow_path = resolve_texture_path(bl_texture.image.filepath)
+
+            tex_id = self.m2.add_texture(wow_path,
+                                         construct_bitfield(bl_texture.WowM2Texture.Flags),
+                                         int(bl_texture.WowM2Texture.TextureType)
+                                         )
+
+            render_flags = construct_bitfield(material.WowM2Material.RenderFlags)
+            flags = construct_bitfield(material.WowM2Material.Flags)
+            bl_mode = int(material.WowM2Material.BlendingMode)
+            shader_id = int(material.WowM2Material.Shader)
+
+            self.m2.add_material_to_geoset(g_index, render_flags, bl_mode, flags, shader_id, tex_id)
+
+
 
         for obj in proxy_objects:
             bpy.data.objects.remove(obj, do_unlink=True)
+
+
 
 
 

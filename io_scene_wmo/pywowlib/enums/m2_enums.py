@@ -4,7 +4,7 @@ from enum import IntEnum, Enum
 class M2GlobalFlags(IntEnum):
     TILT_X = 0x1
     TILT_Y = 0x2
-    UseTextureCombiner_Combos = 0x8
+    UseTextureCombinerCombos = 0x8
     LoadPhysData = 0x20
     UNK = 0x80
     CameraRelated = 0x100
@@ -63,6 +63,11 @@ class M2TextureTypes(IntEnum):
     GUILD_EMBLEM = 18
 
 
+class M2LightTypes(IntEnum):
+    Directional = 0                                             # Directional light type is not used (at least in 3.3.5) outside login screen, and doesn't seem to be taken into account in world.
+    Point = 1
+
+
 class M2TextureFlags(IntEnum):
     T_WRAP_X = 0x1
     T_WRAP_Y = 0x2
@@ -102,10 +107,10 @@ class M2CompBoneFlags(IntEnum):
 
 class M2SkinMeshPartID(Enum):
     Skin = range(0, 1)
-    Hair = range(1, 20)
+    Hair = range(1, 22)
     Facial1 = range(101, 109)
     Facial2 = range(201, 207)
-    Facial3 = range(301, 306)
+    Facial3 = range(301, 312)
     Glove = range(401, 405)
     Boots = range(501, 506)
     Unknown = range(601, 615)

@@ -11,7 +11,7 @@ class M2Versions:
     WOTLK = 264
     CATA = 272
     MOP = 272
-    WOD = 273 # ?
+    WOD = 273  # ?
     LEGION = 274
     # BFA - ?
 
@@ -43,8 +43,8 @@ class CRange:
 class CAaBox:
     """An axis aligned box described by the minimum and maximum point."""
     def __init__(self):
-        self.min = 0.9
-        self.max = 0.0
+        self.min = (0.0, 0.0, 0.0)
+        self.max = (0.0, 0.0, 0.0)
 
     def read(self, f):
         self.min = vec3D.read(f)
@@ -74,6 +74,22 @@ class fixed_point:
 
 # A fixed point number without integer part.
 fixed16 = int16
+
+
+class MemoryManager:
+    @staticmethod
+    def mem_reserve(f, n_bytes):
+        pos = f.tell()
+        f.seek(pos + n_bytes - 1)
+        f.write(b'\0')
+        f.seek(pos)
+
+    @staticmethod
+    def ofs_request(f):
+        pos = f.tell()
+        ofs = f.seek(0, 2)
+        f.seek(pos)
+        return ofs
 
 
 class M2Array(metaclass=Template):
@@ -107,18 +123,21 @@ class M2Array(metaclass=Template):
         return self
 
     def write(self, f):
-        ofs = request_offset()
+        ofs = MemoryManager.ofs_request(f)
         uint32.write(f, len(self.values))
-        uint32.write(f, ofs)
-
-        type_t = type(self.type)
+        uint32.write(f, ofs if len(self.values) else 0)
 
         pos = f.tell()
         f.seek(ofs)
 
+        type_t = type(self.type)
+
+        if hasattr(self.type, 'size'):
+            MemoryManager.mem_reserve(f, len(self.values) * self.type.size())
+
         if type_t is GenericType:
             for value in self.values:
-                type_t.write(f, value)
+                self.type.write(f, value)
         else:
             for value in self.values:
                 value.write(f)
@@ -154,6 +173,10 @@ class M2Array(metaclass=Template):
 
     def __iter__(self):
         return self.values.__iter__()
+
+    @staticmethod
+    def size():
+        return 8
 
 
 class ChunkHeader:
@@ -222,6 +245,3 @@ class StringBlockChunk:
         self.header.size = self.filenames.size
         self.header.write(f)
         self.filenames.write(f)
-
-
-
