@@ -2,7 +2,7 @@ import bpy
 import os
 from mathutils import Vector
 
-from ..utils import resolve_texture_path
+from ..utils import resolve_texture_path, get_origin_position
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
 from ..utils import parse_bitfield, construct_bitfield, load_game_data
 from .ui.enums import mesh_part_id_menu
@@ -487,13 +487,19 @@ class BlenderM2Scene:
         else:
             # Add an empty bone, if the model is not animated
             if selected_only:
-                bpy.ops.view3d.snap_cursor_to_selected()
-                self.m2.add_dummy_bone(bpy.context.scene.cursor_location.to_tuple())
+                self.m2.add_dummy_bone(get_origin_position)
             else:
                 bpy.ops.object.select_all(action='SELECT')
-                bpy.ops.view3d.snap_cursor_to_selected()
-                self.m2.add_dummy_bone(bpy.context.scene.cursor_location.to_tuple())
+                bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
+                self.m2.add_dummy_bone(get_origin_position)
                 bpy.ops.object.select_all(action='DESELECT')
+
+    def save_animations(self):
+
+        # if there are no actions, make a default Stand anim.
+        if not len(bpy.data.actions):
+            self.m2.add_dummy_anim()
+
 
     def save_geosets(self, selected_only, fill_textures):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects

@@ -218,7 +218,9 @@ class M2File:
 
     def add_dummy_bone(self, origin):
         bone = self.root.bones.new()
-        bone.pivot = origin
+        bone.pivot = tuple(origin)
+
+    def add_dummy_anim(self, origin):
 
 
 
