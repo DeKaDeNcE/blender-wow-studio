@@ -105,6 +105,32 @@ def resolve_texture_path(filepath):
             return rest_path_n
 
 
+def get_object_boundbox_world(obj):
+    return tuple(obj.matrix_world * obj.bound_box[0]), tuple(obj.matrix_world * obj.bound_box[1])
+
+
+def get_objects_boundbox_world(objects):
+    corner1 = [32768, 32768, 32768]
+    corner2 = [-32768, -32768, -32768]
+
+    for obj in objects:
+        obj_bb_corner1, obj_bb_corner2 = get_object_boundbox_world(obj)
+
+        for i, value in enumerate(obj_bb_corner1):
+            if corner1[i] < value:
+                corner1[i] = value
+
+        for i, value in enumerate(obj_bb_corner2):
+            if corner2[i] > value:
+                corner2[i] = value
+
+    return tuple(corner1), tuple(corner2)
+
+
+
+
+
+
 
 
 
