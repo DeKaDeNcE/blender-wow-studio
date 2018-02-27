@@ -465,7 +465,6 @@ class BlenderM2Scene:
         if len(rigs) > 1:
             raise Exception('Error: M2 exporter does not support more than one armature. Hide or remove the extra one.')
 
-        # TODO: move bone adding to the library
         for rig in rigs:
             self.rig = rig
             bpy.context.scene.objects.active = rig
@@ -474,11 +473,12 @@ class BlenderM2Scene:
             armature = rig.data
 
             for bone in armature.edit_bones:
-                m2_bone = self.m2.root.bones.new()
-                m2_bone.key_bone_id = int(bone.WowM2Bone.KeyBoneID)
-                m2_bone.flags = construct_bitfield(bone.WowM2Bone.Flags)
-                m2_bone.parent_bone = armature.edit_bones.index(bone.parent) if bone.parent else -1
-                m2_bone.pivot = bone.head.to_tuple()
+                key_bone_id = int(bone.WowM2Bone.KeyBoneID)
+                flags = construct_bitfield(bone.WowM2Bone.Flags)
+                parent_bone = armature.edit_bones.index(bone.parent) if bone.parent else -1
+                pivot = bone.head
+
+                self.m2.add_bone(pivot, key_bone_id, flags, parent_bone)
 
             bpy.ops.object.mode_set(mode='OBJECT')
 
