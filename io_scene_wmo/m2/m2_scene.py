@@ -2,7 +2,7 @@ import bpy
 import os
 from mathutils import Vector
 
-from ..utils import resolve_texture_path
+from ..utils import resolve_texture_path, get_objects_boundbox_world
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
 from ..utils import parse_bitfield, construct_bitfield, load_game_data
 from .ui.enums import mesh_part_id_menu
@@ -456,8 +456,17 @@ class BlenderM2Scene:
         obj.hide = True
         # TODO: add transparent material
 
-    def set_name(self, filepath):
+    def save_properties(self, filepath, selected_only):
         self.m2.root.name.value = os.path.basename(filepath)
+        objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
+        b_min, b_max = get_objects_boundbox_world(filter(lambda ob: not ob.WowM2Geoset.CollisionMesh
+                                                                    and ob.type == 'MESH'
+                                                                    and not ob.hide, objects))
+
+        self.m2.root.min = b_min
+        self.m2.root.max = b_max
+
+        # TODO: flags, collision bounding box
 
     def save_bones(self, selected_only):
         rigs = list(filter(lambda ob: ob.type == 'ARMATURE' and not ob.hide, bpy.context.scene.objects))
