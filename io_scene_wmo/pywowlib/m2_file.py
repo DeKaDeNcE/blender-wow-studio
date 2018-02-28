@@ -1,6 +1,6 @@
 import os
 
-from .file_formats.m2_format import M2Header, M2Versions, M2Vertex, M2Material, M2Texture, M2CompQuaternion, M2CompBone
+from .file_formats.m2_format import *
 from .file_formats.skin_format import M2SkinProfile, M2SkinSubmesh, M2SkinTextureUnit
 from ..pywowlib.io_utils.types import uint32, vec3D
 
@@ -216,11 +216,38 @@ class M2File:
 
         return bone_id
 
-    def add_dummy_bone(self, origin):
+    def add_dummy_anim_set(self, origin):
         bone = self.root.bones.new()
         bone.pivot = tuple(origin)
 
-    def add_dummy_anim(self, origin):
+    def add_anim(self, a_id, var_id, time_bounds, movespeed, flags, frequency, replay, bl_time, bounds, var_next=None, alias_next=None):
+        seq = M2Sequence()
+        seq_id = self.root.sequences.add(seq)
+        self.root.sequence_lookup.append(seq_id)
+
+        # It is presumed that framerate is always 24 fps.
+        if self.version <= M2Versions.TBC:
+            seq.start_timestamp, seq.end_timestamp = time_bounds
+        else:
+            seq.duration = (time_bounds[1] - time_bounds[0]) / 24
+
+        seq.id = a_id
+        seq.variation_index = var_id
+        seq.variation_next = var_next if var_next else -1
+        seq.alias_next = alias_next if alias_next else seq_id
+        seq.flags = flags
+        seq.frequency = frequency
+        seq.movespeed = movespeed
+        seq.replay.minimum, seq.replay.maximum = replay
+        seq.bounds.extent, seq.bounds.radius = bounds
+
+        if self.version <= M2Versions.WOD:
+            seq.blend_time = bl_time
+        else:
+            seq.blend_time_in, seq.blend_time_out = bl_time
+
+        return seq_id
+
 
 
 

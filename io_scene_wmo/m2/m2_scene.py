@@ -1,6 +1,7 @@
 import bpy
 import os
 from mathutils import Vector
+from math import sqrt, pow
 
 from ..utils import resolve_texture_path, get_origin_position, get_objects_boundbox_world
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
@@ -463,8 +464,11 @@ class BlenderM2Scene:
                                                                     and ob.type == 'MESH'
                                                                     and not ob.hide, objects))
 
-        self.m2.root.min = b_min
-        self.m2.root.max = b_max
+        self.m2.root.bounding_box.min = b_min
+        self.m2.root.bounding_box.max = b_max
+        self.m2.root.bounding_sphere_radius = sqrt((b_max[0]-b_min[0]) ** 2
+                                                   + (b_max[1]-b_min[2]) ** 2
+                                                   + (b_max[2]-b_min[2]) ** 2) / 2
 
         # TODO: flags, collision bounding box
 
