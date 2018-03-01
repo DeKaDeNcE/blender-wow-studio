@@ -178,20 +178,26 @@ class BlenderM2Scene:
                 for k in range(4):
                     fcurve = rot_fcurves[k]
                     fcurve.keyframe_points.add(1)
-                    fcurve.keyframe_points[0].co = 0, default_rot[k]
+                    keyframe = fcurve.keyframe_points[0]
+                    keyframe.co = 0, default_rot[k]
+                    keyframe.interpolation = 'LINEAR'
 
                 # set rest translation
                 default_trans = bl_bone.bone.matrix_local.inverted() * Vector(bone.pivot)
                 for k in range(3):
                     fcurve = trans_fcurves[k]
                     fcurve.keyframe_points.add(1)
-                    fcurve.keyframe_points[0].co = 0, default_trans[k]
+                    keyframe = fcurve.keyframe_points[0]
+                    keyframe.co = 0, default_trans[k]
+                    keyframe.interpolation = 'LINEAR'
 
                 # set rest scale
                 for k in range(3):
                     fcurve = scale_fcurves[k]
                     fcurve.keyframe_points.add(1)
-                    fcurve.keyframe_points[0].co = 0, 1
+                    keyframe = fcurve.keyframe_points[0]
+                    keyframe.co = 0, 1
+                    keyframe.interpolation = 'LINEAR'
 
                 if bone.rotation.timestamps.n_elements > i:
                     rotation_frames = bone.rotation.timestamps[i]
@@ -205,7 +211,10 @@ class BlenderM2Scene:
                         rot_quat = rotation_track[j].to_quaternion()
                         frame = timestamp * 0.0266666
 
-                        for k in range(4): rot_fcurves[k].keyframe_points[j].co = frame, rot_quat[k]
+                        for k in range(4):
+                            keyframe = rot_fcurves[k].keyframe_points[j]
+                            keyframe.co = frame, rot_quat[k]
+                            keyframe.interpolation = 'LINEAR'
 
                 if bone.translation.timestamps.n_elements > i:
                     translation_frames = bone.translation.timestamps[i]
@@ -221,7 +230,10 @@ class BlenderM2Scene:
 
                         frame = timestamp * 0.0266666
 
-                        for k in range(3): trans_fcurves[k].keyframe_points[j].co = frame, trans_vec[k]
+                        for k in range(3):
+                            keyframe = trans_fcurves[k].keyframe_points[j]
+                            keyframe.co = frame, trans_vec[k]
+                            keyframe.interpolation = 'LINEAR'
 
                 if bone.scale.timestamps.n_elements > i:
                     scale_frames = bone.scale.timestamps[i]
@@ -233,7 +245,10 @@ class BlenderM2Scene:
                     # set rotation values for each channel
                     for j, timestamp in enumerate(scale_frames):
                         frame = timestamp * 0.0266666
-                        for k in range(3): scale_fcurves[k].keyframe_points[j].co = frame, scale_track[j][k]
+                        for k in range(3):
+                            keyframe = scale_fcurves[k].keyframe_points[j]
+                            keyframe.co = frame, scale_track[j][k]
+                            keyframe.interpolation = 'LINEAR'
 
         rig.animation_data.action = self.animations[0]
 
