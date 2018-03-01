@@ -178,26 +178,20 @@ class BlenderM2Scene:
                 for k in range(4):
                     fcurve = rot_fcurves[k]
                     fcurve.keyframe_points.add(1)
-                    keyframe = fcurve.keyframe_points[0]
-                    keyframe.co = 0, default_rot[k]
-                    keyframe.interpolation = 'LINEAR'
+                    fcurve.keyframe_points[0].co = 0, default_rot[k]
 
                 # set rest translation
                 default_trans = bl_bone.bone.matrix_local.inverted() * Vector(bone.pivot)
                 for k in range(3):
                     fcurve = trans_fcurves[k]
                     fcurve.keyframe_points.add(1)
-                    keyframe = fcurve.keyframe_points[0]
-                    keyframe.co = 0, default_trans[k]
-                    keyframe.interpolation = 'LINEAR'
+                    fcurve.keyframe_points[0].co = 0, default_trans[k]
 
                 # set rest scale
                 for k in range(3):
                     fcurve = scale_fcurves[k]
                     fcurve.keyframe_points.add(1)
-                    keyframe = fcurve.keyframe_points[0]
-                    keyframe.co = 0, 1
-                    keyframe.interpolation = 'LINEAR'
+                    fcurve.keyframe_points[0].co = 0, 1
 
                 if bone.rotation.timestamps.n_elements > i:
                     rotation_frames = bone.rotation.timestamps[i]
@@ -214,16 +208,16 @@ class BlenderM2Scene:
                         for k in range(4):
                             keyframe = rot_fcurves[k].keyframe_points[j]
                             keyframe.co = frame, rot_quat[k]
-                            keyframe.interpolation = 'LINEAR'
+                            keyframe.interpolation = 'LINEAR' if bone.rotation.interpolation_type == 1 else 'CONSTANT'
 
                 if bone.translation.timestamps.n_elements > i:
                     translation_frames = bone.translation.timestamps[i]
                     translation_track = bone.translation.values[i]
 
-                    # init rotation keyframes on the curve
+                    # init translation keyframes on the curve
                     for k in range(3): trans_fcurves[k].keyframe_points.add(len(translation_frames) - 1)
 
-                    # set rotation values for each channel
+                    # set translation values for each channel
                     for j, timestamp in enumerate(translation_frames):
                         trans_vec = bl_bone.bone.matrix_local.inverted() * (Vector(bone.pivot)
                                                                          + Vector(translation_track[j]))
@@ -233,22 +227,22 @@ class BlenderM2Scene:
                         for k in range(3):
                             keyframe = trans_fcurves[k].keyframe_points[j]
                             keyframe.co = frame, trans_vec[k]
-                            keyframe.interpolation = 'LINEAR'
+                            keyframe.interpolation = 'LINEAR' if bone.translation.interpolation_type == 1 else 'CONSTANT'
 
                 if bone.scale.timestamps.n_elements > i:
                     scale_frames = bone.scale.timestamps[i]
                     scale_track = bone.scale.values[i]
 
-                    # init rotation keyframes on the curve
+                    # init scale keyframes on the curve
                     for k in range(3): scale_fcurves[k].keyframe_points.add(len(scale_frames) - 1)
 
-                    # set rotation values for each channel
+                    # set scale values for each channel
                     for j, timestamp in enumerate(scale_frames):
                         frame = timestamp * 0.0266666
                         for k in range(3):
                             keyframe = scale_fcurves[k].keyframe_points[j]
                             keyframe.co = frame, scale_track[j][k]
-                            keyframe.interpolation = 'LINEAR'
+                            keyframe.interpolation = 'LINEAR' if bone.scale.interpolation_type == 1 else 'CONSTANT'
 
         rig.animation_data.action = self.animations[0]
 
