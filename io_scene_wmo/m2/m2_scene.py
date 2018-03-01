@@ -143,7 +143,6 @@ class BlenderM2Scene:
         rig = self.rig
         rig.animation_data_create()
         bpy.context.scene.objects.active = rig
-        bpy.ops.object.mode_set(mode='POSE')
 
         load_game_data()
         anim_data_dbc = bpy.db_files_client.AnimationData
@@ -164,47 +163,79 @@ class BlenderM2Scene:
 
                 bl_bone = rig.pose.bones[bone.name]
 
-                bpy.context.scene.frame_set(0)
-                bl_bone.location = bl_bone.bone.matrix_local.inverted() * Vector(bone.pivot)
-                bl_bone.rotation_quaternion = (1, 0, 0, 0)
-                bl_bone.scale = (1, 1, 1)
+                # create trans / rot / scale fcruves
+                trans_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].location'.format(bl_bone.name), index=k)
+                                 for k in range(3)]
 
-                bl_bone.keyframe_insert(data_path='rotation_quaternion')
-                bl_bone.keyframe_insert(data_path='location')
-                bl_bone.keyframe_insert(data_path='scale')
+                rot_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name),
+                               index=k) for k in range(4)]
+
+                scale_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].scale'.format(bl_bone.name), index=k)
+                                 for k in range(3)]
+
+                # set rest rotation
+                default_rot = (1, 0, 0, 0)
+                for k in range(4):
+                    fcurve = rot_fcurves[k]
+                    fcurve.keyframe_points.add(1)
+                    fcurve.keyframe_points[0].co = 0, default_rot[k]
+
+                # set rest translation
+                default_trans = bl_bone.bone.matrix_local.inverted() * Vector(bone.pivot)
+                for k in range(3):
+                    fcurve = trans_fcurves[k]
+                    fcurve.keyframe_points.add(1)
+                    fcurve.keyframe_points[0].co = 0, default_trans[k]
+
+                # set rest scale
+                for k in range(3):
+                    fcurve = scale_fcurves[k]
+                    fcurve.keyframe_points.add(1)
+                    fcurve.keyframe_points[0].co = 0, 1
 
                 if bone.rotation.timestamps.n_elements > i:
                     rotation_frames = bone.rotation.timestamps[i]
                     rotation_track = bone.rotation.values[i]
 
-                    for j, frame in enumerate(rotation_frames):
-                        bpy.context.scene.frame_set(frame * 0.0266666)
-                        bl_bone.rotation_quaternion = rotation_track[j].to_quaternion()
-                        bl_bone.keyframe_insert(data_path='rotation_quaternion')
+                    # init rotation keyframes on the curve
+                    for k in range(4): rot_fcurves[k].keyframe_points.add(len(rotation_frames) - 1)
+
+                    # set rotation values for each channel
+                    for j, timestamp in enumerate(rotation_frames):
+                        rot_quat = rotation_track[j].to_quaternion()
+                        frame = timestamp * 0.0266666
+
+                        for k in range(4): rot_fcurves[k].keyframe_points[j].co = frame, rot_quat[k]
 
                 if bone.translation.timestamps.n_elements > i:
                     translation_frames = bone.translation.timestamps[i]
                     translation_track = bone.translation.values[i]
 
-                    for j, frame in enumerate(translation_frames):
-                        bpy.context.scene.frame_set(frame * 0.0266666)
-                        bl_bone.location = bl_bone.bone.matrix_local.inverted() * (Vector(bone.pivot) +
-                                                                                   Vector(translation_track[j]))
-                        bl_bone.keyframe_insert(data_path='location')
+                    # init rotation keyframes on the curve
+                    for k in range(3): trans_fcurves[k].keyframe_points.add(len(translation_frames) - 1)
+
+                    # set rotation values for each channel
+                    for j, timestamp in enumerate(translation_frames):
+                        trans_vec = bl_bone.bone.matrix_local.inverted() * (Vector(bone.pivot)
+                                                                         + Vector(translation_track[j]))
+
+                        frame = timestamp * 0.0266666
+
+                        for k in range(3): trans_fcurves[k].keyframe_points[j].co = frame, trans_vec[k]
 
                 if bone.scale.timestamps.n_elements > i:
                     scale_frames = bone.scale.timestamps[i]
                     scale_track = bone.scale.values[i]
 
-                    for j, frame in enumerate(scale_frames):
-                        bpy.context.scene.frame_set(frame * 0.0266666)
-                        bl_bone.scale = scale_track[j]
-                        bl_bone.keyframe_insert(data_path='scale')
+                    # init rotation keyframes on the curve
+                    for k in range(3): scale_fcurves[k].keyframe_points.add(len(scale_frames) - 1)
+
+                    # set rotation values for each channel
+                    for j, timestamp in enumerate(scale_frames):
+                        frame = timestamp * 0.0266666
+                        for k in range(3): scale_fcurves[k].keyframe_points[j].co = frame, scale_track[j][k]
 
         rig.animation_data.action = self.animations[0]
-        bpy.context.scene.frame_set(0)
-
-        bpy.ops.object.mode_set(mode='OBJECT')
 
         # set animation properties
         for i, action in enumerate(self.animations):
@@ -513,7 +544,6 @@ class BlenderM2Scene:
         if not len(bpy.data.actions):
             self.m2.add_dummy_anim()
 
-
     def save_geosets(self, selected_only, fill_textures):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
         if not objects:
@@ -608,8 +638,6 @@ class BlenderM2Scene:
             shader_id = int(material.WowM2Material.Shader)
 
             self.m2.add_material_to_geoset(g_index, render_flags, bl_mode, flags, shader_id, tex_id)
-
-
 
         for obj in proxy_objects:
             bpy.data.objects.remove(obj, do_unlink=True)
