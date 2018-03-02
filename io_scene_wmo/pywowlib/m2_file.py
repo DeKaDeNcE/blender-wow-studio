@@ -163,7 +163,7 @@ class M2File:
 
         geoset_index = skin.submeshes.add(submesh)
         texture_unit.geoset_index = geoset_index
-        skin.texture_units.append(texture_unit)
+        self.root.tex_unit_lookup_table.append(skin.texture_units.add(texture_unit))
 
         return geoset_index
 
@@ -213,6 +213,7 @@ class M2File:
 
         bone_id = self.root.bones.add(m2_bone)
         self.root.bone_lookup_table.append(bone_id)
+        self.root.key_bone_lookup.append(key_bone_id)
 
         return bone_id
 
@@ -220,16 +221,23 @@ class M2File:
         bone = self.root.bones.new()
         bone.pivot = tuple(origin)
 
-    def add_anim(self, a_id, var_id, time_bounds, movespeed, flags, frequency, replay, bl_time, bounds, var_next=None, alias_next=None):
+        self.add_anim(0, 0, (0, 888.77778), 0, 32, 32767, (0, 0), 150,
+                      ((self.root.bounding_box.min, self.root.bounding_box.max), self.root.bounding_sphere_radius),
+                      None, None
+                      )
+
+        # self.add_bone_track(0, ((), ()), ((), ()), ((), ()))
+
+    def add_anim(self, a_id, var_id, frame_bounds, movespeed, flags, frequency, replay, bl_time, bounds, var_next=None, alias_next=None):
         seq = M2Sequence()
         seq_id = self.root.sequences.add(seq)
         self.root.sequence_lookup.append(seq_id)
 
         # It is presumed that framerate is always 24 fps.
         if self.version <= M2Versions.TBC:
-            seq.start_timestamp, seq.end_timestamp = time_bounds
+            seq.start_timestamp, seq.end_timestamp = int(frame_bounds[0] // 0.0266666), int(frame_bounds[1] // 0.0266666)
         else:
-            seq.duration = (time_bounds[1] - time_bounds[0]) / 24
+            seq.duration = int((frame_bounds[1] - frame_bounds[0]) // 0.0266666)
 
         seq.id = a_id
         seq.variation_index = var_id
@@ -239,7 +247,8 @@ class M2File:
         seq.frequency = frequency
         seq.movespeed = movespeed
         seq.replay.minimum, seq.replay.maximum = replay
-        seq.bounds.extent, seq.bounds.radius = bounds
+        seq.bounds.extent.min, seq.bounds.extent.max = bounds[0]
+        seq.bounds.radius = bounds[1]
 
         if self.version <= M2Versions.WOD:
             seq.blend_time = bl_time
@@ -248,33 +257,37 @@ class M2File:
 
         return seq_id
 
+    def add_bone_track(self, bone_id, trans, rot, scale):
+        bone = self.root.bones[bone_id]
 
+        rot_ts = [int(frame // 0.0266666) for frame in rot[0]]
+        trans_ts = [int(frame // 0.0266666) for frame in trans[0]]
+        scale_ts = [int(frame // 0.0266666) for frame in scale[0]]
 
+        if self.version < M2Versions.WOTLK:
+            rot_quats = rot[1]
 
+            if self.version <= M2Versions.CLASSIC:
+                rot_quats = [(qtrn[1], qtrn[2], qtrn[3], qtrn[0]) for qtrn in rot[1]]
 
+            bone.rotation.interpolation_ranges.append(len(bone.rotation.timestamps), len(rot[0]) - 1)
+            bone.rotation.timestamps.extend(rot_ts)
+            bone.rotation.values.extend(rot_quats)
 
+            bone.translation.interpolation_ranges.append(len(bone.translation.timestamps), len(trans[0]) - 1)
+            bone.translation.timestamps.extend(trans_ts)
+            bone.translation.values.extend(trans[1])
 
+            bone.scale.interpolation_ranges.append(len(bone.scale.timestamps), len(rot[0]) - 1)
+            bone.scale.timestamps.extend(scale_ts)
+            bone.scale.values.extend(scale[1])
 
-        
+        else:
+            bone.rotation.timestamps.new().from_iterable(rot_ts)
+            bone.rotation.values.new().from_iterable(rot[1])
 
+            bone.translation.timestamps.new().from_iterable(trans_ts)
+            bone.translation.values.new().from_iterable(trans[1])
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            bone.scale.timestamps.new().from_iterable(scale_ts)
+            bone.scale.values.new().from_iterable(scale[1])

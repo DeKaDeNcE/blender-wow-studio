@@ -540,18 +540,21 @@ class BlenderM2Scene:
         else:
             # Add an empty bone, if the model is not animated
             if selected_only:
-                self.m2.add_dummy_bone(get_origin_position)
+                self.m2.add_dummy_anim_set(get_origin_position())
             else:
                 bpy.ops.object.select_all(action='SELECT')
                 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
-                self.m2.add_dummy_bone(get_origin_position)
+                self.m2.add_dummy_anim_set(get_origin_position())
                 bpy.ops.object.select_all(action='DESELECT')
 
     def save_animations(self):
+        pass
 
+        '''
         # if there are no actions, make a default Stand anim.
         if not len(bpy.data.actions):
-            self.m2.add_dummy_anim()
+            self.m2.add_dummy_anim_set()
+        '''
 
     def save_geosets(self, selected_only, fill_textures):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects

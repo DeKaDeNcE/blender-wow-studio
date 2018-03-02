@@ -113,7 +113,7 @@ class M2TrackBase:
     def __init__(self):
 
         self.interpolation_type = 0
-        self.global_sequence = 0
+        self.global_sequence = -1
 
         if VERSION < M2Versions.WOTLK:
             self.interpolation_ranges = M2Array(M2Range)
@@ -123,7 +123,7 @@ class M2TrackBase:
 
     def read(self, f):
         self.interpolation_type = uint16.read(f)
-        self.global_sequence = uint16.read(f)
+        self.global_sequence = int16.read(f)
 
         if VERSION < M2Versions.WOTLK:
             self.interpolation_ranges.read(f)
@@ -133,7 +133,7 @@ class M2TrackBase:
         
     def write(self, f):
         uint16.write(f, self.interpolation_type)
-        uint16.write(f, self.global_sequence)
+        int16.write(f, self.global_sequence)
 
         if VERSION < M2Versions.WOTLK:
             self.interpolation_ranges.write(f)
@@ -141,6 +141,12 @@ class M2TrackBase:
         self.timestamps.write(f)
 
         return self
+
+    def new(self):
+        if VERSION < M2Versions.WOTLK:
+            return self.interpolation_ranges.new(), self.timestamps
+        else:
+            return self.timestamps.new()
 
     @staticmethod
     def size():
@@ -234,11 +240,11 @@ class M2Box:
 
 class M2CompQuaternion:
     
-    def __init__(self):
-        self.x = 0
-        self.y = 0
-        self.z = 0
-        self.w = 0
+    def __init__(self, quaternion=(-1, 0, 0, 0)):
+        self.x = quaternion[1]
+        self.y = quaternion[2]
+        self.z = quaternion[3]
+        self.w = quaternion[0]
 
     def read(self, f):
         self.y = int16.read(f)
@@ -518,7 +524,7 @@ class M2Vertex:
         self.normal = vec3D.read(f)
         self.tex_coords = vec2D.read(f)
         self.tex_coords2 = vec2D.read(f)
-    
+
         return self
 
     def write(self, f):
@@ -535,17 +541,17 @@ class M2Vertex:
 ###### Render flags ######
 
 class M2Material:
-    
+
     def __init__(self):
         self.flags = 0
         self.blending_mode = 0  # apparently a bitfield
-   
+
     def read(self, f):
         self.flags = uint16.read(f)
         self.blending_mode = uint16.read(f)
 
         return self
-        
+
     def write(self, f):
         uint16.write(f, self.flags)
         uint16.write(f, self.blending_mode)

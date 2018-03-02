@@ -80,7 +80,7 @@ class MemoryManager:
     @staticmethod
     def mem_reserve(f, n_bytes):
         pos = f.tell()
-        f.seek(pos + n_bytes - 1)
+        f.seek(pos + n_bytes)
         f.write(b'\0')
         f.seek(pos)
 
@@ -164,6 +164,9 @@ class M2Array(metaclass=Template):
     def new(self):
         self.values.append(self.type())
         return self.values[-1]
+
+    def from_iterable(self, itrbl):
+        self.values = [self.type(item) for item in itrbl]
 
     def set(self, itrbl):
         self.values = itrbl

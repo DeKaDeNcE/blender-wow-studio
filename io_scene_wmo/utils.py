@@ -1,6 +1,7 @@
 import bpy
 import os
 
+from mathutils import Vector
 from io import BytesIO
 from .pywowlib.archives.mpq.wow import WoWFileData
 from .pywowlib.wdbx.wdbc import DBFilesClient, DBCFile
@@ -123,7 +124,8 @@ def get_origin_position():
 
 
 def get_object_boundbox_world(obj):
-    return tuple(obj.matrix_world * obj.bound_box[0]), tuple(obj.matrix_world * obj.bound_box[1])
+    return tuple(obj.matrix_world * Vector(obj.bound_box[0])), \
+           tuple(obj.matrix_world * Vector(obj.bound_box[1]))
 
 
 def get_objects_boundbox_world(objects):
@@ -134,11 +136,11 @@ def get_objects_boundbox_world(objects):
         obj_bb_corner1, obj_bb_corner2 = get_object_boundbox_world(obj)
 
         for i, value in enumerate(obj_bb_corner1):
-            if corner1[i] < value:
+            if value < corner1[i]:
                 corner1[i] = value
 
         for i, value in enumerate(obj_bb_corner2):
-            if corner2[i] > value:
+            if value > corner2[i]:
                 corner2[i] = value
 
     return tuple(corner1), tuple(corner2)
