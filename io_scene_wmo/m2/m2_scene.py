@@ -721,9 +721,11 @@ class BlenderM2Scene:
 
     def save_collision(self, selected_only):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
+        objects = filter(lambda ob: ob.WowM2Geoset.CollisionMesh and ob.type == 'MESH' and not ob.hide, objects)
 
         proxy_objects = []
-        for obj in filter(lambda ob: ob.WowM2Geoset.CollisionMesh and ob.type == 'MESH' and not ob.hide, objects):
+
+        for obj in objects:
             new_obj = obj.copy()
             new_obj.data = obj.data.copy()
             proxy_objects.append(new_obj)
@@ -758,12 +760,11 @@ class BlenderM2Scene:
         for obj in proxy_objects:
             bpy.data.objects.remove(obj, do_unlink=True)
 
-
-
-
-
-
-
-
-
+        # calculate collision bounding box
+        b_min, b_max = get_objects_boundbox_world(objects)
+        self.m2.root.collision_box.min = b_min
+        self.m2.root.collision_box.max = b_max
+        self.m2.root.collision_sphere_radius = sqrt((b_max[0] - b_min[0]) ** 2
+                                                    + (b_max[1] - b_min[2]) ** 2
+                                                    + (b_max[2] - b_min[2]) ** 2) / 2
 
