@@ -1338,7 +1338,6 @@ class M2Header:
         self.colors.write(f)
         self.textures.write(f)
 
-        print('HERE:')
         self.texture_weights.write(f)
 
         if VERSION <= M2Versions.TBC:

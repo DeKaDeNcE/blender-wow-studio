@@ -145,7 +145,6 @@ class M2Array(metaclass=Template):
         else:
             for value in self.values:
                 value.write(f)
-        print('\nM2Array Object at {}. Writing data-block at {}. Finishing at {}'.format(pos - 8, ofs, f.tell()))
         f.seek(pos)
 
         return self
