@@ -721,7 +721,7 @@ class BlenderM2Scene:
 
     def save_collision(self, selected_only):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
-        objects = filter(lambda ob: ob.WowM2Geoset.CollisionMesh and ob.type == 'MESH' and not ob.hide, objects)
+        objects = list(filter(lambda ob: ob.WowM2Geoset.CollisionMesh and ob.type == 'MESH' and not ob.hide, objects))
 
         proxy_objects = []
 
