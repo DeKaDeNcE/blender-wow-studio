@@ -224,6 +224,15 @@ class M2File:
                       None, None
                       )
 
+        self.root.transparency_lookup_table.add(len(self.root.texture_weights))
+        texture_weight = self.root.texture_weights.new()
+        if self.version >= M2Versions.WOTLK:
+            texture_weight.timestamps.new().add(0)
+            texture_weight.values.new().add(32767)
+        else:
+            pass
+            # TODO: pre-wotlk
+
     def add_anim(self, a_id, var_id, frame_bounds, movespeed, flags, frequency, replay, bl_time, bounds, var_next=None, alias_next=None):
         seq = M2Sequence()
         seq_id = self.root.sequences.add(seq)
@@ -294,6 +303,7 @@ class M2File:
         self.root.collision_vertices.extend(vertices)
         for face in faces: self.root.collision_triangles.extend(face)
         self.root.collision_normals.extend(normals)
+
 
 
 

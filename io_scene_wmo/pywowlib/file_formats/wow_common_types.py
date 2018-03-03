@@ -79,10 +79,11 @@ fixed16 = int16
 class MemoryManager:
     @staticmethod
     def mem_reserve(f, n_bytes):
-        pos = f.tell()
-        f.seek(pos + n_bytes)
-        f.write(b'\0')
-        f.seek(pos)
+        if n_bytes:
+            pos = f.tell()
+            f.seek(pos + n_bytes)
+            f.write(b'\0')
+            f.seek(pos)
 
     @staticmethod
     def ofs_request(f):
@@ -132,8 +133,11 @@ class M2Array(metaclass=Template):
 
         type_t = type(self.type)
 
-        if hasattr(self.type, 'size'):
-            MemoryManager.mem_reserve(f, len(self.values) * self.type.size())
+        if not type_t is partial:
+            if hasattr(self.type, 'size'):
+                MemoryManager.mem_reserve(f, len(self.values) * self.type.size())
+        elif hasattr(self.type.func, 'size'):
+            MemoryManager.mem_reserve(f, len(self.values) * self.type.func.size())
 
         if type_t is GenericType:
             for value in self.values:
@@ -141,6 +145,7 @@ class M2Array(metaclass=Template):
         else:
             for value in self.values:
                 value.write(f)
+        print('\nM2Array Object at {}. Writing data-block at {}. Finishing at {}'.format(pos - 8, ofs, f.tell()))
         f.seek(pos)
 
         return self

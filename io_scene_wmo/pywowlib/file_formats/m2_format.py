@@ -219,7 +219,6 @@ class Vector_2fp_6_9:
     
 
 class M2Box:
-    size = 24
     
     def __init__(self):
         self.model_rotation_speed_min = (0.0, 0.0, 0.0)
@@ -1206,7 +1205,7 @@ class M2Header:
 
         self.colors = M2Array(M2Color)
         self.textures = M2Array(M2Texture)
-        self.texture_weights = M2Array(fixed16)
+        self.texture_weights = M2Array(M2Track << fixed16)
 
         if VERSION <= M2Versions.TBC:
             self.unknown = M2Array(uint16)
@@ -1338,6 +1337,8 @@ class M2Header:
 
         self.colors.write(f)
         self.textures.write(f)
+
+        print('HERE:')
         self.texture_weights.write(f)
 
         if VERSION <= M2Versions.TBC:
