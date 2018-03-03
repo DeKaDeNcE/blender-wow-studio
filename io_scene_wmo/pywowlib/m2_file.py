@@ -191,7 +191,7 @@ class M2File:
 
         # check if this texture was already added
         for i, tex in enumerate(self.root.textures):
-            if tex.path == path and tex.flags == flags and tex.type == tex_type:
+            if tex.filename.value == path and tex.flags == flags and tex.type == tex_type:
                 return i
 
         texture = M2Texture()
