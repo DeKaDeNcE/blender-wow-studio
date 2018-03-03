@@ -1188,7 +1188,7 @@ class M2Header:
         self.version = VERSION
         self.name = M2String()
         self.global_flags = 0
-        self.global_loops = M2Array(uint32)
+        self.global_sequences = M2Array(uint32)
         self.sequences = M2Array(M2Sequence)
         self.sequence_lookup = M2Array(uint16)
 
@@ -1249,7 +1249,7 @@ class M2Header:
         self.version = uint32.read(f)
         self.name.read(f)
         self.global_flags = uint32.read(f)
-        self.global_loops.read(f)
+        self.global_sequences.read(f)
         self.sequences.read(f)
         self.sequence_lookup.read(f)
 
@@ -1319,7 +1319,7 @@ class M2Header:
         uint32.write(f, self.version)
         self.name.write(f)
         uint32.write(f, self.global_flags)
-        self.global_loops.write(f)
+        self.global_sequences.write(f)
         self.sequences.write(f)
         self.sequence_lookup.write(f)
 
