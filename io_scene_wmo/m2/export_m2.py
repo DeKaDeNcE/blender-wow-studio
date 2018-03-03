@@ -12,6 +12,7 @@ def export_m2(version, filepath, selected_only, fill_textures):
     bl_m2.save_properties(filepath, selected_only)
     bl_m2.save_bones(selected_only)
     bl_m2.save_geosets(selected_only, fill_textures)
+    bl_m2.save_collision(selected_only)
 
     m2.write(filepath)
 

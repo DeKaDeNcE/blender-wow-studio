@@ -631,6 +631,7 @@ class BlenderM2Scene:
 
             new_obj = obj.copy()
             new_obj.data = obj.data.copy()
+            proxy_objects.append(new_obj)
 
             bpy.context.scene.objects.link(new_obj)
 
@@ -650,6 +651,7 @@ class BlenderM2Scene:
                 for modifier in obj.modifiers:
                     bpy.ops.object.modifier_apply(modifier=modifier.name)
 
+            # triangulate mesh, delete loose geometry
             bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.reveal()
@@ -713,8 +715,49 @@ class BlenderM2Scene:
 
             self.m2.add_material_to_geoset(g_index, render_flags, bl_mode, flags, shader_id, tex_id)
 
+        # remove temporary objects
         for obj in proxy_objects:
             bpy.data.objects.remove(obj, do_unlink=True)
+
+    def save_collision(self, selected_only):
+        objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
+
+        proxy_objects = []
+        for obj in filter(lambda ob: ob.WowM2Geoset.CollisionMesh and ob.type == 'MESH' and not ob.hide, objects):
+            new_obj = obj.copy()
+            new_obj.data = obj.data.copy()
+            proxy_objects.append(new_obj)
+
+            bpy.context.scene.objects.link(new_obj)
+
+            bpy.context.scene.objects.active = new_obj
+            mesh = new_obj.data
+
+            # apply all modifiers
+            if len(obj.modifiers):
+                for modifier in obj.modifiers:
+                    bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+            # triangulate mesh, delete loose geometry
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.reveal()
+            bpy.ops.mesh.quads_convert_to_tris()
+            bpy.ops.mesh.delete_loose()
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+            # export data
+            vertices = [tuple(new_obj.matrix_world * vertex.co) for vertex in mesh.vertices]
+            faces = [tuple([vertex for vertex in poly.vertices]) for poly in mesh.polygons]
+            normals = [tuple(poly.normal) for poly in mesh.polygons]
+
+            self.m2.add_collision_mesh(vertices, faces, normals)
+
+        # remove temporary objects
+        for obj in proxy_objects:
+            bpy.data.objects.remove(obj, do_unlink=True)
+
 
 
 

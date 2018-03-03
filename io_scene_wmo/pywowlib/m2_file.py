@@ -287,3 +287,15 @@ class M2File:
 
             bone.scale.timestamps.new().from_iterable(scale_ts)
             bone.scale.values.new().from_iterable(scale[1])
+
+    def add_collision_mesh(self, vertices, faces, normals):
+
+        # add collision geometry
+        self.root.collision_vertices.extend(vertices)
+        for face in faces: self.root.collision_triangles.extend(face)
+        self.root.collision_normals.extend(normals)
+
+
+
+
+
