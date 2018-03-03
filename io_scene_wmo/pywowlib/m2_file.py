@@ -218,15 +218,11 @@ class M2File:
         return bone_id
 
     def add_dummy_anim_set(self, origin):
-        bone = self.root.bones.new()
-        bone.pivot = tuple(origin)
-
+        self.add_bone(tuple(origin), -1, 0, -1)
         self.add_anim(0, 0, (0, 888.77778), 0, 32, 32767, (0, 0), 150,
                       ((self.root.bounding_box.min, self.root.bounding_box.max), self.root.bounding_sphere_radius),
                       None, None
                       )
-
-        # self.add_bone_track(0, ((), ()), ((), ()), ((), ()))
 
     def add_anim(self, a_id, var_id, frame_bounds, movespeed, flags, frequency, replay, bl_time, bounds, var_next=None, alias_next=None):
         seq = M2Sequence()

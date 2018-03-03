@@ -1196,7 +1196,7 @@ class M2Header:
             self.playable_animation_lookup = M2Array(uint32)
 
         self.bones = M2Array(M2CompBone)
-        self.key_bone_lookup = M2Array(uint16)
+        self.key_bone_lookup = M2Array(int16)
         self.vertices = M2Array(M2Vertex)
 
         if VERSION <= M2Versions.TBC:
@@ -1229,8 +1229,8 @@ class M2Header:
         self.collision_sphere_radius = 0.0
         
         self.collision_triangles = M2Array(uint16)
-        self.collision_vertices = M2Array(Array << (float32, 3))
-        self.collision_normals = M2Array(Array << (float32, 3))
+        self.collision_vertices = M2Array(vec3D)
+        self.collision_normals = M2Array(vec3D)
         self.attachments = M2Array(M2Attachment)
         self.attachment_lookup_table = M2Array(uint16)
         self.events = M2Array(M2Event)
