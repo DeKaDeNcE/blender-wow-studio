@@ -195,7 +195,7 @@ class M2File:
                 return i
 
         texture = M2Texture()
-        texture.path = path
+        texture.filename.value = path
         texture.flags = flags
         texture.type = tex_type
 
