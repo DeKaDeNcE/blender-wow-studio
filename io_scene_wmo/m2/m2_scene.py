@@ -324,8 +324,6 @@ class BlenderM2Scene:
 
         rig.animation_data.action = self.animations[0] # TODO: do not assume stand is first
 
-
-
     def load_geosets(self):
         if not len(self.m2.root.vertices):
             print("\nNo mesh geometry found to import.")
