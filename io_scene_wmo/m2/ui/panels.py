@@ -372,7 +372,13 @@ class WowM2AnimationPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+
         col = layout.column()
+        col.prop(context.object.animation_data.action.WowM2Animation, 'IsGlobalSequence', text='Global sequence')
+
+        col = layout.column()
+        col.enabled = not context.object.animation_data.action.WowM2Animation.IsGlobalSequence
+
         col.label(text='Animation ID:')
         row = col.row(align=True)
         row.prop(context.object.animation_data.action.WowM2Animation, 'AnimationID', text="")
@@ -430,6 +436,12 @@ def update_anim_variation_index(self, context):
 
 
 class WowM2AnimationPropertyGroup(bpy.types.PropertyGroup):
+    IsGlobalSequence = bpy.props.BoolProperty(
+        name="Global sequence",
+        description='Global sequences are animation loops that are constantly played and blended with current animation',
+        default=False
+    )
+
     AnimationID = bpy.props.EnumProperty(
         name="AnimationID",
         description="WoW Animation ID",
