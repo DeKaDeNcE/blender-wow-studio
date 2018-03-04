@@ -682,7 +682,12 @@ class BlenderM2Scene:
             # export vertices
             vertices = [new_obj.matrix_world * vertex.co for vertex in mesh.vertices]
             normals = [vertex.normal for vertex in mesh.vertices]
-            tex_coords = [mesh.uv_layers.active.data[loop.vertex_index].uv for loop in mesh.loops]
+            tex_coords = [(0.0, 0.0)] * len(vertices)
+
+            for loop in mesh.loops:
+                tex_coords[loop.vertex_index] = (mesh.uv_layers.active.data[loop.index].uv[0],
+                                                 1 - mesh.uv_layers.active.data[loop.index].uv[1])
+
             tris = [poly.vertices for poly in mesh.polygons]
 
             tex_coords2 = []
