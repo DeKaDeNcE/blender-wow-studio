@@ -127,6 +127,7 @@ class M2File:
 
         vertex_index = self.root.vertices.add(vertex)
         skin.vertex_indices.append(vertex_index)
+        skin.bone_indices.new().values = (0, 0, 0, 0)   # TODO: actually assign values
         return vertex_index
 
     def add_geoset(self, vertices, normals, uv, uv2, tris, origin, mesh_part_id, b_weights=None, b_indices=None):
@@ -202,7 +203,7 @@ class M2File:
         tex_id = self.root.textures.add(texture)
         self.root.texture_lookup_table.append(tex_id)
         self.root.texture_transforms_lookup_table.append(-1)
-        self.root.replacable_texture_lookup.append(-1)
+        self.root.replacable_texture_lookup.append(0)   # TODO: get back here
 
         return tex_id
 
