@@ -73,7 +73,7 @@ class M2SkinTextureUnit:
         self.shader_id = 0
         self.skin_section_index = 0
         self.geoset_index = 0
-        self.color_index = 0
+        self.color_index = -1
         self.material_index = 0
         self.material_layer = 0
         self.texture_count = 0
