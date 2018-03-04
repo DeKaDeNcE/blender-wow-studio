@@ -133,7 +133,7 @@ class M2Array(metaclass=Template):
 
         type_t = type(self.type)
 
-        if not type_t is partial:
+        if type_t is not partial:
             if hasattr(self.type, 'size'):
                 MemoryManager.mem_reserve(f, len(self.values) * self.type.size())
         elif hasattr(self.type.func, 'size'):

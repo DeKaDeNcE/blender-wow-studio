@@ -157,6 +157,9 @@ class M2File:
         submesh.index_start = len(skin.triangle_indices)
         submesh.index_count = len(tris) * 3
 
+        # TODO: bone stuff
+        submesh.bone_count = 1
+
         # add triangles
         for i, tri in enumerate(tris):
             for idx in tri:

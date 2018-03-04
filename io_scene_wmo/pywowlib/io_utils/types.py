@@ -94,9 +94,8 @@ class Array(metaclass=Template):
         return self
 
     def write(self, f):
-        type_ = type(self.type)
 
-        if type_ is GenericType:
+        if type(self.type).__name__ == "GenericType":
             for val in self.values:
                 self.type.write(f, val)
         else:
