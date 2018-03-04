@@ -202,6 +202,7 @@ class M2File:
         tex_id = self.root.textures.add(texture)
         self.root.texture_lookup_table.append(tex_id)
         self.root.texture_transforms_lookup_table.append(-1)
+        self.root.replacable_texture_lookup.append(-1)
 
         return tex_id
 
