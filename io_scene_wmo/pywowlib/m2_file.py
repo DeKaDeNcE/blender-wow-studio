@@ -130,7 +130,9 @@ class M2File:
         skin.bone_indices.new().values = (0, 0, 0, 0)   # TODO: actually assign values
         return vertex_index
 
-    def add_geoset(self, vertices, normals, uv, uv2, tris, origin, mesh_part_id, b_weights=None, b_indices=None):
+    def add_geoset(self, vertices, normals, uv, uv2, tris, origin, sort_pos, sort_radius, mesh_part_id, b_weights=None,
+                   b_indices=None):
+
         submesh = M2SkinSubmesh()
         texture_unit = M2SkinTextureUnit()
         skin = self.skins[0]
@@ -152,7 +154,12 @@ class M2File:
 
         submesh.vertex_start = start_index
         submesh.vertex_count = len(vertices)
-        submesh.center_position = origin
+        submesh.center_position = tuple(origin)
+
+        if self.version >= M2Versions.TBC:
+            submesh.sort_ceter_position = tuple(sort_pos)
+            submesh.sort_radius = sort_radius
+
         submesh.skin_section_id = mesh_part_id
         submesh.index_start = len(skin.triangle_indices)
         submesh.index_count = len(tris) * 3

@@ -123,16 +123,31 @@ def get_origin_position():
     return origin_loc
 
 
-def get_object_boundbox_world(obj):
+def get_obj_boundbox_center(obj):
+    return obj.matrix_world * (0.125 * sum((Vector(b) for b in obj.bound_box), Vector()))
+
+
+def get_obj_radius(obj, bb_center):
+    mesh = obj.data
+    radius = 0.0
+    for vertex in mesh.vertices:
+        dist = (vertex.co - bb_center).length
+        if dist > radius:
+            radius = dist
+
+    return radius
+
+
+def get_obj_boundbox_world(obj):
     return tuple(obj.matrix_world * Vector(obj.bound_box[0])), tuple(obj.matrix_world * Vector(obj.bound_box[6]))
 
 
-def get_objects_boundbox_world(objects):
+def get_objs_boundbox_world(objects):
     corner1 = [32768, 32768, 32768]     # TODO: verify max boundaries
     corner2 = [-32768, -32768, -32768]
 
     for obj in objects:
-        obj_bb_corner1, obj_bb_corner2 = get_object_boundbox_world(obj)
+        obj_bb_corner1, obj_bb_corner2 = get_obj_boundbox_world(obj)
 
         for i, value in enumerate(obj_bb_corner1):
             if value < corner1[i]:

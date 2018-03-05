@@ -3,7 +3,7 @@ import os
 from mathutils import Vector
 from math import sqrt, pow
 
-from ..utils import resolve_texture_path, get_origin_position, get_objects_boundbox_world
+from ..utils import resolve_texture_path, get_origin_position, get_objs_boundbox_world, get_obj_boundbox_center, get_obj_radius
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
 from ..utils import parse_bitfield, construct_bitfield, load_game_data
 from .ui.enums import mesh_part_id_menu
@@ -560,9 +560,9 @@ class BlenderM2Scene:
     def save_properties(self, filepath, selected_only):
         self.m2.root.name.value = os.path.basename(filepath)
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
-        b_min, b_max = get_objects_boundbox_world(filter(lambda ob: not ob.WowM2Geoset.CollisionMesh
-                                                                    and ob.type == 'MESH'
-                                                                    and not ob.hide, objects))
+        b_min, b_max = get_objs_boundbox_world(filter(lambda ob: not ob.WowM2Geoset.CollisionMesh
+                                                                 and ob.type == 'MESH'
+                                                                 and not ob.hide, objects))
 
         self.m2.root.bounding_box.min = b_min
         self.m2.root.bounding_box.max = b_max
@@ -695,9 +695,13 @@ class BlenderM2Scene:
                 tex_coords2 = [mesh.uv_layers[1].data[loop.vertex_index].uv for loop in mesh.loops]
 
             bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
-            origin = new_obj.location.to_tuple()
+            origin = new_obj.location
 
-            g_index = self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, int(new_obj.WowM2Geoset.MeshPartID))  # TODO: bone stuff
+            sort_pos = get_obj_boundbox_center(new_obj)
+            sort_radius = get_obj_radius(new_obj, sort_pos)
+
+            g_index = self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, sort_pos,
+                                         sort_radius, int(new_obj.WowM2Geoset.MeshPartID))  # TODO: bone stuff
 
             material = mesh.materials[0]
             bl_texture = material.active_texture
@@ -764,7 +768,7 @@ class BlenderM2Scene:
             bpy.data.objects.remove(obj, do_unlink=True)
 
         # calculate collision bounding box
-        b_min, b_max = get_objects_boundbox_world(objects)
+        b_min, b_max = get_objs_boundbox_world(objects)
         self.m2.root.collision_box.min = b_min
         self.m2.root.collision_box.max = b_max
         self.m2.root.collision_sphere_radius = sqrt((b_max[0] - b_min[0]) ** 2
