@@ -225,7 +225,6 @@ class M2File:
         m2_bone.pivot = tuple(pivot)
 
         bone_id = self.root.bones.add(m2_bone)
-        self.root.bone_lookup_table.append(bone_id)
         self.root.key_bone_lookup.append(key_bone_id)
 
         return bone_id
@@ -236,7 +235,7 @@ class M2File:
                       ((self.root.bounding_box.min, self.root.bounding_box.max), self.root.bounding_sphere_radius),
                       None, None
                       )
-
+        self.root.bone_lookup_table.append(0)
         self.root.transparency_lookup_table.add(len(self.root.texture_weights))
         texture_weight = self.root.texture_weights.new()
         if self.version >= M2Versions.WOTLK:
