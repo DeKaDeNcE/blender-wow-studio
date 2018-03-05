@@ -166,7 +166,7 @@ class M2File:
                 skin.triangle_indices.append(start_index + idx)
 
         geoset_index = skin.submeshes.add(submesh)
-        texture_unit.geoset_index = geoset_index
+        texture_unit.skin_section_index = geoset_index
         self.root.tex_unit_lookup_table.append(skin.texture_units.add(texture_unit))
 
         return geoset_index
