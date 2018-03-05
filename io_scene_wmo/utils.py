@@ -124,7 +124,7 @@ def get_origin_position():
 
 
 def get_object_boundbox_world(obj):
-    return obj.bound_box[0], obj.bound_box[1]
+    return tuple(obj.matrix_world * Vector(obj.bound_box[0])), tuple(obj.matrix_world * Vector(obj.bound_box[6]))
 
 
 def get_objects_boundbox_world(objects):
