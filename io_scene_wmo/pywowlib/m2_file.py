@@ -1,5 +1,6 @@
 import os
 
+from itertools import chain
 from .file_formats.m2_format import *
 from .file_formats.skin_format import M2SkinProfile, M2SkinSubmesh, M2SkinTextureUnit
 from ..pywowlib.io_utils.types import uint32, vec3D
@@ -106,11 +107,15 @@ class M2File:
         self.skins.append(skin)
         return skin
 
-    def add_vertex(self, pos, normal, tex_coords, bone_weights=None, bone_indices=None, tex_coords2=None):
+    def add_vertex(self, pos, normal, tex_coords, bone_weights, bone_indices, tex_coords2=None):
         vertex = M2Vertex()
         vertex.pos = tuple(pos)
         vertex.normal = tuple(normal)
         vertex.tex_coords = tuple(tex_coords)
+
+        # rigging information
+        vertex.bone_weights = bone_weights
+        vertex.bone_indices = bone_indices
 
         skin = self.skins[0]
 
@@ -127,30 +132,54 @@ class M2File:
 
         vertex_index = self.root.vertices.add(vertex)
         skin.vertex_indices.append(vertex_index)
-        skin.bone_indices.new().values = (0, 0, 0, 0)   # TODO: actually assign values
         return vertex_index
 
-    def add_geoset(self, vertices, normals, uv, uv2, tris, origin, sort_pos, sort_radius, mesh_part_id, b_weights=None,
-                   b_indices=None):
+    def add_geoset(self, vertices, normals, uv, uv2, tris, b_indices, b_weights,  origin, sort_pos, sort_radius, mesh_part_id):
 
         submesh = M2SkinSubmesh()
         texture_unit = M2SkinTextureUnit()
         skin = self.skins[0]
 
+        # localize bone indices
+        unique_bone_ids = set(chain(*b_indices))
+
+        bone_lookup = {}
+        for bone_id in unique_bone_ids:
+            bone_lookup[self.root.bone_lookup_table.add(bone_id)] = bone_id
+
         # add vertices
         start_index = len(self.root.vertices)
         for i, vertex_pos in enumerate(vertices):
-            args = [vertex_pos, normals[i], uv[i]]  # fill essentials
-            if b_weights:
-                args.append(b_weights[i])
-
-            if b_indices:
-                args.append(b_indices[i])
+            local_b_indices = tuple([bone_lookup[idx] for idx in b_indices[i]])
+            args = [vertex_pos, normals[i], uv[i], b_weights[i], local_b_indices]
 
             if uv2:
                 args.append(uv2[i])
 
             self.add_vertex(*args)
+            skin.bone_indices.new().values = local_b_indices
+
+        # found min bone index
+        bone_min = None
+        for index_set in b_indices:
+            for index in index_set:
+                if bone_min is None:
+                    bone_min = index
+                elif index < bone_min:
+                    bone_min = index
+
+        # found  max bone index
+        bone_max = None
+        for index_set in b_indices:
+            for index in index_set:
+                if bone_max is None:
+                    bone_max = index
+                elif index > bone_max:
+                    bone_max = index
+
+        submesh.bone_combo_index = bone_min
+        submesh.bone_count = bone_max + 1
+        # TODO: bone influences
 
         submesh.vertex_start = start_index
         submesh.vertex_count = len(vertices)
@@ -163,9 +192,6 @@ class M2File:
         submesh.skin_section_id = mesh_part_id
         submesh.index_start = len(skin.triangle_indices)
         submesh.index_count = len(tris) * 3
-
-        # TODO: bone stuff
-        submesh.bone_count = 1
 
         # add triangles
         for i, tri in enumerate(tris):

@@ -13,6 +13,7 @@ class BlenderM2Scene:
     def __init__(self, m2, prefs):
         self.m2 = m2
         self.materials = {}
+        self.bone_ids = {}
         self.geosets = []
         self.animations = []
         self.global_sequences = []
@@ -591,7 +592,7 @@ class BlenderM2Scene:
                 parent_bone = armature.edit_bones.index(bone.parent) if bone.parent else -1
                 pivot = bone.head
 
-                self.m2.add_bone(pivot, key_bone_id, flags, parent_bone)
+                self.bone_ids[bone.name] = self.m2.add_bone(pivot, key_bone_id, flags, parent_bone)
 
             bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -702,8 +703,32 @@ class BlenderM2Scene:
             sort_pos = get_obj_boundbox_center(new_obj)
             sort_radius = get_obj_radius(new_obj, sort_pos)
 
-            g_index = self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, origin, sort_pos,
-                                         sort_radius, int(new_obj.WowM2Geoset.MeshPartID))  # TODO: bone stuff
+            # collect rig data
+            bpy.ops.object.vertex_group_limit_total(limit=4)
+            bone_indices = []
+            bone_weights = []
+
+            for vertex in mesh.vertices:
+                v_bone_indices = [0, 0, 0, 0]
+                v_bone_weights = [0, 0, 0, 0]
+
+                for i, group_info in enumerate(vertex.groups):
+                    bone_id = self.bone_ids.get(new_obj.vertex_groups[i].name)
+                    weight = group_info.weight
+
+                    if bone_id is None:
+                        bone_id = 0
+                        weight = 0
+
+                    v_bone_indices[i] = bone_id
+                    v_bone_weights = weight
+
+                bone_indices.append(v_bone_indices)
+                bone_weights.append(v_bone_weights)
+
+            # add geoset
+            g_index = self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, bone_indices, bone_weights,
+                                         origin, sort_pos, sort_radius, int(new_obj.WowM2Geoset.MeshPartID))  # TODO: second UV
 
             material = mesh.materials[0]
             bl_texture = material.active_texture
@@ -758,7 +783,7 @@ class BlenderM2Scene:
             bpy.ops.mesh.select_all(action='DESELECT')
             bpy.ops.object.mode_set(mode='OBJECT')
 
-            # export data
+            # collect geometry data
             vertices = [tuple(new_obj.matrix_world * vertex.co) for vertex in mesh.vertices]
             faces = [tuple([vertex for vertex in poly.vertices]) for poly in mesh.polygons]
             normals = [tuple(poly.normal) for poly in mesh.polygons]
