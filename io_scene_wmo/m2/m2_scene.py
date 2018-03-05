@@ -574,6 +574,16 @@ class BlenderM2Scene:
         # TODO: flags, collision bounding box
 
     def save_bones(self, selected_only):
+
+        def add_bone(bl_bone):
+            key_bone_id = int(bl_bone.WowM2Bone.KeyBoneID)
+            flags = construct_bitfield(bl_bone.WowM2Bone.Flags)
+            print(bl_bone.name)
+            parent_bone = self.bone_ids[bl_bone.parent.name] if bl_bone.parent else -1
+            pivot = bl_bone.head
+
+            self.bone_ids[bl_bone.name] = self.m2.add_bone(pivot, key_bone_id, flags, parent_bone)
+
         rigs = list(filter(lambda ob: ob.type == 'ARMATURE' and not ob.hide, bpy.context.scene.objects))
 
         if len(rigs) > 1:
@@ -586,13 +596,34 @@ class BlenderM2Scene:
 
             armature = rig.data
 
+            # find root bone, check if we only have one root bone
+            root_bone = None
             for bone in armature.edit_bones:
-                key_bone_id = int(bone.WowM2Bone.KeyBoneID)
-                flags = construct_bitfield(bone.WowM2Bone.Flags)
-                parent_bone = armature.edit_bones.index(bone.parent) if bone.parent else -1
-                pivot = bone.head
+                if root_bone is not None and bone.parent is None and bone.children:
+                    print(bone.name)
+                    raise Exception('Error: M2 exporter does not support more than one global root bone.')
 
-                self.bone_ids[bone.name] = self.m2.add_bone(pivot, key_bone_id, flags, parent_bone)
+                if bone.parent is None and bone.children:
+                    root_bone = bone
+                    add_bone(root_bone)
+
+            # find root keybone, write additional bones
+            root_keybone = None
+
+            for bone in root_bone.children:
+
+                if bone.WowM2Bone.KeyBoneID == '26':
+                    root_keybone = bone
+                    continue
+
+                add_bone(bone)
+                for child_bone in bone.children_recursive:
+                    add_bone(child_bone)
+
+            # write root keybone and its children
+            if root_keybone:
+                for bone in root_keybone.children_recursive:
+                    add_bone(bone)
 
             bpy.ops.object.mode_set(mode='OBJECT')
 
