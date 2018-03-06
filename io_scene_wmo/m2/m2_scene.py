@@ -622,6 +622,7 @@ class BlenderM2Scene:
 
             # write root keybone and its children
             if root_keybone:
+                add_bone(root_keybone)
                 for bone in root_keybone.children_recursive:
                     add_bone(bone)
 
