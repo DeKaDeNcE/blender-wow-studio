@@ -134,18 +134,29 @@ class M2File:
         skin.vertex_indices.append(vertex_index)
         return vertex_index
 
-    def add_geoset(self, vertices, normals, uv, uv2, tris, b_indices, b_weights,  origin, sort_pos, sort_radius, mesh_part_id):
+    def add_geoset(self, vertices, normals, uv, uv2, tris, b_indices, b_weights, origin, sort_pos, sort_radius, mesh_part_id):
 
         submesh = M2SkinSubmesh()
         texture_unit = M2SkinTextureUnit()
         skin = self.skins[0]
+
+        # get max bone influences per vertex
+        max_influences = 0
+        for b_index_set in b_indices:
+            v_max_influences = 0
+            for b_index in b_index_set:
+                if b_index != 0:
+                    v_max_influences += 1
+
+            if max_influences < v_max_influences:
+                max_influences = v_max_influences
 
         # localize bone indices
         unique_bone_ids = set(chain(*b_indices))
 
         bone_lookup = {}
         for bone_id in unique_bone_ids:
-            bone_lookup[self.root.bone_lookup_table.add(bone_id)] = bone_id
+            bone_lookup[bone_id] = self.root.bone_lookup_table.add(bone_id)
 
         # add vertices
         start_index = len(self.root.vertices)
@@ -179,7 +190,7 @@ class M2File:
 
         submesh.bone_combo_index = bone_min
         submesh.bone_count = bone_max + 1
-        # TODO: bone influences
+        submesh.bone_influences = max_influences
 
         submesh.vertex_start = start_index
         submesh.vertex_count = len(vertices)

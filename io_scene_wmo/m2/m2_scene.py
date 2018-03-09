@@ -578,7 +578,6 @@ class BlenderM2Scene:
         def add_bone(bl_bone):
             key_bone_id = int(bl_bone.WowM2Bone.KeyBoneID)
             flags = construct_bitfield(bl_bone.WowM2Bone.Flags)
-            print(bl_bone.name)
             parent_bone = self.bone_ids[bl_bone.parent.name] if bl_bone.parent else -1
             pivot = bl_bone.head
 
@@ -598,14 +597,21 @@ class BlenderM2Scene:
 
             # find root bone, check if we only have one root bone
             root_bone = None
+            global_bones = []
             for bone in armature.edit_bones:
                 if root_bone is not None and bone.parent is None and bone.children:
-                    print(bone.name)
                     raise Exception('Error: M2 exporter does not support more than one global root bone.')
 
-                if bone.parent is None and bone.children:
-                    root_bone = bone
-                    add_bone(root_bone)
+                if bone.parent is None:
+                    if bone.children:
+                        root_bone = bone
+                        add_bone(root_bone)
+                    else:
+                        global_bones.append(bone)
+
+            # add global bones
+            for bone in global_bones:
+                add_bone(bone)
 
             # find root keybone, write additional bones
             root_keybone = None
