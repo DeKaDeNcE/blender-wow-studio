@@ -27,7 +27,9 @@ class WowM2MaterialPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.material is not None
+        return(context.scene is not None
+               and context.scene.WowScene.Type == 'M2'
+               and context.material is not None)
 
 
 class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
@@ -86,10 +88,11 @@ class M2GeosetPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return (context.object is not None
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'M2'
+                and context.object is not None
                 and context.object.data is not None
-                and isinstance(context.object.data, bpy.types.Mesh)
-                )
+                and isinstance(context.object.data, bpy.types.Mesh))
 
 
 class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
@@ -142,7 +145,9 @@ class WowM2TexturePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.texture is not None
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'M2'
+                and context.texture is not None)
 
 
 class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
@@ -199,8 +204,10 @@ class WowM2LightPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.object is not None \
-            and context.object.type == 'LAMP'
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'M2'
+                and context.object is not None
+                and context.object.type == 'LAMP')
 
 
 def update_lamp_type(self, context):
@@ -293,7 +300,9 @@ class WowM2BonePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.edit_bone is not None
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'M2'
+                and context.edit_bone is not None)
 
 
 class WowM2BonePropertyGroup(bpy.types.PropertyGroup):
@@ -406,7 +415,10 @@ class WowM2AnimationPanel(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         try:
-            return context.object.animation_data.action is not None
+            return (context.scene is not None
+                    and context.scene.WowScene.Type == 'M2'
+                    and context.object is not None
+                    and context.object.animation_data.action is not None)
         except AttributeError:
             return False
 
@@ -536,9 +548,11 @@ class WowM2AttachmentPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.object is not None \
-               and context.object.type == 'EMPTY' \
-               and context.object.empty_draw_type == 'SPHERE'
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'M2'
+                and context.object is not None
+                and context.object.type == 'EMPTY'
+                and context.object.empty_draw_type == 'SPHERE')
 
 
 class WowM2AttachmentPropertyGroup(bpy.types.PropertyGroup):
@@ -580,8 +594,10 @@ class WowM2ParticlePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.object is not None \
-            and context.object.particle_systems.active
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'M2'
+                and context.object is not None
+                and context.object.particle_systems.active)
 
 
 class WowM2ParticlePropertyGroup(bpy.types.PropertyGroup):
@@ -622,9 +638,11 @@ class WowM2EventPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.object is not None \
-            and context.object.type == 'EMPTY' \
-            and context.object.empty_draw_type == 'CUBE'
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'M2'
+                and context.object is not None
+                and context.object.type == 'EMPTY'
+                and context.object.empty_draw_type == 'CUBE')
 
 
 class WowM2EventPropertyGroup(bpy.types.PropertyGroup):

@@ -32,7 +32,7 @@ class WoWRootPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return (context.scene is not None)
+        return context.scene is not None and context.scene.WowScene.Type == 'WMO'
 
 
 class MODS_Set(bpy.types.PropertyGroup):
@@ -126,7 +126,9 @@ class WoWDoodadPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return (context.object is not None
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'WMO'
+                and context.object is not None
                 and context.object.WoWDoodad.Enabled
                 and isinstance(context.object.data, bpy.types.Mesh))
 
@@ -204,7 +206,10 @@ class WowMaterialPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.material is not None
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'WMO'
+                and context.material is not None
+        )
 
 
 class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
@@ -300,7 +305,9 @@ class WowLightPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return (context.object is not None
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'WMO'
+                and context.object is not None
                 and context.object.data is not None
                 and isinstance(context.object.data, bpy.types.Lamp)
                 )
@@ -418,7 +425,9 @@ class WowVertexInfoPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return (context.object is not None
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'WMO'
+                and context.object is not None
                 and context.object.data is not None
                 and isinstance(context.object.data,bpy.types.Mesh)
                 and context.object.WowWMOGroup.Enabled
@@ -484,7 +493,9 @@ class WowWMOGroupPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return (context.object is not None
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'WMO'
+                and context.object is not None
                 and context.object.data is not None
                 and isinstance(context.object.data,bpy.types.Mesh)
                 and not context.object.WowPortalPlane.Enabled
@@ -633,7 +644,9 @@ class WowPortalPlanePanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return (context.object is not None
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'WMO'
+                and context.object is not None
                 and context.object.data is not None
                 and isinstance(context.object.data,bpy.types.Mesh)
                 and not context.object.WowWMOGroup.Enabled
@@ -712,7 +725,9 @@ class WowLiquidPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return (context.object is not None
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'WMO'
+                and context.object is not None
                 and context.object.data is not None
                 and isinstance(context.object.data,bpy.types.Mesh)
                 and context.object.WowLiquid.Enabled
@@ -799,7 +814,9 @@ class WowFogPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return (context.object is not None
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'WMO'
+                and context.object is not None
                 and context.object.data is not None
                 and isinstance(context.object.data,bpy.types.Mesh)
                 and context.object.WowFog.Enabled
@@ -1049,6 +1066,10 @@ class WMOToolsPanelObjectModeDisplay(bpy.types.Panel):
             box2_row2.prop(context.scene, "WoWDoodadVisibility", expand=False)
             box2_row2.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'WoWDoodad'
 
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None and context.scene.WowScene.Type == 'WMO'
+
 
 class WMOToolsPanelObjectModeAddToScene(bpy.types.Panel):
     bl_label = 'Add to scene'
@@ -1083,6 +1104,9 @@ class WMOToolsPanelObjectModeAddToScene(bpy.types.Panel):
         else:
             box1_col.operator("scene.wow_add_scale_reference", text='Scale', icon_value=ui_icons['WOW_STUDIO_SCALE_ADD'])
 
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None and context.scene.WowScene.Type == 'WMO'
 
 class WMOToolsPanelObjectModeActions(bpy.types.Panel):
     bl_label = 'Actions'
@@ -1110,6 +1134,10 @@ class WMOToolsPanelObjectModeActions(bpy.types.Panel):
             box_col.operator("scene.wow_set_portal_dir_alg", text='Set portal dir.', icon_value=ui_icons['WOW_STUDIO_APPLY_DIRECTION'])
             box_col.operator("scene.wow_bake_portal_relations", text='Bake portal rels.', icon_value=ui_icons['WOW_STUDIO_APPLY_RELATIONS'])
 
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None and context.scene.WowScene.Type == 'WMO'
+
 
 class WMOToolsPanelObjectModeDoodads(bpy.types.Panel):
     bl_label = 'Doodads'
@@ -1121,7 +1149,9 @@ class WMOToolsPanelObjectModeDoodads(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return not bpy.context.scene.WoWRoot.MODS_Sets and bpy.context.selected_objects
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'WMO'
+                and not bpy.context.scene.WoWRoot.MODS_Sets and bpy.context.selected_objects)
 
     def draw(self, context):
         layout = self.layout.split()
@@ -1153,6 +1183,10 @@ class ConvertOperators(bpy.types.Menu):
         col.operator("scene.wow_selected_objects_to_portals", text='To WMO portal', icon='MOD_MIRROR')
         col.operator("scene.wow_texface_to_material", text='Texface to material', icon='TEXTURE_DATA')
 
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None and context.scene.WowScene.Type == 'WMO'
+
 
 class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
     bl_label = "WoW"
@@ -1171,6 +1205,10 @@ class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
             col.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2', icon_value=ui_icons['WOW_STUDIO_DOODADS_ADD'])
             col.operator("scene.wow_import_last_wmo_from_wmv", text='WMO', icon_value=ui_icons['WOW_STUDIO_WMO_ADD'])
             col.operator("scene.wow_import_adt_scene", text='ADT', icon_value=ui_icons['WOW_STUDIO_ADT_ADD'])
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None and context.scene.WowScene.Type == 'WMO'
 
 
 def wow_components_add_menu_item(self, context):
@@ -1203,7 +1241,9 @@ class WoWToolsPanelLiquidFlags(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return (context.object is not None
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'WMO'
+                and context.object is not None
                 and context.object.data is not None
                 and isinstance(context.object.data,bpy.types.Mesh)
                 and context.object.WowLiquid.Enabled

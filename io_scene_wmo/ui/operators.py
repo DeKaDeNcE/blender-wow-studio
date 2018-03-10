@@ -81,6 +81,7 @@ class WMOImport(bpy.types.Operator):
 
     def execute(self, context):
         import_wmo_to_blender_scene(self.filepath, self.load_textures, self.import_doodads, self.group_objects)
+        context.scene.WowScene.Type = 'WMO'
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -115,9 +116,12 @@ class WMOExport(bpy.types.Operator, ExportHelper):
         )
 
     def execute(self, context):
-        export_wmo_from_blender_scene(self.filepath, self.autofill_textures, self.export_selected)
+        if context.scene and context.scene.WowScene.Type == 'WMO':
+            export_wmo_from_blender_scene(self.filepath, self.autofill_textures, self.export_selected)
+            return {'FINISHED'}
 
-        return {'FINISHED'}
+        self.report({'ERROR'}, 'Invalid scene type.')
+        return {'CANCELLED'}
 
 
 class M2Import(bpy.types.Operator):
@@ -150,6 +154,7 @@ class M2Import(bpy.types.Operator):
 
     def execute(self, context):
         import_m2(int(self.version), self.filepath, self.load_textures)
+        context.scene.WowScene.Type = 'M2'
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -191,5 +196,8 @@ class M2Export(bpy.types.Operator, ExportHelper):
         )
 
     def execute(self, context):
-        export_m2(int(self.version), self.filepath, self.export_selected, self.autofill_textures)
-        return {'FINISHED'}
+        if context.scene and context.scene.WowScene.Type == 'M2':
+            export_m2(int(self.version), self.filepath, self.export_selected, self.autofill_textures)
+            return {'FINISHED'}
+
+        self.report({'ERROR'}, 'Invalid scene type.')
