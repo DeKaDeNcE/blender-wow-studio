@@ -15,7 +15,7 @@ class DBCHeader:
         self.string_block_size = 0
 
     def read(self, f):
-        self.magic = string.read(f, 4)
+        self.magic = f.read(4).decode('utf-8')
         self.record_count = uint32.read(f)
         self.field_count = uint32.read(f)
         self.record_size = uint32.read(f)
@@ -24,6 +24,7 @@ class DBCHeader:
         return self
 
     def write(self, f):
+        f.write(self.magic.encode('utf-8'))
         string.write(f, self.magic)
         uint32.write(f, self.record_count)
         uint32.write(f, self.field_count)
@@ -45,20 +46,55 @@ class DBCFile:
         self.field_types = tuple([type_ for type_ in definition.values()])
         self.records = []
 
+        self.max_id = 0
+
     def read(self, f):
         self.header.read(f)
         str_block_ofs = 20 + self.header.record_count * self.header.record_size
         for _ in range(self.header.record_count):
-            self.records.append(self.field_names(*[f_type.read(f, str_block_ofs) if f_type is DBCString else f_type.read(f) for f_type in self.field_types]))
+            record = self.field_names(*[f_type.read(f, str_block_ofs) if f_type is DBCString else f_type.read(f) for f_type in self.field_types])
+            self.records.append(record)
+
+            # store max used id
+            if record.ID > self.max_id:
+                self.max_id = record.ID
+
+    def write(self, f):
+        f.seek(20)
+        self.header.record_count = len(self.records)
+        str_block_ofs = 20 + self.header.record_count * self.header.record_size
+
+        for record in self.records:
+            for i, field in enumerate(record):
+                type_ = self.field_types[i]
+                if type_ is DBCString:
+                    field.write(f, field, str_block_ofs)
+                else:
+                    type_.write(f, field)
+
+        f.seek(0, 2)
+        self.header.string_block_size = f.tell() - str_block_ofs
+        f.seek(0)
+        self.header.write(f)
 
     def read_from_gamedata(self, game_data):
         f = BytesIO(game_data.read_file('DBFilesClient\\{}.dbc'.format(self.name)))
         self.read(f)
 
-    def get_field(self, id, name):
+    def get_record(self, uid):
         for record in self.records:
-            if record.ID == id:
-                return getattr(record, name)
+            if record.ID == uid:
+                return record
+
+    def get_field(self, uid, name):
+        record = self.get_record(uid)
+        if record:
+            return getattr(record, name)
+
+    def add_record(self, *args):
+        self.records.append(self.field_names(args))
+        self.header.record_count += 1
+        return len(self.records) - 1
 
 
 class DBFilesClient:

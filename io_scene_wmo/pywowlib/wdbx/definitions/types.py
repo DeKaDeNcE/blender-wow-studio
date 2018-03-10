@@ -1,5 +1,6 @@
 from ...io_utils.types import uint32
 
+
 class DBCString:
     @staticmethod
     def read(f, str_block_ofs):
@@ -18,8 +19,12 @@ class DBCString:
 
         return strng.decode('utf-8')
 
-    '''
     @staticmethod
-    def write(f, strng):
-        f.write((strng + '\0').encode('utf-8'))
-    '''
+    def write(f, string, str_block_ofs):
+        pos = f.tell()
+        f.seek(0, 2)
+        str_pos = f.tell()
+        f.write((string + '\0').encode('utf-8'))
+        f.seek(pos)
+        uint32.write(str_pos - str_block_ofs)
+
