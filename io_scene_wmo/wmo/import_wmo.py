@@ -7,6 +7,7 @@ from .wmo_file import WMOFile
 from ..ui import get_addon_prefs
 from ..utils import load_game_data
 
+
 def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_objects):
     """ Read and import WoW WMO object to Blender scene"""
 
@@ -23,9 +24,7 @@ def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_o
         if load_textures:
             addon_prefs = get_addon_prefs()
             print("\n\n### Extracting textures ###")
-            game_data.extract_textures_as_png(addon_prefs.cache_dir_path
-                                              if addon_prefs.use_cache_dir else os.path.dirname(filepath),
-                                              wmo.motx.get_all_strings())
+            game_data.extract_textures_as_png(addon_prefs.cache_dir_path, wmo.motx.get_all_strings())
 
     # group objects if required
     parent = None
@@ -57,8 +56,7 @@ def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_o
 
     if import_doodads and game_data.files:
         addon_prefs = get_addon_prefs()
-        wmo.load_doodads(addon_prefs.cache_dir_path if addon_prefs.use_cache_dir
-                         else os.path.dirname(filepath), game_data)
+        wmo.load_doodads(addon_prefs.cache_dir_path, game_data)
     else:
         wmo.load_doodads()
 

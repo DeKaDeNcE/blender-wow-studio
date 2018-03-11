@@ -82,11 +82,10 @@ def resolve_texture_path(filepath):
     prefs = bpy.context.user_preferences.addons[__package__].preferences
 
     # TODO: project folder
-    if prefs.use_cache_dir and prefs.cache_dir_path:
-        rel_path = os.path.relpath(filepath, start=prefs.cache_dir_path)
-        test_path = os.path.join(prefs.cache_dir_path, rel_path)
-        if os.path.exists(test_path) and os.path.isfile(test_path):
-            return rel_path.replace('/', '\\')
+    rel_path = os.path.relpath(filepath, start=prefs.cache_dir_path)
+    test_path = os.path.join(prefs.cache_dir_path, rel_path)
+    if os.path.exists(test_path) and os.path.isfile(test_path):
+        return rel_path.replace('/', '\\')
 
     game_data = load_game_data()
 

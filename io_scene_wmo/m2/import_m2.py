@@ -12,7 +12,6 @@ def import_m2(version, file, load_textures):  # TODO: implement multiversioning
 
     # get global variables
     addon_preferences = get_addon_prefs()
-    texture_dir = addon_preferences.cache_dir_path if addon_preferences.use_cache_dir else os.path.dirname(file)
 
     if type(file) is str:
         m2_file = M2File(version, filepath=file)
@@ -25,13 +24,13 @@ def import_m2(version, file, load_textures):  # TODO: implement multiversioning
 
             print("\n\n### Extracting textures ###")
             textures = [m2_texture.filename.value for m2_texture in m2.textures if not m2_texture.type]
-            game_data.extract_textures_as_png(texture_dir, textures)
+            game_data.extract_textures_as_png(addon_preferences.cache_dir_path, textures)
 
         print("\n\n### Importing M2 model ###")
 
         bl_m2 = BlenderM2Scene(m2_file, addon_preferences)
 
-        bl_m2.load_materials(texture_dir)
+        bl_m2.load_materials(addon_preferences.cache_dir_path)
         bl_m2.load_geosets()
         bl_m2.load_collision()
         bl_m2.load_armature()

@@ -234,8 +234,6 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
             return {'CANCELLED'}
 
         addon_preferences = get_addon_prefs()
-        dir = addon_preferences.cache_dir_path if addon_preferences.use_cache_dir else \
-              bpy.path.abspath("//") if bpy.data.is_saved else None
         m2_path = wmv_get_last_m2()
 
         if not m2_path:
@@ -247,7 +245,7 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
 
         if dir:
             try:
-                obj = m2_to_blender_mesh(dir, m2_path, game_data)
+                obj = m2_to_blender_mesh(addon_preferences.cache_dir_path, m2_path, game_data)
             except NotImplementedError:
                 bpy.ops.mesh.primitive_cube_add()
                 obj = bpy.context.scene.objects.active

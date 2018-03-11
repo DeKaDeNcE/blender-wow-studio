@@ -228,7 +228,6 @@ class WMOFile:
         self.material_lookup = {}
 
         addon_prefs = get_addon_prefs()
-        texture_path = addon_prefs.cache_dir_path if addon_prefs.use_cache_dir else os.path.dirname(self.filepath)
 
         images = []
         image_names = []
@@ -297,7 +296,7 @@ class WMOFile:
 
                     # if image is not loaded, do it
                     if not img1_loaded:
-                        tex1_img = bpy.data.images.load(os.path.join(texture_path, tex1_img_filename))
+                        tex1_img = bpy.data.images.load(os.path.join(addon_prefs.cache_dir_path, tex1_img_filename))
                         tex1.image = tex1_img
                         images.append(tex1_img)
                         image_names.append(tex1_img_filename)
@@ -333,7 +332,7 @@ class WMOFile:
 
                     # if image is not loaded, do it
                     if not img2_loaded:
-                        tex2_img = bpy.data.images.load(os.path.join(texture_path, tex2_img_filename))
+                        tex2_img = bpy.data.images.load(os.path.join(addon_prefs.cache_dir_path, tex2_img_filename))
                         tex2.image = tex2_img
                         images.append(tex2_img)
                         image_names.append(tex2_img_filename)

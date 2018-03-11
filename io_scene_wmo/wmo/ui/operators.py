@@ -100,13 +100,6 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
             return {'CANCELLED'}
 
         addon_prefs = get_addon_prefs()
-        save_dir = addon_prefs.cache_dir_path if addon_prefs.use_cache_dir else \
-                   bpy.path.abspath("//") if bpy.data.is_saved else None
-
-        if not save_dir:
-            self.report({'ERROR'}, """Failed to import WMO.
-            Save your blendfile first.""")
-            return {'CANCELLED'}
 
         dir = bpy.path.abspath(self.dir_path)
         if not dir:
@@ -202,7 +195,7 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
                 else:
                     try:
-                        obj = m2.m2_to_blender_mesh(save_dir, doodad_path, game_data)
+                        obj = m2.m2_to_blender_mesh(addon_prefs.cache_dir_path, doodad_path, game_data)
                     except:
                         bpy.ops.mesh.primitive_cube_add()
                         obj = bpy.context.scene.objects.active
@@ -341,8 +334,7 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
             return {'CANCELLED'}
 
         addon_prefs = get_addon_prefs()
-        dir = addon_prefs.cache_dir_path if addon_prefs.use_cache_dir else \
-                   bpy.path.abspath("//") if bpy.data.is_saved else None
+        cache_dir = addon_prefs.cache_dir_path
 
         wmo_path = self.wmv_get_last_wmo(addon_prefs.wmv_path)
 
@@ -351,43 +343,37 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
             Make sure to use compatible WMV version or open a .wmo there.""")
             return {'CANCELLED'}
 
-        if dir:
-            try:
-                game_data.extract_file(dir, wmo_path)
+        try:
+            game_data.extract_file(cache_dir, wmo_path)
 
-                if os.name != 'nt':
-                    root_path = os.path.join(dir, wmo_path.replace('\\', '/'))
-                else:
-                    root_path = os.path.join(dir, wmo_path)
+            if os.name != 'nt':
+                root_path = os.path.join(cache_dir, wmo_path.replace('\\', '/'))
+            else:
+                root_path = os.path.join(cache_dir, wmo_path)
 
-                with open(root_path, 'rb') as f:
-                    f.seek(24)
-                    n_groups = struct.unpack('I', f.read(4))[0]
+            with open(root_path, 'rb') as f:
+                f.seek(24)
+                n_groups = struct.unpack('I', f.read(4))[0]
 
-                group_paths = ["{}_{}.wmo".format(wmo_path[:-4], str(i).zfill(3)) for i in range(n_groups)]
+            group_paths = ["{}_{}.wmo".format(wmo_path[:-4], str(i).zfill(3)) for i in range(n_groups)]
 
-                game_data.extract_files(dir, group_paths)
+            game_data.extract_files(cache_dir, group_paths)
 
-                from .. import import_wmo
-                obj = import_wmo.import_wmo_to_blender_scene(root_path, True, True, True)
+            from .. import import_wmo
+            obj = import_wmo.import_wmo_to_blender_scene(root_path, True, True, True)
 
-                # clean up unnecessary files and directories
-                os.remove(root_path)
-                for group_path in group_paths:
-                    os.remove(os.path.join(dir, *group_path.split('\\')))
+            # clean up unnecessary files and directories
+            os.remove(root_path)
+            for group_path in group_paths:
+                os.remove(os.path.join(cache_dir, *group_path.split('\\')))
 
-            except Exception as e:
-                print(e)
-                self.report({'ERROR'}, "Failed to import model.")
-                return {'CANCELLED'}
+        except Exception as e:
+            print(e)
+            self.report({'ERROR'}, "Failed to import model.")
+            return {'CANCELLED'}
 
             self.report({'INFO'}, "Done importing WMO object to scene.")
             return {'FINISHED'}
-
-        else:
-            self.report({'ERROR'}, """Failed to import WMO.
-            Save your blendfile first.""")
-            return {'CANCELLED'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
@@ -603,17 +589,11 @@ class DOODAD_SET_CLEAR_PRESERVED(bpy.types.Operator):
             game_data = load_game_data()
 
             addon_prefs = get_addon_prefs()
-            dir = addon_prefs.cache_dir_path if addon_prefs.use_cache_dir else \
-                  bpy.path.abspath("//") if bpy.data.is_saved else None
 
-            if dir:
-                try:
-                    LoadDoodadsFromPreserved(dir, game_data)
-                except:
-                    self.report({'ERROR'}, "An error occured while importing doodads.")
-                    return {'CANCELLED'}
-            else:
-                self.report({'ERROR'}, """Failed to import model. Save your blendfile first.""")
+            try:
+                LoadDoodadsFromPreserved(addon_prefs.cache_dir_path, game_data)
+            except:
+                self.report({'ERROR'}, "An error occured while importing doodads.")
                 return {'CANCELLED'}
 
             bpy.context.scene.WoWRoot.MODS_Sets.clear()

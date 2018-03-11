@@ -57,12 +57,6 @@ class WMOPreferences(bpy.types.AddonPreferences):
         subtype='FILE_PATH'
     )
 
-    use_cache_dir = BoolProperty(
-        name="Use cache directory",
-        description="Use custom cache directory for storing textures and other exported content",
-        default=True
-    )
-
     cache_dir_path = StringProperty(
         name="Cache Directory Path",
         description="Any folder that can be used to store exporter content",
@@ -74,12 +68,7 @@ class WMOPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "wmv_path")
         self.layout.prop(self, "blp_path")
         self.layout.prop(self, "fileinfo_path")
-
-        self.layout.prop(self, "use_cache_dir")
-        row = self.layout.row()
-        row.prop(self, "cache_dir_path")
-        if not context.user_preferences.addons[__package__].preferences.use_cache_dir:
-            row.enabled = False
+        self.layout.prop(self, "cache_dir_path")
 
 
 ui_icons = {}
