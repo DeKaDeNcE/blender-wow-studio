@@ -63,12 +63,19 @@ class WMOPreferences(bpy.types.AddonPreferences):
         subtype="DIR_PATH"
     )
 
+    project_dir_path = StringProperty(
+        name="Project Directory Path",
+        description="A directory blender saves WoW files to and treats as top-priority patch.",
+        subtype="DIR_PATH"
+    )
+
     def draw(self, context):
         self.layout.prop(self, "wow_path")
         self.layout.prop(self, "wmv_path")
         self.layout.prop(self, "blp_path")
         self.layout.prop(self, "fileinfo_path")
         self.layout.prop(self, "cache_dir_path")
+        self.layout.prop(self, "project_dir_path")
 
 
 ui_icons = {}

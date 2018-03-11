@@ -6,9 +6,9 @@ from .storm import MPQFile
 
 
 class WoWFileData:
-    def __init__(self, wow_path, blp_path):
+    def __init__(self, wow_path, project_path, blp_path):
         self.wow_path = wow_path
-        self.files = self.open_game_resources(self.wow_path)
+        self.files = self.open_game_resources(self.wow_path, project_path)
         self.converter = BLPConverter(blp_path) if blp_path else None
 
     def __del__(self):
@@ -111,7 +111,7 @@ class WoWFileData:
             and os.path.splitext(f)[1].lower() == '.mpq' \
             or not os.path.isfile(cur_path) \
             and re.match(r'patch-\w.mpq', f.lower()):
-                dir_files.append(cur_path)
+                dir_files.append(cur_path.lower().strip())
 
         map(lambda x: x.lower(), dir_files)
 
@@ -140,7 +140,7 @@ class WoWFileData:
             and os.path.splitext(f)[1].lower() == '.mpq' \
             or not os.path.isfile(cur_path) \
             and re.match(r'patch-{}-\w.mpq'.format(token), f.lower()):
-                locale_dir_files.append(cur_path)
+                locale_dir_files.append(cur_path.lower().strip())
 
         map(lambda x: x.lower(), locale_dir_files)
 
@@ -155,7 +155,7 @@ class WoWFileData:
         return False
 
     @staticmethod
-    def open_game_resources(wow_path):
+    def open_game_resources(wow_path, project_path=None):
         """Open game resources and store links to them in memory"""
 
         print("\nProcessing available game resources of client: " + wow_path)
@@ -163,6 +163,12 @@ class WoWFileData:
 
         if WoWFileData.is_wow_path_valid(wow_path):
             data_packages = WoWFileData.list_game_data_paths(os.path.join(wow_path, "Data"))
+
+            # project path takes top priority if it is not loaded already
+            p_path = project_path.lower().strip(os.sep)
+            if p_path not in data_packages:
+                data_packages.append(p_path)
+
             resource_map = []
 
             for package in data_packages:
@@ -171,7 +177,7 @@ class WoWFileData:
                     print("\nLoaded MPQ: " + os.path.basename(package))
                 else:
                     resource_map.append((package, False))
-                    print("\nLoaded folder patch: " + os.path.basename(package))
+                    print("\nLoaded folder patch: {}".format(os.path.basename(package)))
 
             print("\nDone initializing data packages.")
             print("Total loading time: ", time.strftime("%M minutes %S seconds", time.gmtime(time.time() - start_time)))
