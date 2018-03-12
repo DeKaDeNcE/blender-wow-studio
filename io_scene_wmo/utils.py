@@ -2,8 +2,7 @@ import bpy
 import os
 
 from mathutils import Vector
-from .pywowlib.archives.mpq.wow import WoWFileData
-from .pywowlib.wdbx.wdbc import DBFilesClient, DBCFile
+from .pywowlib.archives.wow_filesystem import WoWFileData
 
 
 def parse_bitfield(bitfield, last_flag=0x1000):
@@ -48,23 +47,6 @@ def load_game_data():
 
         if not bpy.wow_game_data.files:
             raise ChildProcessError("WoW game data is not loaded. Check settings.")
-
-        bpy.db_files_client = DBFilesClient()
-
-        # list of all DB tables that we need to load
-        anim_data_dbc = DBCFile('AnimationData')
-        anim_data_dbc.read_from_gamedata(bpy.wow_game_data)
-        char_sections_dbc = DBCFile('CharSections')
-        char_sections_dbc.read_from_gamedata(bpy.wow_game_data)
-        creature_display_info_dbc = DBCFile('CreatureDisplayInfo')
-        creature_display_info_dbc.read_from_gamedata(bpy.wow_game_data)
-        item_display_info_dbc = DBCFile('ItemDisplayInfo')
-        item_display_info_dbc.read_from_gamedata(bpy.wow_game_data)
-
-        bpy.db_files_client.add(anim_data_dbc)
-        bpy.db_files_client.add(char_sections_dbc)
-        bpy.db_files_client.add(creature_display_info_dbc)
-        bpy.db_files_client.add(item_display_info_dbc)
 
     return bpy.wow_game_data
 

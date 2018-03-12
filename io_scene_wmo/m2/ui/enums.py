@@ -229,8 +229,8 @@ def get_keybone_ids(self, context):
 
 
 def get_anim_ids(self, context):
-    load_game_data()
-    return [(str(record.ID), record.Name, '') for record in bpy.db_files_client.AnimationData.records]
+    game_data = load_game_data()
+    return [(str(record.ID), record.Name, '') for record in game_data.db_files_client.AnimationData.records]
 
 
 def get_attachment_types(self, context):

@@ -2,7 +2,7 @@ import bpy
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy_extras.io_utils import ExportHelper
 
-from ..pywowlib.archives.mpq.wow import WoWFileData
+from ..pywowlib.archives.wow_filesystem import WoWFileData
 from ..wmo.import_wmo import import_wmo_to_blender_scene
 from ..wmo.export_wmo import export_wmo_from_blender_scene
 from ..m2.import_m2 import import_m2

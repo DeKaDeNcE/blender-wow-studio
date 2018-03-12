@@ -2,13 +2,18 @@ import re
 import os
 import time
 import subprocess
-from .storm import MPQFile
+from .mpq.storm import MPQFile
+from ..wdbx.wdbc import DBCFile
 
 
 class WoWFileData:
     def __init__(self, wow_path, project_path, blp_path):
         self.wow_path = wow_path
         self.files = self.open_game_resources(self.wow_path, project_path)
+
+        self.db_files_client = DBFilesClient(self)
+        self.db_files_client.init_tables()
+
         self.converter = BLPConverter(blp_path) if blp_path else None
 
     def __del__(self):
@@ -223,3 +228,43 @@ class BLPConverter:
             final_command.extend(cur_args)
             if subprocess.call(final_command):
                 print("\nBLP convertion failed. Some textures might not be converted correctly.")
+
+
+class DBFilesClient:
+    def __init__(self, game_data):
+        self.game_data = game_data
+        self.tables = {}
+        self.tables_to_save = []
+
+    def __getattr__(self, name):
+        if name in self.tables:
+            return self.tables[name]
+
+        wdb = DBCFile(name)
+        wdb.read_from_gamedata(self.game_data)
+        self.tables[name] = wdb
+
+        return wdb
+
+    def add(self, name):
+        wdb = DBCFile(name)
+        wdb.read_from_gamedata(self.game_data)
+        self.tables[name] = wdb
+
+        return wdb
+
+    def save_table(self, wdb):
+        self.tables_to_save.append(wdb)
+
+    def save_changes(self):
+        pass
+
+    def __contains__(self, item):
+        check = self.tables.get(item)
+        return True if check else False
+
+    def init_tables(self):
+        self.add('AnimationData')
+
+
+

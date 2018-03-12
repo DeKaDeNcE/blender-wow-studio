@@ -2,6 +2,23 @@ import bpy
 from .. import ui_icons
 
 
+class WowScenePanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_label = "WoW Scene"
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(context.scene.WowScene, 'Type')
+        col.prop(context.scene.WowScene, 'GamePath')
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None
+
+
 class WowScenePropertyGroup(bpy.types.PropertyGroup):
     Type = bpy.props.EnumProperty(
         name='Scene type',
@@ -9,7 +26,12 @@ class WowScenePropertyGroup(bpy.types.PropertyGroup):
         items=(
             ('M2', 'M2', 'M2 model'),
             ('WMO', 'WMO', 'World Map Object (WMO)')    # TODO: verify module availability
+            )
         )
+
+    GamePath = bpy.props.StringProperty(
+        name='Game path',
+        description='A path to the model in WoW filesystem.'
     )
 
 

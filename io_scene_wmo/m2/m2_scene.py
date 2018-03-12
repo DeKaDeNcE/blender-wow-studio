@@ -209,8 +209,7 @@ class BlenderM2Scene:
         rig.animation_data_create()
         bpy.context.scene.objects.active = rig
 
-        load_game_data()
-        anim_data_dbc = bpy.db_files_client.AnimationData
+        anim_data_dbc = load_game_data().db_files_client.AnimationData
 
         # create global sequence actions
         for i, sequence in enumerate(self.m2.root.global_sequences):

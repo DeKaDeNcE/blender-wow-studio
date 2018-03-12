@@ -2,7 +2,7 @@ from ..io_utils.types import *
 from collections import namedtuple
 from io import BytesIO
 from .definitions import wotlk
-from .definitions.types import DBCString
+from .definitions.types import DBCString, DBCLangString
 
 
 class DBCHeader:
@@ -52,10 +52,12 @@ class DBCFile:
         self.header.read(f)
         str_block_ofs = 20 + self.header.record_count * self.header.record_size
         for _ in range(self.header.record_count):
-            record = self.field_names(*[f_type.read(f, str_block_ofs) if f_type is DBCString else f_type.read(f) for f_type in self.field_types])
+            record = self.field_names(*[f_type.read(f, str_block_ofs)
+                                        if f_type in (DBCString, DBCLangString)
+                                        else f_type.read(f) for f_type in self.field_types])
             self.records.append(record)
 
-            # store max used id
+            # store max used id,
             if record.ID > self.max_id:
                 self.max_id = record.ID
 
@@ -67,7 +69,7 @@ class DBCFile:
         for record in self.records:
             for i, field in enumerate(record):
                 type_ = self.field_types[i]
-                if type_ is DBCString:
+                if type_ in (DBCString, DBCLangString):
                     field.write(f, field, str_block_ofs)
                 else:
                     type_.write(f, field)
@@ -96,14 +98,8 @@ class DBCFile:
         self.header.record_count += 1
         return len(self.records) - 1
 
-
-class DBFilesClient:
-    def __init__(self):
-        self.tables = {}
-
-    def __getattr__(self, item):
-        return self.tables[item]
-
-    def add(self, wdb):
-        self.tables[wdb.name] = wdb
+    def __getitem__(self, uid):
+        for record in self.records:
+            if record.ID == uid:
+                return record
 
