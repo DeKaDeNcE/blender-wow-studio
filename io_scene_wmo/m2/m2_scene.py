@@ -1,7 +1,7 @@
 import bpy
 import os
 from mathutils import Vector
-from math import sqrt, pow
+from math import sqrt
 
 from ..utils import resolve_texture_path, get_origin_position, get_objs_boundbox_world, get_obj_boundbox_center, get_obj_radius
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens

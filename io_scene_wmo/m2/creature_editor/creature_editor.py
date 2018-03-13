@@ -47,7 +47,7 @@ def load_display_info_properties(self, context):
     context.scene.WowM2Creature.DisplayTexture1 = record.Texture1
     context.scene.WowM2Creature.DisplayTexture2 = record.Texture2
     context.scene.WowM2Creature.DisplayTexture3 = record.Texture3
-    context.scene.WowM2Creature.PortraitTextureName = record.portraitTextureName
+    context.scene.WowM2Creature.PortraitTextureName = record.PortraitTextureName
 
 
 class WoWM2CreatureEditorPanel(bpy.types.Panel):
@@ -81,16 +81,33 @@ class WoWM2CreatureEditorPanel(bpy.types.Panel):
                 col1.prop(context.scene.WowM2Creature, 'DisplaySound')
                 col1.prop(context.scene.WowM2Creature, 'DisplayScale')
 
-                row = col1.row()
+                col1.separator()
+                col1.operator('scene.wow_creature_load_textures',
+                              text='Load all textures',
+                              icon='APPEND_BLEND').LoadAll = True
+
+                row = col1.row(align=True)
                 row.prop(context.scene.WowM2Creature, 'DisplayTexture1')
-                row.operator('scene.wow_creature_load_textures', text='', icon='APPEND_BLEND').Path = context.scene.WowM2Creature.DisplayTexture1
-                row = col1.row()
+                op = row.operator('scene.wow_creature_load_textures', text='', icon='APPEND_BLEND')
+                op.LoadAll = False
+                op.Path = context.scene.WowM2Creature.DisplayTexture1
+                op.TexNum = 11
+
+                row = col1.row(align=True)
                 row.prop(context.scene.WowM2Creature, 'DisplayTexture2')
-                row = col1.row()
+                op = row.operator('scene.wow_creature_load_textures', text='', icon='APPEND_BLEND')
+                op.LoadAll = False
+                op.Path = context.scene.WowM2Creature.DisplayTexture2
+                op.TexNum = 12
+
+                row = col1.row(align=True)
                 row.prop(context.scene.WowM2Creature, 'DisplayTexture3')
+                op = row.operator('scene.wow_creature_load_textures', text='', icon='APPEND_BLEND')
+                op.LoadAll = False
+                op.Path = context.scene.WowM2Creature.DisplayTexture3
+                op.TexNum = 13
 
                 col1.prop(context.scene.WowM2Creature, 'PortraitTextureName')
-
 
         else:
             col.label('No display info found.', icon='PMARKER_ACT')
@@ -161,6 +178,8 @@ class CreatureEditorLoadTextures(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     Path = bpy.props.StringProperty()
+    TexNum = bpy.props.IntProperty()
+    LoadAll = bpy.props.BoolProperty()
 
     @staticmethod
     def load_skin_texture(context, path, tex_type):
@@ -176,9 +195,14 @@ class CreatureEditorLoadTextures(bpy.types.Operator):
 
         if img:
             for obj in filter(lambda o: o.type == 'MESH' and not o.WowM2Geoset.CollisionMesh, context.scene.objects):
-                for material in obj.data.materials:
-                    if material.active_texture.WowM2Texture.Type == str(tex_type):
-                        material.active_texture = img
+                for i, material in enumerate(obj.data.materials):
+                    if material.active_texture.WowM2Texture.TextureType == str(tex_type):
+                        material.active_texture.image = img
+
+                        uv = obj.data.uv_textures.active
+                        for poly in obj.data.polygons:
+                            if poly.material_index == i:
+                                uv.data[poly.index].image = img
 
     def execute(self, context):
         if not context.scene.WowScene.GamePath:
@@ -187,20 +211,27 @@ class CreatureEditorLoadTextures(bpy.types.Operator):
 
         base_path = os.path.dirname(context.scene.WowScene.GamePath)
 
-        if context.scene.WowM2Creature.DisplayTexture1:
-            self.load_skin_texture(context,
-                                   os.path.join(base_path, context.scene.WowM2Creature.DisplayTexture1) + '.blp',
-                                   11)
+        if self.LoadAll:
+            if context.scene.WowM2Creature.DisplayTexture1:
+                self.load_skin_texture(context,
+                                       os.path.join(base_path, context.scene.WowM2Creature.DisplayTexture1) + '.png',
+                                       11)
 
-        if context.scene.WowM2Creature.DisplayTexture2:
-            self.load_skin_texture(context,
-                                   os.path.join(base_path, context.scene.WowM2Creature.DisplayTexture2) + '.blp',
-                                   12)
+            if context.scene.WowM2Creature.DisplayTexture2:
+                self.load_skin_texture(context,
+                                       os.path.join(base_path, context.scene.WowM2Creature.DisplayTexture2) + '.png',
+                                       12)
 
-        if context.scene.WowM2Creature.DisplayTexture3:
-            self.load_skin_texture(context,
-                                   os.path.join(base_path, context.scene.WowM2Creature.DisplayTexture3) + '.blp',
-                                   13)
+            if context.scene.WowM2Creature.DisplayTexture3:
+                self.load_skin_texture(context,
+                                       os.path.join(base_path, context.scene.WowM2Creature.DisplayTexture3) + '.png',
+                                       13)
+
+        else:
+            if self.Path:
+                self.load_skin_texture(context, os.path.join(base_path, self.Path) + '.png', self.TexNum)
+            else:
+                self.report({'ERROR'}, "No texture to load.")
 
         self.report({'INFO'}, "Successfully loaded creature skins.")
         return {'FINISHED'}
