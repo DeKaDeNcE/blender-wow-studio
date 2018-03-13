@@ -229,7 +229,7 @@ class CreatureEditorLoadTextures(bpy.types.Operator):
 
         else:
             if self.Path:
-                self.load_skin_texture(context, os.path.join(base_path, self.Path) + '.png', self.TexNum)
+                self.load_skin_texture(context, os.path.join(base_path, self.Path), self.TexNum)
             else:
                 self.report({'ERROR'}, "No texture to load.")
 
