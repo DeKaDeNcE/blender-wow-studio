@@ -186,10 +186,10 @@ class CreatureEditorLoadTextures(bpy.types.Operator):
         from ...ui import get_addon_prefs
         cache_dir = get_addon_prefs().cache_dir_path
         game_data = load_game_data()
-        game_data.extract_textures_as_png(cache_dir, [path])
+        game_data.extract_textures_as_png(cache_dir, [path + '.blp'])
         img = None
         try:
-            img = bpy.data.images.load(os.path.join(cache_dir, path))
+            img = bpy.data.images.load(os.path.join(cache_dir, path + '.png'))
         except RuntimeError:
             pass
 
@@ -214,17 +214,17 @@ class CreatureEditorLoadTextures(bpy.types.Operator):
         if self.LoadAll:
             if context.scene.WowM2Creature.DisplayTexture1:
                 self.load_skin_texture(context,
-                                       os.path.join(base_path, context.scene.WowM2Creature.DisplayTexture1) + '.png',
+                                       os.path.join(base_path, context.scene.WowM2Creature.DisplayTexture1),
                                        11)
 
             if context.scene.WowM2Creature.DisplayTexture2:
                 self.load_skin_texture(context,
-                                       os.path.join(base_path, context.scene.WowM2Creature.DisplayTexture2) + '.png',
+                                       os.path.join(base_path, context.scene.WowM2Creature.DisplayTexture2),
                                        12)
 
             if context.scene.WowM2Creature.DisplayTexture3:
                 self.load_skin_texture(context,
-                                       os.path.join(base_path, context.scene.WowM2Creature.DisplayTexture3) + '.png',
+                                       os.path.join(base_path, context.scene.WowM2Creature.DisplayTexture3),
                                        13)
 
         else:
