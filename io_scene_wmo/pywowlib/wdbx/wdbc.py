@@ -51,15 +51,37 @@ class DBCFile:
     def read(self, f):
         self.header.read(f)
         str_block_ofs = 20 + self.header.record_count * self.header.record_size
+
         for _ in range(self.header.record_count):
-            record = self.field_names(*[f_type.read(f, str_block_ofs)
-                                        if f_type in (DBCString, DBCLangString)
-                                        else f_type.read(f) for f_type in self.field_types])
+            args = []
+            for f_type in self.field_types:
+                if f_type in (DBCString, DBCLangString):
+                    args.append(f_type.read(f, str_block_ofs))
+                else:
+                    args.append(f_type.read(f))
+
+            record = self.field_names(*args)
             self.records.append(record)
 
             # store max used id,
             if record.ID > self.max_id:
                 self.max_id = record.ID
+
+        '''
+        for _ in range(self.header.record_count):
+            record = self.field_names(*[f_type.read(f, str_block_ofs)
+                                        if f_type in (DBCString, DBCLangString)
+                                        else f_type.read(f) for f_type in self.field_types])
+
+            self.records.append(record)
+        
+            # store max used id,
+            if record.ID > self.max_id:
+                self.max_id = record.ID
+                
+        '''
+
+        return
 
     def write(self, f):
         f.seek(20)

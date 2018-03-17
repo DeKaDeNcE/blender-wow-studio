@@ -33,6 +33,13 @@ def get_creature_display_infos(self, context):
     return cr_display_infos
 
 
+def get_char_races(self, context):
+    game_data = load_game_data()
+    chr_races_db = game_data.db_files_client.ChrRaces
+
+    return [(str(record.ID), record.clientFileString, '') for record in chr_races_db.records]
+
+
 ###############################
 ## Update callbacks
 ###############################
@@ -47,7 +54,41 @@ def load_display_info_properties(self, context):
     context.scene.WowM2Creature.DisplayTexture1 = record.Texture1
     context.scene.WowM2Creature.DisplayTexture2 = record.Texture2
     context.scene.WowM2Creature.DisplayTexture3 = record.Texture3
-    context.scene.WowM2Creature.PortraitTextureName = record.PortraitTextureName
+    context.scene.WowM2Creature.DisplayPortraitTextureName = record.PortraitTextureName
+    context.scene.WowM2Creature.ExtraDisplayInformation = record.ExtraDisplayInformation
+
+
+def load_display_extra_properties(self, context):
+    game_data = load_game_data()
+    creature_display_info_extra_db = game_data.db_files_client.CreatureDisplayInfoExtra
+    record = creature_display_info_extra_db[int(context.scene.WowM2Creature.ExtraDisplayInformation)]
+
+    if record:
+        context.scene.WowM2Creature.DisplayExtraRace = str(record.Race)
+        '''
+        context.scene.WowM2Creature.DisplayExtraGender = record.Gender
+        context.scene.WowM2Creature.DisplayExtraSkinColor = record.SkinColor
+        context.scene.WowM2Creature.DisplayExtraFaceType = record.FaceType
+        context.scene.WowM2Creature.DisplayExtraHairType = record.HairType
+        context.scene.WowM2Creature.DisplayExtraHairStyle = record.HairStyle
+        context.scene.WowM2Creature.DisplayExtraBeardStyle = record.BeardStyle
+        context.scene.WowM2Creature.DisplayExtraHelm = record.Helm
+        context.scene.WowM2Creature.DisplayExtraShoulder = record.Shoulder
+        context.scene.WowM2Creature.DisplayExtraShirt = record.Shirt
+        context.scene.WowM2Creature.DisplayExtraCuirass = record.Cuirass
+        context.scene.WowM2Creature.DisplayExtraBelt = record.Belt
+        context.scene.WowM2Creature.DisplayExtraLegs = record.Legs
+        context.scene.WowM2Creature.DisplayExtraBoots = record.Boots
+        context.scene.WowM2Creature.DisplayExtraWrist = record.Wrist
+        context.scene.WowM2Creature.DisplayExtraGloves = record.Gloves
+        context.scene.WowM2Creature.DisplayExtraTabard = record.Tabard
+        context.scene.WowM2Creature.DisplayExtraCape = record.Cape
+        context.scene.WowM2Creature.DisplayExtraCanEquip = record.CanEquip
+        context.scene.WowM2Creature.DisplayExtraTexture = record.Texture
+        '''
+
+    elif int(context.scene.WowM2Creature.ExtraDisplayInformation):
+        context.scene.WowM2Creature.ExtraDisplayInformation = 0
 
 
 class WoWM2CreatureEditorPanel(bpy.types.Panel):
@@ -77,37 +118,64 @@ class WoWM2CreatureEditorPanel(bpy.types.Panel):
             if context.scene.WowM2Creature.CreatureDisplayInfo != 'None':
                 col1.label('Settings:', icon='SETTINGS')
                 box = col1.box()
-                col1 = box.column()
-                col1.prop(context.scene.WowM2Creature, 'DisplaySound')
-                col1.prop(context.scene.WowM2Creature, 'DisplayScale')
+                box.prop(context.scene.WowM2Creature, 'DisplaySound')
+                box.prop(context.scene.WowM2Creature, 'DisplayScale')
 
-                col1.separator()
-                col1.operator('scene.wow_creature_load_textures',
+                box.separator()
+                box.operator('scene.wow_creature_load_textures',
                               text='Load all textures',
                               icon='APPEND_BLEND').LoadAll = True
 
-                row = col1.row(align=True)
+                row = box.row(align=True)
                 row.prop(context.scene.WowM2Creature, 'DisplayTexture1')
                 op = row.operator('scene.wow_creature_load_textures', text='', icon='APPEND_BLEND')
                 op.LoadAll = False
                 op.Path = context.scene.WowM2Creature.DisplayTexture1
                 op.TexNum = 11
 
-                row = col1.row(align=True)
+                row = box.row(align=True)
                 row.prop(context.scene.WowM2Creature, 'DisplayTexture2')
                 op = row.operator('scene.wow_creature_load_textures', text='', icon='APPEND_BLEND')
                 op.LoadAll = False
                 op.Path = context.scene.WowM2Creature.DisplayTexture2
                 op.TexNum = 12
 
-                row = col1.row(align=True)
+                row = box.row(align=True)
                 row.prop(context.scene.WowM2Creature, 'DisplayTexture3')
                 op = row.operator('scene.wow_creature_load_textures', text='', icon='APPEND_BLEND')
                 op.LoadAll = False
                 op.Path = context.scene.WowM2Creature.DisplayTexture3
                 op.TexNum = 13
 
-                col1.prop(context.scene.WowM2Creature, 'PortraitTextureName')
+                box.prop(context.scene.WowM2Creature, 'DisplayPortraitTextureName')
+                box.prop(context.scene.WowM2Creature, 'ExtraDisplayInformation')
+
+                if context.scene.WowM2Creature.ExtraDisplayInformation != '0':
+                    box.label('Settings:', icon='SETTINGS')
+                    box1 = box.box()
+
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraRace')
+                    '''
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraGender')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraSkinColor')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraFaceType')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraHairType')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraHairStyle')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraBeardStyle')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraHelm')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraShoulder')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraShirt')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCuirass')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraBelt')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraLegs')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraBoots')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraWrist')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraGloves')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraTabard')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCape')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCanEquip')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraTexture')
+                    '''
 
         else:
             col.label('No display info found.', icon='PMARKER_ACT')
@@ -118,6 +186,8 @@ class WoWM2CreatureEditorPanel(bpy.types.Panel):
 
 
 class WowM2CreaturePropertyGroup(bpy.types.PropertyGroup):
+
+    # DBs
 
     CreatureModelData = bpy.props.EnumProperty(
         name='Model data',
@@ -131,6 +201,16 @@ class WowM2CreaturePropertyGroup(bpy.types.PropertyGroup):
         items=get_creature_display_infos,
         update=load_display_info_properties
     )
+
+    ExtraDisplayInformation = bpy.props.IntProperty(
+        name='Display extra',
+        description='Applies only to NPCs with character model (hair/facial feature/... and equipment settings). Not used for creatures.',
+        default=0,
+        min=0,
+        update=load_display_extra_properties
+    )
+
+    # Creature display info
 
     DisplaySound = bpy.props.IntProperty(
         name='Sound',
@@ -161,10 +241,41 @@ class WowM2CreaturePropertyGroup(bpy.types.PropertyGroup):
         description='Third creature skin texture. Texture must be in the same folder as the model.',
     )
 
-    PortraitTextureName = bpy.props.StringProperty(
+    DisplayPortraitTextureName = bpy.props.StringProperty(
         name='Portrait Texture',
         description='Holding an icon like INV_Misc_Food_59. Only on a few.',
     )
+
+    # Creature display info extra
+
+    DisplayExtraRace = bpy.props.EnumProperty(
+        name='Race',
+        description='The race this NPC belongs to',
+        items=get_char_races
+    )
+
+    '''
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraRace')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraGender')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraSkinColor')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraFaceType')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraHairType')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraHairStyle')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraBeardStyle')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraHelm')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraShoulder')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraShirt')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCuirass')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraBelt')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraLegs')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraBoots')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraWrist')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraGloves')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraTabard')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCape')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCanEquip')
+    box1.prop(context.scene.WowM2Creature, 'DisplayExtraTexture')
+    '''
 
 
 ###############################

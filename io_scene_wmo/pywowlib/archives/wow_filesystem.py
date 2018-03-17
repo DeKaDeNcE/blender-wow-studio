@@ -21,7 +21,7 @@ class WoWFileData:
 
     def has_file(self, filepath):
         """ Check if the file is available in WoW filesystem """
-        for storage, type in self.files:
+        for storage, type in reversed(self.files):
             if type:
                 file = filepath in storage
             else:
@@ -148,6 +148,7 @@ class WoWFileData:
                 locale_dir_files.append(cur_path.lower().strip())
 
         map(lambda x: x.lower(), locale_dir_files)
+        locale_dir_files.sort(key=lambda s: os.path.splitext(s)[0])
 
         return dir_files + locale_dir_files
 
