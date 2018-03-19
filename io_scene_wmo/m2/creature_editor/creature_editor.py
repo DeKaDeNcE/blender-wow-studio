@@ -65,8 +65,7 @@ def load_display_extra_properties(self, context):
 
     if record:
         context.scene.WowM2Creature.DisplayExtraRace = str(record.Race)
-        '''
-        context.scene.WowM2Creature.DisplayExtraGender = record.Gender
+        context.scene.WowM2Creature.DisplayExtraGender = str(record.Gender)
         context.scene.WowM2Creature.DisplayExtraSkinColor = record.SkinColor
         context.scene.WowM2Creature.DisplayExtraFaceType = record.FaceType
         context.scene.WowM2Creature.DisplayExtraHairType = record.HairType
@@ -85,7 +84,6 @@ def load_display_extra_properties(self, context):
         context.scene.WowM2Creature.DisplayExtraCape = record.Cape
         context.scene.WowM2Creature.DisplayExtraCanEquip = record.CanEquip
         context.scene.WowM2Creature.DisplayExtraTexture = record.Texture
-        '''
 
     elif int(context.scene.WowM2Creature.ExtraDisplayInformation):
         context.scene.WowM2Creature.ExtraDisplayInformation = 0
@@ -150,32 +148,43 @@ class WoWM2CreatureEditorPanel(bpy.types.Panel):
                 box.prop(context.scene.WowM2Creature, 'DisplayPortraitTextureName')
                 box.prop(context.scene.WowM2Creature, 'ExtraDisplayInformation')
 
-                if context.scene.WowM2Creature.ExtraDisplayInformation != '0':
+                if context.scene.WowM2Creature.ExtraDisplayInformation != 0:
                     box.label('Settings:', icon='SETTINGS')
                     box1 = box.box()
 
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCanEquip')
+                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraTexture')
                     box1.prop(context.scene.WowM2Creature, 'DisplayExtraRace')
-                    '''
                     box1.prop(context.scene.WowM2Creature, 'DisplayExtraGender')
                     box1.prop(context.scene.WowM2Creature, 'DisplayExtraSkinColor')
                     box1.prop(context.scene.WowM2Creature, 'DisplayExtraFaceType')
                     box1.prop(context.scene.WowM2Creature, 'DisplayExtraHairType')
                     box1.prop(context.scene.WowM2Creature, 'DisplayExtraHairStyle')
                     box1.prop(context.scene.WowM2Creature, 'DisplayExtraBeardStyle')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraHelm')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraShoulder')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraShirt')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCuirass')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraBelt')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraLegs')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraBoots')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraWrist')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraGloves')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraTabard')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCape')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCanEquip')
-                    box1.prop(context.scene.WowM2Creature, 'DisplayExtraTexture')
-                    '''
+
+                    box1.label('Equipment:')
+                    row = box1.row()
+                    row.prop(context.scene.WowM2Creature, 'DisplayExtraHelm')
+                    row = box1.row()
+                    row.prop(context.scene.WowM2Creature, 'DisplayExtraShoulder')
+                    row = box1.row()
+                    row.prop(context.scene.WowM2Creature, 'DisplayExtraShirt')
+                    row = box1.row()
+                    row.prop(context.scene.WowM2Creature, 'DisplayExtraCuirass')
+                    row = box1.row()
+                    row.prop(context.scene.WowM2Creature, 'DisplayExtraBelt')
+                    row = box1.row()
+                    row.prop(context.scene.WowM2Creature, 'DisplayExtraLegs')
+                    row = box1.row()
+                    row.prop(context.scene.WowM2Creature, 'DisplayExtraBoots')
+                    row = box1.row()
+                    row.prop(context.scene.WowM2Creature, 'DisplayExtraWrist')
+                    row = box1.row()
+                    row.prop(context.scene.WowM2Creature, 'DisplayExtraGloves')
+                    row = box1.row()
+                    row.prop(context.scene.WowM2Creature, 'DisplayExtraTabard')
+                    row = box1.row()
+                    row.prop(context.scene.WowM2Creature, 'DisplayExtraCape')
 
         else:
             col.label('No display info found.', icon='PMARKER_ACT')
@@ -254,28 +263,118 @@ class WowM2CreaturePropertyGroup(bpy.types.PropertyGroup):
         items=get_char_races
     )
 
-    '''
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraRace')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraGender')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraSkinColor')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraFaceType')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraHairType')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraHairStyle')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraBeardStyle')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraHelm')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraShoulder')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraShirt')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCuirass')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraBelt')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraLegs')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraBoots')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraWrist')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraGloves')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraTabard')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCape')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraCanEquip')
-    box1.prop(context.scene.WowM2Creature, 'DisplayExtraTexture')
-    '''
+    DisplayExtraGender = bpy.props.EnumProperty(
+        name='Gender',
+        description='0 for Male, 1 for Female',
+        items=[('0', 'Male', ''),
+               ('1', 'Female', '')]
+    )
+
+    DisplayExtraSkinColor = bpy.props.IntProperty(
+        name='Skin Color',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraFaceType = bpy.props.IntProperty(
+        name='Face type',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraHairType = bpy.props.IntProperty(
+        name='Hair type',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraHairStyle = bpy.props.IntProperty(
+        name='Hairstyle',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraBeardStyle = bpy.props.IntProperty(
+        name='Beard',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraHelm = bpy.props.IntProperty(
+        name='Helm',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraShoulder = bpy.props.IntProperty(
+        name='Shoulder',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraShirt = bpy.props.IntProperty(
+        name='Shirt',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraCuirass = bpy.props.IntProperty(
+        name='Cuirass',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraBelt = bpy.props.IntProperty(
+        name='Belt',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraLegs = bpy.props.IntProperty(
+        name='Legs',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraBoots = bpy.props.IntProperty(
+        name='Boots',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraWrist = bpy.props.IntProperty(
+        name='Wrist',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraGloves = bpy.props.IntProperty(
+        name='Gloves',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraTabard = bpy.props.IntProperty(
+        name='Tabard',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraCape = bpy.props.IntProperty(
+        name='Cape',
+        default=0,
+        min=0
+    )
+
+    DisplayExtraCanEquip = bpy.props.BoolProperty(
+        name='Can equip',
+        default=True,
+    )
+
+    DisplayExtraTexture = bpy.props.StringProperty(
+        name='Texture'
+    )
+
 
 
 ###############################

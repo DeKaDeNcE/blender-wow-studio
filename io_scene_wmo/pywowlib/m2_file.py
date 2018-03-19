@@ -123,13 +123,6 @@ class M2File:
         if tex_coords2:
             vertex.tex_coords2 = tex_coords2
 
-        if bone_weights:
-            vertex.bone_weights = bone_weights
-
-        if bone_indices:
-            vertex.bone_indices = bone_indices
-            skin.bone_indices.append(bone_indices)
-
         vertex_index = self.root.vertices.add(vertex)
         skin.vertex_indices.append(vertex_index)
         return vertex_index
@@ -168,7 +161,9 @@ class M2File:
                 args.append(uv2[i])
 
             self.add_vertex(*args)
-            skin.bone_indices.new().values = local_b_indices
+
+            indices = skin.bone_indices.new()
+            indices.values = local_b_indices
 
         # found min bone index
         bone_min = None

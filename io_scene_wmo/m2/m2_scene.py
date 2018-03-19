@@ -758,7 +758,7 @@ class BlenderM2Scene:
                         weight = 0
 
                     v_bone_indices[i] = bone_id
-                    v_bone_weights = weight
+                    v_bone_weights[i] = int(weight * 255)
 
                 bone_indices.append(v_bone_indices)
                 bone_weights.append(v_bone_weights)
