@@ -147,6 +147,66 @@ class MDDF:
             doodad.write(f)
 
 
+class ADTWMODefinition:
+    def __init__(self):
+        self.name_id = 0
+        self.unique_id = 0
+        self.position = (0.0, 0.0, 0.0)
+        self.rotation = (0.0, 0.0, 0.0)
+        self.extents = CAaBox()
+        self.flags = 0
+        self.doodad_set = 0
+        self.name_set = 0
+        self.scale = 0
+
+    def read(self, f):
+        self.name_id = uint32.read(f)
+        self.unique_id = uint32.read(f)
+        self.position = vec3D.read(f)
+        self.rotation = vec3D.read(f)
+        self.extents.read(f)
+        self.flags = uint16.read(f)
+        self.doodad_set = uint16.read(f)
+        self.name_set = uint16.read(f)
+        self.scale = uint16.read(f)
+
+    def write(self, f):
+        uint32.write(f, self.name_id)
+        uint32.write(f, self.unique_id)
+        vec3D.write(f, self.position)
+        vec3D.write(f, self.rotation)
+        self.extents.write(f)
+        uint16.write(f, self.flags)
+        uint16.write(f, self.doodad_set)
+        uint16.write(f, self.name_set)
+        uint16.write(f, self.scale)
+
+
+class MODF:
+    def __init__(self):
+        self.header = ChunkHeader('FDOM')
+        self.wmo_instances = []
+
+    def read(self, f):
+        self.header.read(f)
+        for _ in range(self.header.size // 64):
+            wmo_instance = ADTWMODefinition()
+            wmo_instance.read(f)
+            self.wmo_instances.append(wmo_instance)
+
+    def write(self, f):
+        self.header.size = len(self.wmo_instances) * 64
+        self.header.write(f)
+
+        for wmo_instance in self.wmo_instances:
+            wmo_instance.write(f)
+
+
+
+
+
+
+
 
 
 
