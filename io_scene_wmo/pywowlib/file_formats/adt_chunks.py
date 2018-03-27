@@ -1,5 +1,5 @@
-from ..io_utils.types import *
 from .wow_common_types import *
+from .. import CLIENT_VERSION, WoWVersions
 
 TILE_SIZE = 5533.333333333
 MAP_SIZE_MIN = -17066.66656
@@ -200,6 +200,34 @@ class MODF:
 
         for wmo_instance in self.wmo_instances:
             wmo_instance.write(f)
+
+
+class MCNK:
+    def __init__(self):
+        self.header = ChunkHeader('KNCM')
+        self.index_x = 0
+        self.index_y = 0
+        self.n_layers = 0
+        self.n_doodad_refs = 0
+
+        if CLIENT_VERSION >= WoWVersions.MOP:
+            self.hole_high_res = 0
+        else:
+            self.ofs_height = 0
+            self.ofs_normal = 0
+
+        self.ofs_layer = 0
+        self.ofs_refs = 0
+        self.ofs_alpha = 0
+        self.size_alpha = 0
+        self.ofs_shadow = 0
+        self.size_shadow = 0
+        self.area_id = 0
+        self.n_map_obj_refs = 0
+        self.holes_low_res = 0
+        self.unknown_but_used = 0
+        self.low_quality_texture_map = []
+
 
 
 
