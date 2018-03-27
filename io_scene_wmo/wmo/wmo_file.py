@@ -478,8 +478,9 @@ class WMOFile:
                         try:
                             obj = m2.m2_to_blender_mesh(dir, doodad_path, game_data)
                         except Exception as e:
-                            bpy.ops.mesh.primitive_cube_add(name='ERR_' + os.path.splitext(os.path.basename(doodad_path))[0])
+                            bpy.ops.mesh.primitive_cube_add()
                             obj = bpy.context.scene.objects.active
+                            obj.name = 'ERR_' + os.path.splitext(os.path.basename(doodad_path))[0]
                             print("\n{}\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(e, doodad_path))
 
                         obj.WoWDoodad.Enabled = True
@@ -567,7 +568,7 @@ class WMOFile:
             faces = []
 
             for j in range(portal.nVertices):
-                if (len(face) < 4):
+                if len(face) < 4:
                     verts.append(self.mopv.PortalVertices[vert_count])
                     face.append(j)
                 vert_count += 1

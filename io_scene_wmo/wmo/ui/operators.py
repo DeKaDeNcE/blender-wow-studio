@@ -199,6 +199,7 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
                     except:
                         bpy.ops.mesh.primitive_cube_add()
                         obj = bpy.context.scene.objects.active
+                        obj.name = 'ERR_' + os.path.splitext(os.path.basename(doodad_path))[0]
                         print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
 
                     instance_cache[doodad_path] = obj
@@ -372,8 +373,8 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
             self.report({'ERROR'}, "Failed to import model.")
             return {'CANCELLED'}
 
-            self.report({'INFO'}, "Done importing WMO object to scene.")
-            return {'FINISHED'}
+        self.report({'INFO'}, "Done importing WMO object to scene.")
+        return {'FINISHED'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
@@ -415,6 +416,7 @@ def LoadDoodadsFromPreserved(dir, game_data):
                 except:
                     bpy.ops.mesh.primitive_cube_add()
                     obj = bpy.context.scene.objects.active
+                    obj.name = 'ERR_' + os.path.splitext(os.path.basename(doodad_path))[0]
                     print("#nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
 
                 obj.WoWDoodad.Enabled = True
