@@ -229,6 +229,53 @@ class MCNK:
         self.low_quality_texture_map = []
 
 
+class MCVT:
+    def __init__(self):
+        self.header = ChunkHeader('TVCM')
+        self.height = [0.0] * 145
+
+    def read(self, f):
+        self.header.read(f)
+        self.height = [float32.read(f) for _ in range(145)]
+
+    def write(self, f):
+        self.header.write(f)
+        for value in self.height: float32.write(value)
+
+
+class MCLV:
+    def __init__(self):
+        self.header = ChunkHeader('VLCM')
+        self.colors = [(255, 255, 255, 255)] * 145
+
+    def read(self, f):
+        self.header.read(f)
+        self.colors = [uint8.read(f, 4) for _ in range(145)]
+
+    def write(self, f):
+        self.header.write(f)
+        for value in self.colors: uint8.write(f, value, 4)
+
+
+class MCCV:
+    def __init__(self):
+        self.header = ChunkHeader('VCCM')
+        self.colors = [(255, 255, 255, 255)] * 145
+
+    def read(self, f):
+        self.header.read(f)
+        self.colors = [uint8.read(f, 4) for _ in range(145)]
+
+    def write(self, f):
+        self.header.write(f)
+        for value in self.colors: uint8.write(f, value, 4)
+
+
+class MCNR:
+    def __init__(self):
+        self.header = ChunkHeader('RNCM')
+        self.entries = 
+
 
 
 

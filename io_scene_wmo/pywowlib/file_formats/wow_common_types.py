@@ -20,6 +20,17 @@ class M2Versions:
 ######                WoW Common Types                 ######
 #############################################################
 
+class CArgb:
+    """A color given in values of red, green, blue and alpha"""
+    def __init__(self, color=(255, 255, 255, 255)):
+        self.r, self.g, self.b, self.a = color
+
+    def read(self, f):
+        self.r, self.g, self.b, self.a = uint8.read(f, 4)
+
+    def write(self, f):
+        uint8.write(f, (self.r, self.g, self.b, self.a), 4)
+
 
 class CRange:
     """A one dimensional float range defined by the bounds."""
