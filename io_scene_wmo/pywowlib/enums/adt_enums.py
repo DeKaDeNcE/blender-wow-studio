@@ -13,5 +13,12 @@ class ADTChunkFlags(IntEnum):
     DO_NOT_FIX_ALPHA_MAP = 0x8000
     HIGH_RES_HOLES = 0x10000
 
+class ADTAlphaTypes(IntEnum):
+    BROKEN = 0
+    LOWRES = 1
+    HIGHRES = 2
+    HIGHRES_COMRESSED = 3
+
+
 
 

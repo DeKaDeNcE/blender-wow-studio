@@ -1,4 +1,5 @@
 from .wow_common_types import *
+from ..enums.adt_enums import *
 from .. import CLIENT_VERSION, WoWVersions
 
 TILE_SIZE = 5533.333333333
@@ -30,23 +31,24 @@ class MHDR:
     def write(self, f):
         self.header.write(f)
 
-    class MCIN:
-        def __init__(self):
-            self.header = ChunkHeader('NICM', 16)
-            self.offset = 0
-            self.size = 0
 
-        def read(self, f):
-            self.header.read(f)
-            self.offset = uint32.read(f)
-            self.size = uint32.read(f)
-            f.skip(8)
+class MCIN:
+    def __init__(self):
+        self.header = ChunkHeader('NICM', 16)
+        self.offset = 0
+        self.size = 0
 
-        def write(self, f):
-            self.header.write(f)
-            uint32.write(f, self.header)
-            uint32.write(f, self.size)
-            f.skip(8)
+    def read(self, f):
+        self.header.read(f)
+        self.offset = uint32.read(f)
+        self.size = uint32.read(f)
+        f.skip(8)
+
+    def write(self, f):
+        self.header.write(f)
+        uint32.write(f, self.header)
+        uint32.write(f, self.size)
+        f.skip(8)
 
 
 class MTEX(StringBlockChunk):
@@ -231,7 +233,7 @@ class MCNK:
 
 class MCVT:
     def __init__(self):
-        self.header = ChunkHeader('TVCM')
+        self.header = ChunkHeader('TVCM', 580)
         self.height = [0.0] * 145
 
     def read(self, f):
@@ -245,7 +247,7 @@ class MCVT:
 
 class MCLV:
     def __init__(self):
-        self.header = ChunkHeader('VLCM')
+        self.header = ChunkHeader('VLCM', 580)
         self.colors = [(255, 255, 255, 255)] * 145
 
     def read(self, f):
@@ -259,7 +261,7 @@ class MCLV:
 
 class MCCV:
     def __init__(self):
-        self.header = ChunkHeader('VCCM')
+        self.header = ChunkHeader('VCCM', 580)
         self.colors = [(255, 255, 255, 255)] * 145
 
     def read(self, f):
@@ -273,8 +275,136 @@ class MCCV:
 
 class MCNR:
     def __init__(self):
-        self.header = ChunkHeader('RNCM')
-        self.entries = 
+        self.header = ChunkHeader('RNCM', 435 if CLIENT_VERSION <= WoWVersions.WOTLK else 448)
+        self.normals = [(0, 0, 0)] * 145
+
+    def read(self, f):
+        self.header.read(f)
+        self.normals = [int8.read(f, 3) for _ in range(145)]
+        f.skip(13)
+
+    def write(self, f):
+        self.header.write(f)
+        for normal in self.normals: int8.write(f, normal, 3)
+        f.skip(13)  # TODO: write original data here
+
+
+class MCLYLayer:
+    def __init__(self):
+        self.texture_id = 0
+        self.flags = 0
+        self.offset_in_mcal = 0
+        self.effect_id = 0
+
+    def read(self, f):
+        self.texture_id = uint32.read(f)
+        self.flags = uint32.read(f)
+        self.offset_in_mcal = uint32.read(f)
+        self.effect_id = uint32.read(f)
+
+    def write(self, f):
+        uint32.write(f, self.texture_id)
+        uint32.write(f, self.flags)
+        uint32.write(f, self.offset_in_mcal)
+        uint32.write(f, self.effect_id)
+
+
+class MCLY:
+    def __init__(self):
+        self.header = ChunkHeader('YLCM')
+        self.layers = []
+
+    def read(self, f):
+        self.header.read(f)
+
+        for _ in range(self.header.size // 16):
+            layer = MCLYLayer()
+            layer.read(f)
+            self.layers.append(layer)
+
+    def write(self, f):
+        self.header.size = len(self.layers * 16)
+        self.header.write(f)
+
+        for layer in self.layers:
+            layer.write(f)
+
+
+class MCRF:
+    def __init__(self):
+        self.header = ChunkHeader('MCRF')
+        self.doodad_refs = []
+        self.object_refs = []
+
+    def read(self, f, n_doodad_refs, n_object_refs):
+        self.header.read(f)
+        self.doodad_refs = [uint32.read(f) for _ in range(n_doodad_refs)]
+        self.object_refs = [uint32.read(f) for _ in range(n_object_refs)]
+
+    def write(self, f):
+        n_doodad_refs = len(self.doodad_refs)
+        n_object_refs = len(self.object_refs)
+        self.header.size = n_doodad_refs * 4 + n_object_refs * 4
+        self.header.write(f)
+
+        uint32.write(f, self.doodad_refs, n_doodad_refs)
+        uint32.write(f, self.object_refs, n_object_refs)
+
+
+class MCSH:
+    def __init__(self):
+        self.header = ChunkHeader('HSCM', 512)
+        self.shadow_map = [[0 for _ in range(64)] for _ in range(64)]
+
+    def read(self, f):
+        self.header.read(f)
+        f.skip(512)  # TODO: implement
+
+    def write(self, f):
+        self.header.write(f)
+        f.skip(512)
+
+
+class MCAL:
+    def __init__(self, type):
+        self.header = ChunkHeader('LACM')
+        self.type = type
+        self.alpha_map = [[0 for _ in range(64)] for _ in range(64)]
+
+    def read(self, f):
+        if self.type in (ADTAlphaTypes.LOWRES, ADTAlphaTypes.BROKEN):
+            cur_pos = 0
+            alpha_map_flat = [0] * 4096
+
+            for i in range(2048):
+                cur_byte = uint8.read(f)
+                nibble1 = cur_byte & 0x0F
+                nibble2 = (cur_byte & 0xF0) >> 4
+
+                first = nibble1 * 255 // 15
+                second = nibble2 * 255 // 15
+
+                alpha_map_flat[i + cur_pos + 0] = first
+                alpha_map_flat[i + cur_pos + 1] = second
+                cur_pos += 1
+
+            self.alpha_map = [[alpha_map_flat[i * j] for i in range(64)] for j in range(64)]
+
+            if self.type == ADTAlphaTypes.BROKEN:
+                for row in self.alpha_map:
+                    row[63] = row[62]
+
+                for i, column in enumerate(self.alpha_map[62]):
+                    self.alpha_map[63][i] = column
+
+        elif self.type in ADTAlphaTypes.HIGHRES:
+            self.alpha_map = [[uint8.read(f) for _ in range(64)] for _ in range(64)]
+
+        elif self.type in ADTAlphaTypes.HIGHRES_COMRESSED:
+            pass  # TODO: implement
+
+
+
 
 
 
