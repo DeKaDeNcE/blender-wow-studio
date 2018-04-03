@@ -443,29 +443,66 @@ class MCAL:
                     uint8.write(f, value)
 
         elif self.type == ADTAlphaTypes.HIGHRES_COMPRESSED:
-            compression_ranges = {}
 
             alpha_map_flat = []
             for row in self.alpha_map:
                 for value in row:
                     alpha_map_flat.append(value)
 
-            range_begin = 0
-            range_end = 0
-            prev_value = 0
+            class Cache:
+                def __init__(self, pos=0, val=256):
+                    self.reset_pos(pos)
+                    self.reset_val(val)
 
-            for i, value in enumerate(alpha_map_flat):
-                if not i:
-                    prev_value = value
+                def reset_pos(self, pos):
+                    self.pos = pos
+                    self.stride = 1
+
+                def reset_val(self, val):
+                    self.val = val
+                    self.count = 1
+
+                def dump(self, file, mode=None, container=None):
+                    mode = mode if mode is not None else self.count > 1
+
+                    if not (mode or container):
+                        return False
+
+                    count = (self.count if mode else self.stride - 1) & 0x7F
+                    uint8.write(file, mode * 0x80 | count)
+
+                    if mode:
+                        uint8.write(file, self.val)
+                    else:
+                        for j in range(self.pos, self.pos + count):
+                            uint8.write(file, container[j])
+
+                    return True
+
+            cache = Cache(0, alpha_map_flat[0])
+
+            for pos, val in enumerate(alpha_map_flat, 1):
+                if not (pos % 64):
+                    cache.dump(f, container=alpha_map_flat)
+                    cache.reset_pos(pos)
+                    cache.reset_val(val)
                     continue
 
-                if value == prev_value:
-                    range_end = i
-                else:
-                    if (range_end - range_begin) > 3:
-                        compression_ranges[range(range_begin, range_end)] = True
+                if cache.val != val:
+                    if cache.count > 1:
+                        cache.dump(f, True)
+                        cache.reset_pos(pos)
                     else:
-                        range_end = i
+                        cache.stride += 1
+
+                    cache.reset_val(val)
+                else:
+                    if cache.count == 1 and cache.stride > 1:
+                        cache.dump(f, False, alpha_map_flat)
+
+                    cache.count += 1
+
+            cache.dump(f, container=alpha_map_flat)
 
 
 
