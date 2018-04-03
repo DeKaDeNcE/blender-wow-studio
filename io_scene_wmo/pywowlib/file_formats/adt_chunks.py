@@ -397,10 +397,10 @@ class MCAL:
                 for i, column in enumerate(self.alpha_map[62]):
                     self.alpha_map[63][i] = column
 
-        elif self.type in ADTAlphaTypes.HIGHRES:
+        elif self.type == ADTAlphaTypes.HIGHRES:
             self.alpha_map = [[uint8.read(f) for _ in range(64)] for _ in range(64)]
 
-        elif self.type in ADTAlphaTypes.HIGHRES_COMRESSED:
+        elif self.type == ADTAlphaTypes.HIGHRES_COMPRESSED:
             alpha_map_flat = [0] * 4096
             alpha_offset = 0
 
@@ -414,10 +414,69 @@ class MCAL:
                     for i in range(count):
                         alpha_map_flat[alpha_offset] = alpha
                         alpha_offset += 1
-                else:
+                else:  # copy
                     for i in range(count):
                         alpha_map_flat[alpha_offset] = uint8.read(f)
                         alpha_offset += 1
+
+    def write(self, f):
+        if self.type in (ADTAlphaTypes.LOWRES, ADTAlphaTypes.BROKEN):
+            self.header.size = 2048
+            self.header.write(f)
+
+            alpha_map_flat = []
+            for row in self.alpha_map:
+                for value in row:
+                    alpha_map_flat.append(value)
+
+            for i in range(0, 4096, 2):
+                nibble1 = alpha_map_flat[i] // 255 * 15
+                nibble2 = alpha_map_flat[i + 1] // 255 * 15
+                uint8.write(f, nibble1 + (nibble2 << 4))
+
+        elif self.type == ADTAlphaTypes.HIGHRES:
+            self.header.size = 4096
+            self.header.write(f)
+
+            for row in self.alpha_map:
+                for value in row:
+                    uint8.write(f, value)
+
+        elif self.type == ADTAlphaTypes.HIGHRES_COMPRESSED:
+            compression_ranges = {}
+
+            alpha_map_flat = []
+            for row in self.alpha_map:
+                for value in row:
+                    alpha_map_flat.append(value)
+
+            range_begin = 0
+            range_end = 0
+            prev_value = 0
+
+            for i, value in enumerate(alpha_map_flat):
+                if not i:
+                    prev_value = value
+                    continue
+
+                if value == prev_value:
+                    range_end = i
+                else:
+                    if (range_end - range_begin) > 3:
+                        compression_ranges[range(range_begin, range_end)] = True
+                    else:
+                        range_end = i
+
+
+
+
+
+
+
+
+
+
+
 
 
 
