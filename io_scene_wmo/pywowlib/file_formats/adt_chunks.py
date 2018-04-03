@@ -401,7 +401,24 @@ class MCAL:
             self.alpha_map = [[uint8.read(f) for _ in range(64)] for _ in range(64)]
 
         elif self.type in ADTAlphaTypes.HIGHRES_COMRESSED:
-            pass  # TODO: implement
+            alpha_map_flat = [0] * 4096
+            alpha_offset = 0
+
+            while alpha_offset < 4096:
+                cur_byte = uint8.read(f)
+                mode = bool(cur_byte >> 7)
+                count = cur_byte & 0b1111111
+
+                if mode:  # fill
+                    alpha = uint8.read(f)
+                    for i in range(count):
+                        alpha_map_flat[alpha_offset] = alpha
+                        alpha_offset += 1
+                else:
+                    for i in range(count):
+                        alpha_map_flat[alpha_offset] = uint8.read(f)
+                        alpha_offset += 1
+
 
 
 
