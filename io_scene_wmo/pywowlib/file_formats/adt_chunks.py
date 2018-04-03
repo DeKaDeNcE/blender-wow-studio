@@ -430,8 +430,8 @@ class MCAL:
                     alpha_map_flat.append(value)
 
             for i in range(0, 4096, 2):
-                nibble1 = alpha_map_flat[i] // 255 * 15
-                nibble2 = alpha_map_flat[i + 1] // 255 * 15
+                nibble1 = alpha_map_flat[i] // (255 // 15)
+                nibble2 = alpha_map_flat[i + 1] // (255 // 15)
                 uint8.write(f, nibble1 + (nibble2 << 4))
 
         elif self.type == ADTAlphaTypes.HIGHRES:
