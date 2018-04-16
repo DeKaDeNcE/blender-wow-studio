@@ -10,7 +10,7 @@ MAP_SIZE_MAX = 17066.66657
 class MVER:
     def __init__(self):
         self.header = ChunkHeader('REVM', 4)
-        self.version = 0
+        self.version = 18
 
     def read(self, f):
         self.header.read(f)
