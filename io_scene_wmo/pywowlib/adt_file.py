@@ -11,7 +11,7 @@ class ADTFile:
         self.mcin = MCIN()
         self.mtex = MTEX()
         self.mmdx = MMDX()
-        self.mmid = 
+        # self.mmid =
 
         if file:
             if type(file) is BufferedReader:
