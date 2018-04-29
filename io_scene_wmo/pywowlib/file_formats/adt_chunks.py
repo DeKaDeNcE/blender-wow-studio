@@ -24,6 +24,7 @@ class MVER:
 class MHDR:
     def __init__(self):
         self.header = ChunkHeader('RDHM', 54)
+        self.flags =
 
     def read(self, f):
         self.header.read(f)
