@@ -741,7 +741,9 @@ class BlenderM2Scene:
             sort_radius = get_obj_radius(new_obj, sort_pos)
 
             # collect rig data
-            bpy.ops.object.vertex_group_limit_total(limit=4)
+            if new_obj.vertex_groups:
+                bpy.ops.object.vertex_group_limit_total(limit=4)
+
             bone_indices = []
             bone_weights = []
 
