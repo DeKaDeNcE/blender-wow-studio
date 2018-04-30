@@ -5,7 +5,6 @@ from io import BufferedReader
 class ADTFile:
     def __init__(self, file=None):
 
-        self.version = MVER()
         self.header = MHDR()
         self.textures = MTEX()
         self.model_filenames = []
@@ -24,6 +23,17 @@ class ADTFile:
 
             else:
                 raise NotImplementedError('\nFile argument must be either a filepath string or io.BufferedReader')
+
+    def read(self, f):
+
+        mver = MVER().read(f)
+
+        if mver.version != 18:  # Blizzard has never cared to change it so far
+            raise NotImplementedError('Unknown ADT version: ({})'.format(mver.version))
+
+        mhdr = MHDR().read(f)
+        
+
 
 
 

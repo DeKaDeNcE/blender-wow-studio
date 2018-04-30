@@ -16,21 +16,70 @@ class MVER:
         self.header.read(f)
         self.version = uint32.read(f)
 
+        return self
+
     def write(self, f):
         self.header.write(f)
         uint32.write(self.header)
+
+        return self
 
 
 class MHDR:
     def __init__(self):
         self.header = ChunkHeader('RDHM', 54)
-        self.flags =
+        self.flags = 0
+        self.mcin = 0
+        self.mtex = 0
+        self.mmdx = 0
+        self.mmid = 0
+        self.mwmo = 0
+        self.mwid = 0
+        self.mddf = 0
+        self.modf = 0
+        self.mfbo = 0
+        self.mh2o = 0
+        self.mtxf = 0
+        self.mamp_value = 0
 
     def read(self, f):
         self.header.read(f)
+        pos =
+        self.flags = uint32.read(f)
+        self.mcin = uint32.read(f)
+        self.mtex = uint32.read(f)
+        self.mmdx = uint32.read(f)
+        self.mmid = uint32.read(f)
+        self.mwmo = uint32.read(f)
+        self.mwid = uint32.read(f)
+        self.mddf = uint32.read(f)
+        self.modf = uint32.read(f)
+        self.mfbo = uint32.read(f)
+        self.mh2o = uint32.read(f)
+        self.mtxf = uint32.read(f)
+        self.mamp_value = uint8.read(f)
+        f.skip(15)
+
+        return self
 
     def write(self, f):
         self.header.write(f)
+        uint32.write(f, self.flags)
+        uint32.write(f, self.mcin)
+        uint32.write(f, self.mtex)
+        uint32.write(f, self.mmdx)
+        uint32.write(f, self.mmid)
+        uint32.write(f, self.mwmo)
+        uint32.write(f, self.mwid)
+        uint32.write(f, self.mddf)
+        uint32.write(f, self.modf)
+        uint32.write(f, self.mfbo)
+        uint32.write(f, self.mh2o)
+        uint32.write(f, self.mtxf)
+        uint8.write(f, self.mamp_value)
+        f.skip(15)
+
+        return self
 
 
 class MCIN:
