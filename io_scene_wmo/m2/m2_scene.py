@@ -648,13 +648,28 @@ class BlenderM2Scene:
             self.m2.add_dummy_anim_set(origin)
 
     def save_animations(self):
-        pass
 
-        '''
         # if there are no actions, make a default Stand anim.
         if not len(bpy.data.actions):
             self.m2.add_dummy_anim_set()
-        '''
+
+        for action in bpy.data.actions:
+            seq_id = self.m2.add_anim(
+                action.WowM2Animation.AnimationID,
+                action.WowM2Animation.VariationNext,
+                action.frame_range.to_tuple(),
+                action.WowM2Animation.Movespeed,
+                construct_bitfield(action.WowM2Animation.Flags),
+                action.WowM2Animation.Frequency,
+                (action.WowM2Animation.ReplayMin, action.WowM2Animation.ReplayMax),
+                action.WowM2Animation.BlendTime,  # TODO: multiversioning
+                action.WowM2Animation.VariationNext,
+                action.WowM2Animation.AliasNext
+            )
+
+            for fcurve in action.fcurves:
+                pass
+
 
     def save_geosets(self, selected_only, fill_textures):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
