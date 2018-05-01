@@ -206,9 +206,13 @@ class ChunkHeader:
         self.magic = f.read(4)[0:4].decode('ascii')
         self.size = unpack("I", f.read(4))[0]
 
+        return self
+
     def write(self, f):
         f.write(self.magic[:4].encode('ascii'))
         f.write(pack('I', self.size))
+
+        return self
 
 
 class StringBlock:
@@ -259,7 +263,11 @@ class StringBlockChunk:
         self.filenames.size = self.header.size
         self.filenames.read(f)
 
+        return self
+
     def write(self, f):
         self.header.size = self.filenames.size
         self.header.write(f)
         self.filenames.write(f)
+
+        return self

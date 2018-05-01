@@ -44,19 +44,19 @@ class MHDR:
 
     def read(self, f):
         self.header.read(f)
-        pos =
+        pos = f.tell()
         self.flags = uint32.read(f)
-        self.mcin = uint32.read(f)
-        self.mtex = uint32.read(f)
-        self.mmdx = uint32.read(f)
-        self.mmid = uint32.read(f)
-        self.mwmo = uint32.read(f)
-        self.mwid = uint32.read(f)
-        self.mddf = uint32.read(f)
-        self.modf = uint32.read(f)
-        self.mfbo = uint32.read(f)
-        self.mh2o = uint32.read(f)
-        self.mtxf = uint32.read(f)
+        self.mcin = pos + uint32.read(f)
+        self.mtex = pos + uint32.read(f)
+        self.mmdx = pos + uint32.read(f)
+        self.mmid = pos + uint32.read(f)
+        self.mwmo = pos + uint32.read(f)
+        self.mwid = pos + uint32.read(f)
+        self.mddf = pos + uint32.read(f)
+        self.modf = pos + uint32.read(f)
+        self.mfbo = pos + uint32.read(f)
+        self.mh2o = pos + uint32.read(f)
+        self.mtxf = pos + uint32.read(f)
         self.mamp_value = uint8.read(f)
         f.skip(15)
 
@@ -64,18 +64,19 @@ class MHDR:
 
     def write(self, f):
         self.header.write(f)
+        pos = f.tell()
         uint32.write(f, self.flags)
-        uint32.write(f, self.mcin)
-        uint32.write(f, self.mtex)
-        uint32.write(f, self.mmdx)
-        uint32.write(f, self.mmid)
-        uint32.write(f, self.mwmo)
-        uint32.write(f, self.mwid)
-        uint32.write(f, self.mddf)
-        uint32.write(f, self.modf)
-        uint32.write(f, self.mfbo)
-        uint32.write(f, self.mh2o)
-        uint32.write(f, self.mtxf)
+        uint32.write(f, pos + self.mcin)
+        uint32.write(f, pos + self.mtex)
+        uint32.write(f, pos + self.mmdx)
+        uint32.write(f, pos + self.mmid)
+        uint32.write(f, pos + self.mwmo)
+        uint32.write(f, pos + self.mwid)
+        uint32.write(f, pos + self.mddf)
+        uint32.write(f, pos + self.modf)
+        uint32.write(f, pos + self.mfbo)
+        uint32.write(f, pos + self.mh2o)
+        uint32.write(f, pos + self.mtxf)
         uint8.write(f, self.mamp_value)
         f.skip(15)
 
@@ -94,19 +95,19 @@ class MCIN:
         self.size = uint32.read(f)
         f.skip(8)
 
+        return self
+
     def write(self, f):
         self.header.write(f)
         uint32.write(f, self.header)
         uint32.write(f, self.size)
         f.skip(8)
 
+        return self
+
 
 class MTEX(StringBlockChunk):
     magic = 'XTEM'
-
-
-class MMDX(StringBlockChunk):
-    magic = 'XDMM'
 
 
 class MMID:
@@ -120,6 +121,8 @@ class MMID:
         for _ in range(self.header.size // 4):
             self.offsets.append(uint32.read(f))
 
+        return self
+
     def write(self, f):
         self.header.size = len(self.offsets) * 4
         self.header.write(f)
@@ -127,9 +130,7 @@ class MMID:
         for offset in self.offsets:
             uint32.write(offset)
 
-
-class MWMO(StringBlockChunk):
-    magic = 'OMWM'
+        return self
 
 
 class MWID:
