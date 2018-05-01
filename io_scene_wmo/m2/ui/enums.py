@@ -74,6 +74,7 @@ TEXTURE_FLAGS = [
 ]
 
 BONE_FLAGS = [
+    ("1", "Unknown", "", 'PMARKER', 0x1),
     ("2", "Unknown", "", 'PMARKER', 0x2),
     ("4", "Unknown", "", 'PMARKER', 0x4),
     ("8", "Spherical Billboard", "", 'PMARKER', 0x8),
