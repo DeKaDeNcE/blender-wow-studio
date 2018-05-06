@@ -41,9 +41,7 @@ def get_material_viewport_image(material):
 def load_game_data():
     if not hasattr(bpy, 'wow_game_data'):
         addon_preferences = bpy.context.user_preferences.addons[__package__].preferences
-        bpy.wow_game_data = WoWFileData(addon_preferences.wow_path,
-                                        addon_preferences.project_dir_path,
-                                        addon_preferences.blp_path)
+        bpy.wow_game_data = WoWFileData(addon_preferences.wow_path, addon_preferences.project_dir_path)
 
         if not bpy.wow_game_data.files:
             raise ChildProcessError("WoW game data is not loaded. Check settings.")

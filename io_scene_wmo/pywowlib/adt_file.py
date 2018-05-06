@@ -1,4 +1,5 @@
 from .file_formats.adt_chunks import *
+from .file_formats.wow_common_types import ChunkHeader
 from io import BufferedReader
 
 
@@ -32,7 +33,32 @@ class ADTFile:
             raise NotImplementedError('Unknown ADT version: ({})'.format(mver.version))
 
         mhdr = MHDR().read(f)
-        
+
+        # read header chunks
+
+        f.seek(mhdr.mcin)
+        mcnk_pointers = MCIN().read(f)
+
+        f.seek(mhdr.mtex)
+        self.textures.read(f)
+
+        f.seek(mhdr.mmid)
+        mmid = MMID().read(f)
+
+        f.seek(mhdr.mmdx)
+        mmdx_header = ChunkHeader().read(f)
+        mmdx_data_pos = f.tell()
+
+        assert mmdx_header == 'XDMM'
+
+
+
+
+
+
+
+
+
 
 
 

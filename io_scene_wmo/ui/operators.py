@@ -30,9 +30,7 @@ class ReloadWoWFileSystemOP(bpy.types.Operator):
             delattr(bpy, "wow_game_data")
 
         addon_preferences = get_addon_prefs()
-        bpy.wow_game_data = WoWFileData(addon_preferences.wow_path,
-                                        addon_preferences.project_dir_path,
-                                        addon_preferences.blp_path)
+        bpy.wow_game_data = WoWFileData(addon_preferences.wow_path, addon_preferences.project_dir_path)
 
         if not bpy.wow_game_data.files:
             self.report({'ERROR'}, "WoW game data is not loaded. Check settings.")

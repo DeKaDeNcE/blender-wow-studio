@@ -1,20 +1,18 @@
 import re
 import os
 import time
-import subprocess
 from .mpq.storm import MPQFile
 from ..wdbx.wdbc import DBCFile
+from ..blp.BLP2PNG import BlpConverter
 
 
 class WoWFileData:
-    def __init__(self, wow_path, project_path, blp_path):
+    def __init__(self, wow_path, project_path):
         self.wow_path = wow_path
         self.files = self.open_game_resources(self.wow_path, project_path)
 
         self.db_files_client = DBFilesClient(self)
         self.db_files_client.init_tables()
-
-        self.converter = BLPConverter(blp_path) if blp_path else None
 
     def __del__(self):
         print("\nUnloading game data...")
@@ -36,7 +34,7 @@ class WoWFileData:
     def read_file(self, filepath):
         """ Read the latest version of the file from loaded archives and directories. """
 
-        storage, type = self.has_file(filepath)
+        storage, _ = self.has_file(filepath)
         if storage:
             if type:
                 file = storage.open(filepath).read()
@@ -75,35 +73,24 @@ class WoWFileData:
     def extract_textures_as_png(self, dir, filenames):
         """ Read the latest version of the texture files from loaded archives and directories and
         extract them to current working directory as PNG images. """
-        if self.converter:
-            blp_paths = []
 
-            for filename in filenames:
-                if os.name != 'nt':
-                    filename_ = filename.replace('\\', '/')
+        pairs = []
 
-                    abs_path = os.path.join(dir, filename_)
-                else:
-                    abs_path = os.path.join(dir, filename)
+        for filename in filenames:
+            if os.name != 'nt':
+                filename_ = filename.replace('\\', '/')
 
-                if not os.path.exists(os.path.splitext(abs_path)[0] + ".png"):
+                abs_path = os.path.join(dir, filename_)
+            else:
+                abs_path = os.path.join(dir, filename)
 
-                    try:
-                        self.extract_file(dir, filename)
-                    except KeyError:
-                        print("PNG texture extraction: <<{}>> not found in WoW filesystem.".format(filename))
-                        continue
-
-                    blp_paths.append(abs_path)
-
-            self.converter.convert(blp_paths)
-
-            for blp_path in blp_paths:
-                if os.path.exists(blp_path):
-                    os.remove(blp_path)
-
-        else:
-            raise FileNotFoundError("\nPNG texture extraction failed. No converter executable specified or found.")
+            if not os.path.exists(os.path.splitext(abs_path)[0] + ".png"):
+                try:
+                    pairs.append((self.read_file(filename), filename.replace('\\', '/').encode('utf-8')))
+                except KeyError as e:
+                    print(e)
+        if pairs:
+            BlpConverter().convert(pairs, dir.encode('utf-8'))
 
     @staticmethod
     def list_game_data_paths(path):
@@ -191,44 +178,6 @@ class WoWFileData:
         else:
             print("\nPath to World of Warcraft is empty or invalid. Failed to load game data.")
             return None
-
-
-class BLPConverter:
-    def __init__(self, tool_path):
-        if os.path.exists(tool_path):
-            if os.name == 'nt' and not tool_path.endswith('.exe'):
-                raise Exception("\nBLPConverter not found. Applications must have a .exe extension on Windows.")
-            self.tool_path = tool_path
-            print("\nFound BLP Converter executable: " + tool_path)
-        else:
-            raise Exception("\nNo BLPConverter found at given path: " + tool_path)
-
-    def convert(self, filepaths, always_replace = False):
-        init_length = len(self.tool_path) + 4
-        init_command = self.tool_path
-        cur_length = 0
-        cur_args = []
-
-        for filepath in filepaths:
-            if always_replace or not os.path.exists(os.path.splitext(filepath)[0] + ".png"):
-                length = len(filepath)
-
-                if 2047 - (cur_length + init_length) < length + 12:
-                    final_command = [init_command, "-quiet", "-out", "png"]
-                    final_command.extend(cur_args)
-                    if subprocess.call(final_command):
-                        print("\nBLP convertion failed. Some textures might not be converted correctly.")
-                    cur_length = 0
-                    cur_args = []
-
-                cur_length += length + 13
-                cur_args.append(filepath)
-
-        if cur_length:
-            final_command = [init_command, "-quiet", "-out", "png"]
-            final_command.extend(cur_args)
-            if subprocess.call(final_command):
-                print("\nBLP convertion failed. Some textures might not be converted correctly.")
 
 
 class DBFilesClient:

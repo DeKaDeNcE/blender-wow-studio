@@ -52,11 +52,6 @@ class WMOPreferences(bpy.types.AddonPreferences):
         subtype='FILE_PATH'
     )
 
-    blp_path = StringProperty(
-        name="BLP Converter Path",
-        subtype='FILE_PATH'
-    )
-
     cache_dir_path = StringProperty(
         name="Cache Directory Path",
         description="Any folder that can be used to store exporter content",
