@@ -79,6 +79,12 @@ def m2_to_blender_mesh(dir, filepath, filedata):
         uv_coords[i] = unpack('ff', f.read(8))
         skip(f, 8)
 
+    # read texture lookup
+    f.seek(128)
+    n_tex_lookups = unpack('I', f.read(4))[0]
+    f.seek(unpack('I', f.read(4))[0])
+    texture_lookup_table = [unpack('H', f.read(2))[0] for _ in range(n_tex_lookups)]
+
     # read texture names
     f.seek(80)
     n_textures = unpack('I', f.read(4))[0]
@@ -173,7 +179,7 @@ def m2_to_blender_mesh(dir, filepath, filedata):
 
     # set textures
     for submesh in submeshes:
-        tex_path = os.path.splitext(texture_paths[submesh.texture_id])[0] + '.png'
+        tex_path = os.path.splitext(texture_paths[texture_lookup_table[submesh.texture_id]])[0] + '.png'
 
         # add support for unix filesystems
         if os.name != 'nt':
