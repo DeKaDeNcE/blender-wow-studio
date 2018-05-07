@@ -497,7 +497,7 @@ class WMOGroupFile:
         nobj.WowWMOGroup.Fog4 = objects[self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[3]).zfill(2)]
 
         if self.mogp.Flags & MOGP_FLAG.HasWater:
-            self.load_liquids(obj_name, nobj.location)
+            self.load_liquids(nobj.name, nobj.location)
 
         else:
             # getting Liquid Type ID
