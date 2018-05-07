@@ -34,9 +34,9 @@ class WoWFileData:
     def read_file(self, filepath):
         """ Read the latest version of the file from loaded archives and directories. """
 
-        storage, _ = self.has_file(filepath)
+        storage, type_ = self.has_file(filepath)
         if storage:
-            if type:
+            if type_:
                 file = storage.open(filepath).read()
             else:
                 file = open(os.path.join(storage, filepath), "rb").read()
