@@ -19,16 +19,25 @@ class AnimationEditorDialog(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.label =
+        col.label('Animations:')
+        sub_col1 = col.column()
+        sub_col1.template_list("AnimationList", "", context.scene, "WowM2Animations", context.scene, "WowM2CurAnimIndex")
+        sub_col2 = col.column()
+        sub_col2.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'Outdoor'
+
+
+class AnimationList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+        ob = data
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            layout.prop(item, "name", text="", emboss=False, icon_value=icon)
+        elif self.layout_type in {'GRID'}:
+            pass
 
 
 class WowM2AnmationPropertyGroup(bpy.types.PropertyGroup):
 
-    Objects = bpy.props.CollectionProperty(
-
-    )
-
-
+    Objects = bpy.props.IntProperty()
 
 
 def register_wow_m2_animation_editor_properties():
@@ -38,9 +47,12 @@ def register_wow_m2_animation_editor_properties():
         description="WoW M2 animation sequences"
     )
 
+    bpy.types.Scene.WowM2CurAnimIndex = bpy.props.IntProperty()
+
 
 def unregister_wow_m2_animation_editor_properties():
-    bpy.types.Scene.WowM2Animations = None
+    del bpy.types.Scene.WowM2Animations
+    del bpy.types.Scene.WowM2CurAnimIndex
 
 
 def register_animation_editor():
