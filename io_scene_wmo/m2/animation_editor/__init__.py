@@ -20,10 +20,15 @@ class AnimationEditorDialog(bpy.types.Operator):
         layout = self.layout
         col = layout.column()
         col.label('Animations:')
-        sub_col1 = col.column()
+        row = col.row()
+        sub_col1 = row.column()
         sub_col1.template_list("AnimationList", "", context.scene, "WowM2Animations", context.scene, "WowM2CurAnimIndex")
-        sub_col2 = col.column()
-        sub_col2.operator("scene.wow_m2_animation_editor_seq_add", text='', icon='VIEWZOOM')
+        sub_col2 = row.column(align=True)
+        sub_col2.operator("scene.wow_m2_animation_editor_seq_add", text='', icon='ZOOMIN')
+        sub_col2.operator("scene.wow_m2_animation_editor_seq_remove", text='', icon='ZOOMOUT')
+
+    def check(self, context):
+        return True
 
 
 class AnimationList(bpy.types.UIList):
@@ -44,6 +49,8 @@ class AnimationEditorSequenceAdd(bpy.types.Operator):
     def execute(self, context):
         sequence = context.scene.WowM2Animations.add()
 
+        return {'FINISHED'}
+
 
 class AnimationEditorSequenceRemove(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_seq_remove'
@@ -52,10 +59,10 @@ class AnimationEditorSequenceRemove(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-        try:
-            context.scene.WowM2Animations.remove(context.scene.WowM2Animations[context.scene.WowM2CurAnimIndex])
-        except IndexError:
-            pass
+
+        context.scene.WowM2Animations.remove(context.scene.WowM2CurAnimIndex)
+
+        return {'FINISHED'}
 
 
 class WowM2AnimationEditorNLATrackPropertyGroup(bpy.types.PropertyGroup):
