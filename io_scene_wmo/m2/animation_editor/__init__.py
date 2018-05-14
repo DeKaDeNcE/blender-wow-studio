@@ -11,7 +11,7 @@ from ..ui.enums import get_anim_ids, ANIMATION_FLAGS
 
 class AnimationEditorDialog(bpy.types.Operator):
     bl_idname = 'scene.wow_animation_editor_toggle'
-    bl_label = 'Wow M2 Animation Editor'
+    bl_label = 'WoW M2 Animation Editor'
 
     def execute(self, context):
         return {'FINISHED'}
@@ -95,28 +95,68 @@ class AnimationEditorDialog(bpy.types.Operator):
             col.label('NLA Tracks:', icon='NLA')
             col.label('No object selected.', icon='ERROR')
 
-        if cur_anim_track and cur_anim_pair:
-            layout = self.layout
-            split = layout.split(percentage=0.33)
+        if cur_anim_track:
+            if cur_anim_pair:
+                split = layout.split(percentage=0.33)
 
-            split.column()
+                split.column()
+                col = split.column()
+                row = col.row()
+                row_split = row.split(percentage=0.88)
+                row_split.prop(cur_anim_pair, "Object", text='Object')
+                col = split.column()
+
+                if cur_anim_pair.Object and cur_anim_pair.Object.animation_data:
+                    try:
+                        active_track = cur_anim_pair.NLATracks[cur_anim_pair.ActiveTrack]
+                        row = col.row()
+                        row_split = row.split(percentage=0.88)
+                        row_split.prop_search(active_track, "Name", cur_anim_pair.Object.animation_data, "nla_tracks",
+                                              icon='NLA', text="Track")
+
+                    except IndexError:
+                        pass
+
+            row = layout.row()
+            row.separator()
+
+            split = layout.split(percentage=0.5)
+
             col = split.column()
-            row = col.row()
-            row_split = row.split(percentage=0.88)
-            row_split.prop(cur_anim_pair, "Object", text='Object')
+            col.label("Animation properties", icon='UI')
+            col.separator()
+            col.prop(cur_anim_track, 'IsGlobalSequence', text='Global sequence')
+
+            col = col.column()
+            col.enabled = not cur_anim_track.IsGlobalSequence
+
+            col.label(text='Animation ID:')
+            row = col.row(align=True)
+            row.prop(cur_anim_track, 'AnimationID', text="")
+            row.operator("scene.wow_m2_animation_id_search", text="", icon='VIEWZOOM')
+            col.label(text='Flags:')
+            col.prop(cur_anim_track, 'Flags', text="Flags")
+            col.prop(cur_anim_track, 'Movespeed', text="Move speed")
+            col.prop(cur_anim_track, 'BlendTime', text="Blend time")
+            col.prop(cur_anim_track, 'Frequency', text="Frequency")
+
+            col.label(text='Random repeat:')
+            col.prop(cur_anim_track, 'ReplayMin', text="Min")
+            col.prop(cur_anim_track, 'ReplayMax', text="Max")
+
+            col.label(text='Relations:')
+
+            row = col.row(align=True)
+            row.prop(cur_anim_track, 'VariationNext', text="Next")
+            row.operator("scene.wow_m2_animation_switch_active_action", text="", icon='ZOOM_SELECTED').attr_name = 'VariationNext'
+
+            row = col.row(align=True)
+            row.prop(cur_anim_track, 'AliasNext', text="Next alias")
+            row.operator("scene.wow_m2_animation_switch_active_action", text="", icon='ZOOM_SELECTED').attr_name = 'AliasNext'
+
             col = split.column()
-
-            if cur_anim_pair.Object and cur_anim_pair.Object.animation_data:
-                try:
-                    active_track = cur_anim_pair.NLATracks[cur_anim_pair.ActiveTrack]
-                    row = col.row()
-                    row_split = row.split(percentage=0.88)
-                    row_split.prop_search(active_track, "Name", cur_anim_pair.Object.animation_data, "nla_tracks",
-                                          icon='NLA', text="Track")
-
-                except IndexError:
-                    pass
-
+            col.label('Playback properties', icon='TRIA_RIGHT_BAR')
+            col.separator()
 
     def check(self, context): # redraw the popup window
         return True
