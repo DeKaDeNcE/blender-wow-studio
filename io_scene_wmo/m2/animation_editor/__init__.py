@@ -172,7 +172,7 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             anim_ids = get_anim_ids(None, None)
             row = layout.row()
-            row.label(anim_ids[int(item.AnimationID)][1] if not item.IsGlobalSequence else 'GlobalSeq', icon='CLIP') # todo: Global sequence counter.
+            row.label(anim_ids[int(item.AnimationID)][1] if not item.IsGlobalSequence else 'GlobalSeq', icon='SEQUENCE') # todo: Global sequence counter.
         elif self.layout_type in {'GRID'}:
             pass
 
@@ -356,12 +356,14 @@ class WowM2AnimationEditorNLATrackPropertyGroup(bpy.types.PropertyGroup):
 def poll_object(self, obj):
     # TODO: safer polling
 
+    if object not in bpy.context.scene.objects:
+        return False
+
     sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
 
     for anim_pair in sequence.AnimPairs:
         if anim_pair.Object == obj:
             return False
-
 
     return True
 
