@@ -66,14 +66,21 @@ class AnimationEditorDialog(bpy.types.Operator):
 
                 if cur_anim_pair and cur_anim_pair.Object:
 
-                    row = col.row()
-                    sub_col1 = row.column()
-                    sub_col1.template_list("AnimationEditor_ObjectNLATrackList", "", cur_anim_pair, "NLATracks",
-                                           cur_anim_pair, "ActiveTrack")
+                    if cur_anim_pair.Object.animation_data:
 
-                    sub_col2 = row.column(align=True)
-                    sub_col2.operator("scene.wow_m2_animation_editor_nla_track_add", text='', icon='ZOOMIN')
-                    sub_col2.operator("scene.wow_m2_animation_editor_nla_track_remove", text='', icon='ZOOMOUT')
+                        row = col.row()
+                        sub_col1 = row.column()
+                        sub_col1.template_list("AnimationEditor_ObjectNLATrackList", "", cur_anim_pair, "NLATracks",
+                                               cur_anim_pair, "ActiveTrack")
+
+                        sub_col2 = row.column(align=True)
+                        sub_col2.operator("scene.wow_m2_animation_editor_nla_track_add", text='', icon='ZOOMIN')
+                        sub_col2.operator("scene.wow_m2_animation_editor_nla_track_remove", text='', icon='ZOOMOUT')
+
+                    else:
+
+                        col.label('No animation data found.', icon='ERROR')
+
 
                 else:
                     col.label('Active object slot is empty.', icon='ERROR')
@@ -97,14 +104,18 @@ class AnimationEditorDialog(bpy.types.Operator):
             row = col.row()
             row_split = row.split(percentage=0.88)
             row_split.prop(cur_anim_pair, "Object", text='Object')
-            split.column()
+            col = split.column()
 
+            if cur_anim_pair.Object and cur_anim_pair.Object.animation_data:
+                try:
+                    active_track = cur_anim_pair.NLATracks[cur_anim_pair.ActiveTrack]
+                    row = col.row()
+                    row_split = row.split(percentage=0.88)
+                    row_split.prop_search(active_track, "Name", cur_anim_pair.Object.animation_data, "nla_tracks",
+                                          icon='NLA', text="Track")
 
-
-
-
-
-
+                except IndexError:
+                    pass
 
 
     def check(self, context): # redraw the popup window
@@ -216,8 +227,11 @@ class AnimationEditor_ObjectRemove(bpy.types.Operator):
 class AnimationEditor_ObjectNLATrackList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         ob = data
+        scene = context.scene
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.prop(item, "name", text="", emboss=False, icon='NLA')
+            row = layout.row()
+            row.label(item.Name if item.Name else "Empty slot", icon='NLA' if item.Name else 'X')
+
         elif self.layout_type in {'GRID'}:
             pass
 
@@ -289,9 +303,14 @@ class AnimationEditor_NLATrackSlotRemove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+
+
 class WowM2AnimationEditorNLATrackPropertyGroup(bpy.types.PropertyGroup):
 
-    Name = bpy.props.StringProperty()
+    Name = bpy.props.StringProperty(
+        name='Name',
+        description='NLA track name',
+    )
 
 
 def poll_object(self, obj):
@@ -304,7 +323,7 @@ def poll_object(self, obj):
             return False
 
 
-        return True
+    return True
 
 
 def update_object(self, context):
