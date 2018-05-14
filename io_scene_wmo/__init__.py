@@ -67,7 +67,6 @@ class WMOPreferences(bpy.types.AddonPreferences):
     def draw(self, context):
         self.layout.prop(self, "wow_path")
         self.layout.prop(self, "wmv_path")
-        self.layout.prop(self, "blp_path")
         self.layout.prop(self, "fileinfo_path")
         self.layout.prop(self, "cache_dir_path")
         self.layout.prop(self, "project_dir_path")
