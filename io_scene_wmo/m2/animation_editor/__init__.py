@@ -24,6 +24,9 @@ class AnimationEditorDialog(bpy.types.Operator):
         layout = self.layout
         split = layout.split(percentage=0.33)
 
+        # Top row - collections: animations, objects, nla_tracks
+        # Animations column
+
         col = split.column()
         col.label('Animations:', icon='CLIP')
         row = col.row()
@@ -33,6 +36,8 @@ class AnimationEditorDialog(bpy.types.Operator):
         sub_col2 = row.column(align=True)
         sub_col2.operator("scene.wow_m2_animation_editor_seq_add", text='', icon='ZOOMIN')
         sub_col2.operator("scene.wow_m2_animation_editor_seq_remove", text='', icon='ZOOMOUT')
+
+        # Objects column
 
         col = split.column()
         col.label('Objects:', icon='OBJECT_DATA')
@@ -58,6 +63,8 @@ class AnimationEditorDialog(bpy.types.Operator):
             sub_col2.operator("scene.wow_m2_animation_editor_object_add", text='', icon='ZOOMIN')
             sub_col2.operator("scene.wow_m2_animation_editor_object_remove", text='', icon='ZOOMOUT')
 
+            # NLA tracks column
+
             col = split.column()
             col.label('NLA Tracks:', icon='NLA')
 
@@ -81,7 +88,6 @@ class AnimationEditorDialog(bpy.types.Operator):
 
                         col.label('No animation data found.', icon='ERROR')
 
-
                 else:
                     col.label('Active object slot is empty.', icon='ERROR')
 
@@ -95,6 +101,8 @@ class AnimationEditorDialog(bpy.types.Operator):
             col.label('NLA Tracks:', icon='NLA')
             col.label('No object selected.', icon='ERROR')
 
+        # Lower row of top layout: active item editing properties
+
         if cur_anim_track:
             if cur_anim_pair:
                 split = layout.split(percentage=0.33)
@@ -104,6 +112,7 @@ class AnimationEditorDialog(bpy.types.Operator):
                 row = col.row()
                 row_split = row.split(percentage=0.88)
                 row_split.prop(cur_anim_pair, "Object", text='Object')
+
                 col = split.column()
 
                 if cur_anim_pair.Object and cur_anim_pair.Object.animation_data:
@@ -116,6 +125,28 @@ class AnimationEditorDialog(bpy.types.Operator):
 
                     except IndexError:
                         pass
+
+            else:
+                # Draw a placeholder row layout to avoid constant window resize
+
+                # Objects column
+
+                split = layout.split(percentage=0.33)
+
+                split.column()
+                col = split.column()
+                row = col.row()
+                row_split = row.split(percentage=0.88)
+                row_split.label("Object: no object selected")
+
+                # NLA track column
+
+                col = split.column()
+                row = col.row()
+                row_split = row.split(percentage=0.88)
+                row_split.label("Track: no track selected")
+
+            # Lower row: animation and blender playback properties
 
             row = layout.row()
             row.separator()
@@ -343,6 +374,18 @@ class AnimationEditor_NLATrackSlotRemove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+###############################
+## Property groups
+###############################
+
+
+def update_nla_track(self, context):
+    sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
+    anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
+
+    for i, track in enumerate(anim_pair.NLATracks):
+        if track.Name == self.Name and self.Name and i != anim_pair.ActiveTrack:
+            self.Name = ""
 
 
 class WowM2AnimationEditorNLATrackPropertyGroup(bpy.types.PropertyGroup):
@@ -350,13 +393,14 @@ class WowM2AnimationEditorNLATrackPropertyGroup(bpy.types.PropertyGroup):
     Name = bpy.props.StringProperty(
         name='Name',
         description='NLA track name',
+        update=update_nla_track
     )
 
 
 def poll_object(self, obj):
     # TODO: safer polling
 
-    if object not in bpy.context.scene.objects:
+    if obj not in bpy.context.scene.objects:
         return False
 
     sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
