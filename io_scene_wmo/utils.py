@@ -139,11 +139,11 @@ def get_objs_boundbox_world(objects):
         obj_bb_corner1, obj_bb_corner2 = get_obj_boundbox_world(obj)
 
         for i, value in enumerate(obj_bb_corner1):
-            if value < corner1[i]:
+            if value > corner1[i]:
                 corner1[i] = value
 
         for i, value in enumerate(obj_bb_corner2):
-            if value > corner2[i]:
+            if value < corner2[i]:
                 corner2[i] = value
 
     return tuple(corner1), tuple(corner2)

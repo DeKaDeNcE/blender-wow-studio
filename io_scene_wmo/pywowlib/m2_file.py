@@ -163,7 +163,7 @@ class M2File:
             self.add_vertex(*args)
 
             indices = skin.bone_indices.new()
-            indices.values = local_b_indices
+            indices.values = b_indices[i]
 
         # found min bone index
         bone_min = None
