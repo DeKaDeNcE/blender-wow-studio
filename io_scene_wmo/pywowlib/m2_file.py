@@ -138,12 +138,11 @@ class M2File:
         for b_index_set, b_weight_set in zip(b_indices, b_weights):
             v_max_influences = 0
             for b_index, b_weight in zip(b_index_set, b_weight_set):
-                if b_index != 0 and b_weight != 0:
+                if b_index != 0 or (b_index == 0 and b_weight != 0):
                     v_max_influences += 1
 
                 if max_influences < v_max_influences:
                     max_influences = v_max_influences
-
 
         # localize bone indices
         unique_bone_ids = set(chain(*b_indices))
@@ -156,7 +155,7 @@ class M2File:
         start_index = len(self.root.vertices)
         for i, vertex_pos in enumerate(vertices):
             local_b_indices = tuple([bone_lookup[idx] for idx in b_indices[i]])
-            args = [vertex_pos, normals[i], uv[i], b_weights[i], local_b_indices]
+            args = [vertex_pos, normals[i], uv[i], b_weights[i], b_indices]
 
             if uv2:
                 args.append(uv2[i])
