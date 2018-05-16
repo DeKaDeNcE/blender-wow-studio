@@ -155,7 +155,7 @@ class M2File:
         start_index = len(self.root.vertices)
         for i, vertex_pos in enumerate(vertices):
             local_b_indices = tuple([bone_lookup[idx] for idx in b_indices[i]])
-            args = [vertex_pos, normals[i], uv[i], b_weights[i], b_indices]
+            args = [vertex_pos, normals[i], uv[i], b_weights[i], b_indices[i]]
 
             if uv2:
                 args.append(uv2[i])
