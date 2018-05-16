@@ -132,8 +132,8 @@ def get_obj_boundbox_world(obj):
 
 
 def get_objs_boundbox_world(objects):
-    corner1 = [32768, 32768, 32768]     # TODO: verify max boundaries
-    corner2 = [-32768, -32768, -32768]
+    corner1 = [-32768, -32768, -32768] # TODO: verify max boundaries
+    corner2 = [32768, 32768, 32768]
 
     for obj in objects:
         obj_bb_corner1, obj_bb_corner2 = get_obj_boundbox_world(obj)
