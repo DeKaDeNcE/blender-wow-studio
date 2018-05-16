@@ -135,14 +135,15 @@ class M2File:
 
         # get max bone influences per vertex
         max_influences = 0
-        for b_index_set in b_indices:
+        for b_index_set, b_weight_set in zip(b_indices, b_weights):
             v_max_influences = 0
-            for b_index in b_index_set:
-                if b_index != 0:
+            for b_index, b_weight in zip(b_index_set, b_weight_set):
+                if b_index != 0 and b_weight != 0:
                     v_max_influences += 1
 
-            if max_influences < v_max_influences:
-                max_influences = v_max_influences
+                if max_influences < v_max_influences:
+                    max_influences = v_max_influences
+
 
         # localize bone indices
         unique_bone_ids = set(chain(*b_indices))

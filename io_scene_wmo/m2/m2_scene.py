@@ -374,7 +374,7 @@ class BlenderM2Scene:
 
             for i, poly in enumerate(mesh.polygons):
                 uv1.data[i].image = material.active_texture.image
-                poly.material_index = 0
+                poly.material_index = 0 # ???
 
             # get object name
             name = M2SkinMeshPartID.get_mesh_part_name(smesh.skin_section_id)
@@ -761,26 +761,32 @@ class BlenderM2Scene:
             if new_obj.vertex_groups:
                 bpy.ops.object.vertex_group_limit_total(limit=4)
 
-            bone_indices = []
-            bone_weights = []
+            if bpy.data.actions:
 
-            for vertex in mesh.vertices:
-                v_bone_indices = [0, 0, 0, 0]
-                v_bone_weights = [0, 0, 0, 0]
+                bone_indices = []
+                bone_weights = []
 
-                for i, group_info in enumerate(vertex.groups):
-                    bone_id = self.bone_ids.get(new_obj.vertex_groups[i].name)
-                    weight = group_info.weight
+                for vertex in mesh.vertices:
+                    v_bone_indices = [0, 0, 0, 0]
+                    v_bone_weights = [0, 0, 0, 0]
 
-                    if bone_id is None:
-                        bone_id = 0
-                        weight = 0
+                    for i, group_info in enumerate(vertex.groups):
+                        bone_id = self.bone_ids.get(new_obj.vertex_groups[i].name)
+                        weight = group_info.weight
 
-                    v_bone_indices[i] = bone_id
-                    v_bone_weights[i] = int(weight * 255)
+                        if bone_id is None:
+                            bone_id = 0
+                            weight = 0
 
-                bone_indices.append(v_bone_indices)
-                bone_weights.append(v_bone_weights)
+                        v_bone_indices[i] = bone_id
+                        v_bone_weights[i] = int(weight * 255)
+
+                    bone_indices.append(v_bone_indices)
+                    bone_weights.append(v_bone_weights)
+
+            else:
+                bone_indices = [[0, 0, 0 ,0] for _ in mesh.vertices]
+                bone_weights = [[255, 0, 0, 0] for _ in mesh.vertices]
 
             # add geoset
             g_index = self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, bone_indices, bone_weights,
