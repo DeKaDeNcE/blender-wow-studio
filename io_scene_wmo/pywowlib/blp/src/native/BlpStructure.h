@@ -1,11 +1,7 @@
-//
-// Created by cromon on 06.05.2018.
-//
-
 #ifndef CYTHON_BLP_BLPSTRUCTURE_H
 #define CYTHON_BLP_BLPSTRUCTURE_H
 
-#include <cstdint>
+#include <stdint.h>
 
 namespace python_blp {
 #pragma pack(push, 1)

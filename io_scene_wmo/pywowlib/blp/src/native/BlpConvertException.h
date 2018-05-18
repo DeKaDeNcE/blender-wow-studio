@@ -1,7 +1,3 @@
-//
-// Created by cromon on 06.05.2018.
-//
-
 #ifndef CYTHON_BLP_BLPCONVERTEXCEPTION_H
 #define CYTHON_BLP_BLPCONVERTEXCEPTION_H
 
@@ -14,11 +10,13 @@ namespace python_blp {
         std::string mMessage;
 
     public:
-        BlpConvertException(std::string message) : mMessage(std::move(message)) {
+        explicit BlpConvertException(const std::string& message) : mMessage(message) {
 
         }
 
-        const char *what() const noexcept override {
+        virtual ~BlpConvertException() throw() { }
+
+        const char *what() const throw() {
             return mMessage.c_str();
         }
     };

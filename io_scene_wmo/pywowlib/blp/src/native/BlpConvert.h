@@ -1,10 +1,8 @@
-//
-// Created by cromon on 06.05.2018.
-//
-
 #ifndef CYTHON_BLP_BLPCONVERT_H
 #define CYTHON_BLP_BLPCONVERT_H
 
+#include <string>
+#include <stdint.h>
 #include <cstdlib>
 #include "ByteStream.h"
 #include "BlpStructure.h"
@@ -13,14 +11,18 @@
 namespace python_blp {
     namespace _detail {
         struct RgbDataArray {
+            RgbDataArray() {
+                data.color = 0;
+            }
+
             union data {
-                uint32_t color = 0;
+                uint32_t color;
                 uint8_t buffer[4];
             } data;
         };
     }
 
-    enum class Format {
+    enum Format {
         RGB,
         RGB_PALETTE,
         DXT1,

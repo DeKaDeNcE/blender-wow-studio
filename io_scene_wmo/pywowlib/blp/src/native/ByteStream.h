@@ -1,11 +1,7 @@
-//
-// Created by cromon on 06.05.2018.
-//
-
 #ifndef CYTHON_BLP_BYTESTREAM_H
 #define CYTHON_BLP_BYTESTREAM_H
 
-
+#include <stdint.h>
 #include <cstdlib>
 
 namespace python_blp {
@@ -14,15 +10,12 @@ namespace python_blp {
         std::size_t size;
         std::size_t position;
 
+        ByteStream& operator = (const ByteStream& other) { return *this; }
+        ByteStream(const ByteStream& other) { };
+
     public:
         explicit ByteStream(unsigned char* bytes, std::size_t size);
-        virtual ~ByteStream() = default;
-
-        ByteStream(const ByteStream& other) = delete;
-        ByteStream(ByteStream&& other) noexcept;
-
-        ByteStream& operator = (const ByteStream& other) = delete;
-        ByteStream& operator = (ByteStream&& other) noexcept;
+        virtual ~ByteStream() { };
 
         void setPosition(const std::size_t& position) {
             this->position = position;
