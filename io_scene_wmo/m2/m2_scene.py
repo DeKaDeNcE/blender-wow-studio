@@ -207,48 +207,70 @@ class BlenderM2Scene:
             print("\nArmature is not present on the scene. Skipping animation import. M2 is most likely corrupted.")
             return
 
+        scene = bpy.context.scene
         rig = self.rig
         rig.animation_data_create()
         bpy.context.scene.objects.active = rig
 
         anim_data_dbc = load_game_data().db_files_client.AnimationData
 
-        # create global sequence actions
+        # import global sequence animations
         for i, sequence in enumerate(self.m2.root.global_sequences):
+            seq_index = len(scene.WowM2Animations)
+            seq = scene.WowM2Animations.add()
+            seq.IsGlobalSequence = True
+
+            # register rig in the sequence
+            anim_pair = seq.AnimPairs.add()
+            anim_pair.Object = rig
+
             action = bpy.data.actions.new(name='Global_Sequence_{}'.format(str(i).zfill(3)))
-            action.use_fake_user = True  # TODO: check if this is the best solution
-            action.WowM2Animation.IsGlobalSequence = True
-            self.global_sequences.append(action)
+            action.use_fake_user = True
 
-        # import animation sequences
+            track = rig.animation_data.nla_tracks.new()
+            track.name = action.name
+            track.strips.new(action.name, 0, action)
+
+            nla_track_ui = anim_pair.NLATracks.add()
+            nla_track_ui.Name = track.name
+
+            self.global_sequences.append(seq_index)
+
+        # import animation sequence
         for i, sequence in enumerate(self.m2.root.sequences):
-            field_name = anim_data_dbc.get_field(sequence.id, 'Name')
+            anim_index = len(scene.WowM2Animations)
+            anim = scene.WowM2Animations.add()
 
+            # register rig in the sequence
+            anim_pair = anim.AnimPairs.add()
+            anim_pair.Object = rig
+
+            field_name = anim_data_dbc.get_field(sequence.id, 'Name')
             name = '{}_UnkAnim'.format(str(i).zfill(3)) if not field_name \
                 else "{}_{}_({})".format(str(i).zfill(3), field_name, sequence.variation_index)
 
             action = bpy.data.actions.new(name=name)
-            action.use_fake_user = True  # TODO: check if this is the best solution
-            rig.animation_data.action = action
-            self.animations.append(action)
+            action.use_fake_user = True
 
-        # set animation properties
-        for i, action in enumerate(self.animations):
-            m2_sequence = self.m2.root.sequences[i]
+            track = rig.animation_data.nla_tracks.new()
+            track.name = action.name
+            track.strips.new(action.name, 0, action)
 
-            action.WowM2Animation.AnimationID = str(m2_sequence.id)
-            action.WowM2Animation.Flags = parse_bitfield(m2_sequence.flags, 0x800)
-            action.WowM2Animation.Movespeed = m2_sequence.movespeed
-            action.WowM2Animation.Frequency = m2_sequence.frequency
-            action.WowM2Animation.ReplayMin = m2_sequence.replay.minimum
-            action.WowM2Animation.ReplayMax = m2_sequence.replay.maximum
-            action.WowM2Animation.BlendTime = m2_sequence.blend_time
+            nla_track_ui = anim_pair.NLATracks.add()
+            nla_track_ui.Name = track.name
 
-            if m2_sequence.variation_next > 0:
-                action.WowM2Animation.VariationNext = bpy.data.actions[m2_sequence.variation_next]
+            # add animation properties
+            anim.AnimationID = str(sequence.id)
+            anim.Flags = parse_bitfield(sequence.flags, 0x800)
+            anim.Movespeed = sequence.movespeed
+            anim.Frequency = sequence.frequency
+            anim.ReplayMin = sequence.replay.minimum
+            anim.ReplayMax = sequence.replay.maximum
+            anim.BlendTime = sequence.blend_time
 
-            if m2_sequence.alias_next != i:
-                action.WowM2Animation.AliasNext = bpy.data.actions[m2_sequence.alias_next]
+            # TODO: animation relations
+
+            self.animations.append(anim_index)
 
         # import fcurves
         for bone in self.m2.root.bones:
@@ -260,28 +282,34 @@ class BlenderM2Scene:
 
             # write global sequence fcurves
             if is_global_seq_trans:
-                action = self.global_sequences[bone.translation.global_sequence]
+                seq = scene.WowM2Animations[self.global_sequences[bone.translation.global_sequence]]
+                action = rig.animation_data.nla_tracks[seq.AnimPairs[0].NLATracks[0].Name].strips[0].action
                 t_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].location'.format(bl_bone.name),
                                                 index=k) or k in range(3)]
 
                 populate_fcurve_trans(t_fcurves, bone, 0, True)
 
             if is_global_seq_rot:
-                action = self.global_sequences[bone.rotation.global_sequence]
+                seq = scene.WowM2Animations[self.global_sequences[bone.rotation.global_sequence]]
+                action = rig.animation_data.nla_tracks[seq.AnimPairs[0].NLATracks[0].Name].strips[0].action
                 r_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name),
                                                 index=k) for k in range(4)]
 
                 populate_fcurve_rot(r_fcurves, bone, 0, True)
 
             if is_global_seq_scale:
-                action = self.global_sequences[bone.scale.global_sequence]
+                seq = scene.WowM2Animations[self.global_sequences[bone.scale.global_sequence]]
+                action = rig.animation_data.nla_tracks[seq.AnimPairs[0].NLATracks[0].Name].strips[0].action
                 s_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].scale'.format(bl_bone.name),
                                                 index=k) for k in range(3)]
 
                 populate_fcurve_scale(s_fcurves, bone, 0, True)
 
             # write regular animation fcurves
-            for i, action in enumerate(self.animations):
+            for i, anim_index in enumerate(self.animations):
+                anim = scene.WowM2Animations[anim_index]
+                action = rig.animation_data.nla_tracks[anim.AnimPairs[0].NLATracks[0].Name].strips[0].action
+
 
                 # create translation fcurves
                 t_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].location'.format(bl_bone.name),
@@ -324,7 +352,14 @@ class BlenderM2Scene:
                 # actually add scale keys
                 if not is_global_seq_scale: populate_fcurve_scale(s_curves, bone, i)
 
-        rig.animation_data.action = self.animations[0] # TODO: do not assume stand is first
+        # set correct frame ranges for strips
+
+        for anim in scene.WowM2Animations:
+            strip = rig.animation_data.nla_tracks[anim.AnimPairs[0].NLATracks[0].Name].strips[0]
+            strip.action_frame_end = strip.action.frame_range[1]
+            strip.frame_end = strip.action.frame_range[1]
+
+        # rig.animation_data.action = self.animations[0] # TODO: do not assume stand is first
 
     def load_geosets(self):
         if not len(self.m2.root.vertices):
