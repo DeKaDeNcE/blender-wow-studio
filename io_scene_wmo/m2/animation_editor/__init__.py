@@ -400,7 +400,7 @@ class WowM2AnimationEditorNLATrackPropertyGroup(bpy.types.PropertyGroup):
 def poll_object(self, obj):
     # TODO: safer polling
 
-    if obj not in bpy.context.scene.objects:
+    if obj.name not in bpy.context.scene.objects:
         return False
 
     sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
