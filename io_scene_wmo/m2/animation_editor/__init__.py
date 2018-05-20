@@ -22,7 +22,7 @@ class AnimationEditorDialog(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        split = layout.split(percentage=0.33)
+        split = layout.split(percentage=0.5)
 
         # Top row - collections: animations, objects, nla_tracks
         # Animations column
@@ -63,88 +63,44 @@ class AnimationEditorDialog(bpy.types.Operator):
             sub_col2.operator("scene.wow_m2_animation_editor_object_add", text='', icon='ZOOMIN')
             sub_col2.operator("scene.wow_m2_animation_editor_object_remove", text='', icon='ZOOMOUT')
 
-            # NLA tracks column
-
-            col = split.column()
-            col.label('NLA Tracks:', icon='NLA')
-
             try:
                 cur_anim_pair = cur_anim_track.AnimPairs[cur_anim_track.ActiveObjectIndex]
-
-                if cur_anim_pair and cur_anim_pair.Object:
-
-                    if cur_anim_pair.Object.animation_data:
-
-                        row = col.row()
-                        sub_col1 = row.column()
-                        sub_col1.template_list("AnimationEditor_ObjectNLATrackList", "", cur_anim_pair, "NLATracks",
-                                               cur_anim_pair, "ActiveTrack")
-
-                        sub_col2 = row.column(align=True)
-                        sub_col2.operator("scene.wow_m2_animation_editor_nla_track_add", text='', icon='ZOOMIN')
-                        sub_col2.operator("scene.wow_m2_animation_editor_nla_track_remove", text='', icon='ZOOMOUT')
-
-                    else:
-
-                        col.label('No animation data found.', icon='ERROR')
-
-                else:
-                    col.label('Active object slot is empty.', icon='ERROR')
-
             except IndexError:
-                col.label('No object selected.', icon='ERROR')
-
-
-        else:
-
-            col = split.column()
-            col.label('NLA Tracks:', icon='NLA')
-            col.label('No object selected.', icon='ERROR')
+                pass
 
         # Lower row of top layout: active item editing properties
 
         if cur_anim_track:
-            if cur_anim_pair:
-                split = layout.split(percentage=0.33)
+            split = layout.split(percentage=0.5)
+            col = split.column()
+            row = col.row()
+            row_split = row.split(percentage=0.88)
+            row_split.prop(cur_anim_track, "PlaybackSpeed", text='Speed')
 
-                split.column()
+            if cur_anim_pair:
+
                 col = split.column()
+
                 row = col.row()
                 row_split = row.split(percentage=0.88)
                 row_split.prop(cur_anim_pair, "Object", text='Object')
 
-                col = split.column()
-
-                if cur_anim_pair.Object and cur_anim_pair.Object.animation_data:
-                    try:
-                        active_track = cur_anim_pair.NLATracks[cur_anim_pair.ActiveTrack]
-                        row = col.row()
-                        row_split = row.split(percentage=0.88)
-                        row_split.prop_search(active_track, "Name", cur_anim_pair.Object.animation_data, "nla_tracks",
-                                              icon='NLA', text="Track")
-
-                    except IndexError:
-                        pass
+                row = col.row()
+                row_split = row.split(percentage=0.88)
+                row_split.prop(cur_anim_pair, "Action", text='Action')
 
             else:
                 # Draw a placeholder row layout to avoid constant window resize
 
-                # Objects column
-
-                split = layout.split(percentage=0.33)
-
-                split.column()
                 col = split.column()
+
                 row = col.row()
                 row_split = row.split(percentage=0.88)
                 row_split.label("Object: no object selected")
 
-                # NLA track column
-
-                col = split.column()
                 row = col.row()
                 row_split = row.split(percentage=0.88)
-                row_split.label("Track: no track selected")
+                row_split.label("Action: no action available")
 
             # Lower row: animation and blender playback properties
 
@@ -292,109 +248,9 @@ class AnimationEditor_ObjectRemove(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# NLA Track list
-
-
-class AnimationEditor_ObjectNLATrackList(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
-        ob = data
-        scene = context.scene
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            row = layout.row()
-            row.label(item.Name if item.Name else "Empty slot", icon='NLA' if item.Name else 'X')
-
-        elif self.layout_type in {'GRID'}:
-            pass
-
-
-class AnimationEditor_NLATrackSlotAdd(bpy.types.Operator):
-    bl_idname = 'scene.wow_m2_animation_editor_nla_track_add'
-    bl_label = 'Add NLA track slot'
-    bl_description = 'Add NLA track slot to selected object'
-    bl_options = {'REGISTER', 'INTERNAL'}
-
-    def execute(self, context):
-        scene = context.scene
-
-        try:
-            sequence = scene.WowM2Animations[scene.WowM2CurAnimIndex]
-
-            try:
-                anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
-
-                if anim_pair.Object is None:
-                    self.report({'ERROR'}, "Active object slot is empty")
-                    return {'CANCELLED'}
-
-                nla_track = anim_pair.NLATracks.add()
-
-
-            except IndexError:
-                self.report({'ERROR'}, "No object selected in this sequence")
-                return {'CANCELLED'}
-
-        except IndexError:
-            self.report({'ERROR'}, "No animation sequence selected")
-            return {'CANCELLED'}
-
-        return {'FINISHED'}
-
-
-class AnimationEditor_NLATrackSlotRemove(bpy.types.Operator):
-    bl_idname = 'scene.wow_m2_animation_editor_nla_track_remove'
-    bl_label = 'Remove WoW animation'
-    bl_description = 'Remove Wow animation sequence'
-    bl_options = {'REGISTER', 'INTERNAL'}
-
-    def execute(self, context):
-
-        scene = context.scene
-
-        try:
-            sequence = scene.WowM2Animations[scene.WowM2CurAnimIndex]
-
-            try:
-                anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
-
-                if anim_pair.Object is None:
-                    self.report({'ERROR'}, "Active object slot is empty")
-                    return {'CANCELLED'}
-
-                anim_pair.NLATracks.remove(anim_pair.ActiveTrack)
-
-
-            except IndexError:
-                self.report({'ERROR'}, "No object selected in this sequence")
-                return {'CANCELLED'}
-
-        except IndexError:
-            self.report({'ERROR'}, "No animation sequence selected")
-            return {'CANCELLED'}
-
-        return {'FINISHED'}
-
-
 ###############################
 ## Property groups
 ###############################
-
-
-def update_nla_track(self, context):
-    sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
-    anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
-
-    for i, track in enumerate(anim_pair.NLATracks):
-        if track.Name == self.Name and self.Name and i != anim_pair.ActiveTrack:
-            self.Name = ""
-
-
-class WowM2AnimationEditorNLATrackPropertyGroup(bpy.types.PropertyGroup):
-
-    Name = bpy.props.StringProperty(
-        name='Name',
-        description='NLA track name',
-        update=update_nla_track
-    )
 
 
 def poll_object(self, obj):
@@ -416,6 +272,14 @@ def update_object(self, context):
     # TODO: safety checks
 
     sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
+    anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
+    anim_pair.Object.animation_data_create()
+
+
+def update_action(self, context):
+    sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
+    anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
+    anim_pair.Object.animation_data.action = anim_pair.Action
 
 
 class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
@@ -428,13 +292,17 @@ class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
         update=update_object
     )
 
-    NLATracks = bpy.props.CollectionProperty(
-        type=WowM2AnimationEditorNLATrackPropertyGroup,
-        name="NLA Tracks",
-        description="NLA Tracks to use in this animation sequence"
+    Action = bpy.props.PointerProperty(
+        type=bpy.types.Action,
+        name="Action",
+        description="Action to use in this animation sequence",
+        update=update_action
     )
 
-    ActiveTrack = bpy.props.IntProperty()
+
+def update_playback_speed(self, context):
+    sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
+    context.scene.render.fps_base = sequence.PlaybackSpeed
 
 
 class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
@@ -444,6 +312,17 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
     AnimPairs = bpy.props.CollectionProperty(type=WowM2AnimationEditorAnimationPairsPropertyGroup)
 
     ActiveObjectIndex = bpy.props.IntProperty()
+
+    # Playback properties
+
+    PlaybackSpeed = bpy.props.FloatProperty(
+        name="Speed",
+        description="Playback speed of this animation. Does not affect in-game playback speed.",
+        min=0.1,
+        max=120,
+        default=1.0,
+        update=update_playback_speed
+    )
 
     # Actual properties
 
@@ -518,6 +397,22 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
     )
 
 
+def update_animation(self, context):
+    sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
+    context.scene.render.fps_base = sequence.PlaybackSpeed
+
+    frame_end = 0
+    for anim_pair in sequence.AnimPairs:
+        if anim_pair.Object and anim_pair.Action:
+            if anim_pair.Action and anim_pair.Action.frame_range[1] > frame_end:
+                frame_end = anim_pair.Action.frame_range[1]
+
+            anim_pair.Object.animation_data.action = anim_pair.Action
+
+    context.scene.frame_start = 0
+    context.scene.frame_end = frame_end
+
+
 def register_wow_m2_animation_editor_properties():
     bpy.types.Scene.WowM2Animations = bpy.props.CollectionProperty(
         type=WowM2AnimationEditorPropertyGroup,
@@ -525,7 +420,7 @@ def register_wow_m2_animation_editor_properties():
         description="WoW M2 animation sequences"
     )
 
-    bpy.types.Scene.WowM2CurAnimIndex = bpy.props.IntProperty()
+    bpy.types.Scene.WowM2CurAnimIndex = bpy.props.IntProperty(update=update_animation)
 
 
 def unregister_wow_m2_animation_editor_properties():
