@@ -128,10 +128,11 @@ class AnimationEditorDialog(bpy.types.Operator):
             col = col.column()
             col.enabled = not cur_anim_track.IsGlobalSequence
 
-            col.label(text='Animation ID:')
             row = col.row(align=True)
-            row.prop(cur_anim_track, 'AnimationID', text="")
-            row.operator("scene.wow_m2_animation_id_search", text="", icon='VIEWZOOM')
+            row.label("Animation ID: ")
+            anim_ids = get_anim_ids(None, None)
+            row.operator("scene.wow_m2_animation_id_search", text=anim_ids[int(cur_anim_track.AnimationID)][1],
+                         icon='VIEWZOOM')
             col.prop(cur_anim_track, 'Movespeed', text="Move speed")
             col.prop(cur_anim_track, 'BlendTime', text="Blend time")
             col.prop(cur_anim_track, 'Frequency', text="Frequency")
@@ -141,14 +142,8 @@ class AnimationEditorDialog(bpy.types.Operator):
             col.prop(cur_anim_track, 'ReplayMax', text="Max")
 
             col.label(text='Relations:')
-
-            row = col.row(align=True)
-            row.prop(cur_anim_track, 'VariationNext', text="Next")
-            row.operator("scene.wow_m2_animation_switch_active_action", text="", icon='ZOOM_SELECTED').attr_name = 'VariationNext'
-
-            row = col.row(align=True)
-            row.prop(cur_anim_track, 'AliasNext', text="Next alias")
-            row.operator("scene.wow_m2_animation_switch_active_action", text="", icon='ZOOM_SELECTED').attr_name = 'AliasNext'
+            col.prop(cur_anim_track, 'VariationNext', text="Next")
+            col.prop(cur_anim_track, 'AliasNext', text="Next alias")
 
             col = split.column()
             col.label(text='Flags:')
