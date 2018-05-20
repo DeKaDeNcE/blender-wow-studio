@@ -410,7 +410,7 @@ def update_animation(self, context):
             anim_pair.Object.animation_data.action = anim_pair.Action
 
     context.scene.frame_start = 0
-    context.scene.frame_end = frame_end
+    context.scene.frame_end = frame_end + 1
 
 
 def register_wow_m2_animation_editor_properties():

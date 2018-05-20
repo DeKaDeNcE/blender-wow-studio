@@ -226,13 +226,7 @@ class BlenderM2Scene:
 
             action = bpy.data.actions.new(name='Global_Sequence_{}'.format(str(i).zfill(3)))
             action.use_fake_user = True
-
-            track = rig.animation_data.nla_tracks.new()
-            track.name = action.name
-            track.strips.new(action.name, 0, action)
-
-            nla_track_ui = anim_pair.NLATracks.add()
-            nla_track_ui.Name = track.name
+            anim_pair.Action = action
 
             self.global_sequences.append(seq_index)
 
@@ -252,12 +246,7 @@ class BlenderM2Scene:
             action = bpy.data.actions.new(name=name)
             action.use_fake_user = True
 
-            track = rig.animation_data.nla_tracks.new()
-            track.name = action.name
-            track.strips.new(action.name, 0, action)
-
-            nla_track_ui = anim_pair.NLATracks.add()
-            nla_track_ui.Name = track.name
+            anim_pair.Action = action
 
             # add animation properties
             anim.AnimationID = str(sequence.id)
@@ -282,24 +271,21 @@ class BlenderM2Scene:
 
             # write global sequence fcurves
             if is_global_seq_trans:
-                seq = scene.WowM2Animations[self.global_sequences[bone.translation.global_sequence]]
-                action = rig.animation_data.nla_tracks[seq.AnimPairs[0].NLATracks[0].Name].strips[0].action
+                action = scene.WowM2Animations[self.global_sequences[bone.translation.global_sequence]].AnimPairs[0].Action
                 t_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].location'.format(bl_bone.name),
                                                 index=k) or k in range(3)]
 
                 populate_fcurve_trans(t_fcurves, bone, 0, True)
 
             if is_global_seq_rot:
-                seq = scene.WowM2Animations[self.global_sequences[bone.rotation.global_sequence]]
-                action = rig.animation_data.nla_tracks[seq.AnimPairs[0].NLATracks[0].Name].strips[0].action
+                action = scene.WowM2Animations[self.global_sequences[bone.rotation.global_sequence]].AnimPairs[0].Action
                 r_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name),
                                                 index=k) for k in range(4)]
 
                 populate_fcurve_rot(r_fcurves, bone, 0, True)
 
             if is_global_seq_scale:
-                seq = scene.WowM2Animations[self.global_sequences[bone.scale.global_sequence]]
-                action = rig.animation_data.nla_tracks[seq.AnimPairs[0].NLATracks[0].Name].strips[0].action
+                action = scene.WowM2Animations[self.global_sequences[bone.scale.global_sequence]].AnimPairs[0].Action
                 s_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].scale'.format(bl_bone.name),
                                                 index=k) for k in range(3)]
 
@@ -308,7 +294,7 @@ class BlenderM2Scene:
             # write regular animation fcurves
             for i, anim_index in enumerate(self.animations):
                 anim = scene.WowM2Animations[anim_index]
-                action = rig.animation_data.nla_tracks[anim.AnimPairs[0].NLATracks[0].Name].strips[0].action
+                action = anim.AnimPairs[0].Action
 
 
                 # create translation fcurves
@@ -351,13 +337,6 @@ class BlenderM2Scene:
 
                 # actually add scale keys
                 if not is_global_seq_scale: populate_fcurve_scale(s_curves, bone, i)
-
-        # set correct frame ranges for strips
-
-        for anim in scene.WowM2Animations:
-            strip = rig.animation_data.nla_tracks[anim.AnimPairs[0].NLATracks[0].Name].strips[0]
-            strip.action_frame_end = strip.action.frame_range[1]
-            strip.frame_end = strip.action.frame_range[1]
 
         # rig.animation_data.action = self.animations[0] # TODO: do not assume stand is first
 
