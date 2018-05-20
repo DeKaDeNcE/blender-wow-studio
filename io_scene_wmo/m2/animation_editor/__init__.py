@@ -291,6 +291,12 @@ def poll_object(self, obj):
         if anim_pair.Object == obj:
             return False
 
+    if obj.type not in ('CAMERA', 'ARMATURE', 'LAMP', 'EMPTY'):
+        return False
+
+    if obj.type == 'EMPTY' and obj.empty_draw_type not in ('SPHERE', 'CUBE'):
+        return False
+
     return True
 
 
