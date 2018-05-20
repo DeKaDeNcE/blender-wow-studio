@@ -296,7 +296,6 @@ class BlenderM2Scene:
                 anim = scene.WowM2Animations[anim_index]
                 action = anim.AnimPairs[0].Action
 
-
                 # create translation fcurves
                 t_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].location'.format(bl_bone.name),
                                                 index=k) for k in range(3)]

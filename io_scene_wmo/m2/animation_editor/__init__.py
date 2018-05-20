@@ -13,6 +13,8 @@ class AnimationEditorDialog(bpy.types.Operator):
     bl_idname = 'scene.wow_animation_editor_toggle'
     bl_label = 'WoW M2 Animation Editor'
 
+    is_playing_anim = False
+
     def execute(self, context):
         return {'FINISHED'}
 
@@ -28,7 +30,16 @@ class AnimationEditorDialog(bpy.types.Operator):
         # Animations column
 
         col = split.column()
-        col.label('Animations:', icon='CLIP')
+        sub_split = col.split(percentage=0.3)
+        row = sub_split.row(align=True)
+        row.label('Animations:', icon='CLIP')
+
+        row = sub_split.row(align=True)
+        op = row.operator("screen.animation_play", text="", icon='PLAY_REVERSE')
+        op.reverse = True
+
+        row.operator("screen.animation_play", text="", icon='PLAY')
+
         row = col.row()
         sub_col1 = row.column()
         sub_col1.template_list("AnimationEditor_AnimationList", "", context.scene, "WowM2Animations", context.scene,
@@ -69,10 +80,10 @@ class AnimationEditorDialog(bpy.types.Operator):
                 pass
 
         # Lower row of top layout: active item editing properties
+        split = layout.split(percentage=0.5)
+        col = split.column()
 
         if cur_anim_track:
-            split = layout.split(percentage=0.5)
-            col = split.column()
             row = col.row()
             row_split = row.split(percentage=0.88)
             row_split.prop(cur_anim_track, "PlaybackSpeed", text='Speed')
@@ -106,11 +117,11 @@ class AnimationEditorDialog(bpy.types.Operator):
 
             row = layout.row()
             row.separator()
+            layout.row().label("Animation properties", icon='UI')
 
             split = layout.split(percentage=0.5)
 
             col = split.column()
-            col.label("Animation properties", icon='UI')
             col.separator()
             col.prop(cur_anim_track, 'IsGlobalSequence', text='Global sequence')
 
@@ -121,8 +132,6 @@ class AnimationEditorDialog(bpy.types.Operator):
             row = col.row(align=True)
             row.prop(cur_anim_track, 'AnimationID', text="")
             row.operator("scene.wow_m2_animation_id_search", text="", icon='VIEWZOOM')
-            col.label(text='Flags:')
-            col.prop(cur_anim_track, 'Flags', text="Flags")
             col.prop(cur_anim_track, 'Movespeed', text="Move speed")
             col.prop(cur_anim_track, 'BlendTime', text="Blend time")
             col.prop(cur_anim_track, 'Frequency', text="Frequency")
@@ -142,7 +151,9 @@ class AnimationEditorDialog(bpy.types.Operator):
             row.operator("scene.wow_m2_animation_switch_active_action", text="", icon='ZOOM_SELECTED').attr_name = 'AliasNext'
 
             col = split.column()
-            col.label('Playback properties', icon='TRIA_RIGHT_BAR')
+            col.label(text='Flags:')
+            col.separator()
+            col.prop(cur_anim_track, 'Flags', text="Flags")
             col.separator()
 
     def check(self, context): # redraw the popup window
@@ -191,14 +202,29 @@ class AnimationEditor_SequenceRemove(bpy.types.Operator):
 
 # Object list
 
-
 class AnimationEditor_SequenceObjectList(bpy.types.UIList):
+
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         ob = data
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             row = layout.row()
             if item.Object:
-                row.label(item.Object.name, icon='OBJECT_DATA')
+
+                icon = 'OBJECT_DATA'
+
+                if item.Object.type == 'ARMATURE':
+                    icon = 'OUTLINER_OB_ARMATURE'
+                elif item.Object.type == 'LAMP':
+                    icon = 'LAMP_SUN',
+                elif item.Object.type == 'CAMERA':
+                    icon = 'RESTRICT_RENDER_OFF'
+                elif item.Object.type == 'EMPTY':
+                    if item.Object.empty_draw_type == 'SPHERE':
+                        icon = 'CONSTRAINT'
+                    elif item.Object.empty_draw_type == 'CUBE':
+                        icon = 'PLUGIN'
+
+                row.label(item.Object.name, icon=icon)
             else:
                 row.label("Empty slot", icon='MATCUBE')
 
