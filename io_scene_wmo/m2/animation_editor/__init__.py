@@ -160,6 +160,32 @@ class AnimationEditorDialog(bpy.types.Operator):
         return True
 
 
+class WowM2AnimationIDSearch(bpy.types.Operator):
+    bl_idname = "scene.wow_m2_animation_id_search"
+    bl_label = "Search animation ID"
+    bl_description = "Select WoW M2 animation ID"
+    bl_options = {'REGISTER', 'INTERNAL'}
+    bl_property = "AnimationID"
+
+    AnimationID = bpy.props.EnumProperty(items=get_anim_ids)
+
+    def execute(self, context):
+
+        context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex].AnimationID = self.AnimationID
+
+        # refresh UI after setting the property
+        for region in context.area.regions:
+            if region.type == "UI":
+                region.tag_redraw()
+
+        self.report({'INFO'}, "Animation ID set successfully.")
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {"FINISHED"}
+
+
 #### UI List layouts ####
 
 # Animation List
