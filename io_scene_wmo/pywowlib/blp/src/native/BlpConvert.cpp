@@ -403,12 +403,18 @@ namespace python_blp {
             return;
         }
 
+        std::cout << "Attempting to create directories for: " << path << std::endl;
         std::string pathPart;
         std::stringstream pathStream;
         pathStream << path.substr(0, lastSlash);
         std::stringstream curPath;
 
         while(std::getline(pathStream, pathPart, _detail::separator)) {
+            if(pathPart.empty()) {
+                curPath << _detail::separator;
+                continue;
+            }
+
             curPath << pathPart;
 #ifdef _WIN32
             int ret = _mkdir(curPath.str().c_str());
@@ -416,7 +422,7 @@ namespace python_blp {
             int ret = mkdir(curPath.str().c_str(), S_IRWXU | S_IRWXG | S_IROTH);
 #endif
             if(ret != 0 && errno != EEXIST) {
-                std::cout << "Failed to create directories at: " << curPath.str() << std::endl;
+                std::cout << "Failed to create directories at: " << curPath.str() << " with error: " << errno << std::endl;
                 throw BlpConvertException("Unable to create directory");
             }
             curPath << _detail::separator;
