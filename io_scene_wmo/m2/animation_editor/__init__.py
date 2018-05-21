@@ -1,6 +1,7 @@
 import bpy
 
 from ..ui.enums import get_anim_ids, ANIMATION_FLAGS
+from ...utils import parse_bitfield
 
 
 ###############################
@@ -146,6 +147,7 @@ class AnimationEditorDialog(bpy.types.Operator):
             col.prop(cur_anim_track, 'AliasNext', text="Next alias")
 
             col = split.column()
+            col.enabled = not cur_anim_track.IsGlobalSequence
             col.label(text='Flags:')
             col.separator()
             col.prop(cur_anim_track, 'Flags', text="Flags")
@@ -185,13 +187,39 @@ class WowM2AnimationIDSearch(bpy.types.Operator):
 
 # Animation List
 
+def update_animation_colletion():
+
+    index_cache = {}
+
+    for anim in reversed(bpy.context.scene.WowM2Animations):
+        anim_id = int(anim.AnimationID) if not anim.IsGlobalSequence else -1
+        last_idx = index_cache.get(anim_id)
+
+        if last_idx is not None:
+            anim.ChainIndex = last_idx + 1
+            index_cache[anim_id] += 1
+        else:
+            anim.ChainIndex = 0
+            index_cache[anim_id] = 0
+
+
 class AnimationEditor_AnimationList(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
         ob = data
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             anim_ids = get_anim_ids(None, None)
+
+            if not item.IsGlobalSequence:
+                anim_name = "{} ({})".format(anim_ids[int(item.AnimationID)][1], item.ChainIndex)
+            else:
+                anim_name = "Global Sequence ({})".format(item.ChainIndex)
+
             row = layout.row()
-            row.label(anim_ids[int(item.AnimationID)][1] if not item.IsGlobalSequence else 'GlobalSeq', icon='SEQUENCE') # todo: Global sequence counter.
+            row.label(anim_name, icon='SEQUENCE')
+
+            if not item.IsGlobalSequence:
+                row.prop(item, "IsPrimarySequence", emboss=False, text="", icon='POSE_HLT' if item.IsPrimarySequence else 'OUTLINER_DATA_POSE')
+                row.prop(item, "IsAlias", emboss=False, text="", icon='GHOST_ENABLED' if item.IsAlias else 'GHOST_DISABLED')
         elif self.layout_type in {'GRID'}:
             pass
 
@@ -204,6 +232,8 @@ class AnimationEditor_SequenceAdd(bpy.types.Operator):
 
     def execute(self, context):
         sequence = context.scene.WowM2Animations.add()
+        context.scene.WowM2CurAnimIndex = len(context.scene.WowM2Animations) - 1
+        update_animation_colletion()
 
         return {'FINISHED'}
 
@@ -217,6 +247,7 @@ class AnimationEditor_SequenceRemove(bpy.types.Operator):
     def execute(self, context):
 
         context.scene.WowM2Animations.remove(context.scene.WowM2CurAnimIndex)
+        update_animation_colletion()
 
         return {'FINISHED'}
 
@@ -358,6 +389,41 @@ def update_playback_speed(self, context):
     context.scene.render.fps_base = sequence.PlaybackSpeed
 
 
+def update_primary_sequence(self, context):
+    flag_set = self.Flags
+    is_changed = False
+
+    if self.IsPrimarySequence and '32' not in flag_set:
+        flag_set.add('32')
+        is_changed = True
+    elif not self.IsPrimarySequence and '32' in flag_set:
+        flag_set.remove('32')
+        is_changed = True
+
+    if is_changed:
+        self.Flags = flag_set
+
+
+def update_animation_flags(self, context):
+    self.IsPrimarySequence = '32' in self.Flags
+    self.IsAlias = '64' in self.Flags
+
+
+def update_alias(self, context):
+    flag_set = self.Flags
+    is_changed = False
+
+    if self.IsAlias and '64' not in flag_set:
+        flag_set.add('64')
+        is_changed = True
+    elif not self.IsAlias and '64' in flag_set:
+        flag_set.remove('64')
+        is_changed = True
+
+    if is_changed:
+        self.Flags = flag_set
+
+
 class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
 
     # Collection
@@ -365,6 +431,8 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
     AnimPairs = bpy.props.CollectionProperty(type=WowM2AnimationEditorAnimationPairsPropertyGroup)
 
     ActiveObjectIndex = bpy.props.IntProperty()
+
+    ChainIndex = bpy.props.IntProperty()
 
     # Playback properties
 
@@ -377,8 +445,22 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         update=update_playback_speed
     )
 
-    # Actual properties
+    # Layout properties
+    IsPrimarySequence = bpy.props.BoolProperty(
+        name='Primary sequence',
+        description="If set, the animation data is in the .m2 file, else in an .anim file",
+        default=True,
+        update=update_primary_sequence
+    )
 
+    IsAlias = bpy.props.BoolProperty(
+        name='Is alias',
+        description="The animation uses transformation data from another sequence, changing its action won't affect the in-game track",
+        default=False,
+        update=update_alias
+    )
+
+    # Actual properties
     IsGlobalSequence = bpy.props.BoolProperty(
         name="Global sequence",
         description='Global sequences are animation loops that are constantly played and blended with current animation',
@@ -395,7 +477,8 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         name='Flags',
         description="WoW M2 Animation Flags",
         items=ANIMATION_FLAGS,
-        options={"ENUM_FLAG"}
+        options={"ENUM_FLAG"},
+        update=update_animation_flags
     )
 
     Movespeed = bpy.props.FloatProperty(
@@ -464,7 +547,6 @@ def update_animation(self, context):
 
     context.scene.frame_start = 0
     context.scene.frame_end = frame_end + 1
-
 
 def register_wow_m2_animation_editor_properties():
     bpy.types.Scene.WowM2Animations = bpy.props.CollectionProperty(
