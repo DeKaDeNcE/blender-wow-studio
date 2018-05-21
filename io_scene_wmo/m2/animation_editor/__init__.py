@@ -19,7 +19,7 @@ class AnimationEditorDialog(bpy.types.Operator):
 
     def invoke(self, context, event):
         wm = context.window_manager
-        return wm.invoke_props_dialog(self, width=700)
+        return wm.invoke_props_dialog(self, width=800)
 
     def draw(self, context):
         layout = self.layout
@@ -159,8 +159,12 @@ class AnimationEditorDialog(bpy.types.Operator):
             col.prop(cur_anim_track, 'ReplayMax', text="Max")
 
             col.label(text='Relations:')
-            col.prop(cur_anim_track, 'VariationNext', text="Next")
-            col.prop(cur_anim_track, 'AliasNext', text="Next alias")
+            row = col.row(align=True)
+            row.enabled = cur_anim_track.IsAlias
+            row.label('', icon='FILE_TICK' if cur_anim_track.AliasNext < len(context.scene.WowM2Animations) else 'ERROR')
+            row.prop(cur_anim_track, 'AliasNext', text="Next alias")
+            row.operator("scene.wow_m2_animation_editor_go_to_index", text="", icon='ZOOM_SELECTED').anim_index = \
+                cur_anim_track.AliasNext
 
             col = split.column()
             col.enabled = not cur_anim_track.IsGlobalSequence
@@ -173,7 +177,7 @@ class AnimationEditorDialog(bpy.types.Operator):
         return True
 
 
-class WowM2AnimationIDSearch(bpy.types.Operator):
+class AnimationEditor_IDSearch(bpy.types.Operator):
     bl_idname = "scene.wow_m2_animation_id_search"
     bl_label = "Search animation ID"
     bl_description = "Select WoW M2 animation ID"
@@ -226,14 +230,21 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
             anim_ids = get_anim_ids(None, None)
 
             if not item.IsGlobalSequence:
-                anim_name = "{} ({})".format(anim_ids[int(item.AnimationID)][1], item.ChainIndex)
+                if not item.IsAlias:
+                    anim_name = "#{} {} ({})".format(index, anim_ids[int(item.AnimationID)][1], item.ChainIndex)
+                else:
+                    anim_name = "#{} {} ({}) -> #{}".format(index, anim_ids[int(item.AnimationID)][1],
+                                                            item.ChainIndex, item.AliasNext)
             else:
-                anim_name = "Global Sequence ({})".format(item.ChainIndex)
+                anim_name = "#{} Global Sequence ({})".format(index, item.ChainIndex)
 
             row = layout.row()
             row.label(anim_name, icon='SEQUENCE')
 
             if not item.IsGlobalSequence:
+
+                if item.IsAlias and len(data.WowM2Animations) < item.AliasNext:
+                    row.label("", icon='ERROR')
                 row.prop(item, "IsPrimarySequence", emboss=False, text="", icon='POSE_HLT' if item.IsPrimarySequence else 'OUTLINER_DATA_POSE')
                 row.prop(item, "IsAlias", emboss=False, text="", icon='GHOST_ENABLED' if item.IsAlias else 'GHOST_DISABLED')
         elif self.layout_type in {'GRID'}:
@@ -247,7 +258,7 @@ class AnimationEditor_SequenceAdd(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-        sequence = context.scene.WowM2Animations.add()
+        context.scene.WowM2Animations.add()
         context.scene.WowM2CurAnimIndex = len(context.scene.WowM2Animations) - 1
         update_animation_colletion()
 
@@ -261,7 +272,6 @@ class AnimationEditor_SequenceRemove(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-
         context.scene.WowM2Animations.remove(context.scene.WowM2CurAnimIndex)
         update_animation_colletion()
 
@@ -291,6 +301,21 @@ class AnimationEditor_SequenceMove(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
+class AnimationEditor_GoToAnimation(bpy.types.Operator):
+    bl_idname = 'scene.wow_m2_animation_editor_go_to_index'
+    bl_label = 'Go to this WoW animation'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    anim_index = bpy.props.IntProperty()
+
+    def execute(self, context):
+        if self.anim_index < len(context.scene.WowM2Animations):
+            context.scene.WowM2CurAnimIndex = self.anim_index
+            return {'FINISHED'}
+        else:
+            self.report({'ERROR'}, "Invalid animation index")
+            return {'CANCELLED'}
 
 # Object list
 
@@ -541,23 +566,6 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         max=32767
     )
 
-    AliasNext = bpy.props.PointerProperty(
-        type=bpy.types.Action,
-        name="Next alias",
-        poll=lambda self, action: action != bpy.context.object.animation_data.action
-    )
-
-    VariationIndex = bpy.props.IntProperty(
-        name="Variation index",
-        description="For internal use only",
-        min=0
-    )
-
-    VariationNext = bpy.props.PointerProperty(
-        type=bpy.types.Action,
-        name="Next alias"
-    )
-
     ReplayMin = bpy.props.IntProperty(
         name="Replay Min",
         description="Client will pick a random number of repetitions within bounds if given.",
@@ -570,6 +578,12 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         description="Client will pick a random number of repetitions within bounds if given.",
         min=0,
         max=65535
+    )
+
+    AliasNext = bpy.props.IntProperty(
+        name='Alias',
+        description='Index of animation used as a alias for this one',
+        min=0
     )
 
 
