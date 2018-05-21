@@ -588,7 +588,11 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
 
 
 def update_animation(self, context):
-    sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
+    try:
+        sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
+    except IndexError:
+        return
+
     context.scene.render.fps_base = sequence.PlaybackSpeed
 
     frame_end = 0
