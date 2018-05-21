@@ -19,7 +19,7 @@ class AnimationEditorDialog(bpy.types.Operator):
 
     def invoke(self, context, event):
         wm = context.window_manager
-        return wm.invoke_props_dialog(self, width=800)
+        return wm.invoke_props_dialog(self, width=820)
 
     def draw(self, context):
         layout = self.layout
@@ -173,7 +173,7 @@ class AnimationEditorDialog(bpy.types.Operator):
             col.prop(cur_anim_track, 'Flags', text="Flags")
             col.separator()
 
-    def check(self, context): # redraw the popup window
+    def check(self, context):  # redraw the popup window
         return True
 
 
@@ -211,7 +211,7 @@ def update_animation_colletion():
 
     index_cache = {}
 
-    for anim in reversed(bpy.context.scene.WowM2Animations):
+    for anim in bpy.context.scene.WowM2Animations:
         anim_id = int(anim.AnimationID) if not anim.IsGlobalSequence else -1
         last_idx = index_cache.get(anim_id)
 

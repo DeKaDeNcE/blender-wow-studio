@@ -230,8 +230,12 @@ class BlenderM2Scene:
 
             self.global_sequences.append(seq_index)
 
+        m2_sequences = sorted(enumerate(self.m2.root.sequences), key=lambda item: (item[0], item[1].id, item[1].variation_index))
+
         # import animation sequence
-        for i, sequence in enumerate(self.m2.root.sequences):
+        for i, pair in enumerate(m2_sequences):
+            idx, sequence = pair
+
             anim_index = len(scene.WowM2Animations)
             anim = scene.WowM2Animations.add()
 
@@ -257,7 +261,13 @@ class BlenderM2Scene:
             anim.ReplayMax = sequence.replay.maximum
             anim.BlendTime = sequence.blend_time
 
-            # TODO: animation relations
+            if '64' in anim.Flags:  # check if sequence is an alias
+                anim.IsAlias = True
+
+                for j, seq in m2_sequences:
+                    if j == sequence.alias_next:
+                        anim.AliasNext = j + len(self.m2.root.global_sequences)
+                        break
 
             self.animations.append(anim_index)
 
