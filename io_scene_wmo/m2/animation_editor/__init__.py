@@ -1,8 +1,6 @@
 import bpy
 
 from ..ui.enums import get_anim_ids, ANIMATION_FLAGS
-from ...utils import parse_bitfield
-
 
 ###############################
 ## User Interface
@@ -31,23 +29,22 @@ class AnimationEditorDialog(bpy.types.Operator):
         # Animations column
 
         col = split.column()
-        sub_split = col.split(percentage=0.3)
-        row = sub_split.row(align=True)
-        row.label('Animations:', icon='CLIP')
-
-        row = sub_split.row(align=True)
-        op = row.operator("screen.animation_play", text="", icon='PLAY_REVERSE')
-        op.reverse = True
-
-        row.operator("screen.animation_play", text="", icon='PLAY')
+        col.label('Animations:', icon='CLIP')
 
         row = col.row()
         sub_col1 = row.column()
         sub_col1.template_list("AnimationEditor_AnimationList", "", context.scene, "WowM2Animations", context.scene,
                                "WowM2CurAnimIndex")
-        sub_col2 = row.column(align=True)
+        sub_col_parent = row.column()
+        sub_col2 = sub_col_parent.column(align=True)
         sub_col2.operator("scene.wow_m2_animation_editor_seq_add", text='', icon='ZOOMIN')
         sub_col2.operator("scene.wow_m2_animation_editor_seq_remove", text='', icon='ZOOMOUT')
+
+        sub_col_parent.separator()
+
+        sub_col3 = sub_col_parent.column(align=True)
+        sub_col3.operator("scene.wow_m2_animation_editor_seq_move", text='', icon='TRIA_UP').direction = 'UP'
+        sub_col3.operator("scene.wow_m2_animation_editor_seq_move", text='', icon='TRIA_DOWN').direction = 'DOWN'
 
         # Objects column
 
@@ -88,6 +85,25 @@ class AnimationEditorDialog(bpy.types.Operator):
             row = col.row()
             row_split = row.split(percentage=0.88)
             row_split.prop(cur_anim_track, "PlaybackSpeed", text='Speed')
+
+            if context.scene.sync_mode == 'AUDIO_SYNC' and context.user_preferences.system.audio_device == 'JACK':
+                sub = row_split.row(align=True)
+                sub.scale_x = 2.0
+                sub.operator("screen.animation_play", text="", icon='PLAY')
+
+            row = row_split.row(align=True)
+            if not context.screen.is_animation_playing:
+                if context.scene.sync_mode == 'AUDIO_SYNC' and context.user_preferences.system.audio_device == 'JACK':
+                    sub = row.row(align=True)
+                    sub.scale_x = 2.0
+                    sub.operator("screen.animation_play", text="", icon='PLAY')
+                else:
+                    row.operator("screen.animation_play", text="", icon='PLAY_REVERSE').reverse = True
+                    row.operator("screen.animation_play", text="", icon='PLAY')
+            else:
+                sub = row.row(align=True)
+                sub.scale_x = 2.0
+                sub.operator("screen.animation_play", text="", icon='PAUSE')
 
             if cur_anim_pair:
 
@@ -247,6 +263,30 @@ class AnimationEditor_SequenceRemove(bpy.types.Operator):
     def execute(self, context):
 
         context.scene.WowM2Animations.remove(context.scene.WowM2CurAnimIndex)
+        update_animation_colletion()
+
+        return {'FINISHED'}
+
+
+class AnimationEditor_SequenceMove(bpy.types.Operator):
+    bl_idname = 'scene.wow_m2_animation_editor_seq_move'
+    bl_label = 'Move WoW animation'
+    bl_description = 'Move Wow animation sequence'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    direction = bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        if self.direction == 'UP':
+            context.scene.WowM2Animations.move(context.scene.WowM2CurAnimIndex, context.scene.WowM2CurAnimIndex - 1)
+            context.scene.WowM2CurAnimIndex -= 1
+        elif self.direction == 'DOWN':
+            context.scene.WowM2Animations.move(context.scene.WowM2CurAnimIndex, context.scene.WowM2CurAnimIndex + 1)
+            context.scene.WowM2CurAnimIndex += 1
+        else:
+            raise NotImplementedError("Only UP and DOWN movement in the UI list in supported.")
+
         update_animation_colletion()
 
         return {'FINISHED'}
@@ -548,7 +588,9 @@ def update_animation(self, context):
     context.scene.frame_start = 0
     context.scene.frame_end = frame_end + 1
 
+
 def register_wow_m2_animation_editor_properties():
+
     bpy.types.Scene.WowM2Animations = bpy.props.CollectionProperty(
         type=WowM2AnimationEditorPropertyGroup,
         name="Animations",
