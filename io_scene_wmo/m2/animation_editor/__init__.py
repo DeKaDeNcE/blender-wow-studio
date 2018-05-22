@@ -265,11 +265,11 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
         if self.use_filter_sort_alpha:
             flt_neworder = [x[1] for x in sorted(
                 zip(
-                    [x[0] for x in sorted(enumerate(col), key=lambda x: x[1].Name)],
-                    range(len(col))
+                    [x[0] for x in sorted(enumerate(col),
+                                          key=lambda x: x[1].Name.split()[1] + x[1].Name.split()[2])], range(len(col))
                 )
             )
-                            ]
+            ]
         else:
             flt_neworder = []
 
