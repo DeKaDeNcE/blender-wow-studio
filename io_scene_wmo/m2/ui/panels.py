@@ -471,6 +471,60 @@ def unregister_wow_m2_event_properties():
     bpy.types.Object.WowM2Event = None
 
 
+###############################
+## Animation
+###############################
+
+class WowM2AnimationsPanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_label = "M2 Animations"
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.template_list("AnimationEditor_AnimationList", "", context.scene, "WowM2Animations", context.scene,
+                          "WowM2CurAnimIndex")
+
+        try:
+            cur_anim_track = context.scene.WowM2Animations[context.scene.WowM2CurAnimIndex]
+
+            row = col.row()
+            row_split = row.split(percentage=0.88)
+            row_split.prop(cur_anim_track, "PlaybackSpeed", text='Speed')
+
+            if context.scene.sync_mode == 'AUDIO_SYNC' and context.user_preferences.system.audio_device == 'JACK':
+                sub = row_split.row(align=True)
+                sub.scale_x = 2.0
+                sub.operator("screen.animation_play", text="", icon='PLAY')
+
+            row = row_split.row(align=True)
+            if not context.screen.is_animation_playing:
+                if context.scene.sync_mode == 'AUDIO_SYNC' and context.user_preferences.system.audio_device == 'JACK':
+                    sub = row.row(align=True)
+                    sub.scale_x = 2.0
+                    sub.operator("screen.animation_play", text="", icon='PLAY')
+                else:
+                    row.operator("screen.animation_play", text="", icon='PLAY_REVERSE').reverse = True
+                    row.operator("screen.animation_play", text="", icon='PLAY')
+            else:
+                sub = row.row(align=True)
+                sub.scale_x = 2.0
+                sub.operator("screen.animation_play", text="", icon='PAUSE')
+
+            col.separator()
+
+        except IndexError:
+            pass
+
+        col.operator('scene.wow_animation_editor_toggle', text='Edit animations', icon='CLIP')
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None and context.scene.WowScene.Type == 'M2'
+
+
 def register():
     register_wow_m2_material_properties()
     register_wow_m2_geoset_properties()
