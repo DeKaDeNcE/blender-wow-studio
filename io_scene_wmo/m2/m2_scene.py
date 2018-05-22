@@ -236,7 +236,6 @@ class BlenderM2Scene:
         for i, pair in enumerate(m2_sequences):
             idx, sequence = pair
 
-            anim_index = len(scene.WowM2Animations)
             anim = scene.WowM2Animations.add()
 
             # register rig in the sequence
@@ -269,7 +268,7 @@ class BlenderM2Scene:
                         anim.AliasNext = j + len(self.m2.root.global_sequences)
                         break
 
-            self.animations.append(anim_index)
+            self.animations.append(idx)
 
         # import fcurves
         for bone in self.m2.root.bones:
@@ -302,8 +301,9 @@ class BlenderM2Scene:
                 populate_fcurve_scale(s_fcurves, bone, 0, True)
 
             # write regular animation fcurves
+            n_global_sequences = len(self.m2.root.global_sequences)
             for i, anim_index in enumerate(self.animations):
-                anim = scene.WowM2Animations[anim_index]
+                anim = scene.WowM2Animations[i + n_global_sequences]
                 action = anim.AnimPairs[0].Action
 
                 # create translation fcurves
@@ -318,7 +318,7 @@ class BlenderM2Scene:
                     fcurve.keyframe_points[0].co = 0, default_trans[k]
 
                 # actually add translation keys
-                if not is_global_seq_trans: populate_fcurve_trans(t_fcurves, bone, i)
+                if not is_global_seq_trans: populate_fcurve_trans(t_fcurves, bone, anim_index)
 
                 # create rotation fcurves
                 r_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name),
@@ -332,7 +332,7 @@ class BlenderM2Scene:
                     fcurve.keyframe_points[0].co = 0, default_rot[k]
 
                 # actually add rotation keys
-                if not is_global_seq_rot: populate_fcurve_rot(r_fcurves, bone, i)
+                if not is_global_seq_rot: populate_fcurve_rot(r_fcurves, bone, anim_index)
 
                 # create scale curves
                 s_curves = [action.fcurves.new(data_path='pose.bones.["{}"].scale'.format(bl_bone.name),
@@ -345,7 +345,7 @@ class BlenderM2Scene:
                     fcurve.keyframe_points[0].co = 0, 1
 
                 # actually add scale keys
-                if not is_global_seq_scale: populate_fcurve_scale(s_curves, bone, i)
+                if not is_global_seq_scale: populate_fcurve_scale(s_curves, bone, anim_index)
 
     def load_geosets(self):
         if not len(self.m2.root.vertices):
@@ -430,6 +430,46 @@ class BlenderM2Scene:
 
             obj.name = M2AttachmentTypes.get_attachment_name(attachment.id, i)
             obj.WowM2Attachment.Type = str(attachment.id)
+
+            # Animate attachment
+            obj.animation_data_create()
+            anim_data_dbc = load_game_data().db_files_client.AnimationData
+            n_global_sequences = len(self.global_sequences)
+
+            for j, anim_index in enumerate(self.animations):
+                anim = bpy.context.scene.WowM2Animations[j + n_global_sequences]
+                sequence = self.m2.root.sequences[anim_index]
+
+                if attachment.animate_attached.timestamps.n_elements > anim_index:
+                    frames = attachment.animate_attached.timestamps[anim_index]
+                    track = attachment.animate_attached.values[anim_index]
+
+                    if not len(frames):
+                        continue
+
+                    field_name = anim_data_dbc.get_field(sequence.id, 'Name')
+                    name = 'AT_{}_{}_UnkAnim'.format(i, str(anim_index).zfill(3)) if not field_name \
+                        else "AT_{}_{}_{}_({})".format(i, str(anim_index).zfill(3), field_name,
+                                                       sequence.variation_index)
+
+                    anim_pair = anim.AnimPairs.add()
+                    anim_pair.Object = obj
+                    action = anim_pair.Action = bpy.data.actions.new(name=name)
+                    action.use_fake_user = True
+                    anim_pair.Action = action
+
+                    # create fcurve
+                    f_curve = action.fcurves.new(data_path='WowM2Attachment.Animate')
+
+                    # init translation keyframes on the curve
+                    f_curve.keyframe_points.add(len(frames))
+
+                    # set translation values for each channel
+                    for k, timestamp in enumerate(frames):
+                        frame = timestamp * 0.0266666
+                        keyframe = f_curve.keyframe_points[j]
+                        keyframe.co = frame, track[j]
+                        keyframe.interpolation = 'LINEAR' if attachment.animate_attached.interpolation_type == 1 else 'CONSTANT'
 
     def load_lights(self):
 

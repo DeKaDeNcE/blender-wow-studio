@@ -332,6 +332,7 @@ def unregister_wow_m2_bone_properties():
 ## Attachments
 ###############################
 
+
 class WowM2AttachmentPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
