@@ -347,6 +347,8 @@ class AnimationEditor_GoToAnimation(bpy.types.Operator):
 class AnimationEditor_SequenceObjectList(bpy.types.UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+        self.use_filter_show = True
+
         ob = data
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             row = layout.row()
@@ -372,6 +374,28 @@ class AnimationEditor_SequenceObjectList(bpy.types.UIList):
 
         elif self.layout_type in {'GRID'}:
             pass
+
+    def filter_items(self, context, data, propname):
+
+        col = getattr(data, propname)
+        filter_name = self.filter_name.lower()
+
+        flt_flags = [self.bitflag_filter_item
+                     if any(filter_name in filter_set for filter_set in (str(i), item.Object.name.lower()
+                                                                         if item.Object else 'Empty slot'))
+                     else 0 for i, item in enumerate(col, 1)
+                     ]
+
+        if self.use_filter_sort_alpha:
+            flt_neworder = [x[1] for x in sorted(
+                zip([x[0] for x in sorted(enumerate(col),key=lambda x: x[1].Object.name
+                                          if x[1].Object else 'Empty slot')], range(len(col)))
+            )
+            ]
+        else:
+            flt_neworder = []
+
+        return flt_flags, flt_neworder
 
 
 class AnimationEditor_ObjectAdd(bpy.types.Operator):
@@ -522,7 +546,7 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
 
     AnimPairs = bpy.props.CollectionProperty(type=WowM2AnimationEditorAnimationPairsPropertyGroup)
 
-    ActiveObjectIndex = bpy.props.IntProperty()
+    ActiveObjectIndex = bpy.props.IntProperty(update=update_animation_colletion)
 
     ChainIndex = bpy.props.IntProperty()
 
