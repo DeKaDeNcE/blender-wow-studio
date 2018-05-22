@@ -486,20 +486,19 @@ class M2CompBone:
             parent.children.append(self)
 
     def load_bone_name(self, bone_type_dict):
-        if self.key_bone_id >= 0:
-            self.name = M2KeyBones.get_bone_name(self.key_bone_id, self.index)
 
-        else:
-            b_type = bone_type_dict.get(self.index)
+        self.name = M2KeyBones.get_bone_name(self.key_bone_id, self.index)
 
-            if b_type:
-                prefix, i, item = b_type
+        b_type = bone_type_dict.get(self.index)
 
-                if prefix in ('AT', 'ET'):
-                    self.name = "{}_{}_{}".format(prefix, item, i)
+        if b_type and not self.key_bone_id < 0:
+            prefix, i, item = b_type
 
-                elif prefix in ('LT', 'RB', 'PT'):
-                    self.name = "{}_{}".format(prefix, i)
+            if prefix in ('AT', 'ET'):
+                self.name = "{}_{}_{}".format(prefix, item, i)
+
+            elif prefix in ('LT', 'RB', 'PT'):
+                self.name = "{}_{}".format(prefix, i)
 
     def get_depth(self):
         if not self.children:
