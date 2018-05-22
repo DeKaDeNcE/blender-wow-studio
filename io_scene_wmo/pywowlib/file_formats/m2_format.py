@@ -1326,15 +1326,15 @@ class M2Header:
             if event.bone > 0:
                 bone_type_dict[event.bone] = ('ET', i, M2EventTokens.get_event_name(event.identifier))
 
-        for i, light in self.lights:
+        for i, light in enumerate(self.lights):
             if light.bone > 0:
                 bone_type_dict[light.bone] = ('LT', i, light)
 
-        for i, ribbon_emitter in self.ribbon_emitters:
+        for i, ribbon_emitter in enumerate(self.ribbon_emitters):
             if ribbon_emitter.bone_index > 0:
                 bone_type_dict[ribbon_emitter.bone_index] = ('RB', i, ribbon_emitter)
 
-        for i, particle_emitter in self.particle_emitters:
+        for i, particle_emitter in enumerate(self.particle_emitters):
             if particle_emitter.bone > 0:
                 bone_type_dict[particle_emitter.bone] = ('PT', i, particle_emitter)
 
