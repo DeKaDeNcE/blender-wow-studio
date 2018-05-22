@@ -467,8 +467,8 @@ class BlenderM2Scene:
                     # set translation values for each channel
                     for k, timestamp in enumerate(frames):
                         frame = timestamp * 0.0266666
-                        keyframe = f_curve.keyframe_points[j]
-                        keyframe.co = frame, track[j]
+                        keyframe = f_curve.keyframe_points[k]
+                        keyframe.co = frame, track[k]
                         keyframe.interpolation = 'LINEAR' if attachment.animate_attached.interpolation_type == 1 else 'CONSTANT'
 
     def load_lights(self):
@@ -543,7 +543,8 @@ class BlenderM2Scene:
 
             bl_edit_bone = self.rig.data.bones[bone.name]
             obj.location = bl_edit_bone.matrix_local.inverted() * Vector(event.position)
-            obj.name = "Event_{}".format(M2EventTokens.get_event_name(event.identifier))
+            token = M2EventTokens.get_event_name(event.identifier)
+            obj.name = "Event_{}".format(token)
             obj.WowM2Event.Token = event.identifier
 
             if obj.name in ('PlayEmoteSound',
@@ -552,6 +553,53 @@ class BlenderM2Scene:
                             'GOPlaySoundKitCustom',
                             'GOAddShake'):
                 obj.WowM2Event.Data = event.data
+
+            # animate event firing
+            obj.animation_data_create()
+            anim_data_dbc = load_game_data().db_files_client.AnimationData
+            n_global_sequences = len(self.global_sequences)
+
+            for j, anim_index in enumerate(self.animations):
+                anim = bpy.context.scene.WowM2Animations[j + n_global_sequences]
+                sequence = self.m2.root.sequences[anim_index]
+
+                if event.enabled.timestamps.n_elements > anim_index:
+                    frames = event.enabled.timestamps[anim_index]
+
+                    if not len(frames):
+                        continue
+
+                    field_name = anim_data_dbc.get_field(sequence.id, 'Name')
+                    name = 'ET_{}_{}_UnkAnim'.format(token, str(anim_index).zfill(3)) if not field_name \
+                        else "ET_{}_{}_{}_({})".format(token, str(anim_index).zfill(3), field_name,
+                                                       sequence.variation_index)
+
+                    anim_pair = anim.AnimPairs.add()
+                    anim_pair.Object = obj
+                    action = anim_pair.Action = bpy.data.actions.new(name=name)
+                    action.use_fake_user = True
+                    anim_pair.Action = action
+
+                    # create fcurve
+                    f_curve = action.fcurves.new(data_path='WowM2Event.Enabled')
+
+                    has_zero = True
+                    if frames[0] != 0:
+                        f_curve.keyframe_points.add(1)
+                        keyframe = f_curve.keyframe_points[0]
+                        keyframe.co = 0, True
+                        has_zero = False
+
+                    # init translation keyframes on the curve
+                    f_curve.keyframe_points.add(len(frames))
+
+                    # fire event
+                    for k, timestamp in enumerate(frames):
+                        idx = k if has_zero else k + 1
+                        frame = timestamp * 0.0266666
+                        keyframe = f_curve.keyframe_points[idx]
+                        keyframe.co = frame, True
+                        keyframe.interpolation = 'LINEAR' if event.enabled.interpolation_type == 1 else 'CONSTANT'
 
             '''
             # animate event firing
