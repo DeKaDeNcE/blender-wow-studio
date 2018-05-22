@@ -207,7 +207,7 @@ class AnimationEditor_IDSearch(bpy.types.Operator):
 
 # Animation List
 
-def update_animation_colletion(self, context):
+def update_animation_collection(self, context):
 
     anim_ids = get_anim_ids(None, None)
     index_cache = {}
@@ -285,7 +285,7 @@ class AnimationEditor_SequenceAdd(bpy.types.Operator):
     def execute(self, context):
         context.scene.WowM2Animations.add()
         context.scene.WowM2CurAnimIndex = len(context.scene.WowM2Animations) - 1
-        update_animation_colletion(None, None)
+        update_animation_collection(None, None)
 
         return {'FINISHED'}
 
@@ -298,7 +298,7 @@ class AnimationEditor_SequenceRemove(bpy.types.Operator):
 
     def execute(self, context):
         context.scene.WowM2Animations.remove(context.scene.WowM2CurAnimIndex)
-        update_animation_colletion(None, None)
+        update_animation_collection(None, None)
 
         return {'FINISHED'}
 
@@ -322,7 +322,7 @@ class AnimationEditor_SequenceMove(bpy.types.Operator):
         else:
             raise NotImplementedError("Only UP and DOWN movement in the UI list in supported.")
 
-        update_animation_colletion(None, None)
+        update_animation_collection(None, None)
 
         return {'FINISHED'}
 
@@ -537,7 +537,7 @@ def update_alias(self, context):
     if is_changed:
         self.Flags = flag_set
 
-    update_animation_colletion(None, None)
+    update_animation_collection(None, None) 
 
 
 class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
@@ -546,7 +546,7 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
 
     AnimPairs = bpy.props.CollectionProperty(type=WowM2AnimationEditorAnimationPairsPropertyGroup)
 
-    ActiveObjectIndex = bpy.props.IntProperty(update=update_animation_colletion)
+    ActiveObjectIndex = bpy.props.IntProperty(update=update_animation_collection)
 
     ChainIndex = bpy.props.IntProperty()
 
@@ -589,7 +589,7 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         name="AnimationID",
         description="WoW Animation ID",
         items=get_anim_ids,
-        update=update_animation_colletion
+        update=update_animation_collection
     )
 
     Flags = bpy.props.EnumProperty(
@@ -638,7 +638,7 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         name='Alias',
         description='Index of animation used as a alias for this one',
         min=0,
-        update=update_animation_colletion
+        update=update_animation_collection
     )
 
 
