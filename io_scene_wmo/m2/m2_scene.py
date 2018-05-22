@@ -347,8 +347,6 @@ class BlenderM2Scene:
                 # actually add scale keys
                 if not is_global_seq_scale: populate_fcurve_scale(s_curves, bone, i)
 
-        # rig.animation_data.action = self.animations[0] # TODO: do not assume stand is first
-
     def load_geosets(self):
         if not len(self.m2.root.vertices):
             print("\nNo mesh geometry found to import.")
@@ -475,6 +473,7 @@ class BlenderM2Scene:
                 bl_edit_bone = self.rig.data.bones[bone.name]
                 obj.location = bl_edit_bone.matrix_local.inverted() * Vector(light.position)
 
+            '''
             # import animated values
             animate_light_properties(obj, 'WowM2Light.AmbientColor', light.ambient_color)
             animate_light_properties(obj, 'WowM2Light.AmbientIntensity', light.ambient_intensity)
@@ -483,6 +482,7 @@ class BlenderM2Scene:
             animate_light_properties(obj, 'WowM2Light.AttenuationStart', light.attenuation_start)
             animate_light_properties(obj, 'WowM2Light.AttenuationEnd', light.attenuation_end)
             animate_light_properties(obj, 'WowM2Light.Enabled', light.visibility)
+            '''
 
     def load_events(self):
         if not len(self.m2.root.events):
@@ -515,6 +515,7 @@ class BlenderM2Scene:
                             'GOAddShake'):
                 obj.WowM2Event.Data = event.data
 
+            '''
             # animate event firing
             obj.animation_data_create()
 
@@ -534,6 +535,8 @@ class BlenderM2Scene:
                     obj.keyframe_insert(data_path='["WowM2Event"]["Enabled"]')
 
             obj.animation_data.action = self.animations[0]
+            
+            '''
 
     def load_particles(self):
         if not len(self.m2.root.particles):
@@ -694,7 +697,6 @@ class BlenderM2Scene:
 
             for fcurve in action.fcurves:
                 pass
-
 
     def save_geosets(self, selected_only, fill_textures):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects

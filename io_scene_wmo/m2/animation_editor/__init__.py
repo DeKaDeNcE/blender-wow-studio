@@ -207,11 +207,12 @@ class AnimationEditor_IDSearch(bpy.types.Operator):
 
 # Animation List
 
-def update_animation_colletion():
+def update_animation_colletion(self, context):
 
+    anim_ids = get_anim_ids(None, None)
     index_cache = {}
 
-    for anim in bpy.context.scene.WowM2Animations:
+    for i, anim in enumerate(bpy.context.scene.WowM2Animations):
         anim_id = int(anim.AnimationID) if not anim.IsGlobalSequence else -1
         last_idx = index_cache.get(anim_id)
 
@@ -222,24 +223,25 @@ def update_animation_colletion():
             anim.ChainIndex = 0
             index_cache[anim_id] = 0
 
+        if not anim.IsGlobalSequence:
+            if not anim.IsAlias:
+                anim.Name = "#{} {} ({})".format(i, anim_ids[int(anim.AnimationID)][1], anim.ChainIndex)
+            else:
+                anim.Name = "#{} {} ({}) -> #{}".format(i, anim_ids[int(anim.AnimationID)][1],
+                                                        anim.ChainIndex, anim.AliasNext)
+        else:
+            anim.Name = "#{} Global Sequence ({})".format(i, anim.ChainIndex)
+
 
 class AnimationEditor_AnimationList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+        self.use_filter_show = True
+
         ob = data
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            anim_ids = get_anim_ids(None, None)
-
-            if not item.IsGlobalSequence:
-                if not item.IsAlias:
-                    anim_name = "#{} {} ({})".format(index, anim_ids[int(item.AnimationID)][1], item.ChainIndex)
-                else:
-                    anim_name = "#{} {} ({}) -> #{}".format(index, anim_ids[int(item.AnimationID)][1],
-                                                            item.ChainIndex, item.AliasNext)
-            else:
-                anim_name = "#{} Global Sequence ({})".format(index, item.ChainIndex)
 
             row = layout.row()
-            row.label(anim_name, icon='SEQUENCE')
+            row.label(item.Name, icon='SEQUENCE')
 
             if not item.IsGlobalSequence:
 
@@ -249,6 +251,29 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
                 row.prop(item, "IsAlias", emboss=False, text="", icon='GHOST_ENABLED' if item.IsAlias else 'GHOST_DISABLED')
         elif self.layout_type in {'GRID'}:
             pass
+
+    def filter_items(self, context, data, propname):
+
+        col = getattr(data, propname)
+        filter_name = self.filter_name.lower()
+
+        flt_flags = [self.bitflag_filter_item
+                     if any(filter_name in filter_set for filter_set in (str(i), item.Name.lower()))
+                     else 0 for i, item in enumerate(col, 1)
+                     ]
+
+        if self.use_filter_sort_alpha:
+            flt_neworder = [x[1] for x in sorted(
+                zip(
+                    [x[0] for x in sorted(enumerate(col), key=lambda x: x[1].Name)],
+                    range(len(col))
+                )
+            )
+                            ]
+        else:
+            flt_neworder = []
+
+        return flt_flags, flt_neworder
 
 
 class AnimationEditor_SequenceAdd(bpy.types.Operator):
@@ -260,7 +285,7 @@ class AnimationEditor_SequenceAdd(bpy.types.Operator):
     def execute(self, context):
         context.scene.WowM2Animations.add()
         context.scene.WowM2CurAnimIndex = len(context.scene.WowM2Animations) - 1
-        update_animation_colletion()
+        update_animation_colletion(None, None)
 
         return {'FINISHED'}
 
@@ -273,7 +298,7 @@ class AnimationEditor_SequenceRemove(bpy.types.Operator):
 
     def execute(self, context):
         context.scene.WowM2Animations.remove(context.scene.WowM2CurAnimIndex)
-        update_animation_colletion()
+        update_animation_colletion(None, None)
 
         return {'FINISHED'}
 
@@ -297,7 +322,7 @@ class AnimationEditor_SequenceMove(bpy.types.Operator):
         else:
             raise NotImplementedError("Only UP and DOWN movement in the UI list in supported.")
 
-        update_animation_colletion()
+        update_animation_colletion(None, None)
 
         return {'FINISHED'}
 
@@ -488,6 +513,8 @@ def update_alias(self, context):
     if is_changed:
         self.Flags = flag_set
 
+    update_animation_colletion(None, None)
+
 
 class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
 
@@ -498,6 +525,8 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
     ActiveObjectIndex = bpy.props.IntProperty()
 
     ChainIndex = bpy.props.IntProperty()
+
+    Name = bpy.props.StringProperty()
 
     # Playback properties
 
@@ -535,7 +564,8 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
     AnimationID = bpy.props.EnumProperty(
         name="AnimationID",
         description="WoW Animation ID",
-        items=get_anim_ids
+        items=get_anim_ids,
+        update=update_animation_colletion
     )
 
     Flags = bpy.props.EnumProperty(
@@ -583,7 +613,8 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
     AliasNext = bpy.props.IntProperty(
         name='Alias',
         description='Index of animation used as a alias for this one',
-        min=0
+        min=0,
+        update=update_animation_colletion
     )
 
 
@@ -615,7 +646,11 @@ def register_wow_m2_animation_editor_properties():
         description="WoW M2 animation sequences"
     )
 
-    bpy.types.Scene.WowM2CurAnimIndex = bpy.props.IntProperty(update=update_animation)
+    bpy.types.Scene.WowM2CurAnimIndex = bpy.props.IntProperty(
+        name='M2 Animation',
+        description='Current WoW M2 animation',
+        update=update_animation,
+    )
 
 
 def unregister_wow_m2_animation_editor_properties():
