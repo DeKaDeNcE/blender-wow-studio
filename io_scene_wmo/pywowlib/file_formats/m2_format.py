@@ -1,7 +1,7 @@
 from .wow_common_types import CAaBox, CRange, VERSION, M2Array, M2Versions, fixed16, fixed_point, MemoryManager
 from ..io_utils.types import *
 from .skin_format import M2SkinProfile
-from ..enums.m2_enums import M2KeyBones, M2GlobalFlags
+from ..enums.m2_enums import M2KeyBones, M2GlobalFlags, M2AttachmentTypes, M2EventTokens
 
 
 #############################################################
@@ -485,8 +485,21 @@ class M2CompBone:
             self.parent = parent
             parent.children.append(self)
 
-    def load_bone_name(self):
-        self.name = M2KeyBones.get_bone_name(self.key_bone_id, self.index)
+    def load_bone_name(self, bone_type_dict):
+        if self.key_bone_id >= 0:
+            self.name = M2KeyBones.get_bone_name(self.key_bone_id, self.index)
+
+        else:
+            b_type = bone_type_dict.get(self.index)
+
+            if b_type:
+                prefix, i, item = b_type
+
+                if prefix in ('AT', 'ET'):
+                    self.name = "{}_{}_{}".format(prefix, item, i)
+
+                elif prefix in ('LT', 'RB', 'PT'):
+                    self.name = "{}_{}".format(prefix, i)
 
     def get_depth(self):
         if not self.children:
@@ -1254,13 +1267,7 @@ class M2Header:
         if VERSION <= M2Versions.TBC:
             self.playable_animation_lookup.read(f)
 
-        # bones
         self.bones.read(f)
-        for i, bone in enumerate(self.bones):
-            bone.index = i
-            bone.build_relations(self.bones)
-            bone.load_bone_name()
-        # end;
 
         self.key_bone_lookup.read(f)
         self.vertices.read(f)
@@ -1307,6 +1314,35 @@ class M2Header:
 
         if VERSION >= M2Versions.WOTLK and self.global_flags & M2GlobalFlags.UseTextureCombinerCombos:
             self.texture_combiner_combos.read(f)
+
+        # assign bone names
+        bone_type_dict = {}
+
+        for i, attachment in enumerate(self.attachments):
+            if attachment.bone > 0:
+                bone_type_dict[attachment.bone] = ('AT', i, M2AttachmentTypes.get_attachment_name(
+                                                    self.attachment_lookup_table[attachment.id], i))
+
+        for i, event in enumerate(self.events):
+            if event.bone > 0:
+                bone_type_dict[event.bone] = ('ET', i, M2EventTokens.get_event_name(event.identifier))
+
+        for i, light in self.lights:
+            if light.bone > 0:
+                bone_type_dict[light.bone] = ('LT', i, light)
+
+        for i, ribbon_emitter in self.ribbon_emitters:
+            if ribbon_emitter.bone_index > 0:
+                bone_type_dict[ribbon_emitter.bone_index] = ('RB', i, ribbon_emitter)
+
+        for i, particle_emitter in self.particle_emitters:
+            if particle_emitter.bone > 0:
+                bone_type_dict[particle_emitter.bone] = ('PT', i, particle_emitter)
+
+        for i, bone in enumerate(self.bones):
+            bone.index = i
+            bone.build_relations(self.bones)
+            bone.load_bone_name(bone_type_dict)
 
         return self
 
