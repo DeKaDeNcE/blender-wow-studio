@@ -583,21 +583,13 @@ class BlenderM2Scene:
                     # create fcurve
                     f_curve = action.fcurves.new(data_path='WowM2Event.Enabled')
 
-                    has_zero = True
-                    if frames[0] != 0:
-                        f_curve.keyframe_points.add(1)
-                        keyframe = f_curve.keyframe_points[0]
-                        keyframe.co = 0, True
-                        has_zero = False
-
                     # init translation keyframes on the curve
                     f_curve.keyframe_points.add(len(frames))
 
                     # fire event
                     for k, timestamp in enumerate(frames):
-                        idx = k if has_zero else k + 1
                         frame = timestamp * 0.0266666
-                        keyframe = f_curve.keyframe_points[idx]
+                        keyframe = f_curve.keyframe_points[k]
                         keyframe.co = frame, True
                         keyframe.interpolation = 'LINEAR' if event.enabled.interpolation_type == 1 else 'CONSTANT'
 
