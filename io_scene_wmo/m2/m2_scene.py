@@ -418,7 +418,8 @@ class BlenderM2Scene:
             bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
             obj = bpy.context.scene.objects.active
             obj.scale = (0.094431, 0.094431, 0.094431)
-            bpy.ops.object.constraint_add(type='CHILD_OF')
+            obj.empty_draw_size = 0.07
+            bpy.ops.object.constraint_add(type='COPY_TRANSFORMS')
             constraint = obj.constraints[-1]
             constraint.target = self.rig
             obj.parent = self.rig
