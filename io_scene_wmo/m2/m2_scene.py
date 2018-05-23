@@ -282,7 +282,7 @@ class BlenderM2Scene:
             if is_global_seq_trans:
                 action = scene.WowM2Animations[self.global_sequences[bone.translation.global_sequence]].AnimPairs[0].Action
                 t_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].location'.format(bl_bone.name),
-                                                index=k) or k in range(3)]
+                                                index=k) for k in range(3)]
 
                 populate_fcurve_trans(t_fcurves, bone, 0, True)
 
