@@ -593,29 +593,6 @@ class BlenderM2Scene:
                         keyframe.co = frame, True
                         keyframe.interpolation = 'LINEAR' if event.enabled.interpolation_type == 1 else 'CONSTANT'
 
-            '''
-            # animate event firing
-            obj.animation_data_create()
-
-            for i, action in enumerate(self.animations):
-                obj.animation_data.action = action
-
-                try:
-                    frames = event.enabled.timestamps[i]
-                except IndexError:
-                    break
-
-                for j, frame in enumerate(frames):
-                    bpy.context.scene.frame_set(frame * 0.0266666)
-
-                    obj.WowM2Event.Enabled = True
-
-                    obj.keyframe_insert(data_path='["WowM2Event"]["Enabled"]')
-
-            obj.animation_data.action = self.animations[0]
-            
-            '''
-
     def load_particles(self):
         if not len(self.m2.root.particles):
             print("\nNo particles found to import.")
