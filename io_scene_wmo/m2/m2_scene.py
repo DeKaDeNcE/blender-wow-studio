@@ -414,6 +414,26 @@ class BlenderM2Scene:
     def load_attachments(self):
         # TODO: unknown field
 
+        def animate_attachment(attachment, obj, anim, anim_name, frames, track):
+            anim_pair = anim.AnimPairs.add()
+            anim_pair.Object = obj
+            action = anim_pair.Action = bpy.data.actions.new(name=anim_name)
+            action.use_fake_user = True
+            anim_pair.Action = action
+
+            # create fcurve
+            f_curve = action.fcurves.new(data_path='WowM2Attachment.Animate')
+
+            # init translation keyframes on the curve
+            f_curve.keyframe_points.add(len(frames))
+
+            # set translation values for each channel
+            for k, timestamp in enumerate(frames):
+                frame = timestamp * 0.0266666
+                keyframe = f_curve.keyframe_points[k]
+                keyframe.co = frame, track[k]
+                keyframe.interpolation = 'LINEAR' if attachment.animate_attached.interpolation_type == 1 else 'CONSTANT'
+
         for i, attachment in enumerate(self.m2.root.attachments):
             bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
             obj = bpy.context.scene.objects.active
@@ -437,6 +457,22 @@ class BlenderM2Scene:
             anim_data_dbc = load_game_data().db_files_client.AnimationData
             n_global_sequences = len(self.global_sequences)
 
+            # load global sequences
+            for j, seq_index in enumerate(self.global_sequences):
+                anim = bpy.context.scene.WowM2Animations[seq_index]
+
+                if attachment.animate_attached.global_sequence == j:
+                    frames = attachment.animate_attached.timestamps[0]
+                    track = attachment.animate_attached.values[0]
+
+                    if not len(frames):
+                        continue
+
+                    name = "AT_{}_{}_Global_Sequence_{}".format(i, obj.name, str(j).zfill(3))
+
+                    animate_attachment(attachment, obj, anim, name, frames, track)
+
+            # load animations
             for j, anim_index in enumerate(self.animations):
                 anim = bpy.context.scene.WowM2Animations[j + n_global_sequences]
                 sequence = self.m2.root.sequences[anim_index]
@@ -449,28 +485,11 @@ class BlenderM2Scene:
                         continue
 
                     field_name = anim_data_dbc.get_field(sequence.id, 'Name')
-                    name = 'AT_{}_{}_UnkAnim'.format(i, str(anim_index).zfill(3)) if not field_name \
-                        else "AT_{}_{}_{}_({})".format(i, str(anim_index).zfill(3), field_name,
+                    name = 'AT_{}_{}_UnkAnim'.format(i, obj.name, str(j).zfill(3)) if not field_name \
+                        else "AT_{}_{}_{}_({})".format(i, obj.name, str(j).zfill(3), field_name,
                                                        sequence.variation_index)
 
-                    anim_pair = anim.AnimPairs.add()
-                    anim_pair.Object = obj
-                    action = anim_pair.Action = bpy.data.actions.new(name=name)
-                    action.use_fake_user = True
-                    anim_pair.Action = action
-
-                    # create fcurve
-                    f_curve = action.fcurves.new(data_path='WowM2Attachment.Animate')
-
-                    # init translation keyframes on the curve
-                    f_curve.keyframe_points.add(len(frames))
-
-                    # set translation values for each channel
-                    for k, timestamp in enumerate(frames):
-                        frame = timestamp * 0.0266666
-                        keyframe = f_curve.keyframe_points[k]
-                        keyframe.co = frame, track[k]
-                        keyframe.interpolation = 'LINEAR' if attachment.animate_attached.interpolation_type == 1 else 'CONSTANT'
+                    animate_attachment(attachment, obj, anim, name, frames, track)
 
     def load_lights(self):
 
@@ -525,6 +544,27 @@ class BlenderM2Scene:
             '''
 
     def load_events(self):
+
+        def animate_event(event, obj, anim_name, frames):
+            anim_pair = anim.AnimPairs.add()
+            anim_pair.Object = obj
+            action = anim_pair.Action = bpy.data.actions.new(name=anim_name)
+            action.use_fake_user = True
+            anim_pair.Action = action
+
+            # create fcurve
+            f_curve = action.fcurves.new(data_path='WowM2Event.Enabled')
+
+            # init translation keyframes on the curve
+            f_curve.keyframe_points.add(len(frames))
+
+            # fire event
+            for k, timestamp in enumerate(frames):
+                frame = timestamp * 0.0266666
+                keyframe = f_curve.keyframe_points[k]
+                keyframe.co = frame, True
+                keyframe.interpolation = 'LINEAR' if event.enabled.interpolation_type == 1 else 'CONSTANT'
+
         if not len(self.m2.root.events):
             print("\nNo events found to import.")
             return
@@ -560,6 +600,21 @@ class BlenderM2Scene:
             anim_data_dbc = load_game_data().db_files_client.AnimationData
             n_global_sequences = len(self.global_sequences)
 
+            # load global sequences
+            for j, seq_index in enumerate(self.global_sequences):
+                anim = bpy.context.scene.WowM2Animations[seq_index]
+
+                if event.enabled.global_sequence == j:
+                    frames = event.enabled.timestamps[0]
+
+                    if not len(frames):
+                        continue
+
+                    name = 'ET_{}_{}_UnkAnim'.format(token, str(j).zfill(3))
+
+                    animate_event(event, obj, name, frames)
+
+            # load animations
             for j, anim_index in enumerate(self.animations):
                 anim = bpy.context.scene.WowM2Animations[j + n_global_sequences]
                 sequence = self.m2.root.sequences[anim_index]
@@ -575,24 +630,7 @@ class BlenderM2Scene:
                         else "ET_{}_{}_{}_({})".format(token, str(anim_index).zfill(3), field_name,
                                                        sequence.variation_index)
 
-                    anim_pair = anim.AnimPairs.add()
-                    anim_pair.Object = obj
-                    action = anim_pair.Action = bpy.data.actions.new(name=name)
-                    action.use_fake_user = True
-                    anim_pair.Action = action
-
-                    # create fcurve
-                    f_curve = action.fcurves.new(data_path='WowM2Event.Enabled')
-
-                    # init translation keyframes on the curve
-                    f_curve.keyframe_points.add(len(frames))
-
-                    # fire event
-                    for k, timestamp in enumerate(frames):
-                        frame = timestamp * 0.0266666
-                        keyframe = f_curve.keyframe_points[k]
-                        keyframe.co = frame, True
-                        keyframe.interpolation = 'LINEAR' if event.enabled.interpolation_type == 1 else 'CONSTANT'
+                    animate_event(event, obj, name, frames)
 
     def load_particles(self):
         if not len(self.m2.root.particles):
