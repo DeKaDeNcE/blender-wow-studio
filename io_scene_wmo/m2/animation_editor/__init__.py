@@ -472,6 +472,7 @@ class AnimationEditor_ActionAdd(bpy.types.Operator):
         sequence = scene.WowM2Animations[scene.WowM2CurAnimIndex]
         anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
         anim_pair.Action = bpy.data.actions.new(name="")
+        anim_pair.Action.use_fake_user = True
 
         return {'FINISHED'}
 
