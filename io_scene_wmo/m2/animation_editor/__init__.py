@@ -123,7 +123,8 @@ class AnimationEditorDialog(bpy.types.Operator):
                 col.label("Action:")
 
                 col = row.column(align=True)
-                row.template_ID(cur_anim_pair, "Action", new="scene.wow_m2_animation_editor_action_add",
+                col.scale_x = 1.0 if cur_anim_pair.Action else 1.55
+                col.template_ID(cur_anim_pair, "Action", new="scene.wow_m2_animation_editor_action_add",
                                 unlink="scene.wow_m2_animation_editor_action_unlink")
 
             else:
