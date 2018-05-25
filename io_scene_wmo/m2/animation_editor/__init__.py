@@ -84,7 +84,7 @@ class AnimationEditorDialog(bpy.types.Operator):
 
         if cur_anim_track:
             row = col.row()
-            row_split = row.split(percentage=0.88)
+            row_split = row.split(percentage=0.83)
             row_split.prop(cur_anim_track, "PlaybackSpeed", text='Speed')
 
             if context.scene.sync_mode == 'AUDIO_SYNC' and context.user_preferences.system.audio_device == 'JACK':
@@ -110,13 +110,21 @@ class AnimationEditorDialog(bpy.types.Operator):
 
                 col = split.column()
 
-                row = col.row()
-                row_split = row.split(percentage=0.88)
-                row_split.prop(cur_anim_pair, "Object", text='Object')
+                row_split = col.row().split(percentage=0.93)
+                row = row_split.row(align=True)
+                row.prop(cur_anim_pair, "Object", text='Object')
+                row.operator("scene.wow_m2_animation_editor_select_object",
+                             text='', icon='ZOOM_SELECTED').name = cur_anim_pair.Object.name
 
-                row = col.row()
-                row_split = row.split(percentage=0.88)
-                row_split.prop(cur_anim_pair, "Action", text='Action')
+                row_split = col.row().split(percentage=0.93)
+                row = row_split.row(align=True)
+                col = row.column()
+                col.scale_x = 0.54
+                col.label("Action:")
+
+                col = row.column(align=True)
+                row.template_ID(cur_anim_pair, "Action", new="scene.wow_m2_animation_editor_action_add",
+                                unlink="scene.wow_m2_animation_editor_action_unlink")
 
             else:
                 # Draw a placeholder row layout to avoid constant window resize
@@ -440,6 +448,50 @@ class AnimationEditor_ObjectRemove(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
+class AnimationEditor_ObjectSelect(bpy.types.Operator):
+    bl_idname = 'scene.wow_m2_animation_editor_select_object'
+    bl_label = 'Select object'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    name = bpy.props.StringProperty()
+
+    def execute(self, context):
+        bpy.data.objects[self.name].select = True
+        return {'FINISHED'}
+
+
+class AnimationEditor_ActionAdd(bpy.types.Operator):
+    bl_idname = 'scene.wow_m2_animation_editor_action_add'
+    bl_label = 'Add new action'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+        scene = context.scene
+        sequence = scene.WowM2Animations[scene.WowM2CurAnimIndex]
+        anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
+        anim_pair.Action = bpy.data.actions.new(name="")
+
+        return {'FINISHED'}
+
+
+class AnimationEditor_ActionUnlink(bpy.types.Operator):
+    bl_idname = 'scene.wow_m2_animation_editor_action_unlink'
+    bl_label = 'Unlink action'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        sequence = context.scene.WowM2Animations[context.scene.WowM2CurAnimIndex]
+        anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
+        return anim_pair.Action is not None
+
+    def execute(self, context):
+        scene = context.scene
+        sequence = scene.WowM2Animations[scene.WowM2CurAnimIndex]
+        anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
+        anim_pair.Action = None
+        return {'FINISHED'}
 
 ###############################
 ## Property groups
