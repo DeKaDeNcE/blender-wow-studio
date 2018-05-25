@@ -60,6 +60,30 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         description="WoW material blending mode"
         )
 
+    IsAnimated = bpy.props.BoolProperty(
+        name='Is Animated',
+        description='This turns on texture animation properties for this texture',
+        default=False
+    )
+
+    Location = bpy.props.FloatVectorProperty(
+        name='Location',
+        description='Animating this property will translate the texture in-game'
+    )
+
+    Rotation = bpy.props.FloatVectorProperty(
+        name='Rotation',
+        description='Animating this property will rotate the texture in-game',
+        size=4,
+        subtype='QUATERNION',
+        unit='ROTATION'
+    )
+
+    Scale = bpy.props.FloatVectorProperty(
+        name='Scale',
+        description='Animating this property will scale the texture in-game',
+    )
+
 
 def register_wow_m2_material_properties():
     bpy.types.Material.WowM2Material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
@@ -170,7 +194,6 @@ class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
         name='Path',
         description='Path to .blp file in wow file system.'
     )
-
 
 def register_wow_m2_texture_properties():
     bpy.types.ImageTexture.WowM2Texture = bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)

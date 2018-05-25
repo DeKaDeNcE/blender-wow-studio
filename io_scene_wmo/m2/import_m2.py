@@ -31,10 +31,10 @@ def import_m2(version, file, load_textures):  # TODO: implement multiversioning
         bl_m2 = BlenderM2Scene(m2_file, addon_preferences)
 
         bl_m2.load_materials(addon_preferences.cache_dir_path)
-        bl_m2.load_geosets()
-        bl_m2.load_collision()
         bl_m2.load_armature()
         bl_m2.load_animations()
+        bl_m2.load_geosets()
+        bl_m2.load_collision()
         bl_m2.load_attachments()
         bl_m2.load_lights()
         bl_m2.load_events()

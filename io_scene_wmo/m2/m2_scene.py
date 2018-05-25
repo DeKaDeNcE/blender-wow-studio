@@ -24,6 +24,7 @@ class BlenderM2Scene:
         self.settings = prefs
 
     def load_materials(self, texture_dir):
+
         # TODO: multitexturing
         skin = self.m2.skins[0]  # assuming first skin is the most detailed one
 
@@ -45,6 +46,7 @@ class BlenderM2Scene:
             tex1.WowM2Texture.Flags = parse_bitfield(texture.flags, 0x2)
             tex1.WowM2Texture.TextureType = str(texture.type)
             tex1.WowM2Texture.Path = texture.filename.value
+
             tex1_slot.texture = tex1
 
             # loading images
@@ -64,9 +66,11 @@ class BlenderM2Scene:
             blender_mat.WowM2Material.BlendingMode = str(m2_mat.blending_mode)  # TODO: ? bitfield
             blender_mat.WowM2Material.Shader = str(tex_unit.shader_id)
 
+            blender_mat.WowM2Material.IsAnimated = tex_unit.texture_transform_combo_index >= 0
+
             # TODO: other settings
 
-            self.materials[tex_unit.skin_section_index] = blender_mat
+            self.materials[tex_unit.skin_section_index] = blender_mat, tex_unit
 
     def load_armature(self):
         if not len(self.m2.root.bones):
@@ -109,29 +113,6 @@ class BlenderM2Scene:
 
         bpy.context.scene.update()  # update scene.
         bpy.ops.object.mode_set(mode='OBJECT')  # return to object mode.
-
-        skin = self.m2.skins[0]
-
-        for i, smesh in enumerate(skin.submeshes):
-            bl_obj = self.geosets[i]
-            bl_obj.parent = rig
-
-            # bind armature to geometry
-            bpy.context.scene.objects.active = bl_obj
-            bpy.ops.object.modifier_add(type='ARMATURE')
-            bpy.context.object.modifiers["Armature"].object = rig
-
-            vgroups = {}
-            for j in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count):
-                m2_vertex = self.m2.root.vertices[skin.vertex_indices[j]]
-                for b_index, bone_index in enumerate(filter(lambda x: x > 0, m2_vertex.bone_indices)):
-                    vgroups.setdefault(self.m2.root.bones[bone_index].name, []).append((j - smesh.vertex_start, m2_vertex.bone_weights[b_index] / 255))
-
-            for name in vgroups.keys():
-                if len(vgroups[name]) > 0:
-                    grp = bl_obj.vertex_groups.new(name)
-                    for (v, w) in vgroups[name]:
-                        grp.add([v], w, 'REPLACE')
 
     def load_animations(self):
 
@@ -390,7 +371,7 @@ class BlenderM2Scene:
                 uv_layer1.data[i].uv = (uv[0], 1 - uv[1])
 
             # set textures and materials
-            material = self.materials[smesh_i]
+            material, tex_unit = self.materials[smesh_i]
             mesh.materials.append(material)
 
             for i, poly in enumerate(mesh.polygons):
@@ -408,6 +389,33 @@ class BlenderM2Scene:
             for item in mesh_part_id_menu(obj.WowM2Geoset, None):
                 if item[0] == smesh.skin_section_id:
                     obj.name = item[1]
+
+            if self.rig:
+                obj.parent = self.rig
+
+                # bind armature to geometry
+                bpy.context.scene.objects.active = obj
+                bpy.ops.object.modifier_add(type='ARMATURE')
+                bpy.context.object.modifiers["Armature"].object = self.rig
+
+                vgroups = {}
+                for j in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count):
+                    m2_vertex = self.m2.root.vertices[skin.vertex_indices[j]]
+                    for b_index, bone_index in enumerate(filter(lambda x: x > 0, m2_vertex.bone_indices)):
+                        vgroups.setdefault(self.m2.root.bones[bone_index].name, []).append(
+                            (j - smesh.vertex_start, m2_vertex.bone_weights[b_index] / 255))
+
+                for name in vgroups.keys():
+                    if len(vgroups[name]) > 0:
+                        grp = obj.vertex_groups.new(name)
+                        for (v, w) in vgroups[name]:
+                            grp.add([v], w, 'REPLACE')
+
+            # animate UVs
+            if material.WowM2Material.IsAnimated:
+                for j, seq_index in enumerate(self.global_sequences):
+                    pass
+
 
             self.geosets.append(obj)
 
