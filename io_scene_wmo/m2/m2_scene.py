@@ -380,15 +380,16 @@ class BlenderM2Scene:
                 anim_pair.Action = action
 
             # create fcurve
-            f_curves = [action.fcurves.new(data_path='location', index=k) for k in range(3)]
+            f_curves = [action.fcurves.new(data_path='rotation_quaternion', index=k) for k in range(4)]
 
             # init keyframes on the curve
             for f_curve in f_curves: f_curve.keyframe_points.add(len(frames))
 
             # set translation values for each channel
             for i, timestamp in enumerate(frames):
-                rot_quat = track[i].to_quaternion()
                 frame = timestamp * 0.0266666
+
+                rot_quat = (track[i][3], track[i][0], track[i][1], track[i][2])
 
                 for j in range(4):
                     keyframe = f_curves[j].keyframe_points[i]
@@ -413,7 +414,7 @@ class BlenderM2Scene:
                 anim_pair.Action = action
 
             # create fcurve
-            f_curves = [action.fcurves.new(data_path='location', index=k) for k in range(3)]
+            f_curves = [action.fcurves.new(data_path='scale', index=k) for k in range(3)]
 
             # init keyframes on the curve
             for f_curve in f_curves: f_curve.keyframe_points.add(len(frames))
@@ -517,6 +518,7 @@ class BlenderM2Scene:
 
                 bpy.ops.object.empty_add(type='SINGLE_ARROW', location=(0, 0, 0))
                 c_obj = bpy.context.scene.objects.active
+                c_obj.rotation_mode = 'QUATERNION'
                 c_obj.empty_draw_size = 0.5
                 c_obj.parent = obj
 
@@ -547,7 +549,7 @@ class BlenderM2Scene:
                     if tex_transform.rotation.global_sequence == j:
                         animate_tex_transform_controller_rot(anim_pair, name, tex_transform.rotation, j)
 
-                    if tex_transform.scale.global_sequence == j:
+                    if tex_transform.scaling.global_sequence == j:
                         animate_tex_transform_controller_scale(anim_pair, name, tex_transform.scaling, j)
 
                     if not anim_pair.Action:
