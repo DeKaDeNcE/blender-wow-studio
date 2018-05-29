@@ -66,8 +66,6 @@ class BlenderM2Scene:
             blender_mat.WowM2Material.BlendingMode = str(m2_mat.blending_mode)  # TODO: ? bitfield
             blender_mat.WowM2Material.Shader = str(tex_unit.shader_id)
 
-            blender_mat.WowM2Material.IsAnimated = tex_unit.texture_transform_combo_index >= 0
-
             # TODO: other settings
 
             self.materials[tex_unit.skin_section_index] = blender_mat, tex_unit
@@ -329,6 +327,106 @@ class BlenderM2Scene:
                 if not is_global_seq_scale: populate_fcurve_scale(s_curves, bone, anim_index)
 
     def load_geosets(self):
+
+        def animate_tex_transform_controller_trans(anim_pair, name, trans_track, anim_index):
+
+            action = anim_pair.Action
+
+            try:
+                frames = trans_track.timestamps[anim_index]
+                track = trans_track.values[anim_index]
+            except IndexError:
+                return
+
+            if not len(frames):
+                return
+
+            if not action:
+                action = bpy.data.actions.new(name=name)
+                action.use_fake_user = True
+                anim_pair.Action = action
+
+            # create fcurve
+            f_curves = [action.fcurves.new(data_path='location', index=k) for k in range(3)]
+
+            # init keyframes on the curve
+            for f_curve in f_curves: f_curve.keyframe_points.add(len(frames))
+
+            # set translation values for each channel
+            for i, timestamp in enumerate(frames):
+                trans_vec = Vector((0, 0, 0)) + Vector(track[i])
+                frame = timestamp * 0.0266666
+
+                for j in range(3):
+                    keyframe = f_curves[j].keyframe_points[i]
+                    keyframe.co = frame, trans_vec[j]
+                    keyframe.interpolation = 'LINEAR' if trans_track.interpolation_type == 1 else 'CONSTANT'
+
+        def animate_tex_transform_controller_rot(anim_pair, name, rot_track, anim_index):
+            action = anim_pair.Action
+
+            try:
+                frames = rot_track.timestamps[anim_index]
+                track = rot_track.values[anim_index]
+            except IndexError:
+                return
+
+            if not len(frames):
+                return
+
+            if not action:
+                action = bpy.data.actions.new(name=name)
+                action.use_fake_user = True
+                anim_pair.Action = action
+
+            # create fcurve
+            f_curves = [action.fcurves.new(data_path='location', index=k) for k in range(3)]
+
+            # init keyframes on the curve
+            for f_curve in f_curves: f_curve.keyframe_points.add(len(frames))
+
+            # set translation values for each channel
+            for i, timestamp in enumerate(frames):
+                rot_quat = track[i].to_quaternion()
+                frame = timestamp * 0.0266666
+
+                for j in range(4):
+                    keyframe = f_curves[j].keyframe_points[i]
+                    keyframe.co = frame, rot_quat[j]
+                    keyframe.interpolation = 'LINEAR' if rot_track.interpolation_type == 1 else 'CONSTANT'
+
+        def animate_tex_transform_controller_scale(anim_pair, name, scale_track, anim_index):
+            action = anim_pair.Action
+
+            try:
+                frames = scale_track.timestamps[anim_index]
+                track = scale_track.values[anim_index]
+            except IndexError:
+                return
+
+            if not len(frames):
+                return
+
+            if not action:
+                action = bpy.data.actions.new(name=name)
+                action.use_fake_user = True
+                anim_pair.Action = action
+
+            # create fcurve
+            f_curves = [action.fcurves.new(data_path='location', index=k) for k in range(3)]
+
+            # init keyframes on the curve
+            for f_curve in f_curves: f_curve.keyframe_points.add(len(frames))
+
+            # set translation values for each channel
+            for i, timestamp in enumerate(frames):
+                frame = timestamp * 0.0266666
+
+                for j in range(3):
+                    keyframe = f_curves[j].keyframe_points[i]
+                    keyframe.co = frame, track[i][j]
+                    keyframe.interpolation = 'LINEAR' if scale_track.interpolation_type == 1 else 'CONSTANT'
+
         if not len(self.m2.root.vertices):
             print("\nNo mesh geometry found to import.")
             return
@@ -376,7 +474,7 @@ class BlenderM2Scene:
 
             for i, poly in enumerate(mesh.polygons):
                 uv1.data[i].image = material.active_texture.image
-                poly.material_index = 0 # ???
+                poly.material_index = 0  # ???
 
             # get object name
             name = M2SkinMeshPartID.get_mesh_part_name(smesh.skin_section_id)
@@ -412,10 +510,77 @@ class BlenderM2Scene:
                             grp.add([v], w, 'REPLACE')
 
             # animate UVs
-            if material.WowM2Material.IsAnimated:
-                for j, seq_index in enumerate(self.global_sequences):
-                    pass
+            tex_tranform_index = self.m2.root.texture_transforms_lookup_table[tex_unit.texture_transform_combo_index]
 
+            if tex_tranform_index >= 0:
+                tex_transform = self.m2.root.texture_transforms[tex_tranform_index]
+
+                bpy.ops.object.empty_add(type='SINGLE_ARROW', location=(0, 0, 0))
+                c_obj = bpy.context.scene.objects.active
+                c_obj.empty_draw_size = 0.5
+                c_obj.parent = obj
+
+                c_obj.animation_data_create()
+                anim_data_dbc = load_game_data().db_files_client.AnimationData
+                n_global_sequences = len(self.global_sequences)
+
+                bpy.context.scene.objects.active = obj
+                bpy.ops.object.modifier_add(type='UV_WARP')
+                uv_transform = bpy.context.object.modifiers["UVWarp"]
+                uv_transform.object_from = obj
+                uv_transform.object_to = c_obj
+                uv_transform.uv_layer = 'UVMap'
+
+                # load global sequences
+                for j, seq_index in enumerate(self.global_sequences):
+                    anim = bpy.context.scene.WowM2Animations[seq_index]
+
+                    name = "TT_{}_{}_Global_Sequence_{}".format(tex_tranform_index, obj.name, str(j).zfill(3))
+
+                    cur_index = len(anim.AnimPairs)
+                    anim_pair = anim.AnimPairs.add()
+                    anim_pair.Object = c_obj
+
+                    if tex_transform.translation.global_sequence == j:
+                        animate_tex_transform_controller_trans(anim_pair, name, tex_transform.translation, j)
+
+                    if tex_transform.rotation.global_sequence == j:
+                        animate_tex_transform_controller_rot(anim_pair, name, tex_transform.rotation, j)
+
+                    if tex_transform.scale.global_sequence == j:
+                        animate_tex_transform_controller_scale(anim_pair, name, tex_transform.scaling, j)
+
+                    if not anim_pair.Action:
+                        anim.AnimPairs.remove(cur_index)
+
+                # load animations
+                for j, anim_index in enumerate(self.animations):
+                    anim = bpy.context.scene.WowM2Animations[j + n_global_sequences]
+                    sequence = self.m2.root.sequences[anim_index]
+
+                    field_name = anim_data_dbc.get_field(sequence.id, 'Name')
+                    name = 'TT_{}_{}_{}_UnkAnim'.format(tex_tranform_index, obj.name, str(i).zfill(3)) \
+                        if not field_name else "TT_{}_{}_{}_{}_({})".format(tex_tranform_index,
+                                                                            obj.name,
+                                                                            str(i).zfill(3),
+                                                                            field_name,
+                                                                            sequence.variation_index)
+
+                    cur_index = len(anim.AnimPairs)
+                    anim_pair = anim.AnimPairs.add()
+                    anim_pair.Object = c_obj
+
+                    if tex_transform.translation.global_sequence < 0:
+                        animate_tex_transform_controller_trans(anim_pair, name, tex_transform.translation, j)
+
+                    if tex_transform.rotation.global_sequence < 0:
+                        animate_tex_transform_controller_rot(anim_pair, name, tex_transform.rotation, j)
+
+                    if tex_transform.scaling.global_sequence < 0:
+                        animate_tex_transform_controller_scale(anim_pair, name, tex_transform.scaling, j)
+
+                    if not anim_pair.Action:
+                        anim.AnimPairs.remove(cur_index)
 
             self.geosets.append(obj)
 
@@ -561,7 +726,7 @@ class BlenderM2Scene:
             anim_pair.Action = action
 
             # create fcurve
-            f_curve = action.fcurves.new(data_path='WowM2Event.Enabled')
+            f_curve = action.fcurves.new(data_path='WowM2Event.Fire')
 
             # init translation keyframes on the curve
             f_curve.keyframe_points.add(len(frames))

@@ -60,31 +60,6 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         description="WoW material blending mode"
         )
 
-    IsAnimated = bpy.props.BoolProperty(
-        name='Is Animated',
-        description='This turns on texture animation properties for this texture',
-        default=False
-    )
-
-    Location = bpy.props.FloatVectorProperty(
-        name='Location',
-        description='Animating this property will translate the texture in-game'
-    )
-
-    Rotation = bpy.props.FloatVectorProperty(
-        name='Rotation',
-        description='Animating this property will rotate the texture in-game',
-        size=4,
-        subtype='QUATERNION',
-        unit='ROTATION'
-    )
-
-    Scale = bpy.props.FloatVectorProperty(
-        name='Scale',
-        description='Animating this property will scale the texture in-game',
-    )
-
-
 def register_wow_m2_material_properties():
     bpy.types.Material.WowM2Material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
 
@@ -194,6 +169,7 @@ class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
         name='Path',
         description='Path to .blp file in wow file system.'
     )
+
 
 def register_wow_m2_texture_properties():
     bpy.types.ImageTexture.WowM2Texture = bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)
@@ -362,8 +338,13 @@ class WowM2AttachmentPanel(bpy.types.Panel):
     bl_context = "object"
     bl_label = "M2 Attachment"
 
+    def draw_header(self, context):
+        self.layout.prop(context.object.WowM2Attachment, "Enabled", text="")
+
     def draw(self, context):
         layout = self.layout
+        layout.enabled = context.object.WowM2Attachment.Enabled
+
         col = layout.column()
         col.prop(context.object.WowM2Attachment, 'Type', text="Type")
         col.prop(context.object.WowM2Attachment, 'Animate', text="Animate")
@@ -374,10 +355,18 @@ class WowM2AttachmentPanel(bpy.types.Panel):
                 and context.scene.WowScene.Type == 'M2'
                 and context.object is not None
                 and context.object.type == 'EMPTY'
-                and context.object.empty_draw_type == 'SPHERE')
+                and not (context.object.WowM2Event.Enabled or context.object.WowM2TextureTransform.Enabled)
+        )
 
 
 class WowM2AttachmentPropertyGroup(bpy.types.PropertyGroup):
+
+    Enabled = bpy.props.BoolProperty(
+        name='Enabled',
+        description='Enabled this object to be a WoW M2 attachment point',
+        default=False
+    )
+
     Type = bpy.props.EnumProperty(
         name="Type",
         description="WoW Attachment Type",
@@ -444,8 +433,13 @@ class WowM2EventPanel(bpy.types.Panel):
     bl_context = "object"
     bl_label = "M2 Event"
 
+    def draw_header(self, context):
+        self.layout.prop(context.object.WowM2Event, "Enabled", text="")
+
     def draw(self, context):
         layout = self.layout
+        layout.enabled = context.object.WowM2Event.Enabled
+
         col = layout.column()
         col.prop(context.object.WowM2Event, 'Token')
         col.prop(context.object.WowM2Event, 'Enabled')
@@ -464,10 +458,18 @@ class WowM2EventPanel(bpy.types.Panel):
                 and context.scene.WowScene.Type == 'M2'
                 and context.object is not None
                 and context.object.type == 'EMPTY'
-                and context.object.empty_draw_type == 'CUBE')
+                and not (context.object.WowM2Attachment.Enabled or context.object.WowM2TextureTransform.Enabled)
+        )
 
 
 class WowM2EventPropertyGroup(bpy.types.PropertyGroup):
+
+    Enabled = bpy.props.BoolProperty(
+        name='Enabled',
+        description='Enabled this object to be a WoW M2 event',
+        default=False
+    )
+
     Token = bpy.props.EnumProperty(
         name='Token',
         description='This token defines the purpose of the event',
@@ -480,7 +482,7 @@ class WowM2EventPropertyGroup(bpy.types.PropertyGroup):
         min=0
     )
 
-    Enabled = bpy.props.BoolProperty(
+    Fire = bpy.props.BoolProperty(
         name='Enabled',
         description='Enable this event in this specific animation keyframe',
         default=False
@@ -549,6 +551,58 @@ class WowM2AnimationsPanel(bpy.types.Panel):
         return context.scene is not None and context.scene.WowScene.Type == 'M2'
 
 
+###############################
+## Texture Transform Controller
+###############################
+
+class WowM2TextureTransformControllerPanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_label = "M2 Texture Transform"
+
+    def draw_header(self, context):
+        self.layout.prop(context.object.WowM2TextureTransform, "Enabled", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.enabled = context.object.WowM2TextureTransform.Enabled
+
+        layout.prop(context.object, "parent", text='Parent')
+        layout.separator()
+
+        if context.object.parent and context.object.parent.WowM2Geoset.CollisionMesh:
+            layout.label("Parent object is not M2 geoset", icon='ERROR')
+        else:
+            layout.label("No parent object selected", icon='ERROR')
+
+    @classmethod
+    def poll(cls, context):
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'M2'
+                and context.object is not None
+                and context.object.type == 'EMPTY'
+                and not (context.object.WowM2Event.Enabled or context.object.WowM2Attachment.Enabled)
+        )
+
+
+class WowM2TextureTransformControllerPropertyGroup(bpy.types.PropertyGroup):
+
+    Enabled = bpy.props.BoolProperty(
+        name='Enabled',
+        description='Enable this object to be WoW M2 texture transform controller',
+        default=False
+    )
+
+
+def register_wow_m2_texture_transform_controller_properties():
+    bpy.types.Object.WowM2TextureTransform = bpy.props.PointerProperty(type=WowM2TextureTransformControllerPropertyGroup)
+
+
+def unregister_wow_m2_texture_transform_controller_properties():
+    bpy.types.Object.WowM2TextureTransform = None
+
+
 def register():
     register_wow_m2_material_properties()
     register_wow_m2_geoset_properties()
@@ -558,6 +612,7 @@ def register():
     register_wow_m2_attachment_properties()
     register_wow_m2_particle_properties()
     register_wow_m2_event_properties()
+    register_wow_m2_texture_transform_controller_properties()
 
 
 def unregister():
@@ -569,5 +624,6 @@ def unregister():
     unregister_wow_m2_attachment_properties()
     unregister_wow_m2_particle_properties()
     unregister_wow_m2_event_properties()
+    unregister_wow_m2_texture_transform_controller_properties()
 
 

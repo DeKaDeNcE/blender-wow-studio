@@ -706,12 +706,18 @@ def update_animation(self, context):
     context.scene.render.fps_base = sequence.PlaybackSpeed
 
     frame_end = 0
-    for anim_pair in sequence.AnimPairs:
-        if anim_pair.Object and anim_pair.Action:
-            if anim_pair.Action and anim_pair.Action.frame_range[1] > frame_end:
-                frame_end = anim_pair.Action.frame_range[1]
 
-            anim_pair.Object.animation_data.action = anim_pair.Action
+    for obj in bpy.context.scene.objects:
+        for anim_pair in sequence.AnimPairs:
+            if anim_pair.Object.name == obj.name and anim_pair.Action:
+                if anim_pair.Action and anim_pair.Action.frame_range[1] > frame_end:
+                    frame_end = anim_pair.Action.frame_range[1]
+
+                anim_pair.Object.animation_data.action = anim_pair.Action
+                break
+        else:
+            if obj.animation_data:
+                obj.animation_data.action = None
 
     context.scene.frame_start = 0
     context.scene.frame_end = frame_end + 1

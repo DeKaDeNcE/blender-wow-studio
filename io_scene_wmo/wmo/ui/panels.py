@@ -80,7 +80,7 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
         max=1.0
         )
 
-    SkyboxPath =  bpy.props.StringProperty(
+    SkyboxPath = bpy.props.StringProperty(
         name="SkyboxPath",
         description="Skybox for WMO (.MDX)",
         default='',
