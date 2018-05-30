@@ -575,7 +575,7 @@ class WowM2AnimationsPanel(bpy.types.Panel):
             cur_anim_track = context.scene.WowM2Animations[context.scene.WowM2CurAnimIndex]
 
             row = col.row()
-            row_split = row.split(percentage=0.88)
+            row_split = row.split().row(align=True)
             row_split.prop(cur_anim_track, "PlaybackSpeed", text='Speed')
 
             if context.scene.sync_mode == 'AUDIO_SYNC' and context.user_preferences.system.audio_device == 'JACK':
@@ -596,6 +596,9 @@ class WowM2AnimationsPanel(bpy.types.Panel):
                 sub = row.row(align=True)
                 sub.scale_x = 2.0
                 sub.operator("screen.animation_play", text="", icon='PAUSE')
+
+            row = row_split.row(align=True)
+            row.operator("scene.wow_m2_animation_editor_seq_deselect", text='', icon='ARMATURE_DATA')
 
             col.separator()
 

@@ -62,7 +62,7 @@ class AnimationEditorDialog(bpy.types.Operator):
 
         cur_anim_pair = None
 
-        if cur_anim_track:
+        if cur_anim_track and context.scene.WowM2CurAnimIndex >= 0:
 
             row = col.row()
             sub_col1 = row.column()
@@ -82,9 +82,10 @@ class AnimationEditorDialog(bpy.types.Operator):
         split = layout.split(percentage=0.5)
         col = split.column()
 
-        if cur_anim_track:
+        if cur_anim_track and context.scene.WowM2CurAnimIndex >= 0:
             row = col.row()
-            row_split = row.split(percentage=0.83)
+            row_split = row.split(percentage=0.935)
+            row_split = row_split.row(align=True)
             row_split.prop(cur_anim_track, "PlaybackSpeed", text='Speed')
 
             if context.scene.sync_mode == 'AUDIO_SYNC' and context.user_preferences.system.audio_device == 'JACK':
@@ -105,6 +106,9 @@ class AnimationEditorDialog(bpy.types.Operator):
                 sub = row.row(align=True)
                 sub.scale_x = 2.0
                 sub.operator("screen.animation_play", text="", icon='PAUSE')
+
+            row = row_split.row(align=True)
+            row.operator("scene.wow_m2_animation_editor_seq_deselect", text='', icon='ARMATURE_DATA')
 
             if cur_anim_pair:
 
@@ -247,7 +251,6 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
         self.use_filter_show = True
 
-        ob = data
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
 
             row = layout.row()
@@ -337,6 +340,25 @@ class AnimationEditor_SequenceMove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class AnimationEditor_SequenceDeselect(bpy.types.Operator):
+    bl_idname = 'scene.wow_m2_animation_editor_seq_deselect'
+    bl_label = 'Deselect sequence'
+    bl_description = 'Deselect Wow animation sequence'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+
+        context.scene.WowM2CurAnimIndex = -1
+
+        for obj in context.scene.objects:
+            if obj.animation_data:
+                obj.animation_data.action = None
+
+            # TODO: set to rest pose here
+
+        return {'FINISHED'}
+
+
 class AnimationEditor_GoToAnimation(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_go_to_index'
     bl_label = 'Go to this WoW animation'
@@ -347,6 +369,7 @@ class AnimationEditor_GoToAnimation(bpy.types.Operator):
     def execute(self, context):
         if self.anim_index < len(context.scene.WowM2Animations):
             context.scene.WowM2CurAnimIndex = self.anim_index
+
             return {'FINISHED'}
         else:
             self.report({'ERROR'}, "Invalid animation index")
