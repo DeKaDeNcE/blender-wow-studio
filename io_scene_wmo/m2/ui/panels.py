@@ -60,6 +60,7 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         description="WoW material blending mode"
         )
 
+
 def register_wow_m2_material_properties():
     bpy.types.Material.WowM2Material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
 
@@ -69,7 +70,7 @@ def unregister_wow_m2_material_properties():
 
 
 ###############################
-## Vertex Info
+## Geoset
 ###############################
 
 class M2GeosetPanel(bpy.types.Panel):
@@ -84,6 +85,9 @@ class M2GeosetPanel(bpy.types.Panel):
         if not context.object.WowM2Geoset.CollisionMesh:
             self.layout.prop(context.object.WowM2Geoset, "MeshPartGroup")
             self.layout.prop(context.object.WowM2Geoset, "MeshPartID")
+            row = self.layout.row(align=True)
+            row.prop(context.object.WowM2Geoset, "UVTransform")
+            row.operator("scene.wow_m2_geoset_add_texture_transform", text='', icon='RNA_ADD')
 
     @classmethod
     def poll(cls, context):
@@ -92,6 +96,29 @@ class M2GeosetPanel(bpy.types.Panel):
                 and context.object is not None
                 and context.object.data is not None
                 and isinstance(context.object.data, bpy.types.Mesh))
+
+
+def update_geoset_uv_transform(self, context):
+    c_obj = context.object.WowM2Geoset.UVTransform
+
+    uv_transform = context.object.modifiers.get('M2TexTransform')
+
+    if c_obj:
+        if not c_obj.WowM2TextureTransform.Enabled:
+            context.object.WowM2Geoset.UVTransform = None
+
+        if not uv_transform:
+            bpy.ops.object.modifier_add(type='UV_WARP')
+            uv_transform = context.object.modifiers[-1]
+            uv_transform.name = 'M2TexTransform'
+            uv_transform.object_from = context.object
+            uv_transform.object_to = c_obj
+            uv_transform.uv_layer = 'UVMap'
+        else:
+            uv_transform.object_to = c_obj
+
+    elif uv_transform:
+        context.object.modifiers.remove(uv_transform)
 
 
 class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
@@ -111,6 +138,37 @@ class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
         description="Mesh part ID of this geoset",
         items=mesh_part_id_menu
     )
+
+    UVTransform = bpy.props.PointerProperty(
+        name="UV Transform",
+        type=bpy.types.Object,
+        poll=lambda self, obj: obj.WowM2TextureTransform.Enabled,
+        update=update_geoset_uv_transform
+    )
+
+
+class WowM2Geoset_AddTextureTransform(bpy.types.Operator):
+    bl_idname = 'scene.wow_m2_geoset_add_texture_transform'
+    bl_label = 'Add new UV transform controller'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    anim_index = bpy.props.IntProperty()
+
+    def execute(self, context):
+        obj = context.object
+        bpy.ops.object.empty_add(type='SINGLE_ARROW', location=(0, 0, 0))
+        c_obj = bpy.context.scene.objects.active
+        c_obj.name = "TT_Controller"
+        c_obj.WowM2TextureTransform.Enabled = True
+        c_obj = bpy.context.scene.objects.active
+        c_obj.rotation_mode = 'QUATERNION'
+        c_obj.empty_draw_size = 0.5
+        c_obj.animation_data_create()
+
+        obj.WowM2Geoset.UVTransform = c_obj
+        bpy.context.scene.objects.active = obj
+
+        return {'FINISHED'}
 
 
 def register_wow_m2_geoset_properties():
@@ -563,18 +621,6 @@ class WowM2TextureTransformControllerPanel(bpy.types.Panel):
 
     def draw_header(self, context):
         self.layout.prop(context.object.WowM2TextureTransform, "Enabled", text="")
-
-    def draw(self, context):
-        layout = self.layout
-        layout.enabled = context.object.WowM2TextureTransform.Enabled
-
-        layout.prop(context.object, "parent", text='Parent')
-        layout.separator()
-
-        if context.object.parent and context.object.parent.WowM2Geoset.CollisionMesh:
-            layout.label("Parent object is not M2 geoset", icon='ERROR')
-        else:
-            layout.label("No parent object selected", icon='ERROR')
 
     @classmethod
     def poll(cls, context):

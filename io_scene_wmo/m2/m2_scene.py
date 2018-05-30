@@ -16,6 +16,7 @@ class BlenderM2Scene:
         self.m2 = m2
         self.materials = {}
         self.bone_ids = {}
+        self.uv_transforms = {}
         self.geosets = []
         self.animations = []
         self.global_sequences = []
@@ -514,24 +515,33 @@ class BlenderM2Scene:
             tex_tranform_index = self.m2.root.texture_transforms_lookup_table[tex_unit.texture_transform_combo_index]
 
             if tex_tranform_index >= 0:
+
+                c_obj = self.uv_transforms.get(tex_tranform_index)
                 tex_transform = self.m2.root.texture_transforms[tex_tranform_index]
-
-                bpy.ops.object.empty_add(type='SINGLE_ARROW', location=(0, 0, 0))
-                c_obj = bpy.context.scene.objects.active
-                c_obj.rotation_mode = 'QUATERNION'
-                c_obj.empty_draw_size = 0.5
-                c_obj.parent = obj
-
-                c_obj.animation_data_create()
                 anim_data_dbc = load_game_data().db_files_client.AnimationData
                 n_global_sequences = len(self.global_sequences)
 
+                if not c_obj:
+                    bpy.ops.object.empty_add(type='SINGLE_ARROW', location=(0, 0, 0))
+                    c_obj = bpy.context.scene.objects.active
+                    c_obj.name = "TT_Controller"
+                    c_obj.WowM2TextureTransform.Enabled = True
+                    c_obj = bpy.context.scene.objects.active
+                    c_obj.rotation_mode = 'QUATERNION'
+                    c_obj.empty_draw_size = 0.5
+                    c_obj.animation_data_create()
+
+                    self.uv_transforms[tex_tranform_index] = c_obj
+
                 bpy.context.scene.objects.active = obj
                 bpy.ops.object.modifier_add(type='UV_WARP')
-                uv_transform = bpy.context.object.modifiers["UVWarp"]
+                uv_transform = bpy.context.object.modifiers[-1]
+                uv_transform.name = 'M2TexTransform'
                 uv_transform.object_from = obj
                 uv_transform.object_to = c_obj
                 uv_transform.uv_layer = 'UVMap'
+
+                obj.WowM2Geoset.UVTransform = c_obj
 
                 # load global sequences
                 for j, seq_index in enumerate(self.global_sequences):
@@ -625,6 +635,7 @@ class BlenderM2Scene:
             obj.location = bl_edit_bone.matrix_local.inverted() * Vector(attachment.position)
 
             obj.name = M2AttachmentTypes.get_attachment_name(attachment.id, i)
+            obj.WowM2Attachment.Enabled = True
             obj.WowM2Attachment.Type = str(attachment.id)
 
             # Animate attachment
@@ -761,6 +772,7 @@ class BlenderM2Scene:
             obj.location = bl_edit_bone.matrix_local.inverted() * Vector(event.position)
             token = M2EventTokens.get_event_name(event.identifier)
             obj.name = "Event_{}".format(token)
+            obj.WowM2Event.Enabled = True
             obj.WowM2Event.Token = event.identifier
 
             if obj.name in ('PlayEmoteSound',
