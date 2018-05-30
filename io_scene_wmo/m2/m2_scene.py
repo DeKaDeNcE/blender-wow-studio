@@ -389,7 +389,7 @@ class BlenderM2Scene:
             for i, timestamp in enumerate(frames):
                 frame = timestamp * 0.0266666
 
-                rot_quat = (track[i][3], track[i][0], track[i][1], track[i][2])
+                rot_quat = (track[i][3], -track[i][1], track[i][0], track[i][2])
 
                 for j in range(4):
                     keyframe = f_curves[j].keyframe_points[i]
@@ -544,13 +544,13 @@ class BlenderM2Scene:
                     anim_pair.Object = c_obj
 
                     if tex_transform.translation.global_sequence == j:
-                        animate_tex_transform_controller_trans(anim_pair, name, tex_transform.translation, j)
+                        animate_tex_transform_controller_trans(anim_pair, name, tex_transform.translation, 0)
 
                     if tex_transform.rotation.global_sequence == j:
-                        animate_tex_transform_controller_rot(anim_pair, name, tex_transform.rotation, j)
+                        animate_tex_transform_controller_rot(anim_pair, name, tex_transform.rotation, 0)
 
                     if tex_transform.scaling.global_sequence == j:
-                        animate_tex_transform_controller_scale(anim_pair, name, tex_transform.scaling, j)
+                        animate_tex_transform_controller_scale(anim_pair, name, tex_transform.scaling, 0)
 
                     if not anim_pair.Action:
                         anim.AnimPairs.remove(cur_index)
