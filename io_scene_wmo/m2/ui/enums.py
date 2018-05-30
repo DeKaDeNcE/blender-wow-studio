@@ -32,7 +32,12 @@ RENDER_FLAGS = [
     ("2", "Unfogged", "Disable fog", ui_icons['MAT_UNFOGGED'], 0x2),
     ("4", "Two-sided", "Render from both sides", 'MOD_UVPROJECT', 0x4),
     ("8", "Depth-Test", "Unknown", 'SPACE3', 0x8),
-    ("16", "Depth-Write", "Unknown", 'SPACE2', 0x10)
+    ("16", "Depth-Write", "Unknown", 'SPACE2', 0x10),
+    ("64", "Shadow Batch 1", "seen in WoD", 'QUESTION', 0x40),
+    ("128", "Shadow Batch 2", "seen in WoD", 'QUESTION', 0x80),
+    ("256", "Unknown", "seen in well_vortex01.m2", 'QUESTION', 0x100),
+    ("1024", "Unknown", "see in WoD", 'QUESTION', 0x400),
+    ("2048", "Prevent Alpha ", "revent alpha for custom elements. if set, use (fully) opaque or transparent. (litSphere, shadowMonk) (MoP+)", 'SPACE2', 0x800)
 ]
 
 BLENDING_MODES = [

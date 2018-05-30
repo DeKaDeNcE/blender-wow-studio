@@ -405,6 +405,8 @@ class M2EventTokens(Enum):
     ExploadBallista = 'DEST'
     Unknown3 = 'POIN'
     Unknown4 = 'WHEE'                                           # Data: 601+, Used on wheels at vehicles.
+    Unknown5 = 'BOTT'                                           # seen in well_vortex01.m2
+    Unknown6 = 'TOP'                                            # seen in well_vortex01.m2
 
     @classmethod
     def get_event_name(cls, event_token):
