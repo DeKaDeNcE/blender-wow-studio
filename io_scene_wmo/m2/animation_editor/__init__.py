@@ -257,11 +257,16 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
             row.label(item.Name, icon='SEQUENCE')
 
             if not item.IsGlobalSequence:
-
                 if item.IsAlias and len(data.WowM2Animations) < item.AliasNext:
                     row.label("", icon='ERROR')
-                row.prop(item, "IsPrimarySequence", emboss=False, text="", icon='POSE_HLT' if item.IsPrimarySequence else 'OUTLINER_DATA_POSE')
-                row.prop(item, "IsAlias", emboss=False, text="", icon='GHOST_ENABLED' if item.IsAlias else 'GHOST_DISABLED')
+                row.prop(item, "IsPrimarySequence", emboss=False, text="",
+                         icon='POSE_HLT' if item.IsPrimarySequence else 'OUTLINER_DATA_POSE')
+                row.prop(item, "IsAlias", emboss=False, text="",
+                         icon='GHOST_ENABLED' if item.IsAlias else 'GHOST_DISABLED')
+            else:
+                row.prop(item, 'StashToNLA', emboss=False, text="",
+                         icon='RESTRICT_RENDER_OFF' if item.StashToNLA else 'RESTRICT_RENDER_ON')
+
         elif self.layout_type in {'GRID'}:
             pass
 
@@ -615,7 +620,36 @@ def update_alias(self, context):
     if is_changed:
         self.Flags = flag_set
 
-    update_animation_collection(None, None) 
+    update_animation_collection(None, None)
+
+
+def update_stash_to_nla(self, context):
+    if self.StashToNLA and not context.scene.WowM2Animations[context.scene.WowM2CurAnimIndex] == self:
+        for anim_pair in self.AnimPairs:
+            if anim_pair.Object and anim_pair.Action:
+                nla_track = anim_pair.Object.animation_data.nla_tracks.get(anim_pair.Action.name)
+
+                if not nla_track:
+                    nla_track = anim_pair.Object.animation_data.nla_tracks.new()
+                    nla_track.is_solo = False
+                    nla_track.lock = True
+                    nla_track.mute = False
+
+                nla_track.name = anim_pair.Action.name
+
+                for strip in nla_track.strips:
+                    nla_track.strips.remove(strip)
+
+                strip = nla_track.strips.new(name=anim_pair.Action.name, start=0, action=anim_pair.Action)
+                strip.frame_end = context.scene.frame_end
+
+    else:
+        for anim_pair in self.AnimPairs:
+            if anim_pair.Object and anim_pair.Action:
+                nla_track = anim_pair.Object.animation_data.nla_tracks.get(anim_pair.Action.name)
+
+                if nla_track:
+                    anim_pair.Object.animation_data.nla_tracks.remove(nla_track)
 
 
 class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
@@ -639,6 +673,12 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         max=120,
         default=1.0,
         update=update_playback_speed
+    )
+
+    StashToNLA = bpy.props.BoolProperty(
+        name='Enable persistent playing',
+        description='Enable persistent playing of this global sequences, no matter what animation is chosen',
+        update=update_stash_to_nla
     )
 
     # Layout properties
@@ -722,7 +762,7 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
 
 def update_animation(self, context):
     try:
-        sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
+        sequence = context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
     except IndexError:
         return
 
@@ -730,20 +770,30 @@ def update_animation(self, context):
 
     frame_end = 0
 
-    for obj in bpy.context.scene.objects:
-        for anim_pair in sequence.AnimPairs:
-            if anim_pair.Object.name == obj.name and anim_pair.Action:
-                if anim_pair.Action and anim_pair.Action.frame_range[1] > frame_end:
-                    frame_end = anim_pair.Action.frame_range[1]
+    for obj in context.scene.objects:
+        if obj.animation_data:
+            obj.animation_data.action = None
 
+    global_seqs = []
+
+    for i, anim in enumerate(context.scene.WowM2Animations):
+
+        if i == context.scene.WowM2CurAnimIndex:
+            for anim_pair in anim.AnimPairs:
                 anim_pair.Object.animation_data.action = anim_pair.Action
-                break
-        else:
-            if obj.animation_data:
-                obj.animation_data.action = None
+
+                if anim_pair.Object and anim_pair.Action:
+                    if anim_pair.Action.frame_range[1] > frame_end:
+                        frame_end = anim_pair.Action.frame_range[1]
+
+        if anim.IsGlobalSequence:
+            global_seqs.append(anim)
 
     context.scene.frame_start = 0
     context.scene.frame_end = frame_end + 1
+
+    for seq in global_seqs:
+        update_stash_to_nla(seq, bpy.context)
 
 
 def register_wow_m2_animation_editor_properties():
@@ -757,7 +807,7 @@ def register_wow_m2_animation_editor_properties():
     bpy.types.Scene.WowM2CurAnimIndex = bpy.props.IntProperty(
         name='M2 Animation',
         description='Current WoW M2 animation',
-        update=update_animation,
+        update=update_animation
     )
 
 
