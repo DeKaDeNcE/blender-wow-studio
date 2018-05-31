@@ -642,8 +642,6 @@ def update_stash_to_nla(self, context):
 
                 strip = nla_track.strips.new(name=anim_pair.Action.name, start=0, action=anim_pair.Action)
 
-                update_scene_frame_range()
-
     else:
         for anim_pair in self.AnimPairs:
             if anim_pair.Object and anim_pair.Action:
@@ -651,6 +649,8 @@ def update_stash_to_nla(self, context):
 
                 if nla_track:
                     anim_pair.Object.animation_data.nla_tracks.remove(nla_track)
+
+    update_scene_frame_range()
 
 
 class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
