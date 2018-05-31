@@ -641,7 +641,8 @@ def update_stash_to_nla(self, context):
                     nla_track.strips.remove(strip)
 
                 strip = nla_track.strips.new(name=anim_pair.Action.name, start=0, action=anim_pair.Action)
-                strip.frame_end = context.scene.frame_end
+
+                update_scene_frame_range()
 
     else:
         for anim_pair in self.AnimPairs:
@@ -760,6 +761,34 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
     )
 
 
+def update_scene_frame_range():
+    frame_end = 0
+
+    for obj in bpy.context.scene.objects:
+        if obj.animation_data:
+
+            if obj.animation_data.action and obj.animation_data.action.frame_range[1] > frame_end:
+                frame_end = obj.animation_data.action.frame_range[1]
+
+            for nla_track in obj.animation_data.nla_tracks:
+                if not nla_track.mute:
+                    for strip in nla_track.strips:
+                        if strip.frame_end > frame_end:
+                            frame_end = strip.frame_end
+
+    bpy.context.scene.frame_start = 0
+    bpy.context.scene.frame_end = frame_end
+
+    for anim in bpy.context.scene.WowM2Animations:
+        if anim.IsGlobalSequence and anim.StashToNLA:
+            for anim_pair in anim.AnimPairs:
+                if anim_pair.Object and anim_pair.Action:
+                    nla_track = anim_pair.Object.animation_data.nla_tracks.get(anim_pair.Action.name)
+
+                    if nla_track and len(nla_track.strips):
+                        nla_track.strips[-1].frame_end = bpy.context.scene.frame_end
+
+
 def update_animation(self, context):
     try:
         sequence = context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
@@ -767,8 +796,6 @@ def update_animation(self, context):
         return
 
     context.scene.render.fps_base = sequence.PlaybackSpeed
-
-    frame_end = 0
 
     for obj in context.scene.objects:
         if obj.animation_data:
@@ -782,15 +809,10 @@ def update_animation(self, context):
             for anim_pair in anim.AnimPairs:
                 anim_pair.Object.animation_data.action = anim_pair.Action
 
-                if anim_pair.Object and anim_pair.Action:
-                    if anim_pair.Action.frame_range[1] > frame_end:
-                        frame_end = anim_pair.Action.frame_range[1]
-
         if anim.IsGlobalSequence:
             global_seqs.append(anim)
 
-    context.scene.frame_start = 0
-    context.scene.frame_end = frame_end + 1
+    update_scene_frame_range()
 
     for seq in global_seqs:
         update_stash_to_nla(seq, bpy.context)
