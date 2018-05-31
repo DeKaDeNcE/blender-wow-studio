@@ -190,6 +190,7 @@ class BlenderM2Scene:
         scene = bpy.context.scene
         rig = self.rig
         rig.animation_data_create()
+        rig.animation_data.action_blend_type = 'ADD'
         bpy.context.scene.objects.active = rig
 
         anim_data_dbc = load_game_data().db_files_client.AnimationData
@@ -530,6 +531,7 @@ class BlenderM2Scene:
                     c_obj.rotation_mode = 'QUATERNION'
                     c_obj.empty_draw_size = 0.5
                     c_obj.animation_data_create()
+                    c_obj.animation_data.action_blend_type = 'ADD'
 
                     self.uv_transforms[tex_tranform_index] = c_obj
 
@@ -640,6 +642,7 @@ class BlenderM2Scene:
 
             # Animate attachment
             obj.animation_data_create()
+            obj.animation_data.action_blend_type = 'ADD'
             anim_data_dbc = load_game_data().db_files_client.AnimationData
             n_global_sequences = len(self.global_sequences)
 
@@ -682,6 +685,7 @@ class BlenderM2Scene:
         def animate_light_properties(obj, prop_path, m2_track):
             panel, prop = prop_path.split('.')
             obj.animation_data_create()
+            obj.animation_data.action_blend_type = 'ADD'
 
             for i, action in enumerate(self.animations):
                 obj.animation_data.action = action
@@ -784,6 +788,7 @@ class BlenderM2Scene:
 
             # animate event firing
             obj.animation_data_create()
+            obj.animation_data.action_blend_type = 'ADD'
             anim_data_dbc = load_game_data().db_files_client.AnimationData
             n_global_sequences = len(self.global_sequences)
 

@@ -164,6 +164,7 @@ class WowM2Geoset_AddTextureTransform(bpy.types.Operator):
         c_obj.rotation_mode = 'QUATERNION'
         c_obj.empty_draw_size = 0.5
         c_obj.animation_data_create()
+        c_obj.animation_data.action_blend_type = 'ADD'
 
         obj.WowM2Geoset.UVTransform = c_obj
         bpy.context.scene.objects.active = obj

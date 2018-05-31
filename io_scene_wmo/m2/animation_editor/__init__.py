@@ -555,6 +555,7 @@ def update_object(self, context):
     sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
     anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
     anim_pair.Object.animation_data_create()
+    anim_pair.Object.animation_data.action_blend_type = 'ADD'
 
 
 def update_action(self, context):
@@ -641,7 +642,10 @@ def update_stash_to_nla(self, context):
                     nla_track.strips.remove(strip)
 
                 strip = nla_track.strips.new(name=anim_pair.Action.name, start=0, action=anim_pair.Action)
+                strip.blend_type = 'ADD'
 
+                if anim_pair.Object.animation_data.action:
+                    strip.frame_end = anim_pair.Object.animation_data.action.frame_range[1]
     else:
         for anim_pair in self.AnimPairs:
             if anim_pair.Object and anim_pair.Action:
