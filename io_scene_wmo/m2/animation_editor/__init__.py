@@ -765,7 +765,7 @@ def update_scene_frame_range():
     frame_end = 0
 
     for obj in bpy.context.scene.objects:
-        if obj.animation_data:
+        if obj.animation_data and not obj.WowM2Event.Enabled: # TODO: wtf?
 
             if obj.animation_data.action and obj.animation_data.action.frame_range[1] > frame_end:
                 frame_end = obj.animation_data.action.frame_range[1]
