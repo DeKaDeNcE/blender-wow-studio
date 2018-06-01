@@ -262,22 +262,39 @@ class BlenderM2Scene:
             # write global sequence fcurves
             if is_global_seq_trans:
                 action = scene.WowM2Animations[self.global_sequences[bone.translation.global_sequence]].AnimPairs[0].Action
+
+                # group channels
+                if bone.name not in action.groups:
+                    action.groups.new(name=bone.name)
+
                 t_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].location'.format(bl_bone.name),
-                                                index=k) for k in range(3)]
+                                                index=k, action_group=bone.name) for k in range(3)]
+
 
                 populate_fcurve_trans(t_fcurves, bone, 0, True)
 
             if is_global_seq_rot:
+
                 action = scene.WowM2Animations[self.global_sequences[bone.rotation.global_sequence]].AnimPairs[0].Action
+
+                # group channels
+                if bone.name not in action.groups:
+                    action.groups.new(name=bone.name)
+
                 r_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name),
-                                                index=k) for k in range(4)]
+                                                index=k, action_group=bone.name) for k in range(4)]
 
                 populate_fcurve_rot(r_fcurves, bone, 0, True)
 
             if is_global_seq_scale:
                 action = scene.WowM2Animations[self.global_sequences[bone.scale.global_sequence]].AnimPairs[0].Action
+
+                # group channels
+                if bone.name not in action.groups:
+                    action.groups.new(name=bone.name)
+
                 s_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].scale'.format(bl_bone.name),
-                                                index=k) for k in range(3)]
+                                                index=k, action_group=bone.name) for k in range(3)]
 
                 populate_fcurve_scale(s_fcurves, bone, 0, True)
 
@@ -287,9 +304,13 @@ class BlenderM2Scene:
                 anim = scene.WowM2Animations[i + n_global_sequences]
                 action = anim.AnimPairs[0].Action
 
+                # group channels
+                if bone.name not in action.groups:
+                    action.groups.new(name=bone.name)
+
                 # create translation fcurves
                 t_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].location'.format(bl_bone.name),
-                                                index=k) for k in range(3)]
+                                                index=k, action_group=bone.name) for k in range(3)]
 
                 # set rest translation
                 default_trans = bl_bone.bone.matrix_local.inverted() * Vector(bone.pivot)
@@ -303,7 +324,7 @@ class BlenderM2Scene:
 
                 # create rotation fcurves
                 r_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name),
-                                                index=k) for k in range(4)]
+                                                index=k, action_group=bone.name) for k in range(4)]
 
                 # set rest rotation
                 default_rot = (1, 0, 0, 0)
@@ -316,17 +337,17 @@ class BlenderM2Scene:
                 if not is_global_seq_rot: populate_fcurve_rot(r_fcurves, bone, anim_index)
 
                 # create scale curves
-                s_curves = [action.fcurves.new(data_path='pose.bones.["{}"].scale'.format(bl_bone.name),
-                                               index=k) for k in range(3)]
+                s_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].scale'.format(bl_bone.name),
+                                                index=k, action_group=bone.name) for k in range(3)]
 
                 # set rest scale
                 for k in range(3):
-                    fcurve = s_curves[k]
+                    fcurve = s_fcurves[k]
                     fcurve.keyframe_points.add(1)
                     fcurve.keyframe_points[0].co = 0, 1
 
                 # actually add scale keys
-                if not is_global_seq_scale: populate_fcurve_scale(s_curves, bone, anim_index)
+                if not is_global_seq_scale: populate_fcurve_scale(s_fcurves, bone, anim_index)
 
     def load_geosets(self):
 
