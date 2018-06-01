@@ -16,7 +16,7 @@ from ...utils import load_game_data
 ## WMO operators
 ###############################
 
-class FIX_MATERIAL_DUPLICATES(bpy.types.Operator):
+class WoWWMOFixMaterailDuplicates_OP(bpy.types.Operator):
     bl_idname = "scene.wow_fix_material_duplicates"
     bl_label = "Fix material duplicates"
     bl_description = "Fix duplicated materials in WMO groups."
@@ -43,11 +43,19 @@ class FIX_MATERIAL_DUPLICATES(bpy.types.Operator):
 
         duplicate_count = 0
         for source, duplicates in material_duplicates.items():
-            source_prop = get_attributes(bpy.data.materials[source].WowMaterial)
+            source_props = bpy.data.materials[source].WowMaterial
 
             for duplicate in duplicates:
-                duplicate_prop = get_attributes(bpy.data.materials[duplicate].WowMaterial)
-                if source_prop == duplicate_prop and source != duplicate:
+                dupli_props = bpy.data.materials[duplicate].WowMaterial
+                if source != duplicate \
+                and source_props.Shader == dupli_props.Shader \
+                and source_props.TerrainType == dupli_props.TerrainType \
+                and source_props.BlendingMode == dupli_props.BlendingMode \
+                and source_props.Texture1 == dupli_props.Texture1 \
+                and source_props.EmissiveColor[:] == dupli_props.EmissiveColor[:] \
+                and source_props.Flags == dupli_props.Flags \
+                and source_props.Texture2 == dupli_props.Texture2 \
+                and source_props.DiffColor[:] == dupli_props.DiffColor[:]:
                     bpy.ops.view3d.replace_material(matorg=duplicate, matrep=source)
                     duplicate_count += 1
 

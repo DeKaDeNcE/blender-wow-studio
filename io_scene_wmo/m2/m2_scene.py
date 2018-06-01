@@ -270,7 +270,6 @@ class BlenderM2Scene:
                 t_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].location'.format(bl_bone.name),
                                                 index=k, action_group=bone.name) for k in range(3)]
 
-
                 populate_fcurve_trans(t_fcurves, bone, 0, True)
 
             if is_global_seq_rot:
