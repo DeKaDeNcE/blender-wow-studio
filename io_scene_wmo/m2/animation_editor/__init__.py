@@ -805,6 +805,13 @@ def update_animation(self, context):
         if obj.animation_data:
             obj.animation_data.action = None
 
+            if obj.type == 'ARMATURE':
+                for bone in obj.pose.bones:
+                    bone.location = (0, 0, 0)
+                    bone.rotation_mode = 'QUATERNION'
+                    bone.rotation_quaternion = (1, 0, 0, 0)
+                    bone.scale = (1, 1, 1)
+
     global_seqs = []
 
     for i, anim in enumerate(context.scene.WowM2Animations):
