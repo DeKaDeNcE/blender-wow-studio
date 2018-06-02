@@ -58,7 +58,7 @@ class AnimationEditorDialog(bpy.types.Operator):
             cur_anim_track = context.scene.WowM2Animations[context.scene.WowM2CurAnimIndex]
 
         except IndexError:
-            col.label('No sequence selected.', icon='ERROR')
+            pass
 
         cur_anim_pair = None
 
@@ -77,6 +77,8 @@ class AnimationEditorDialog(bpy.types.Operator):
                 cur_anim_pair = cur_anim_track.AnimPairs[cur_anim_track.ActiveObjectIndex]
             except IndexError:
                 pass
+        else:
+            col.label('No sequence selected.', icon='ERROR')
 
         # Lower row of top layout: active item editing properties
         split = layout.split(percentage=0.5)
@@ -324,7 +326,7 @@ class AnimationEditor_SequenceRemove(bpy.types.Operator):
 class AnimationEditor_SequenceMove(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_seq_move'
     bl_label = 'Move WoW animation'
-    bl_description = 'Move Wow animation sequence'
+    bl_description = 'Move WoW animation sequence'
     bl_options = {'REGISTER', 'INTERNAL'}
 
     direction = bpy.props.StringProperty()
@@ -347,8 +349,8 @@ class AnimationEditor_SequenceMove(bpy.types.Operator):
 
 class AnimationEditor_SequenceDeselect(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_seq_deselect'
-    bl_label = 'Deselect sequence'
-    bl_description = 'Deselect Wow animation sequence'
+    bl_label = 'Get back to rest pose'
+    bl_description = 'Deselect WoW animation sequence'
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
