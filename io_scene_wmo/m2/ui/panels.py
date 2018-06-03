@@ -626,6 +626,9 @@ class WowM2TextureTransformControllerPanel(bpy.types.Panel):
     def draw_header(self, context):
         self.layout.prop(context.object.WowM2TextureTransform, "Enabled", text="")
 
+    def draw(self, context):
+        pass
+
     @classmethod
     def poll(cls, context):
         return (context.scene is not None

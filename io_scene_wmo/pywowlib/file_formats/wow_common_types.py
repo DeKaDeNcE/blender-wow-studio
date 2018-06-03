@@ -74,17 +74,32 @@ class fixed_point:
     """A fixed point real number, opposed to a floating point."""
     def __init__(self, type_, dec_bits, int_bits):
         self.type = type_
+        self.dec_bits = dec_bits
+        self.int_bits = int_bits
         self.value = 0
 
     def read(self, f):
-        self.value = self.type.read(f)
+        fixed_point_val = self.type.read(f)
+        decimal_part = fixed_point_val & ((1 << self.dec_bits) - 1)
+        integral_part = (fixed_point_val >> self.dec_bits) & (1 << self.int_bits) - 1
+        sign = -1.0 if (fixed_point_val & (1 << (self.dec_bits + self.int_bits)) != 0) else 1.0
+
+        self.value = sign * (integral_part + decimal_part / (((1 << self.dec_bits) - 1) + 1.0))
+
+        return self
 
     def write(self, f):
-        self.type.write(f, self.value)
+        sign = 1 if self.value < 0 else 0
+        integral_part = int(self.value) & ((1 << self.int_bits) - 1)
+        decimal_part = int((self.value - int(self.value)) * (1 << self.dec_bits))
+        fixed_point_val = (sign << (self.int_bits + self.dec_bits)) | (integral_part << self.int_bits) | decimal_part
+
+        self.type.write(f, fixed_point_val)
+
+        return self
 
 
-# A fixed point number without integer part.
-fixed16 = int16
+fixed16 = uint16
 
 
 class MemoryManager:

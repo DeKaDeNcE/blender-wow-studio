@@ -89,16 +89,32 @@ def load_display_extra_properties(self, context):
         context.scene.WowM2Creature.ExtraDisplayInformation = 0
 
 
-class WoWM2CreatureEditorPanel(bpy.types.Panel):
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
-    bl_context = 'objectmode'
-    bl_category = 'M2 Extra'
-    bl_label = 'Creature Editor'
+###############################
+## User Interface
+###############################
+
+#### Pop-up dialog ####
+
+class CreatureEditorDialog(bpy.types.Operator):
+    bl_idname = 'scene.wow_creature_editor_toggle'
+    bl_label = 'WoW M2 Creature Editor'
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None and context.scene.WowScene.Type == 'M2'
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
 
     def draw(self, context):
         layout = self.layout
-        col = layout.column()
+        split = layout.split(percentage=0.5)
+        col = split.column()
+        col1 = split.column()
 
         if not context.scene.WowScene.GamePath:
             col.label('Model path is unknown.', icon='ERROR')
@@ -109,7 +125,6 @@ class WoWM2CreatureEditorPanel(bpy.types.Panel):
         col.separator()
 
         if context.scene.WowM2Creature.CreatureModelData != 'None':
-            col1 = col.column()
             col1.label('Display Info:')
             col1.prop(context.scene.WowM2Creature, 'CreatureDisplayInfo', text='')
 
@@ -121,8 +136,8 @@ class WoWM2CreatureEditorPanel(bpy.types.Panel):
 
                 box.separator()
                 box.operator('scene.wow_creature_load_textures',
-                              text='Load all textures',
-                              icon='APPEND_BLEND').LoadAll = True
+                             text='Load all textures',
+                             icon='APPEND_BLEND').LoadAll = True
 
                 row = box.row(align=True)
                 row.prop(context.scene.WowM2Creature, 'DisplayTexture1')
@@ -189,9 +204,8 @@ class WoWM2CreatureEditorPanel(bpy.types.Panel):
         else:
             col.label('No display info found.', icon='PMARKER_ACT')
 
-    @classmethod
-    def poll(cls, context):
-        return context.scene is not None and context.scene.WowScene.Type == 'M2'
+    def check(self, context):  # redraw the popup window
+        return True
 
 
 class WowM2CreaturePropertyGroup(bpy.types.PropertyGroup):

@@ -28,10 +28,33 @@ bl_info = {
     "category": "Import-Export"
 }
 
+import os
 import bpy
 import bpy.utils.previews
-import os
 from bpy.props import StringProperty, BoolProperty
+
+# load custom icons
+##################################
+
+ui_icons = {}
+pcoll = None
+
+pcoll = bpy.utils.previews.new()
+
+icons_dir = os.path.join(os.path.dirname(__file__), "ui", "icons")
+
+for file in os.listdir(icons_dir):
+    pcoll.load(os.path.splitext(file)[0].upper(), os.path.join(icons_dir, file), 'IMAGE')
+
+for name, icon_file in pcoll.items():
+    ui_icons[name] = icon_file.icon_id
+
+# load and reload submodules
+##################################
+import importlib
+from . import developer_utils
+importlib.reload(developer_utils)
+modules = developer_utils.setup_addon_modules(__path__, __name__, "bpy" in locals())
 
 
 class WMOPreferences(bpy.types.AddonPreferences):
@@ -72,30 +95,7 @@ class WMOPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "project_dir_path")
 
 
-ui_icons = {}
-pcoll = None
-
-
 def register():
-    # load custom icons
-    ##################################
-    global ui_icons
-    global pcoll
-
-    pcoll = bpy.utils.previews.new()
-
-    icons_dir = os.path.join(os.path.dirname(__file__), "ui", "icons")
-
-    for file in os.listdir(icons_dir):
-        pcoll.load(os.path.splitext(file)[0].upper(), os.path.join(icons_dir, file), 'IMAGE')
-
-    for name, icon_file in pcoll.items():
-        ui_icons[name] = icon_file.icon_id
-
-    # load and reload submodules
-    ##################################
-    from .developer_utils import setup_addon_modules
-    setup_addon_modules(__path__, __name__, True)
 
     bpy.utils.register_module(__name__)
 
