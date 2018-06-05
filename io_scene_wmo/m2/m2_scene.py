@@ -336,6 +336,92 @@ class BlenderM2Scene:
 
     def load_geosets(self):
 
+        if not len(self.m2.root.vertices):
+            print("\nNo mesh geometry found to import.")
+            return
+
+        else:
+            print("\nImporting geosets.")
+
+        skin = self.m2.skins[0]
+
+        for smesh_i, smesh in enumerate(skin.submeshes):
+
+            vertices = [self.m2.root.vertices[skin.vertex_indices[i]].pos
+                        for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
+
+            normals = [self.m2.root.vertices[skin.vertex_indices[i]].normal
+                       for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
+
+            tex_coords = [self.m2.root.vertices[skin.vertex_indices[i]].tex_coords
+                          for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
+
+            triangles = [[skin.triangle_indices[i + j] - smesh.vertex_start for j in range(3)]
+                         for i in range(smesh.index_start, smesh.index_start + smesh.index_count, 3)]
+
+            # create mesh
+            mesh = bpy.data.meshes.new(self.m2.root.name.value)
+            mesh.from_pydata(vertices, [], triangles)
+
+            for poly in mesh.polygons:
+                poly.use_smooth = True
+
+            # set normals
+            for index, vertex in enumerate(mesh.vertices):
+                vertex.normal = normals[index]
+
+            # set uv
+            uv1 = mesh.uv_textures.new("UVMap")
+            uv_layer1 = mesh.uv_layers[0]
+            for i in range(len(uv_layer1.data)):
+                uv = tex_coords[mesh.loops[i].vertex_index]
+                uv_layer1.data[i].uv = (uv[0], 1 - uv[1])
+
+            # set textures and materials
+            material, tex_unit = self.materials[smesh_i]
+            mesh.materials.append(material)
+
+            for i, poly in enumerate(mesh.polygons):
+                uv1.data[i].image = material.active_texture.image
+                poly.material_index = 0  # ???
+
+            # get object name
+            name = M2SkinMeshPartID.get_mesh_part_name(smesh.skin_section_id)
+            obj = bpy.data.objects.new(name if name else 'Geoset', mesh)
+            bpy.context.scene.objects.link(obj)
+
+            obj.WowM2Geoset.MeshPartGroup = name
+            obj.WowM2Geoset.MeshPartID = str(smesh.skin_section_id)
+
+            for item in mesh_part_id_menu(obj.WowM2Geoset, None):
+                if item[0] == smesh.skin_section_id:
+                    obj.name = item[1]
+
+            if self.rig:
+                obj.parent = self.rig
+
+                # bind armature to geometry
+                bpy.context.scene.objects.active = obj
+                bpy.ops.object.modifier_add(type='ARMATURE')
+                bpy.context.object.modifiers["Armature"].object = self.rig
+
+                vgroups = {}
+                for j in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count):
+                    m2_vertex = self.m2.root.vertices[skin.vertex_indices[j]]
+                    for b_index, bone_index in enumerate(filter(lambda x: x > 0, m2_vertex.bone_indices)):
+                        vgroups.setdefault(self.m2.root.bones[bone_index].name, []).append(
+                            (j - smesh.vertex_start, m2_vertex.bone_weights[b_index] / 255))
+
+                for name in vgroups.keys():
+                    if len(vgroups[name]) > 0:
+                        grp = obj.vertex_groups.new(name)
+                        for (v, w) in vgroups[name]:
+                            grp.add([v], w, 'REPLACE')
+
+            self.geosets.append(obj)
+
+    def load_texture_transforms(self):
+
         def animate_tex_transform_controller_trans(anim_pair, name, trans_track, anim_index):
 
             action = anim_pair.Action
@@ -436,89 +522,18 @@ class BlenderM2Scene:
                     keyframe.co = frame, track[i][j]
                     keyframe.interpolation = 'LINEAR' if scale_track.interpolation_type == 1 else 'CONSTANT'
 
-        if not len(self.m2.root.vertices):
-            print("\nNo mesh geometry found to import.")
+        if not self.geosets:
+            print('\nNo geosets found. Skipping texture transform import')
             return
-
         else:
-            print("\nImporting geosets.")
+            print('\nImporting texture transforms')
 
         skin = self.m2.skins[0]
 
-        for smesh_i, smesh in enumerate(skin.submeshes):
+        for smesh_pair, obj in zip(enumerate(skin.submeshes), self.geosets):
+            smesh_i, smesh = smesh_pair
 
-            vertices = [self.m2.root.vertices[skin.vertex_indices[i]].pos
-                        for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
-
-            normals = [self.m2.root.vertices[skin.vertex_indices[i]].normal
-                       for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
-
-            tex_coords = [self.m2.root.vertices[skin.vertex_indices[i]].tex_coords
-                          for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
-
-            triangles = [[skin.triangle_indices[i + j] - smesh.vertex_start for j in range(3)]
-                         for i in range(smesh.index_start, smesh.index_start + smesh.index_count, 3)]
-
-            # create mesh
-            mesh = bpy.data.meshes.new(self.m2.root.name.value)
-            mesh.from_pydata(vertices, [], triangles)
-
-            for poly in mesh.polygons:
-                poly.use_smooth = True
-
-            # set normals
-            for index, vertex in enumerate(mesh.vertices):
-                vertex.normal = normals[index]
-
-            # set uv
-            uv1 = mesh.uv_textures.new("UVMap")
-            uv_layer1 = mesh.uv_layers[0]
-            for i in range(len(uv_layer1.data)):
-                uv = tex_coords[mesh.loops[i].vertex_index]
-                uv_layer1.data[i].uv = (uv[0], 1 - uv[1])
-
-            # set textures and materials
             material, tex_unit = self.materials[smesh_i]
-            mesh.materials.append(material)
-
-            for i, poly in enumerate(mesh.polygons):
-                uv1.data[i].image = material.active_texture.image
-                poly.material_index = 0  # ???
-
-            # get object name
-            name = M2SkinMeshPartID.get_mesh_part_name(smesh.skin_section_id)
-            obj = bpy.data.objects.new(name if name else 'Geoset', mesh)
-            bpy.context.scene.objects.link(obj)
-
-            obj.WowM2Geoset.MeshPartGroup = name
-            obj.WowM2Geoset.MeshPartID = str(smesh.skin_section_id)
-
-            for item in mesh_part_id_menu(obj.WowM2Geoset, None):
-                if item[0] == smesh.skin_section_id:
-                    obj.name = item[1]
-
-            if self.rig:
-                obj.parent = self.rig
-
-                # bind armature to geometry
-                bpy.context.scene.objects.active = obj
-                bpy.ops.object.modifier_add(type='ARMATURE')
-                bpy.context.object.modifiers["Armature"].object = self.rig
-
-                vgroups = {}
-                for j in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count):
-                    m2_vertex = self.m2.root.vertices[skin.vertex_indices[j]]
-                    for b_index, bone_index in enumerate(filter(lambda x: x > 0, m2_vertex.bone_indices)):
-                        vgroups.setdefault(self.m2.root.bones[bone_index].name, []).append(
-                            (j - smesh.vertex_start, m2_vertex.bone_weights[b_index] / 255))
-
-                for name in vgroups.keys():
-                    if len(vgroups[name]) > 0:
-                        grp = obj.vertex_groups.new(name)
-                        for (v, w) in vgroups[name]:
-                            grp.add([v], w, 'REPLACE')
-
-            # animate UVs
             tex_tranform_index = self.m2.root.texture_transforms_lookup_table[tex_unit.texture_transform_combo_index]
 
             if tex_tranform_index >= 0:
@@ -579,10 +594,10 @@ class BlenderM2Scene:
                     sequence = self.m2.root.sequences[anim_index]
 
                     field_name = anim_data_dbc.get_field(sequence.id, 'Name')
-                    name = 'TT_{}_{}_{}_UnkAnim'.format(tex_tranform_index, obj.name, str(i).zfill(3)) \
+                    name = 'TT_{}_{}_{}_UnkAnim'.format(tex_tranform_index, obj.name, str(j).zfill(3)) \
                         if not field_name else "TT_{}_{}_{}_{}_({})".format(tex_tranform_index,
                                                                             obj.name,
-                                                                            str(i).zfill(3),
+                                                                            str(j).zfill(3),
                                                                             field_name,
                                                                             sequence.variation_index)
 
@@ -601,8 +616,6 @@ class BlenderM2Scene:
 
                     if not anim_pair.Action:
                         anim.AnimPairs.remove(cur_index)
-
-            self.geosets.append(obj)
 
     def load_attachments(self):
         # TODO: unknown field
