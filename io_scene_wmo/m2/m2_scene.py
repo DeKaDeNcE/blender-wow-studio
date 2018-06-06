@@ -132,6 +132,80 @@ class BlenderM2Scene:
                 if m2_color.alpha.global_sequence < 0:
                     animate_alpha(anim_pair, m2_color.alpha, i, anim_index)
 
+    def load_transparency(self):
+
+        def animate_transparency(anim_pair, trans_track, trans_index, anim_index):
+
+            action = anim_pair.Action
+
+            try:
+                frames = trans_track.timestamps[anim_index]
+                track = trans_track.values[anim_index]
+            except IndexError:
+                return
+
+            if not len(frames):
+                return
+
+            # create fcurve
+            f_curve = action.fcurves.new(data_path='WowM2Transparency[{}].Value'.format(trans_index),
+                                         index=3, action_group='Transparency_{}'.format(trans_index))
+
+            # init keyframes on the curve
+            f_curve.keyframe_points.add(len(frames))
+
+            # set translation values for each channel
+            for i, timestamp in enumerate(frames):
+                frame = timestamp * 0.0266666
+
+                keyframe = f_curve.keyframe_points[i]
+                keyframe.co = frame, track[i] / 0x7FFF
+                keyframe.interpolation = 'LINEAR' if trans_track.interpolation_type == 1 else 'CONSTANT'
+
+        if not len(self.m2.root.texture_weights):
+            print("\nNo transparency tracks found to import.")
+            return
+
+        else:
+            print("\nImporting colors.")
+
+        bpy.context.scene.animation_data_create()
+        bpy.context.scene.animation_data.action_blend_type = 'ADD'
+        n_global_sequences = len(self.global_sequences)
+
+        for i, m2_transparency in enumerate(self.m2.root.texture_weights):
+            bl_transparency = bpy.context.scene.WowM2Transparency.add()
+            bl_transparency.Name = 'Transparency_{}'.format(i)
+
+            # load global sequences
+            for j, seq_index in enumerate(self.global_sequences):
+                anim = bpy.context.scene.WowM2Animations[j]
+
+                anim_pair = None
+                for pair in anim.AnimPairs:
+                    if pair.Type == 'SCENE':
+                        anim_pair = pair
+                        break
+
+                if m2_transparency.global_sequence == seq_index:
+                    animate_transparency(anim_pair, m2_transparency, i, 0)
+
+            # load animations
+            for j, anim_index in enumerate(self.animations):
+                anim = bpy.context.scene.WowM2Animations[j + n_global_sequences]
+
+                anim_pair = None
+                for pair in anim.AnimPairs:
+                    if pair.Type == 'SCENE':
+                        anim_pair = pair
+                        break
+
+                if m2_transparency.global_sequence < 0:
+                    animate_transparency(anim_pair, m2_transparency, i, anim_index)
+
+
+
+
     def load_materials(self, texture_dir):
 
         # TODO: multitexturing
