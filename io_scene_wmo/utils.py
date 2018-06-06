@@ -49,16 +49,6 @@ def load_game_data():
     return bpy.wow_game_data
 
 
-def singleton(class_):
-    instances = {}
-
-    def getinstance(*args, **kwargs):
-        if class_ not in instances:
-            instances[class_] = class_(*args, **kwargs)
-        return instances[class_]
-    return getinstance
-
-
 def resolve_texture_path(filepath):
     filepath = os.path.splitext(bpy.path.abspath(filepath))[0] + ".blp"
     prefs = bpy.context.user_preferences.addons[__package__].preferences

@@ -4,6 +4,18 @@ from .skin_format import M2SkinProfile
 from ..enums.m2_enums import M2KeyBones, M2GlobalFlags, M2AttachmentTypes, M2EventTokens
 
 
+@singleton
+class M2TrackCache:
+    def __init__(self):
+        self.m2_tracks = []
+
+    def add_track(self, track):
+        self.m2_tracks.append(track)
+
+    def purge(self):
+        self.m2_tracks = []
+
+
 #############################################################
 ######                 M2 Common Types                 ######
 #############################################################
@@ -162,6 +174,8 @@ class M2Track(M2TrackBase, metaclass=Template):
     def read(self, f):
         super(M2Track, self).read(f)
         self.values.read(f)
+
+        M2TrackCache().add_track(self)
 
         return self
 

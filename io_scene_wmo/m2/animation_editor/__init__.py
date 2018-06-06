@@ -892,6 +892,9 @@ def update_animation(self, context):
                     bone.rotation_quaternion = (1, 0, 0, 0)
                     bone.scale = (1, 1, 1)
 
+    for color in context.scene.WowM2Colors:
+        color.Color = (0.5, 0.5, 0.5, 1.0)
+
     if bpy.context.scene.animation_data:
         bpy.context.scene.animation_data.action = None
 

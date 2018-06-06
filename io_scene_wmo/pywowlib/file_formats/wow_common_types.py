@@ -127,9 +127,10 @@ class M2Array(metaclass=Template):
         self.type = type_
         self.values = []
 
-    def read(self, f):
-        self.n_elements = uint32.read(f)
-        self.ofs_elements = uint32.read(f)
+    def read(self, f, ignore_header=False):
+        if not ignore_header:
+            self.n_elements = uint32.read(f)
+            self.ofs_elements = uint32.read(f)
 
         pos = f.tell()
 

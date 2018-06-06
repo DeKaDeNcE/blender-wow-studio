@@ -25,6 +25,7 @@ class M2File:
                         with open("{}{}.skin".format(raw_path, str(i).zfill(2)), 'rb') as skin_file:
                             self.skins.append(M2SkinProfile().read(skin_file))
 
+                    track_cache = M2TrackCache()
                     # load anim files
                     for i, sequence in enumerate(self.root.sequences):
 
@@ -43,43 +44,20 @@ class M2File:
                             # TODO: implement game-data loading
                             anim_file = open(anim_path, 'rb')
 
-                            for bone in self.root.bones:
-                                if bone.rotation.timestamps.n_elements > a_idx:
-                                    frames = bone.rotation.timestamps[a_idx]
-                                    track = bone.rotation.values[a_idx]
+                            for track in track_cache.m2_tracks:
+                                if track.global_sequence < 0 and track.timestamps.n_elements > a_idx:
+                                    frames = track.timestamps[a_idx]
+                                    values = track.values[a_idx]
 
-                                    anim_file.seek(frames.ofs_elements)
-                                    bone.rotation.timestamps[i].values = \
-                                        [uint32.read(anim_file) for _ in range(frames.n_elements)]
+                                    timestamps = track.timestamps[i]
+                                    timestamps.ofs_elements = frames.ofs_elements
+                                    timestamps.n_elements = frames.n_elements
+                                    timestamps.read(anim_file, ignore_header=True)
 
-                                    anim_file.seek(track.ofs_elements)
-                                    bone.rotation.values[i].values = \
-                                        [M2CompQuaternion().read(anim_file) for _ in range(track.n_elements)]
-
-                                if bone.translation.timestamps.n_elements > a_idx:
-                                    frames = bone.translation.timestamps[a_idx]
-                                    track = bone.translation.values[a_idx]
-
-                                    anim_file.seek(frames.ofs_elements)
-                                    bone.translation.timestamps[i].values = \
-                                        [uint32.read(anim_file) for _ in range(frames.n_elements)]
-
-                                    anim_file.seek(track.ofs_elements)
-                                    bone.translation.values[i].values = \
-                                        [vec3D.read(anim_file) for _ in range(track.n_elements)]
-
-                                if bone.scale.timestamps.n_elements > a_idx:
-                                    frames = bone.scale.timestamps[a_idx]
-                                    track = bone.scale.values[a_idx]
-
-                                    anim_file.seek(frames.ofs_elements)
-                                    bone.scale.timestamps[i].values = \
-                                        [uint32.read(anim_file) for _ in range(frames.n_elements)]
-
-                                    anim_file.seek(track.ofs_elements)
-                                    bone.scale.values[i].values = \
-                                        [vec3D.read(anim_file) for _ in range(track.n_elements)]
-
+                                    frame_values = track.values[i]
+                                    frame_values.ofs_elements = values.ofs_elements
+                                    frame_values.n_elements = values.n_elements
+                                    frame_values.read(anim_file, ignore_header=True)
                 else:
                     self.skins = self.root.skin_profiles
 
