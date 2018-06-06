@@ -655,6 +655,208 @@ def unregister_wow_m2_texture_transform_controller_properties():
     bpy.types.Object.WowM2TextureTransform = None
 
 
+###############################
+## Colors
+###############################
+
+class WowM2ColorsPanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_label = "M2 Colors"
+
+    def draw(self, context):
+        layout = self.layout
+
+        col = layout.column()
+
+        row = col.row()
+        sub_col1 = row.column()
+        sub_col1.template_list("WowM2Colors_ColorList", "", context.scene, "WowM2Colors", context.scene,
+                               "WowM2CurColorIndex")
+
+        sub_col2 = row.column().column(align=True)
+        sub_col2.operator("scene.wow_m2_colors_add_color", text='', icon='ZOOMIN')
+        sub_col2.operator("scene.wow_m2_colors_remove_color", text='', icon='ZOOMOUT')
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None and context.scene.WowScene.Type == 'M2'
+
+
+class WowM2Colors_ColorList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+        self.use_filter_show = False
+
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+
+            row = layout.row(align=True)
+            cur_color_prop_group = context.scene.WowM2Colors[index]
+            row.prop(cur_color_prop_group, "Name", text="", icon='COLOR', emboss=False)
+            row.prop(cur_color_prop_group, "Color", text="")
+
+        elif self.layout_type in {'GRID'}:
+            pass
+
+
+class WowM2Colors_ColorAdd(bpy.types.Operator):
+    bl_idname = 'scene.wow_m2_colors_add_color'
+    bl_label = 'Add WoW color'
+    bl_description = 'Add WoW color'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+        color = context.scene.WowM2Colors.add()
+        context.scene.WowM2CurColorIndex = len(context.scene.WowM2Colors) - 1
+        color.Name = 'Color_{}'.format(context.scene.WowM2CurColorIndex)
+
+        return {'FINISHED'}
+
+
+class WowM2Colors_ColorRemove(bpy.types.Operator):
+    bl_idname = 'scene.wow_m2_colors_remove_color'
+    bl_label = 'Remove WoW color'
+    bl_description = 'Remove WoW color'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+        context.scene.WowM2Colors.remove(context.scene.WowM2CurColorIndex)
+
+        return {'FINISHED'}
+
+
+class WowM2ColorPropertyGroup(bpy.types.PropertyGroup):
+
+    Color = bpy.props.FloatVectorProperty(
+        name='Color',
+        description='The color applied to WoW material. Can be animated. Alpha defines model transparency and is multiplied with transparency value',
+        subtype='COLOR',
+        size=4,
+        default=(0.5, 0.5, 0.5, 1.0),
+        min=0.0,
+        max=1.0
+    )
+
+    Name = bpy.props.StringProperty(
+        name='Color name',
+        description='Only used for scene organization purposes, ignored on export'
+    )
+
+
+def register_wow_m2_colors_properties():
+    bpy.types.Scene.WowM2Colors = bpy.props.CollectionProperty(
+        name='Colors',
+        type=WowM2ColorPropertyGroup
+    )
+
+    bpy.types.Scene.WowM2CurColorIndex = bpy.props.IntProperty()
+
+
+def unregister_wow_m2_colors_properties():
+    del bpy.types.Scene.WowM2Colors
+    del bpy.types.Scene.WowM2CurColorIndex
+
+
+###############################
+## Transparency
+###############################
+
+class WowM2TransparencyPanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_label = "M2 Transparency"
+
+    def draw(self, context):
+        layout = self.layout
+
+        col = layout.column()
+
+        row = col.row()
+        sub_col1 = row.column()
+        sub_col1.template_list("WowM2Transparency_TransparencyList", "", context.scene, "WowM2Transparency", context.scene,
+                               "WowM2CurTransparencyIndex")
+
+        sub_col2 = row.column().column(align=True)
+        sub_col2.operator("scene.wow_m2_transparency_add_value", text='', icon='ZOOMIN')
+        sub_col2.operator("scene.wow_m2_transparency_remove_value", text='', icon='ZOOMOUT')
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None and context.scene.WowScene.Type == 'M2'
+
+
+class WowM2Transparency_TransparencyList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+        self.use_filter_show = False
+
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+
+            row = layout.row(align=True)
+            cur_trans_prop_group = context.scene.WowM2Transparency[index]
+            row.prop(cur_trans_prop_group, "Name", text="", icon='RESTRICT_VIEW_OFF', emboss=False)
+            row.prop(cur_trans_prop_group, "Value", text="")
+
+        elif self.layout_type in {'GRID'}:
+            pass
+
+
+class WowM2Transparency_ValueAdd(bpy.types.Operator):
+    bl_idname = 'scene.wow_m2_transparency_add_value'
+    bl_label = 'Add WoW transparency'
+    bl_description = 'Add WoW transparency'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+        value = context.scene.WowM2Transparency.add()
+        context.scene.WowM2CurTransparencyIndex = len(context.scene.WowM2Transparency) - 1
+        value.Name = 'Transparency_{}'.format(context.scene.WowM2CurTransparencyIndex)
+
+        return {'FINISHED'}
+
+
+class WowM2Transparency_ValueRemove(bpy.types.Operator):
+    bl_idname = 'scene.wow_m2_transparency_remove_value'
+    bl_label = 'Remove WoW transparency'
+    bl_description = 'Remove WoW transparency'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+        context.scene.WowM2Transparency.remove(context.scene.WowM2CurTransparencyIndex)
+
+        return {'FINISHED'}
+
+
+class WowM2TransprencyPropertyGroup(bpy.types.PropertyGroup):
+
+    Value = bpy.props.FloatProperty(
+        name='Transparency',
+        description='Defines transparency for M2 material. Can be animated. Multiplied by alpha channel of color block.',
+        min=0.0,
+        max=1.0
+    )
+
+    Name = bpy.props.StringProperty(
+        name='Transparency name',
+        description='Only used for scene organization purposes, ignored on export'
+    )
+
+
+def register_wow_m2_transparency_properties():
+    bpy.types.Scene.WowM2Transparency = bpy.props.CollectionProperty(
+        name='Transparency',
+        type=WowM2TransprencyPropertyGroup
+    )
+
+    bpy.types.Scene.WowM2CurTransparencyIndex = bpy.props.IntProperty()
+
+
+def unregister_wow_m2_transparency_properties():
+    del bpy.types.Scene.WowM2Transparency
+    del bpy.types.Scene.WowM2CurTransparencyIndex
+
+
+
 def register():
     register_wow_m2_material_properties()
     register_wow_m2_geoset_properties()
@@ -665,6 +867,8 @@ def register():
     register_wow_m2_particle_properties()
     register_wow_m2_event_properties()
     register_wow_m2_texture_transform_controller_properties()
+    register_wow_m2_colors_properties()
+    register_wow_m2_transparency_properties()
 
 
 def unregister():
@@ -677,5 +881,7 @@ def unregister():
     unregister_wow_m2_particle_properties()
     unregister_wow_m2_event_properties()
     unregister_wow_m2_texture_transform_controller_properties()
+    unregister_wow_m2_colors_properties()
+    unregister_wow_m2_transparency_properties()
 
 

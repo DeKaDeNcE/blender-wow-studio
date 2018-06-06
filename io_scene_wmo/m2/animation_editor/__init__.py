@@ -26,7 +26,7 @@ class AnimationEditorDialog(bpy.types.Operator):
         layout = self.layout
         split = layout.split(percentage=0.5)
 
-        # Top row - collections: animations, objects, nla_tracks
+        # Top row - collections: animations, objects
         # Animations column
 
         col = split.column()
@@ -313,7 +313,7 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
 class AnimationEditor_SequenceAdd(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_seq_add'
     bl_label = 'Add WoW animation'
-    bl_description = 'Add Wow animation sequence'
+    bl_description = 'Add WoW animation sequence'
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
@@ -327,7 +327,7 @@ class AnimationEditor_SequenceAdd(bpy.types.Operator):
 class AnimationEditor_SequenceRemove(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_seq_remove'
     bl_label = 'Remove WoW animation'
-    bl_description = 'Remove Wow animation sequence'
+    bl_description = 'Remove WoW animation sequence'
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
@@ -406,7 +406,7 @@ class AnimationEditor_SequenceObjectList(bpy.types.UIList):
         ob = data
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             row = layout.row()
-            if item.Object:
+            if item.Type == 'OBJECT' and item.Object:
 
                 icon = 'OBJECT_DATA'
 
@@ -423,6 +423,8 @@ class AnimationEditor_SequenceObjectList(bpy.types.UIList):
                         icon = 'PLUGIN'
 
                 row.label(item.Object.name, icon=icon)
+            elif item.Type == 'SCENE' and item.Scene:
+                row.label(item.Scene.name, icon='SCENE_DATA')
             else:
                 row.label("Empty slot", icon='MATCUBE')
 
@@ -698,11 +700,13 @@ def update_alias(self, context):
 def update_stash_to_nla(self, context):
     if self.StashToNLA and not context.scene.WowM2Animations[context.scene.WowM2CurAnimIndex] == self:
         for anim_pair in self.AnimPairs:
-            if anim_pair.Object and anim_pair.Action:
-                nla_track = anim_pair.Object.animation_data.nla_tracks.get(anim_pair.Action.name)
+            if (anim_pair.Object or anim_pair.Scene) and anim_pair.Action:
+                obj = anim_pair.Object if anim_pair.Type == 'OBJECT' else anim_pair.Scene
+
+                nla_track = obj.animation_data.nla_tracks.get(anim_pair.Action.name)
 
                 if not nla_track:
-                    nla_track = anim_pair.Object.animation_data.nla_tracks.new()
+                    nla_track = obj.animation_data.nla_tracks.new()
                     nla_track.is_solo = False
                     nla_track.lock = True
                     nla_track.mute = False
@@ -719,11 +723,12 @@ def update_stash_to_nla(self, context):
                     strip.frame_end = anim_pair.Object.animation_data.action.frame_range[1]
     else:
         for anim_pair in self.AnimPairs:
-            if anim_pair.Object and anim_pair.Action:
-                nla_track = anim_pair.Object.animation_data.nla_tracks.get(anim_pair.Action.name)
+            if (anim_pair.Object or anim_pair.Scene) and anim_pair.Action:
+                obj = anim_pair.Object if anim_pair.Type == 'OBJECT' else anim_pair.Scene
+                nla_track = obj.animation_data.nla_tracks.get(anim_pair.Action.name)
 
                 if nla_track:
-                    anim_pair.Object.animation_data.nla_tracks.remove(nla_track)
+                    obj.animation_data.nla_tracks.remove(nla_track)
 
     update_scene_frame_range()
 
@@ -851,6 +856,10 @@ def update_scene_frame_range():
                         if strip.frame_end > frame_end:
                             frame_end = strip.frame_end
 
+    if bpy.context.scene.animation_data and bpy.context.scene.animation_data.action:
+        if bpy.context.scene.animation_data.action.frame_range[1] > frame_end:
+            frame_end = bpy.context.scene.animation_data.action.frame_range[1]
+
     bpy.context.scene.frame_start = 0
     bpy.context.scene.frame_end = frame_end
 
@@ -883,13 +892,19 @@ def update_animation(self, context):
                     bone.rotation_quaternion = (1, 0, 0, 0)
                     bone.scale = (1, 1, 1)
 
+    if bpy.context.scene.animation_data:
+        bpy.context.scene.animation_data.action = None
+
     global_seqs = []
 
     for i, anim in enumerate(context.scene.WowM2Animations):
 
         if i == context.scene.WowM2CurAnimIndex:
             for anim_pair in anim.AnimPairs:
-                anim_pair.Object.animation_data.action = anim_pair.Action
+                if anim_pair.Type == 'OBJECT':
+                    anim_pair.Object.animation_data.action = anim_pair.Action
+                else:
+                    anim_pair.Scene.animation_data.action = anim_pair.Action
 
         if anim.IsGlobalSequence:
             global_seqs.append(anim)
