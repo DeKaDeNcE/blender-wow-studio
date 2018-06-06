@@ -118,9 +118,23 @@ class AnimationEditorDialog(bpy.types.Operator):
 
                 row_split = col.row().split(percentage=0.93)
                 row = row_split.row(align=True)
-                row.prop(cur_anim_pair, "Object", text='Object')
-                row.operator("scene.wow_m2_animation_editor_select_object",
-                             text='', icon='ZOOM_SELECTED').name = cur_anim_pair.Object.name
+                row_split = row.split(percentage=0.30)
+                row_split.row().label('Object' if cur_anim_pair.Type == 'OBJECT' else 'Scene')
+                row = row_split.row(align=True)
+                row.prop(cur_anim_pair, "Type", text="", expand=True)
+
+                if cur_anim_pair.Type == 'OBJECT':
+                    row.prop(cur_anim_pair, "Object", text='')
+
+                    if cur_anim_pair.Object:
+                        row.row().operator("scene.wow_m2_animation_editor_select_object",
+                                            text='', icon='ZOOM_SELECTED').name = cur_anim_pair.Object.name
+                    else:
+                        sub_row = row.row()
+                        sub_row.enabled = False
+                        sub_row.label("", icon='ZOOM_SELECTED')
+                else:
+                    row.prop(cur_anim_pair, "Scene", text='')
 
                 row_split = col.row().split(percentage=0.93)
                 row = row_split.row(align=True)
@@ -545,28 +559,75 @@ def poll_object(self, obj):
     if obj.type not in ('CAMERA', 'ARMATURE', 'LAMP', 'EMPTY'):
         return False
 
-    if obj.type == 'EMPTY' and obj.empty_draw_type not in ('SPHERE', 'CUBE'):
+    if obj.type == 'EMPTY' and not (obj.WowM2TextureTransform.Enabled
+                                    or obj.WowM2Attachment.Enabled
+                                    or obj.WowM2Event.Enabled):
         return False
 
     return True
 
 
+def poll_scene(self, scene):
+
+    if scene.name != bpy.context.scene.name:
+        return False
+
+    sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
+
+    for anim_pair in sequence.AnimPairs:
+        if anim_pair.Scene == scene:
+            return False
+
+    return True
+
+
 def update_object(self, context):
-    # TODO: safety checks
 
     sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
     anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
-    anim_pair.Object.animation_data_create()
-    anim_pair.Object.animation_data.action_blend_type = 'ADD'
+
+    if anim_pair.Object:
+        anim_pair.Object.animation_data_create()
+        anim_pair.Object.animation_data.action_blend_type = 'ADD'
+
+
+def update_scene(self, context):
+    sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
+    anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
+
+    if anim_pair.Scene:
+        anim_pair.Scene.animation_data_create()
+        anim_pair.Scene.animation_data.action_blend_type = 'ADD'
 
 
 def update_action(self, context):
     sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
     anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
-    anim_pair.Object.animation_data.action = anim_pair.Action
+    if anim_pair.Type == 'OBJECT' and anim_pair.Object and anim_pair.Object.animation_data:
+        anim_pair.Object.animation_data.action = anim_pair.Action
+    elif anim_pair.Type == 'SCENE' and anim_pair.Scene and anim_pair.Scene.animation_data:
+        anim_pair.Scene.animation_data.action = anim_pair.Action
+
+
+def update_anim_pair_type(self, context):
+    sequence = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
+    anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
+    if anim_pair.Type == 'OBJECT':
+        anim_pair.Scene = None
+    else:
+        anim_pair.Object = None
 
 
 class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
+
+    Type = bpy.props.EnumProperty(
+        name="Type",
+        description="Defines whether object or scene is animated",
+        items=[('OBJECT', "Object", "", 'OBJECT_DATA', 0),
+               ('SCENE', "Scene", "", 'SCENE_DATA', 1)],
+        default='OBJECT',
+        update=update_anim_pair_type
+    )
 
     Object = bpy.props.PointerProperty(
         type=bpy.types.Object,
@@ -574,6 +635,14 @@ class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
         description="Object to animate in this animation sequence",
         poll=poll_object,
         update=update_object
+    )
+
+    Scene = bpy.props.PointerProperty(
+        type=bpy.types.Scene,
+        name="Scene",
+        description="Scene to animate in this animation sequence",
+        poll=poll_scene,
+        update=update_scene
     )
 
     Action = bpy.props.PointerProperty(

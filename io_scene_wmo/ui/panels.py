@@ -14,13 +14,6 @@ class WowScenePanel(bpy.types.Panel):
         col.prop(context.scene.WowScene, 'Type')
         col.prop(context.scene.WowScene, 'GamePath')
 
-        if context.scene.WowScene.Type == 'M2':
-            col.prop(context.scene.WowScene, 'M2UseGlobalTransparency')
-
-            row = col.row()
-            row.enabled = context.scene.WowScene.M2UseGlobalTransparency
-            row.prop(context.scene.WowScene, 'M2GlobalTransparency')
-
     @classmethod
     def poll(cls, context):
         return context.scene is not None
@@ -39,19 +32,6 @@ class WowScenePropertyGroup(bpy.types.PropertyGroup):
     GamePath = bpy.props.StringProperty(
         name='Game path',
         description='A path to the model in WoW filesystem.'
-    )
-
-    M2UseGlobalTransparency = bpy.props.BoolProperty(
-        name='Use global transparency',
-        description='Enable the model to use global transparency. If not set, it is presumed that the model is opaque.',
-        default=False
-    )
-
-    M2GlobalTransparency = bpy.props.FloatProperty(
-        name='Global transparency',
-        description='That property defines the global transparency of a model. Can be animated.',
-        min=0.0,
-        max=1.0
     )
 
 

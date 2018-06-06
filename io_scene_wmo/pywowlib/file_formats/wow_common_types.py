@@ -80,13 +80,11 @@ class fixed_point:
 
     def read(self, f):
         fixed_point_val = self.type.read(f)
-        # decimal_part = fixed_point_val & ((1 << self.dec_bits) - 1)
+        decimal_part = fixed_point_val & ((1 << self.dec_bits) - 1)
         integral_part = (fixed_point_val >> self.dec_bits) & (1 << self.int_bits) - 1
         sign = -1.0 if (fixed_point_val & (1 << (self.dec_bits + self.int_bits)) != 0) else 1.0
 
-        self.value = sign * float(integral_part) * 2**-self.dec_bits
-
-        #self.value = sign * (integral_part + decimal_part / (((1 << self.dec_bits) - 1) + 1.0))
+        self.value = sign * (integral_part + decimal_part / (((1 << self.dec_bits) - 1) + 1.0))
 
         return self
 

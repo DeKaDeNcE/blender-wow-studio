@@ -60,7 +60,6 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         description="WoW material blending mode"
         )
 
-
 def register_wow_m2_material_properties():
     bpy.types.Material.WowM2Material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
 
@@ -89,10 +88,6 @@ class M2GeosetPanel(bpy.types.Panel):
             row = self.layout.row(align=True)
             row.prop(context.object.WowM2Geoset, "UVTransform")
             row.operator("scene.wow_m2_geoset_add_texture_transform", text='', icon='RNA_ADD')
-
-            row = self.layout.row()
-            row.enabled = context.object.WowM2Geoset.UseColor
-            row.prop(context.object.WowM2Geoset, "Color")
 
     @classmethod
     def poll(cls, context):
@@ -150,22 +145,6 @@ class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
         poll=lambda self, obj: obj.WowM2TextureTransform.Enabled,
         update=update_geoset_uv_transform
     )
-
-    UseColor = bpy.props.BoolProperty(
-        name='Use color',
-        description='Use coloring on this model'
-    )
-
-    Color = bpy.props.FloatVectorProperty(
-        name="Emissive Color",
-        description='Coloring used on this M2 object. Can be animated, alpha defines visibility and is multiplied with global transparency',
-        subtype='COLOR',
-        default=(1, 1, 1, 1),
-        size=4,
-        min=0.0,
-        max=1.0
-    )
-
 
 class WowM2Geoset_AddTextureTransform(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_geoset_add_texture_transform'

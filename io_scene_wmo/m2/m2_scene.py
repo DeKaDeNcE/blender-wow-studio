@@ -188,6 +188,7 @@ class BlenderM2Scene:
 
             # register rig in the sequence
             anim_pair = seq.AnimPairs.add()
+            anim_pair.Type = 'OBJECT'
             anim_pair.Object = rig
 
             action = bpy.data.actions.new(name='Global_Sequence_{}'.format(str(i).zfill(3)))
@@ -206,6 +207,7 @@ class BlenderM2Scene:
 
             # register rig in the sequence
             anim_pair = anim.AnimPairs.add()
+            anim_pair.Type = 'OBJECT'
             anim_pair.Object = rig
 
             field_name = anim_data_dbc.get_field(sequence.id, 'Name')
@@ -420,6 +422,25 @@ class BlenderM2Scene:
 
             self.geosets.append(obj)
 
+    def load_colors_and_transparency(self):
+        if not self.geosets:
+            print('\nNo geosets found. Skipping colors import')
+            return
+        else:
+            print('\nImporting colors')
+
+        skin = self.m2.skins[0]
+
+        for smesh_pair, obj in zip(enumerate(skin.submeshes), self.geosets):
+            smesh_i, smesh = smesh_pair
+            _, tex_unit = self.materials[smesh_i]
+
+            # skip geosets without bound color data
+            if not tex_unit.color_index >= 0:
+                continue
+
+            # import color tracks
+
     def load_texture_transforms(self):
 
         def animate_tex_transform_controller_trans(anim_pair, name, trans_track, anim_index):
@@ -533,7 +554,7 @@ class BlenderM2Scene:
         for smesh_pair, obj in zip(enumerate(skin.submeshes), self.geosets):
             smesh_i, smesh = smesh_pair
 
-            material, tex_unit = self.materials[smesh_i]
+            _, tex_unit = self.materials[smesh_i]
             tex_tranform_index = self.m2.root.texture_transforms_lookup_table[tex_unit.texture_transform_combo_index]
 
             if tex_tranform_index >= 0:
@@ -574,6 +595,7 @@ class BlenderM2Scene:
 
                     cur_index = len(anim.AnimPairs)
                     anim_pair = anim.AnimPairs.add()
+                    anim_pair.Type = 'OBJECT'
                     anim_pair.Object = c_obj
 
                     if tex_transform.translation.global_sequence == j:
@@ -603,6 +625,7 @@ class BlenderM2Scene:
 
                     cur_index = len(anim.AnimPairs)
                     anim_pair = anim.AnimPairs.add()
+                    anim_pair.Type = 'OBJECT'
                     anim_pair.Object = c_obj
 
                     if tex_transform.translation.global_sequence < 0:
@@ -622,6 +645,7 @@ class BlenderM2Scene:
 
         def animate_attachment(attachment, obj, anim, anim_name, frames, track):
             anim_pair = anim.AnimPairs.add()
+            anim_pair.Type = 'OBJECT'
             anim_pair.Object = obj
             action = anim_pair.Action = bpy.data.actions.new(name=anim_name)
             action.use_fake_user = True
@@ -756,6 +780,7 @@ class BlenderM2Scene:
 
         def animate_event(event, obj, anim_name, frames):
             anim_pair = anim.AnimPairs.add()
+            anim_pair.Type = 'OBJECT'
             anim_pair.Object = obj
             action = anim_pair.Action = bpy.data.actions.new(name=anim_name)
             action.use_fake_user = True
