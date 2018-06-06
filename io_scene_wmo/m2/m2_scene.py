@@ -24,6 +24,114 @@ class BlenderM2Scene:
         self.collision_mesh = None
         self.settings = prefs
 
+    def load_colors(self):
+
+        def animate_color(anim_pair, color_track, color_index, anim_index):
+
+            action = anim_pair.Action
+
+            try:
+                frames = color_track.timestamps[anim_index]
+                track = color_track.values[anim_index]
+            except IndexError:
+                return
+
+            if not len(frames):
+                return
+
+            # create fcurve
+            f_curves = [action.fcurves.new(data_path='WowM2Colors[{}].Color'.format(color_index),
+                                           index=k, action_group='Color_{}'.format(color_index)) for k in range(3)]
+
+            # init keyframes on the curve
+            for f_curve in f_curves:
+                f_curve.keyframe_points.add(len(frames))
+
+            # set translation values for each channel
+            for i, timestamp in enumerate(frames):
+                frame = timestamp * 0.0266666
+
+                for j in range(3):
+                    keyframe = f_curves[j].keyframe_points[i]
+                    keyframe.co = frame, track[i][j]
+                    keyframe.interpolation = 'LINEAR' if color_track.interpolation_type == 1 else 'CONSTANT'
+
+        def animate_alpha(anim_pair, alpha_track, color_index, anim_index):
+
+            action = anim_pair.Action
+
+            try:
+                frames = alpha_track.timestamps[anim_index]
+                track = alpha_track.values[anim_index]
+            except IndexError:
+                return
+
+            if not len(frames):
+                return
+
+            # create fcurve
+            f_curve = action.fcurves.new(data_path='WowM2Colors[{}].Color'.format(color_index),
+                                         index=3, action_group='Color_{}'.format(color_index))
+
+            # init keyframes on the curve
+            f_curve.keyframe_points.add(len(frames))
+
+            # set translation values for each channel
+            for i, timestamp in enumerate(frames):
+                frame = timestamp * 0.0266666
+
+                keyframe = f_curve.keyframe_points[i]
+                keyframe.co = frame, track[i] / 0x7FFF
+                keyframe.interpolation = 'LINEAR' if alpha_track.interpolation_type == 1 else 'CONSTANT'
+
+        if not len(self.m2.root.colors):
+            print("\nNo colors found to import.")
+            return
+
+        else:
+            print("\nImporting colors.")
+
+        bpy.context.scene.animation_data_create()
+        bpy.context.scene.animation_data.action_blend_type = 'ADD'
+        n_global_sequences = len(self.global_sequences)
+
+        for i, m2_color in enumerate(self.m2.root.colors):
+            bl_color = bpy.context.scene.WowM2Colors.add()
+            bl_color.Name = 'Color_{}'.format(i)
+            bl_color.Color = (0.5, 0.5, 0.5, 1.0)
+
+            # load global sequences
+            for j, seq_index in enumerate(self.global_sequences):
+                anim = bpy.context.scene.WowM2Animations[j]
+
+                anim_pair = None
+                for pair in anim.AnimPairs:
+                    if pair.Type == 'SCENE':
+                        anim_pair = pair
+                        break
+
+                if m2_color.color.global_sequence == seq_index:
+                    animate_color(anim_pair, m2_color.color, i, 0)
+
+                if m2_color.alpha.global_sequence == seq_index:
+                    animate_alpha(anim_pair, m2_color.alpha, i, 0)
+
+            # load animations
+            for j, anim_index in enumerate(self.animations):
+                anim = bpy.context.scene.WowM2Animations[j + n_global_sequences]
+
+                anim_pair = None
+                for pair in anim.AnimPairs:
+                    if pair.Type == 'SCENE':
+                        anim_pair = pair
+                        break
+
+                if m2_color.color.global_sequence < 0:
+                    animate_color(anim_pair, m2_color.color, i, anim_index)
+
+                if m2_color.alpha.global_sequence < 0:
+                    animate_alpha(anim_pair, m2_color.alpha, i, anim_index)
+
     def load_materials(self, texture_dir):
 
         # TODO: multitexturing
@@ -186,6 +294,15 @@ class BlenderM2Scene:
             seq = scene.WowM2Animations.add()
             seq.IsGlobalSequence = True
 
+            # register scene in the sequence
+            name = "SC_Global_Sequence_{}".format(str(i).zfill(3))
+            anim_pair = seq.AnimPairs.add()
+            anim_pair.Type = 'SCENE'
+            anim_pair.Scene = bpy.context.scene
+            action = bpy.data.actions.new(name=name)
+            action.use_fake_user = True
+            anim_pair.Action = action
+
             # register rig in the sequence
             anim_pair = seq.AnimPairs.add()
             anim_pair.Type = 'OBJECT'
@@ -205,14 +322,22 @@ class BlenderM2Scene:
 
             anim = scene.WowM2Animations.add()
 
+            field_name = anim_data_dbc.get_field(sequence.id, 'Name')
+            name = '{}_UnkAnim'.format(str(i).zfill(3)) if not field_name \
+                else "{}_{}_({})".format(str(i).zfill(3), field_name, sequence.variation_index)
+
+            # register scene in the sequence
+            anim_pair = anim.AnimPairs.add()
+            anim_pair.Type = 'SCENE'
+            anim_pair.Scene = bpy.context.scene
+            action = bpy.data.actions.new(name='SC_' + name)
+            action.use_fake_user = True
+            anim_pair.Action = action
+
             # register rig in the sequence
             anim_pair = anim.AnimPairs.add()
             anim_pair.Type = 'OBJECT'
             anim_pair.Object = rig
-
-            field_name = anim_data_dbc.get_field(sequence.id, 'Name')
-            name = '{}_UnkAnim'.format(str(i).zfill(3)) if not field_name \
-                else "{}_{}_({})".format(str(i).zfill(3), field_name, sequence.variation_index)
 
             action = bpy.data.actions.new(name=name)
             action.use_fake_user = True
@@ -248,7 +373,7 @@ class BlenderM2Scene:
 
             # write global sequence fcurves
             if is_global_seq_trans:
-                action = scene.WowM2Animations[self.global_sequences[bone.translation.global_sequence]].AnimPairs[0].Action
+                action = scene.WowM2Animations[self.global_sequences[bone.translation.global_sequence]].AnimPairs[1].Action
 
                 # group channels
                 if bone.name not in action.groups:
@@ -265,7 +390,7 @@ class BlenderM2Scene:
 
             if is_global_seq_rot:
 
-                action = scene.WowM2Animations[self.global_sequences[bone.rotation.global_sequence]].AnimPairs[0].Action
+                action = scene.WowM2Animations[self.global_sequences[bone.rotation.global_sequence]].AnimPairs[1].Action
 
                 # group channels
                 if bone.name not in action.groups:
@@ -281,7 +406,7 @@ class BlenderM2Scene:
                         populate_fcurve_rot(r_fcurves, bone, frames, track)
 
             if is_global_seq_scale:
-                action = scene.WowM2Animations[self.global_sequences[bone.scale.global_sequence]].AnimPairs[0].Action
+                action = scene.WowM2Animations[self.global_sequences[bone.scale.global_sequence]].AnimPairs[1].Action
 
                 # group channels
                 if bone.name not in action.groups:
@@ -300,7 +425,7 @@ class BlenderM2Scene:
             n_global_sequences = len(self.m2.root.global_sequences)
             for i, anim_index in enumerate(self.animations):
                 anim = scene.WowM2Animations[i + n_global_sequences]
-                action = anim.AnimPairs[0].Action
+                action = anim.AnimPairs[1].Action
 
                 # group channels
                 if bone.name not in action.groups:
@@ -421,25 +546,6 @@ class BlenderM2Scene:
                             grp.add([v], w, 'REPLACE')
 
             self.geosets.append(obj)
-
-    def load_colors_and_transparency(self):
-        if not self.geosets:
-            print('\nNo geosets found. Skipping colors import')
-            return
-        else:
-            print('\nImporting colors')
-
-        skin = self.m2.skins[0]
-
-        for smesh_pair, obj in zip(enumerate(skin.submeshes), self.geosets):
-            smesh_i, smesh = smesh_pair
-            _, tex_unit = self.materials[smesh_i]
-
-            # skip geosets without bound color data
-            if not tex_unit.color_index >= 0:
-                continue
-
-            # import color tracks
 
     def load_texture_transforms(self):
 
