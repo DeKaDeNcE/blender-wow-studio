@@ -283,6 +283,8 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
                 row.prop(item, 'StashToNLA', emboss=False, text="",
                          icon='RESTRICT_RENDER_OFF' if item.StashToNLA else 'RESTRICT_RENDER_ON')
 
+            row.prop(item, "LiveUpdate", emboss=False, text="")
+
         elif self.layout_type in {'GRID'}:
             pass
 
@@ -760,6 +762,11 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         name='Enable persistent playing',
         description='Enable persistent playing of this global sequences, no matter what animation is chosen',
         update=update_stash_to_nla
+    )
+
+    LiveUpdate = bpy.props.BoolProperty(
+        name='Live update',
+        decription='Automatically update materials that have live update turned on. May decrease FPS.'
     )
 
     # Layout properties

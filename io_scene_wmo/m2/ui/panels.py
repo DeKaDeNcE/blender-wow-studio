@@ -16,6 +16,9 @@ class WowM2MaterialPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
+        col.label('Render settings:')
+        col.prop(context.material.WowM2Material, "LiveUpdate")
+        col.separator()
         col.label('Flags:')
         col.prop(context.material.WowM2Material, "Flags")
         col.separator()
@@ -30,6 +33,19 @@ class WowM2MaterialPanel(bpy.types.Panel):
         return(context.scene is not None
                and context.scene.WowScene.Type == 'M2'
                and context.material is not None)
+
+
+def update_live_material_update(self, context):
+
+    if self.LiveUpdate and context.material.name not in context.scene.WowM2MaterialsToUpdate:
+        mat_slot = context.scene.WowM2MaterialsToUpdate.add()
+        mat_slot.Material = context.material
+        mat_slot.name = context.material.name
+
+    elif not self.LiveUpdate:
+        idx = context.scene.WowM2MaterialsToUpdate.find(context.material.name)
+        if idx is not None:
+            context.scene.WowM2MaterialsToUpdate.remove(idx)
 
 
 class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
@@ -60,8 +76,25 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         description="WoW material blending mode"
         )
 
+    # Blender animation playback settings
+
+    LiveUpdate = bpy.props.BoolProperty(
+        name='Live update',
+        description='Automatically update this material on scene frame changes, if global live update is on. May decrease FPS.',
+        update=update_live_material_update
+    )
+
+
+class WowM2MaterialLiveUpdatePropertyGroup(bpy.types.PropertyGroup):
+
+    name = bpy.props.StringProperty()
+
+    Material = bpy.props.PointerProperty(type=bpy.types.Material)
+
+
 def register_wow_m2_material_properties():
     bpy.types.Material.WowM2Material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
+    bpy.types.Scene.WowM2MaterialsToUpdate = bpy.props.CollectionProperty(type=WowM2MaterialLiveUpdatePropertyGroup)
 
 
 def unregister_wow_m2_material_properties():
@@ -145,6 +178,7 @@ class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
         poll=lambda self, obj: obj.WowM2TextureTransform.Enabled,
         update=update_geoset_uv_transform
     )
+
 
 class WowM2Geoset_AddTextureTransform(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_geoset_add_texture_transform'
@@ -878,7 +912,6 @@ def register_wow_m2_transparency_properties():
 def unregister_wow_m2_transparency_properties():
     del bpy.types.Scene.WowM2Transparency
     del bpy.types.Scene.WowM2CurTransparencyIndex
-
 
 
 def register():
