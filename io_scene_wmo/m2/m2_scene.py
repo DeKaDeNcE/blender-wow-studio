@@ -97,7 +97,7 @@ class BlenderM2Scene:
 
         for i, m2_color in enumerate(self.m2.root.colors):
             bl_color = bpy.context.scene.WowM2Colors.add()
-            bl_color.Name = 'Color_{}'.format(i)
+            bl_color.name = 'Color_{}'.format(i)
             bl_color.Color = (0.5, 0.5, 0.5, 1.0)
 
             # load global sequences
@@ -175,7 +175,7 @@ class BlenderM2Scene:
 
         for i, m2_transparency in enumerate(self.m2.root.texture_weights):
             bl_transparency = bpy.context.scene.WowM2Transparency.add()
-            bl_transparency.Name = 'Transparency_{}'.format(i)
+            bl_transparency.name = 'Transparency_{}'.format(i)
 
             # load global sequences
             for j, seq_index in enumerate(self.global_sequences):
@@ -203,9 +203,6 @@ class BlenderM2Scene:
                 if m2_transparency.global_sequence < 0:
                     animate_transparency(anim_pair, m2_transparency, i, anim_index)
 
-
-
-
     def load_materials(self, texture_dir):
 
         # TODO: multitexturing
@@ -219,8 +216,13 @@ class BlenderM2Scene:
 
             # creating material
             blender_mat = bpy.data.materials.new(os.path.basename(tex_path_png))
+            blender_mat.use_shadeless = True
+            blender_mat.use_transparency = True
+            blender_mat.alpha = 0
 
             tex1_slot = blender_mat.texture_slots.create(0)
+            tex1_slot.use_map_alpha = True
+            tex1_slot.alpha_factor = 1.0
             tex1_slot.uv_layer = "UVMap"
             tex1_slot.texture_coords = 'UV'
 
@@ -237,10 +239,114 @@ class BlenderM2Scene:
 
             try:
                 tex1_img = bpy.data.images.load(os.path.join(texture_dir, tex_path_png))
+                tex1_img.use_alpha = True
                 tex1.image = tex1_img
                 blender_mat.active_texture = tex1
             except RuntimeError:
                 pass
+
+            # setup node render node tree
+            blender_mat.use_nodes = True
+            tree = blender_mat.node_tree
+            links = tree.links
+
+            # clear default nodes
+            for n in tree.nodes:
+                tree.nodes.remove(n)
+
+            # create input materail node
+            mat_node = tree.nodes.new('ShaderNodeExtendedMaterial')
+            mat_node.location = 530, 1039
+            mat_node.material = blender_mat
+
+            # create color ramp nodes
+            c_ramp = tree.nodes.new('ShaderNodeValToRGB')
+            c_ramp.location = 896, 579
+            c_ramp.inputs[0].default_value = 1.0
+            c_ramp.color_ramp.elements.remove(c_ramp.color_ramp.elements[1])
+            c_ramp.color_ramp.elements[0].color = 1.0, 1.0, 1.0, 1.0
+            # create multiply nodes
+
+            # transparency
+            t_mult = tree.nodes.new('ShaderNodeMath')
+            t_mult.location = 975, 878
+            t_mult.operation = 'MULTIPLY'
+            t_mult.inputs[1].default_value = 1.0
+
+            # alpha
+            a_mult = tree.nodes.new('ShaderNodeMath')
+            a_mult.location = 1386, 757
+            a_mult.operation = 'MULTIPLY'
+
+            # color
+            c_mult = tree.nodes.new('ShaderNodeMixRGB')
+            c_mult.location = 1304, 1083
+            c_mult.blend_type = 'MULTIPLY'
+            c_mult.inputs[0].default_value = 1.0
+
+            # create output node
+            output = tree.nodes.new('ShaderNodeOutput')
+            output.location = 1799, 995
+
+            # link nodes to each other
+            links.new(mat_node.outputs[0], c_mult.inputs[1])
+            links.new(c_mult.outputs[0], output.inputs[0])
+            links.new(mat_node.outputs[1], t_mult.inputs[0])
+            links.new(t_mult.outputs[0], a_mult.inputs[0])
+            links.new(a_mult.outputs[0], output.inputs[1])
+            links.new(c_ramp.outputs[0], c_mult.inputs[2])
+            links.new(c_ramp.outputs[1], a_mult.inputs[1])
+
+            # add UI property drivers
+            color_curves = tree.driver_add("nodes[\"ColorRamp\"].color_ramp.elements[0].color")
+            transparency_curve = tree.driver_add("nodes[\"Math\"].inputs[1].default_value")
+
+            # colors
+            for i, fcurve in enumerate(color_curves):
+                driver = fcurve.driver
+                driver.type = 'SCRIPTED'
+
+                color_name_var = driver.variables.new()
+                color_name_var.name = 'color_name'
+                color_name_var.targets[0].id_type = 'TEXTURE'
+                color_name_var.targets[0].id = tex1
+                color_name_var.targets[0].data_path = 'WowM2Texture.Color'
+
+                color_col_var = driver.variables.new()
+                color_col_var.name = 'colors'
+                color_col_var.targets[0].id_type = 'SCENE'
+                color_col_var.targets[0].id = bpy.context.scene
+                color_col_var.targets[0].data_path = 'WowM2Colors'
+
+                driver.expression = 'colors[color_name].Color[{}] if color_name in colors else 1.0'.format(i)
+
+            # transparency
+            driver = transparency_curve.driver
+            driver.type = 'SCRIPTED'
+
+            trans_name_var = driver.variables.new()
+            trans_name_var.name = 'trans_name'
+            trans_name_var.targets[0].id_type = 'TEXTURE'
+            trans_name_var.targets[0].id = tex1
+            trans_name_var.targets[0].data_path = 'WowM2Texture.Transparency'
+
+            color_col_var = driver.variables.new()
+            color_col_var.name = 'trans_values'
+            color_col_var.targets[0].id_type = 'SCENE'
+            color_col_var.targets[0].id = bpy.context.scene
+            color_col_var.targets[0].data_path = 'WowM2Transparency'
+
+            driver.expression = 'trans_values[trans_name].Value if trans_name in trans_values else 1.0'
+
+            # bind color to texture
+            if tex_unit.color_index >= 0:
+                color = bpy.context.scene.WowM2Colors[tex_unit.color_index]
+                tex1.WowM2Texture.Color = color.name
+
+            # bind transparency to texture
+            real_tw_index = self.m2.root.transparency_lookup_table[tex_unit.texture_weight_combo_index]
+            transparency = bpy.context.scene.WowM2Transparency[real_tw_index]
+            tex1.WowM2Texture.Transparency = transparency.name
 
             # filling material settings
             blender_mat.WowM2Material.Flags = parse_bitfield(tex_unit.flags, 0x80)  # texture unit flags
@@ -590,6 +696,7 @@ class BlenderM2Scene:
             name = M2SkinMeshPartID.get_mesh_part_name(smesh.skin_section_id)
             obj = bpy.data.objects.new(name if name else 'Geoset', mesh)
             bpy.context.scene.objects.link(obj)
+            obj.show_transparent = True
 
             obj.WowM2Geoset.MeshPartGroup = name
             obj.WowM2Geoset.MeshPartID = str(smesh.skin_section_id)

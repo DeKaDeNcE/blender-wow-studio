@@ -195,16 +195,27 @@ class WowM2TexturePanel(bpy.types.Panel):
         col.prop(context.texture.WowM2Texture, "Flags")
         col.separator()
         col.prop(context.texture.WowM2Texture, "TextureType")
-
-        if context.texture.WowM2Texture.TextureType == '0':
-            col.separator()
-            col.prop(context.texture.WowM2Texture, "Path", text='Path')
+        col.separator()
+        col.prop(context.texture.WowM2Texture, "Path", text='Path')
+        col.separator()
+        col.prop_search(context.texture.WowM2Texture, "Color",
+                        context.scene, "WowM2Colors", text='Color', icon='COLOR')
+        col.prop_search(context.texture.WowM2Texture, "Transparency",
+                        context.scene, "WowM2Transparency", text='Transparency', icon='RESTRICT_VIEW_OFF')
 
     @classmethod
     def poll(cls, context):
         return (context.scene is not None
                 and context.scene.WowScene.Type == 'M2'
                 and context.texture is not None)
+
+
+def update_texture_bound_color(self, context):
+    pass
+
+
+def update_texture_bound_transparency(self, context):
+    pass
 
 
 class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
@@ -226,6 +237,18 @@ class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
     Path = bpy.props.StringProperty(
         name='Path',
         description='Path to .blp file in wow file system.'
+    )
+
+    Color = bpy.props.StringProperty(
+        name='Color',
+        description='Color track linked to this texture.',
+        update=update_texture_bound_color
+    )
+
+    Transparency = bpy.props.StringProperty(
+        name='Transparency',
+        description='Transparency track linked to this texture.',
+        update=update_texture_bound_transparency
     )
 
 
@@ -692,7 +715,7 @@ class WowM2Colors_ColorList(bpy.types.UIList):
 
             row = layout.row(align=True)
             cur_color_prop_group = context.scene.WowM2Colors[index]
-            row.prop(cur_color_prop_group, "Name", text="", icon='COLOR', emboss=False)
+            row.prop(cur_color_prop_group, "name", text="", icon='COLOR', emboss=False)
             row.prop(cur_color_prop_group, "Color", text="")
 
         elif self.layout_type in {'GRID'}:
@@ -708,7 +731,7 @@ class WowM2Colors_ColorAdd(bpy.types.Operator):
     def execute(self, context):
         color = context.scene.WowM2Colors.add()
         context.scene.WowM2CurColorIndex = len(context.scene.WowM2Colors) - 1
-        color.Name = 'Color_{}'.format(context.scene.WowM2CurColorIndex)
+        color.name = 'Color_{}'.format(context.scene.WowM2CurColorIndex)
 
         return {'FINISHED'}
 
@@ -732,12 +755,12 @@ class WowM2ColorPropertyGroup(bpy.types.PropertyGroup):
         description='The color applied to WoW material. Can be animated. Alpha defines model transparency and is multiplied with transparency value',
         subtype='COLOR',
         size=4,
-        default=(0.5, 0.5, 0.5, 1.0),
+        default=(1.0, 1.0, 1.0, 1.0),
         min=0.0,
         max=1.0
     )
 
-    Name = bpy.props.StringProperty(
+    name = bpy.props.StringProperty(
         name='Color name',
         description='Only used for scene organization purposes, ignored on export'
     )
@@ -794,7 +817,7 @@ class WowM2Transparency_TransparencyList(bpy.types.UIList):
 
             row = layout.row(align=True)
             cur_trans_prop_group = context.scene.WowM2Transparency[index]
-            row.prop(cur_trans_prop_group, "Name", text="", icon='RESTRICT_VIEW_OFF', emboss=False)
+            row.prop(cur_trans_prop_group, "name", text="", icon='RESTRICT_VIEW_OFF', emboss=False)
             row.prop(cur_trans_prop_group, "Value", text="")
 
         elif self.layout_type in {'GRID'}:
@@ -810,7 +833,7 @@ class WowM2Transparency_ValueAdd(bpy.types.Operator):
     def execute(self, context):
         value = context.scene.WowM2Transparency.add()
         context.scene.WowM2CurTransparencyIndex = len(context.scene.WowM2Transparency) - 1
-        value.Name = 'Transparency_{}'.format(context.scene.WowM2CurTransparencyIndex)
+        value.name = 'Transparency_{}'.format(context.scene.WowM2CurTransparencyIndex)
 
         return {'FINISHED'}
 
@@ -833,10 +856,11 @@ class WowM2TransprencyPropertyGroup(bpy.types.PropertyGroup):
         name='Transparency',
         description='Defines transparency for M2 material. Can be animated. Multiplied by alpha channel of color block.',
         min=0.0,
-        max=1.0
+        max=1.0,
+        default=1.0
     )
 
-    Name = bpy.props.StringProperty(
+    name = bpy.props.StringProperty(
         name='Transparency name',
         description='Only used for scene organization purposes, ignored on export'
     )

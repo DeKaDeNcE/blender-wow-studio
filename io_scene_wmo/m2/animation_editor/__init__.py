@@ -719,8 +719,8 @@ def update_stash_to_nla(self, context):
                 strip = nla_track.strips.new(name=anim_pair.Action.name, start=0, action=anim_pair.Action)
                 strip.blend_type = 'ADD'
 
-                if anim_pair.Object.animation_data.action:
-                    strip.frame_end = anim_pair.Object.animation_data.action.frame_range[1]
+                if obj.animation_data.action:
+                    strip.frame_end = obj.animation_data.action.frame_range[1]
     else:
         for anim_pair in self.AnimPairs:
             if (anim_pair.Object or anim_pair.Scene) and anim_pair.Action:
@@ -894,6 +894,9 @@ def update_animation(self, context):
 
     for color in context.scene.WowM2Colors:
         color.Color = (0.5, 0.5, 0.5, 1.0)
+
+    for trans in context.scene.WowM2Transparency:
+        trans.Value = 1.0
 
     if bpy.context.scene.animation_data:
         bpy.context.scene.animation_data.action = None
