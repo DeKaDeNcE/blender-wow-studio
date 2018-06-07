@@ -283,7 +283,7 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
                 row.prop(item, 'StashToNLA', emboss=False, text="",
                          icon='RESTRICT_RENDER_OFF' if item.StashToNLA else 'RESTRICT_RENDER_ON')
 
-            row.prop(item, "LiveUpdate", emboss=False, text="")
+            row.prop(item, "LiveUpdate", emboss=False, text="", icon='PMARKER_SEL' if item.LiveUpdate else 'PMARKER')
 
         elif self.layout_type in {'GRID'}:
             pass
@@ -766,7 +766,7 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
 
     LiveUpdate = bpy.props.BoolProperty(
         name='Live update',
-        decription='Automatically update materials that have live update turned on. May decrease FPS.'
+        description='Automatically update materials that have live update turned on. May decrease FPS.'
     )
 
     # Layout properties
