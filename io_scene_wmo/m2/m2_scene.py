@@ -697,7 +697,6 @@ class BlenderM2Scene:
             name = M2SkinMeshPartID.get_mesh_part_name(smesh.skin_section_id)
             obj = bpy.data.objects.new(name if name else 'Geoset', mesh)
             bpy.context.scene.objects.link(obj)
-            obj.show_transparent = True
 
             obj.WowM2Geoset.MeshPartGroup = name
             obj.WowM2Geoset.MeshPartID = str(smesh.skin_section_id)
