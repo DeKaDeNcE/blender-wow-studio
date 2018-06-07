@@ -98,7 +98,7 @@ class BlenderM2Scene:
         for i, m2_color in enumerate(self.m2.root.colors):
             bl_color = bpy.context.scene.WowM2Colors.add()
             bl_color.name = 'Color_{}'.format(i)
-            bl_color.Color = (0.5, 0.5, 0.5, 1.0)
+            bl_color.Color = (1.0, 1.0, 1.0, 1.0)
 
             # load global sequences
             for j, seq_index in enumerate(self.global_sequences):
