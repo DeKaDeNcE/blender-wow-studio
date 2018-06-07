@@ -34,20 +34,6 @@ class WowM2MaterialPanel(bpy.types.Panel):
                and context.scene.WowScene.Type == 'M2'
                and context.material is not None)
 
-
-def update_live_material_update(self, context):
-
-    if self.LiveUpdate and context.material.name not in context.scene.WowM2MaterialsToUpdate:
-        mat_slot = context.scene.WowM2MaterialsToUpdate.add()
-        mat_slot.Material = context.material
-        mat_slot.name = context.material.name
-
-    elif not self.LiveUpdate:
-        idx = context.scene.WowM2MaterialsToUpdate.find(context.material.name)
-        if idx is not None:
-            context.scene.WowM2MaterialsToUpdate.remove(idx)
-
-
 class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
 
     Flags = bpy.props.EnumProperty(
@@ -81,20 +67,12 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
     LiveUpdate = bpy.props.BoolProperty(
         name='Live update',
         description='Automatically update this material on scene frame changes, if global live update is on. May decrease FPS.',
-        update=update_live_material_update
+        default=False
     )
-
-
-class WowM2MaterialLiveUpdatePropertyGroup(bpy.types.PropertyGroup):
-
-    name = bpy.props.StringProperty()
-
-    Material = bpy.props.PointerProperty(type=bpy.types.Material)
 
 
 def register_wow_m2_material_properties():
     bpy.types.Material.WowM2Material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
-    bpy.types.Scene.WowM2MaterialsToUpdate = bpy.props.CollectionProperty(type=WowM2MaterialLiveUpdatePropertyGroup)
 
 
 def unregister_wow_m2_material_properties():

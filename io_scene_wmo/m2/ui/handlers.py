@@ -2,11 +2,16 @@ import bpy
 from bpy.app.handlers import persistent
 
 
-# @persistent
+@persistent
 def live_update_materials(dummy):
-    for mat_slot in bpy.context.scene.WowM2MaterialsToUpdate:
-        if mat_slot.material.LiveUpdate:
-            mat_slot.material.invert_z = mat_slot.material.invert_z
+    try:
+        anim = bpy.context.scene.WowM2Animations[bpy.context.scene.WowM2CurAnimIndex]
+        if anim.LiveUpdate:
+            for mat in bpy.data.materials:
+                if mat.WowM2Material.LiveUpdate:
+                    mat.invert_z = mat.invert_z
+    except IndexError:
+        pass
 
 
 def register_m2_handlers():

@@ -219,6 +219,7 @@ class BlenderM2Scene:
             blender_mat.use_shadeless = True
             blender_mat.use_transparency = True
             blender_mat.alpha = 0
+            blender_mat.WowM2Material.LiveUpdate = True
 
             tex1_slot = blender_mat.texture_slots.create(0)
             tex1_slot.use_map_alpha = True
