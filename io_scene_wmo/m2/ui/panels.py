@@ -1,6 +1,7 @@
 import bpy
 
 from .enums import *
+from .handlers import live_update_materials
 
 
 ###############################
@@ -769,7 +770,8 @@ class WowM2ColorPropertyGroup(bpy.types.PropertyGroup):
         size=4,
         default=(1.0, 1.0, 1.0, 1.0),
         min=0.0,
-        max=1.0
+        max=1.0,
+        update=lambda self, ctx: live_update_materials(ctx)
     )
 
     name = bpy.props.StringProperty(
@@ -869,7 +871,8 @@ class WowM2TransprencyPropertyGroup(bpy.types.PropertyGroup):
         description='Defines transparency for M2 material. Can be animated. Multiplied by alpha channel of color block.',
         min=0.0,
         max=1.0,
-        default=1.0
+        default=1.0,
+        update=lambda self, ctx: live_update_materials(ctx)
     )
 
     name = bpy.props.StringProperty(
