@@ -418,9 +418,9 @@ class CreatureEditorLoadTextures(bpy.types.Operator):
             pass
 
         if img:
-            for obj in filter(lambda o: o.type == 'MESH' and not o.WowM2Geoset.CollisionMesh, context.scene.objects):
+            for obj in filter(lambda o: o.type == 'MESH' and not o.wow_m2_geoset.CollisionMesh, context.scene.objects):
                 for i, material in enumerate(obj.data.materials):
-                    if material.active_texture.WowM2Texture.TextureType == str(tex_type):
+                    if material.active_texture.wow_m2_texture.TextureType == str(tex_type):
                         material.active_texture.image = img
 
                         uv = obj.data.uv_textures.active

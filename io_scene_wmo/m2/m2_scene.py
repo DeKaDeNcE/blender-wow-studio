@@ -40,7 +40,7 @@ class BlenderM2Scene:
                 return
 
             # create fcurve
-            f_curves = [action.fcurves.new(data_path='WowM2Colors[{}].Color'.format(color_index),
+            f_curves = [action.fcurves.new(data_path='wow_m2_colors[{}].Color'.format(color_index),
                                            index=k, action_group='Color_{}'.format(color_index)) for k in range(3)]
 
             # init keyframes on the curve
@@ -70,7 +70,7 @@ class BlenderM2Scene:
                 return
 
             # create fcurve
-            f_curve = action.fcurves.new(data_path='WowM2Colors[{}].Color'.format(color_index),
+            f_curve = action.fcurves.new(data_path='wow_m2_colors[{}].Color'.format(color_index),
                                          index=3, action_group='Color_{}'.format(color_index))
 
             # init keyframes on the curve
@@ -96,13 +96,13 @@ class BlenderM2Scene:
         n_global_sequences = len(self.global_sequences)
 
         for i, m2_color in enumerate(self.m2.root.colors):
-            bl_color = bpy.context.scene.WowM2Colors.add()
+            bl_color = bpy.context.scene.wow_m2_colors.add()
             bl_color.name = 'Color_{}'.format(i)
             bl_color.Color = (1.0, 1.0, 1.0, 1.0)
 
             # load global sequences
             for j, seq_index in enumerate(self.global_sequences):
-                anim = bpy.context.scene.WowM2Animations[j]
+                anim = bpy.context.scene.wow_m2_animations[j]
 
                 anim_pair = None
                 for pair in anim.AnimPairs:
@@ -118,7 +118,7 @@ class BlenderM2Scene:
 
             # load animations
             for j, anim_index in enumerate(self.animations):
-                anim = bpy.context.scene.WowM2Animations[j + n_global_sequences]
+                anim = bpy.context.scene.wow_m2_animations[j + n_global_sequences]
 
                 anim_pair = None
                 for pair in anim.AnimPairs:
@@ -148,7 +148,7 @@ class BlenderM2Scene:
                 return
 
             # create fcurve
-            f_curve = action.fcurves.new(data_path='WowM2Transparency[{}].Value'.format(trans_index),
+            f_curve = action.fcurves.new(data_path='wow_m2_transparency[{}].Value'.format(trans_index),
                                          index=3, action_group='Transparency_{}'.format(trans_index))
 
             # init keyframes on the curve
@@ -174,12 +174,12 @@ class BlenderM2Scene:
         n_global_sequences = len(self.global_sequences)
 
         for i, m2_transparency in enumerate(self.m2.root.texture_weights):
-            bl_transparency = bpy.context.scene.WowM2Transparency.add()
+            bl_transparency = bpy.context.scene.wow_m2_transparency.add()
             bl_transparency.name = 'Transparency_{}'.format(i)
 
             # load global sequences
             for j, seq_index in enumerate(self.global_sequences):
-                anim = bpy.context.scene.WowM2Animations[j]
+                anim = bpy.context.scene.wow_m2_animations[j]
 
                 anim_pair = None
                 for pair in anim.AnimPairs:
@@ -192,7 +192,7 @@ class BlenderM2Scene:
 
             # load animations
             for j, anim_index in enumerate(self.animations):
-                anim = bpy.context.scene.WowM2Animations[j + n_global_sequences]
+                anim = bpy.context.scene.wow_m2_animations[j + n_global_sequences]
 
                 anim_pair = None
                 for pair in anim.AnimPairs:
@@ -219,7 +219,7 @@ class BlenderM2Scene:
             blender_mat.use_shadeless = True
             blender_mat.use_transparency = True
             blender_mat.alpha = 0
-            blender_mat.WowM2Material.LiveUpdate = True
+            blender_mat.wow_m2_material.LiveUpdate = True
 
             tex1_slot = blender_mat.texture_slots.create(0)
             tex1_slot.use_map_alpha = True
@@ -229,9 +229,9 @@ class BlenderM2Scene:
 
             tex1_name = blender_mat.name + "_Tex_02"
             tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
-            tex1.WowM2Texture.Flags = parse_bitfield(texture.flags, 0x2)
-            tex1.WowM2Texture.TextureType = str(texture.type)
-            tex1.WowM2Texture.Path = texture.filename.value
+            tex1.wow_m2_texture.Flags = parse_bitfield(texture.flags, 0x2)
+            tex1.wow_m2_texture.TextureType = str(texture.type)
+            tex1.wow_m2_texture.Path = texture.filename.value
 
             tex1_slot.texture = tex1
 
@@ -311,13 +311,13 @@ class BlenderM2Scene:
                 color_name_var.name = 'color_name'
                 color_name_var.targets[0].id_type = 'TEXTURE'
                 color_name_var.targets[0].id = tex1
-                color_name_var.targets[0].data_path = 'WowM2Texture.Color'
+                color_name_var.targets[0].data_path = 'wow_m2_texture.Color'
 
                 color_col_var = driver.variables.new()
                 color_col_var.name = 'colors'
                 color_col_var.targets[0].id_type = 'SCENE'
                 color_col_var.targets[0].id = bpy.context.scene
-                color_col_var.targets[0].data_path = 'WowM2Colors'
+                color_col_var.targets[0].data_path = 'wow_m2_colors'
 
                 driver.expression = 'colors[color_name].Color[{}] if color_name in colors else 1.0'.format(i)
 
@@ -329,32 +329,32 @@ class BlenderM2Scene:
             trans_name_var.name = 'trans_name'
             trans_name_var.targets[0].id_type = 'TEXTURE'
             trans_name_var.targets[0].id = tex1
-            trans_name_var.targets[0].data_path = 'WowM2Texture.Transparency'
+            trans_name_var.targets[0].data_path = 'wow_m2_texture.Transparency'
 
             color_col_var = driver.variables.new()
             color_col_var.name = 'trans_values'
             color_col_var.targets[0].id_type = 'SCENE'
             color_col_var.targets[0].id = bpy.context.scene
-            color_col_var.targets[0].data_path = 'WowM2Transparency'
+            color_col_var.targets[0].data_path = 'wow_m2_transparency'
 
             driver.expression = 'trans_values[trans_name].Value if trans_name in trans_values else 1.0'
 
             # bind color to texture
             if tex_unit.color_index >= 0:
-                color = bpy.context.scene.WowM2Colors[tex_unit.color_index]
-                tex1.WowM2Texture.Color = color.name
+                color = bpy.context.scene.wow_m2_colors[tex_unit.color_index]
+                tex1.wow_m2_texture.Color = color.name
 
             # bind transparency to texture
             real_tw_index = self.m2.root.transparency_lookup_table[tex_unit.texture_weight_combo_index]
-            transparency = bpy.context.scene.WowM2Transparency[real_tw_index]
-            tex1.WowM2Texture.Transparency = transparency.name
+            transparency = bpy.context.scene.wow_m2_transparency[real_tw_index]
+            tex1.wow_m2_texture.Transparency = transparency.name
 
             # filling material settings
-            blender_mat.WowM2Material.Flags = parse_bitfield(tex_unit.flags, 0x80)  # texture unit flags
-            blender_mat.WowM2Material.RenderFlags = parse_bitfield(m2_mat.flags, 0x800)  # render flags
+            blender_mat.wow_m2_material.Flags = parse_bitfield(tex_unit.flags, 0x80)  # texture unit flags
+            blender_mat.wow_m2_material.RenderFlags = parse_bitfield(m2_mat.flags, 0x800)  # render flags
 
-            blender_mat.WowM2Material.BlendingMode = str(m2_mat.blending_mode)  # TODO: ? bitfield
-            blender_mat.WowM2Material.Shader = str(tex_unit.shader_id)
+            blender_mat.wow_m2_material.BlendingMode = str(m2_mat.blending_mode)  # TODO: ? bitfield
+            blender_mat.wow_m2_material.Shader = str(tex_unit.shader_id)
 
             # TODO: other settings
 
@@ -471,8 +471,8 @@ class BlenderM2Scene:
 
         # import global sequence animations
         for i, sequence in enumerate(self.m2.root.global_sequences):
-            seq_index = len(scene.WowM2Animations)
-            seq = scene.WowM2Animations.add()
+            seq_index = len(scene.wow_m2_animations)
+            seq = scene.wow_m2_animations.add()
             seq.IsGlobalSequence = True
 
             # register scene in the sequence
@@ -501,7 +501,7 @@ class BlenderM2Scene:
         for i, pair in enumerate(m2_sequences):
             idx, sequence = pair
 
-            anim = scene.WowM2Animations.add()
+            anim = scene.wow_m2_animations.add()
 
             field_name = anim_data_dbc.get_field(sequence.id, 'Name')
             name = '{}_UnkAnim'.format(str(i).zfill(3)) if not field_name \
@@ -554,7 +554,7 @@ class BlenderM2Scene:
 
             # write global sequence fcurves
             if is_global_seq_trans:
-                action = scene.WowM2Animations[self.global_sequences[bone.translation.global_sequence]].AnimPairs[1].Action
+                action = scene.wow_m2_animations[self.global_sequences[bone.translation.global_sequence]].AnimPairs[1].Action
 
                 # group channels
                 if bone.name not in action.groups:
@@ -571,7 +571,7 @@ class BlenderM2Scene:
 
             if is_global_seq_rot:
 
-                action = scene.WowM2Animations[self.global_sequences[bone.rotation.global_sequence]].AnimPairs[1].Action
+                action = scene.wow_m2_animations[self.global_sequences[bone.rotation.global_sequence]].AnimPairs[1].Action
 
                 # group channels
                 if bone.name not in action.groups:
@@ -587,7 +587,7 @@ class BlenderM2Scene:
                         populate_fcurve_rot(r_fcurves, bone, frames, track)
 
             if is_global_seq_scale:
-                action = scene.WowM2Animations[self.global_sequences[bone.scale.global_sequence]].AnimPairs[1].Action
+                action = scene.wow_m2_animations[self.global_sequences[bone.scale.global_sequence]].AnimPairs[1].Action
 
                 # group channels
                 if bone.name not in action.groups:
@@ -605,7 +605,7 @@ class BlenderM2Scene:
             # write regular animation fcurves
             n_global_sequences = len(self.m2.root.global_sequences)
             for i, anim_index in enumerate(self.animations):
-                anim = scene.WowM2Animations[i + n_global_sequences]
+                anim = scene.wow_m2_animations[i + n_global_sequences]
                 action = anim.AnimPairs[1].Action
 
                 # group channels
@@ -698,10 +698,10 @@ class BlenderM2Scene:
             obj = bpy.data.objects.new(name if name else 'Geoset', mesh)
             bpy.context.scene.objects.link(obj)
 
-            obj.WowM2Geoset.MeshPartGroup = name
-            obj.WowM2Geoset.MeshPartID = str(smesh.skin_section_id)
+            obj.wow_m2_geoset.MeshPartGroup = name
+            obj.wow_m2_geoset.MeshPartID = str(smesh.skin_section_id)
 
-            for item in mesh_part_id_menu(obj.WowM2Geoset, None):
+            for item in mesh_part_id_menu(obj.wow_m2_geoset, None):
                 if item[0] == smesh.skin_section_id:
                     obj.name = item[1]
 
@@ -855,7 +855,7 @@ class BlenderM2Scene:
                     bpy.ops.object.empty_add(type='SINGLE_ARROW', location=(0, 0, 0))
                     c_obj = bpy.context.scene.objects.active
                     c_obj.name = "TT_Controller"
-                    c_obj.WowM2TextureTransform.Enabled = True
+                    c_obj.wow_m2_uv_transform.Enabled = True
                     c_obj = bpy.context.scene.objects.active
                     c_obj.rotation_mode = 'QUATERNION'
                     c_obj.empty_draw_size = 0.5
@@ -872,11 +872,11 @@ class BlenderM2Scene:
                 uv_transform.object_to = c_obj
                 uv_transform.uv_layer = 'UVMap'
 
-                obj.WowM2Geoset.UVTransform = c_obj
+                obj.wow_m2_geoset.UVTransform = c_obj
 
                 # load global sequences
                 for j, seq_index in enumerate(self.global_sequences):
-                    anim = bpy.context.scene.WowM2Animations[seq_index]
+                    anim = bpy.context.scene.wow_m2_animations[seq_index]
 
                     name = "TT_{}_{}_Global_Sequence_{}".format(tex_tranform_index, obj.name, str(j).zfill(3))
 
@@ -899,7 +899,7 @@ class BlenderM2Scene:
 
                 # load animations
                 for j, anim_index in enumerate(self.animations):
-                    anim = bpy.context.scene.WowM2Animations[j + n_global_sequences]
+                    anim = bpy.context.scene.wow_m2_animations[j + n_global_sequences]
                     sequence = self.m2.root.sequences[anim_index]
 
                     field_name = anim_data_dbc.get_field(sequence.id, 'Name')
@@ -939,7 +939,7 @@ class BlenderM2Scene:
             anim_pair.Action = action
 
             # create fcurve
-            f_curve = action.fcurves.new(data_path='WowM2Attachment.Animate')
+            f_curve = action.fcurves.new(data_path='wow_m2_attachment.Animate')
 
             # init translation keyframes on the curve
             f_curve.keyframe_points.add(len(frames))
@@ -967,8 +967,8 @@ class BlenderM2Scene:
             obj.location = bl_edit_bone.matrix_local.inverted() * Vector(attachment.position)
 
             obj.name = M2AttachmentTypes.get_attachment_name(attachment.id, i)
-            obj.WowM2Attachment.Enabled = True
-            obj.WowM2Attachment.Type = str(attachment.id)
+            obj.wow_m2_attachment.Enabled = True
+            obj.wow_m2_attachment.Type = str(attachment.id)
 
             # Animate attachment
             obj.animation_data_create()
@@ -978,7 +978,7 @@ class BlenderM2Scene:
 
             # load global sequences
             for j, seq_index in enumerate(self.global_sequences):
-                anim = bpy.context.scene.WowM2Animations[seq_index]
+                anim = bpy.context.scene.wow_m2_animations[seq_index]
 
                 if attachment.animate_attached.global_sequence == j:
                     frames = attachment.animate_attached.timestamps[0]
@@ -993,7 +993,7 @@ class BlenderM2Scene:
 
             # load animations
             for j, anim_index in enumerate(self.animations):
-                anim = bpy.context.scene.WowM2Animations[j + n_global_sequences]
+                anim = bpy.context.scene.wow_m2_animations[j + n_global_sequences]
                 sequence = self.m2.root.sequences[anim_index]
 
                 if attachment.animate_attached.timestamps.n_elements > anim_index:
@@ -1074,7 +1074,7 @@ class BlenderM2Scene:
             anim_pair.Action = action
 
             # create fcurve
-            f_curve = action.fcurves.new(data_path='WowM2Event.Fire')
+            f_curve = action.fcurves.new(data_path='wow_m2_event.Fire')
 
             # init translation keyframes on the curve
             f_curve.keyframe_points.add(len(frames))
@@ -1107,15 +1107,15 @@ class BlenderM2Scene:
             obj.location = bl_edit_bone.matrix_local.inverted() * Vector(event.position)
             token = M2EventTokens.get_event_name(event.identifier)
             obj.name = "Event_{}".format(token)
-            obj.WowM2Event.Enabled = True
-            obj.WowM2Event.Token = event.identifier
+            obj.wow_m2_event.Enabled = True
+            obj.wow_m2_event.Token = event.identifier
 
             if obj.name in ('PlayEmoteSound',
                             'DoodadSoundUnknown',
                             'DoodadSoundOneShot',
                             'GOPlaySoundKitCustom',
                             'GOAddShake'):
-                obj.WowM2Event.Data = event.data
+                obj.wow_m2_event.Data = event.data
 
             # animate event firing
             obj.animation_data_create()
@@ -1125,7 +1125,7 @@ class BlenderM2Scene:
 
             # load global sequences
             for j, seq_index in enumerate(self.global_sequences):
-                anim = bpy.context.scene.WowM2Animations[seq_index]
+                anim = bpy.context.scene.wow_m2_animations[seq_index]
 
                 if event.enabled.global_sequence == j:
                     frames = event.enabled.timestamps[0]
@@ -1139,7 +1139,7 @@ class BlenderM2Scene:
 
             # load animations
             for j, anim_index in enumerate(self.animations):
-                anim = bpy.context.scene.WowM2Animations[j + n_global_sequences]
+                anim = bpy.context.scene.wow_m2_animations[j + n_global_sequences]
                 sequence = self.m2.root.sequences[anim_index]
 
                 if event.enabled.timestamps.n_elements > anim_index:
@@ -1198,14 +1198,14 @@ class BlenderM2Scene:
         # create object
         obj = bpy.data.objects.new('Collision', mesh)
         bpy.context.scene.objects.link(obj)
-        obj.WowM2Geoset.CollisionMesh = True
+        obj.wow_m2_geoset.CollisionMesh = True
         obj.hide = True
         # TODO: add transparent material
 
     def save_properties(self, filepath, selected_only):
         self.m2.root.name.value = os.path.basename(filepath)
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
-        b_min, b_max = get_objs_boundbox_world(filter(lambda ob: not ob.WowM2Geoset.CollisionMesh
+        b_min, b_max = get_objs_boundbox_world(filter(lambda ob: not ob.wow_m2_geoset.CollisionMesh
                                                                  and ob.type == 'MESH'
                                                                  and not ob.hide, objects))
 
@@ -1324,7 +1324,7 @@ class BlenderM2Scene:
         bpy.ops.object.select_all(action='DESELECT')
 
         proxy_objects = []
-        for obj in filter(lambda ob: not ob.WowM2Geoset.CollisionMesh and ob.type == 'MESH' and not ob.hide, objects):
+        for obj in filter(lambda ob: not ob.wow_m2_geoset.CollisionMesh and ob.type == 'MESH' and not ob.hide, objects):
 
             new_obj = obj.copy()
             new_obj.data = obj.data.copy()
@@ -1432,24 +1432,24 @@ class BlenderM2Scene:
 
             # add geoset
             g_index = self.m2.add_geoset(vertices, normals, tex_coords, tex_coords2, tris, bone_indices, bone_weights,
-                                         origin, sort_pos, sort_radius, int(new_obj.WowM2Geoset.MeshPartID))  # TODO: second UV
+                                         origin, sort_pos, sort_radius, int(new_obj.wow_m2_geoset.MeshPartID))  # TODO: second UV
 
             material = mesh.materials[0]
             bl_texture = material.active_texture
-            wow_path = bl_texture.WowM2Texture.Path
+            wow_path = bl_texture.wow_m2_texture.Path
 
             if fill_textures and not wow_path:
                 wow_path = resolve_texture_path(bl_texture.image.filepath)
 
             tex_id = self.m2.add_texture(wow_path,
-                                         construct_bitfield(bl_texture.WowM2Texture.Flags),
-                                         int(bl_texture.WowM2Texture.TextureType)
+                                         construct_bitfield(bl_texture.wow_m2_texture.Flags),
+                                         int(bl_texture.wow_m2_texture.TextureType)
                                          )
 
-            render_flags = construct_bitfield(material.WowM2Material.RenderFlags)
-            flags = construct_bitfield(material.WowM2Material.Flags)
-            bl_mode = int(material.WowM2Material.BlendingMode)
-            shader_id = int(material.WowM2Material.Shader)
+            render_flags = construct_bitfield(material.wow_m2_material.RenderFlags)
+            flags = construct_bitfield(material.wow_m2_material.Flags)
+            bl_mode = int(material.wow_m2_material.BlendingMode)
+            shader_id = int(material.wow_m2_material.Shader)
 
             self.m2.add_material_to_geoset(g_index, render_flags, bl_mode, flags, shader_id, tex_id)
 
@@ -1459,7 +1459,7 @@ class BlenderM2Scene:
 
     def save_collision(self, selected_only):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
-        objects = list(filter(lambda ob: ob.WowM2Geoset.CollisionMesh and ob.type == 'MESH' and not ob.hide, objects))
+        objects = list(filter(lambda ob: ob.wow_m2_geoset.CollisionMesh and ob.type == 'MESH' and not ob.hide, objects))
 
         proxy_objects = []
 

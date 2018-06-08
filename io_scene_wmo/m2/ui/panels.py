@@ -18,16 +18,16 @@ class WowM2MaterialPanel(bpy.types.Panel):
         layout = self.layout
         col = layout.column()
         col.label('Render settings:')
-        col.prop(context.material.WowM2Material, "LiveUpdate")
+        col.prop(context.material.wow_m2_material, "LiveUpdate")
         col.separator()
         col.label('Flags:')
-        col.prop(context.material.WowM2Material, "Flags")
+        col.prop(context.material.wow_m2_material, "Flags")
         col.separator()
         col.label('Render Flags:')
-        col.prop(context.material.WowM2Material, "RenderFlags")
+        col.prop(context.material.wow_m2_material, "RenderFlags")
         col.separator()
-        col.prop(context.material.WowM2Material, "BlendingMode")
-        col.prop(context.material.WowM2Material, "Shader")
+        col.prop(context.material.wow_m2_material, "BlendingMode")
+        col.prop(context.material.wow_m2_material, "Shader")
 
     @classmethod
     def poll(cls, context):
@@ -73,11 +73,11 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register_wow_m2_material_properties():
-    bpy.types.Material.WowM2Material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
+    bpy.types.Material.wow_m2_material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
 
 
 def unregister_wow_m2_material_properties():
-    bpy.types.Material.WowM2Material = None
+    bpy.types.Material.wow_m2_material = None
 
 
 ###############################
@@ -91,14 +91,14 @@ class M2GeosetPanel(bpy.types.Panel):
     bl_label = "M2 Geoset"
 
     def draw(self, context):
-        self.layout.prop(context.object.WowM2Geoset, "CollisionMesh")
+        self.layout.prop(context.object.wow_m2_geoset, "CollisionMesh")
 
-        if not context.object.WowM2Geoset.CollisionMesh:
-            self.layout.prop(context.object.WowM2Geoset, "MeshPartGroup")
-            self.layout.prop(context.object.WowM2Geoset, "MeshPartID")
+        if not context.object.wow_m2_geoset.CollisionMesh:
+            self.layout.prop(context.object.wow_m2_geoset, "MeshPartGroup")
+            self.layout.prop(context.object.wow_m2_geoset, "MeshPartID")
 
             row = self.layout.row(align=True)
-            row.prop(context.object.WowM2Geoset, "UVTransform")
+            row.prop(context.object.wow_m2_geoset, "UVTransform")
             row.operator("scene.wow_m2_geoset_add_texture_transform", text='', icon='RNA_ADD')
 
     @classmethod
@@ -111,13 +111,13 @@ class M2GeosetPanel(bpy.types.Panel):
 
 
 def update_geoset_uv_transform(self, context):
-    c_obj = context.object.WowM2Geoset.UVTransform
+    c_obj = context.object.wow_m2_geoset.UVTransform
 
     uv_transform = context.object.modifiers.get('M2TexTransform')
 
     if c_obj:
-        if not c_obj.WowM2TextureTransform.Enabled:
-            context.object.WowM2Geoset.UVTransform = None
+        if not c_obj.wow_m2_uv_transform.Enabled:
+            context.object.wow_m2_geoset.UVTransform = None
 
         if not uv_transform:
             bpy.ops.object.modifier_add(type='UV_WARP')
@@ -154,7 +154,7 @@ class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
     UVTransform = bpy.props.PointerProperty(
         name="UV Transform",
         type=bpy.types.Object,
-        poll=lambda self, obj: obj.WowM2TextureTransform.Enabled,
+        poll=lambda self, obj: obj.wow_m2_uv_transform.Enabled,
         update=update_geoset_uv_transform
     )
 
@@ -171,25 +171,25 @@ class WowM2Geoset_AddTextureTransform(bpy.types.Operator):
         bpy.ops.object.empty_add(type='SINGLE_ARROW', location=(0, 0, 0))
         c_obj = bpy.context.scene.objects.active
         c_obj.name = "TT_Controller"
-        c_obj.WowM2TextureTransform.Enabled = True
+        c_obj.wow_m2_uv_transform.Enabled = True
         c_obj = bpy.context.scene.objects.active
         c_obj.rotation_mode = 'QUATERNION'
         c_obj.empty_draw_size = 0.5
         c_obj.animation_data_create()
         c_obj.animation_data.action_blend_type = 'ADD'
 
-        obj.WowM2Geoset.UVTransform = c_obj
+        obj.wow_m2_geoset.UVTransform = c_obj
         bpy.context.scene.objects.active = obj
 
         return {'FINISHED'}
 
 
 def register_wow_m2_geoset_properties():
-    bpy.types.Object.WowM2Geoset = bpy.props.PointerProperty(type=WowM2GeosetPropertyGroup)
+    bpy.types.Object.wow_m2_geoset = bpy.props.PointerProperty(type=WowM2GeosetPropertyGroup)
 
 
 def unregister_wow_m2_geoset_properties():
-    bpy.types.Object.WowM2Geoset = None
+    bpy.types.Object.wow_m2_geoset = None
 
 
 ###############################
@@ -205,16 +205,16 @@ class WowM2TexturePanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(context.texture.WowM2Texture, "Flags")
+        col.prop(context.texture.wow_m2_texture, "Flags")
         col.separator()
-        col.prop(context.texture.WowM2Texture, "TextureType")
+        col.prop(context.texture.wow_m2_texture, "TextureType")
         col.separator()
-        col.prop(context.texture.WowM2Texture, "Path", text='Path')
+        col.prop(context.texture.wow_m2_texture, "Path", text='Path')
         col.separator()
-        col.prop_search(context.texture.WowM2Texture, "Color",
-                        context.scene, "WowM2Colors", text='Color', icon='COLOR')
-        col.prop_search(context.texture.WowM2Texture, "Transparency",
-                        context.scene, "WowM2Transparency", text='Transparency', icon='RESTRICT_VIEW_OFF')
+        col.prop_search(context.texture.wow_m2_texture, "Color",
+                        context.scene, "wow_m2_colors", text='Color', icon='COLOR')
+        col.prop_search(context.texture.wow_m2_texture, "Transparency",
+                        context.scene, "wow_m2_transparency", text='Transparency', icon='RESTRICT_VIEW_OFF')
 
     @classmethod
     def poll(cls, context):
@@ -266,11 +266,11 @@ class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
 
 
 def register_wow_m2_texture_properties():
-    bpy.types.ImageTexture.WowM2Texture = bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)
+    bpy.types.ImageTexture.wow_m2_texture = bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)
 
 
 def unregister_wow_m2_texture_properties():
-    bpy.types.ImageTexture.WowM2Texture = None
+    bpy.types.ImageTexture.wow_m2_texture = None
 
 
 ###############################
@@ -433,15 +433,15 @@ class WowM2AttachmentPanel(bpy.types.Panel):
     bl_label = "M2 Attachment"
 
     def draw_header(self, context):
-        self.layout.prop(context.object.WowM2Attachment, "Enabled", text="")
+        self.layout.prop(context.object.wow_m2_attachment, "Enabled", text="")
 
     def draw(self, context):
         layout = self.layout
-        layout.enabled = context.object.WowM2Attachment.Enabled
+        layout.enabled = context.object.wow_m2_attachment.Enabled
 
         col = layout.column()
-        col.prop(context.object.WowM2Attachment, 'Type', text="Type")
-        col.prop(context.object.WowM2Attachment, 'Animate', text="Animate")
+        col.prop(context.object.wow_m2_attachment, 'Type', text="Type")
+        col.prop(context.object.wow_m2_attachment, 'Animate', text="Animate")
 
     @classmethod
     def poll(cls, context):
@@ -449,7 +449,7 @@ class WowM2AttachmentPanel(bpy.types.Panel):
                 and context.scene.WowScene.Type == 'M2'
                 and context.object is not None
                 and context.object.type == 'EMPTY'
-                and not (context.object.WowM2Event.Enabled or context.object.WowM2TextureTransform.Enabled)
+                and not (context.object.wow_m2_event.Enabled or context.object.wow_m2_uv_transform.Enabled)
         )
 
 
@@ -475,11 +475,11 @@ class WowM2AttachmentPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register_wow_m2_attachment_properties():
-    bpy.types.Object.WowM2Attachment = bpy.props.PointerProperty(type=WowM2AttachmentPropertyGroup)
+    bpy.types.Object.wow_m2_attachment = bpy.props.PointerProperty(type=WowM2AttachmentPropertyGroup)
 
 
 def unregister_wow_m2_attachment_properties():
-    bpy.types.Object.WowM2Attachment = None
+    bpy.types.Object.wow_m2_attachment = None
 
 
 ###############################
@@ -528,23 +528,23 @@ class WowM2EventPanel(bpy.types.Panel):
     bl_label = "M2 Event"
 
     def draw_header(self, context):
-        self.layout.prop(context.object.WowM2Event, "Enabled", text="")
+        self.layout.prop(context.object.wow_m2_event, "Enabled", text="")
 
     def draw(self, context):
         layout = self.layout
-        layout.enabled = context.object.WowM2Event.Enabled
+        layout.enabled = context.object.wow_m2_event.Enabled
 
         col = layout.column()
-        col.prop(context.object.WowM2Event, 'Token')
-        col.prop(context.object.WowM2Event, 'Enabled')
+        col.prop(context.object.wow_m2_event, 'Token')
+        col.prop(context.object.wow_m2_event, 'Enabled')
 
-        event_name = M2EventTokens.get_event_name(context.object.WowM2Event.Token)
+        event_name = M2EventTokens.get_event_name(context.object.wow_m2_event.Token)
         if event_name in ('PlayEmoteSound', 'DoodadSoundUnknown', 'DoodadSoundOneShot', 'GOPlaySoundKitCustom'):
             col.label(text='SoundEntryID')
-            col.prop(context.object.WowM2Event, 'Data')
+            col.prop(context.object.wow_m2_event, 'Data')
         elif event_name == 'GOAddShake':
             col.label(text='SpellEffectCameraShakesID')
-            col.prop(context.object.WowM2Event, 'Data')
+            col.prop(context.object.wow_m2_event, 'Data')
 
     @classmethod
     def poll(cls, context):
@@ -552,7 +552,7 @@ class WowM2EventPanel(bpy.types.Panel):
                 and context.scene.WowScene.Type == 'M2'
                 and context.object is not None
                 and context.object.type == 'EMPTY'
-                and not (context.object.WowM2Attachment.Enabled or context.object.WowM2TextureTransform.Enabled)
+                and not (context.object.wow_m2_attachment.Enabled or context.object.wow_m2_uv_transform.Enabled)
         )
 
 
@@ -584,11 +584,11 @@ class WowM2EventPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register_wow_m2_event_properties():
-    bpy.types.Object.WowM2Event = bpy.props.PointerProperty(type=WowM2EventPropertyGroup)
+    bpy.types.Object.wow_m2_event = bpy.props.PointerProperty(type=WowM2EventPropertyGroup)
 
 
 def unregister_wow_m2_event_properties():
-    bpy.types.Object.WowM2Event = None
+    bpy.types.Object.wow_m2_event = None
 
 
 ###############################
@@ -604,11 +604,11 @@ class WowM2AnimationsPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.template_list("AnimationEditor_AnimationList", "", context.scene, "WowM2Animations", context.scene,
-                          "WowM2CurAnimIndex")
+        col.template_list("AnimationEditor_AnimationList", "", context.scene, "wow_m2_animations", context.scene,
+                          "wow_m2_cur_anim_index")
 
         try:
-            cur_anim_track = context.scene.WowM2Animations[context.scene.WowM2CurAnimIndex]
+            cur_anim_track = context.scene.wow_m2_animations[context.scene.wow_m2_cur_anim_index]
 
             row = col.row()
             row_split = row.split().row(align=True)
@@ -659,7 +659,7 @@ class WowM2TextureTransformControllerPanel(bpy.types.Panel):
     bl_label = "M2 Texture Transform"
 
     def draw_header(self, context):
-        self.layout.prop(context.object.WowM2TextureTransform, "Enabled", text="")
+        self.layout.prop(context.object.wow_m2_uv_transform, "Enabled", text="")
 
     def draw(self, context):
         pass
@@ -670,7 +670,7 @@ class WowM2TextureTransformControllerPanel(bpy.types.Panel):
                 and context.scene.WowScene.Type == 'M2'
                 and context.object is not None
                 and context.object.type == 'EMPTY'
-                and not (context.object.WowM2Event.Enabled or context.object.WowM2Attachment.Enabled)
+                and not (context.object.wow_m2_event.Enabled or context.object.wow_m2_attachment.Enabled)
         )
 
 
@@ -684,11 +684,11 @@ class WowM2TextureTransformControllerPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register_wow_m2_texture_transform_controller_properties():
-    bpy.types.Object.WowM2TextureTransform = bpy.props.PointerProperty(type=WowM2TextureTransformControllerPropertyGroup)
+    bpy.types.Object.wow_m2_uv_transform = bpy.props.PointerProperty(type=WowM2TextureTransformControllerPropertyGroup)
 
 
 def unregister_wow_m2_texture_transform_controller_properties():
-    bpy.types.Object.WowM2TextureTransform = None
+    bpy.types.Object.wow_m2_uv_transform = None
 
 
 ###############################
@@ -708,7 +708,7 @@ class WowM2ColorsPanel(bpy.types.Panel):
 
         row = col.row()
         sub_col1 = row.column()
-        sub_col1.template_list("WowM2Colors_ColorList", "", context.scene, "WowM2Colors", context.scene,
+        sub_col1.template_list("WowM2Colors_ColorList", "", context.scene, "wow_m2_colors", context.scene,
                                "WowM2CurColorIndex")
 
         sub_col2 = row.column().column(align=True)
@@ -727,7 +727,7 @@ class WowM2Colors_ColorList(bpy.types.UIList):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
 
             row = layout.row(align=True)
-            cur_color_prop_group = context.scene.WowM2Colors[index]
+            cur_color_prop_group = context.scene.wow_m2_colors[index]
             row.prop(cur_color_prop_group, "name", text="", icon='COLOR', emboss=False)
             row.prop(cur_color_prop_group, "Color", text="")
 
@@ -742,8 +742,8 @@ class WowM2Colors_ColorAdd(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-        color = context.scene.WowM2Colors.add()
-        context.scene.WowM2CurColorIndex = len(context.scene.WowM2Colors) - 1
+        color = context.scene.wow_m2_colors.add()
+        context.scene.WowM2CurColorIndex = len(context.scene.wow_m2_colors) - 1
         color.name = 'Color_{}'.format(context.scene.WowM2CurColorIndex)
 
         return {'FINISHED'}
@@ -756,7 +756,7 @@ class WowM2Colors_ColorRemove(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-        context.scene.WowM2Colors.remove(context.scene.WowM2CurColorIndex)
+        context.scene.wow_m2_colors.remove(context.scene.WowM2CurColorIndex)
 
         return {'FINISHED'}
 
@@ -781,7 +781,7 @@ class WowM2ColorPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register_wow_m2_colors_properties():
-    bpy.types.Scene.WowM2Colors = bpy.props.CollectionProperty(
+    bpy.types.Scene.wow_m2_colors = bpy.props.CollectionProperty(
         name='Colors',
         type=WowM2ColorPropertyGroup
     )
@@ -790,7 +790,7 @@ def register_wow_m2_colors_properties():
 
 
 def unregister_wow_m2_colors_properties():
-    del bpy.types.Scene.WowM2Colors
+    del bpy.types.Scene.wow_m2_colors
     del bpy.types.Scene.WowM2CurColorIndex
 
 
@@ -811,7 +811,7 @@ class WowM2TransparencyPanel(bpy.types.Panel):
 
         row = col.row()
         sub_col1 = row.column()
-        sub_col1.template_list("WowM2Transparency_TransparencyList", "", context.scene, "WowM2Transparency", context.scene,
+        sub_col1.template_list("WowM2Transparency_TransparencyList", "", context.scene, "wow_m2_transparency", context.scene,
                                "WowM2CurTransparencyIndex")
 
         sub_col2 = row.column().column(align=True)
@@ -830,7 +830,7 @@ class WowM2Transparency_TransparencyList(bpy.types.UIList):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
 
             row = layout.row(align=True)
-            cur_trans_prop_group = context.scene.WowM2Transparency[index]
+            cur_trans_prop_group = context.scene.wow_m2_transparency[index]
             row.prop(cur_trans_prop_group, "name", text="", icon='RESTRICT_VIEW_OFF', emboss=False)
             row.prop(cur_trans_prop_group, "Value", text="")
 
@@ -845,8 +845,8 @@ class WowM2Transparency_ValueAdd(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-        value = context.scene.WowM2Transparency.add()
-        context.scene.WowM2CurTransparencyIndex = len(context.scene.WowM2Transparency) - 1
+        value = context.scene.wow_m2_transparency.add()
+        context.scene.WowM2CurTransparencyIndex = len(context.scene.wow_m2_transparency) - 1
         value.name = 'Transparency_{}'.format(context.scene.WowM2CurTransparencyIndex)
 
         return {'FINISHED'}
@@ -859,7 +859,7 @@ class WowM2Transparency_ValueRemove(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-        context.scene.WowM2Transparency.remove(context.scene.WowM2CurTransparencyIndex)
+        context.scene.wow_m2_transparency.remove(context.scene.WowM2CurTransparencyIndex)
 
         return {'FINISHED'}
 
@@ -882,7 +882,7 @@ class WowM2TransprencyPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register_wow_m2_transparency_properties():
-    bpy.types.Scene.WowM2Transparency = bpy.props.CollectionProperty(
+    bpy.types.Scene.wow_m2_transparency = bpy.props.CollectionProperty(
         name='Transparency',
         type=WowM2TransprencyPropertyGroup
     )
@@ -891,7 +891,7 @@ def register_wow_m2_transparency_properties():
 
 
 def unregister_wow_m2_transparency_properties():
-    del bpy.types.Scene.WowM2Transparency
+    del bpy.types.Scene.wow_m2_transparency
     del bpy.types.Scene.WowM2CurTransparencyIndex
 
 
