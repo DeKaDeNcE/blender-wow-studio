@@ -35,6 +35,7 @@ class WowM2MaterialPanel(bpy.types.Panel):
                and context.scene.WowScene.Type == 'M2'
                and context.material is not None)
 
+
 class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
 
     Flags = bpy.props.EnumProperty(
@@ -761,6 +762,13 @@ class WowM2Colors_ColorRemove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def update_color_change(self, context):
+    for mat in bpy.data.materials:
+        if mat.use_nodes and mat.texture_slots[mat.active_texture_index].texture.wow_m2_texture.Color == self.name:
+            mat.node_tree.nodes['ColorRamp'].color_ramp.elements[0].color = self.Color
+            mat.invert_z = mat.invert_z
+
+
 class WowM2ColorPropertyGroup(bpy.types.PropertyGroup):
 
     Color = bpy.props.FloatVectorProperty(
@@ -771,7 +779,7 @@ class WowM2ColorPropertyGroup(bpy.types.PropertyGroup):
         default=(1.0, 1.0, 1.0, 1.0),
         min=0.0,
         max=1.0,
-        update=lambda self, ctx: live_update_materials(ctx)
+        update=update_color_change
     )
 
     name = bpy.props.StringProperty(
@@ -864,6 +872,13 @@ class WowM2Transparency_ValueRemove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def update_transparency_change(self, context):
+    for mat in bpy.data.materials:
+        if mat.use_nodes and mat.texture_slots[mat.active_texture_index].texture.wow_m2_texture.Transparency == self.name:
+            mat.node_tree.nodes['Math'].inputs[1].default_value = self.Value
+            mat.invert_z = mat.invert_z
+
+
 class WowM2TransprencyPropertyGroup(bpy.types.PropertyGroup):
 
     Value = bpy.props.FloatProperty(
@@ -872,7 +887,7 @@ class WowM2TransprencyPropertyGroup(bpy.types.PropertyGroup):
         min=0.0,
         max=1.0,
         default=1.0,
-        update=lambda self, ctx: live_update_materials(ctx)
+        update=update_transparency_change
     )
 
     name = bpy.props.StringProperty(
