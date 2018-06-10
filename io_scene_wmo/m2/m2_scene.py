@@ -1,7 +1,7 @@
 import bpy
 import os
 from mathutils import Vector
-from math import sqrt
+from math import sqrt, degrees
 
 from ..utils import resolve_texture_path, get_origin_position, get_objs_boundbox_world, get_obj_boundbox_center, get_obj_radius
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
@@ -1154,6 +1154,37 @@ class BlenderM2Scene:
                                                        sequence.variation_index)
 
                     animate_event(event, obj, name, frames)
+
+    def load_cameras(self):
+        if not len(self.m2.root.cameras):
+            print("\nNo cameras found to import.")
+            return
+        else:
+            print("\nImporting cameras.")
+
+        for camera in self.m2.root.cameras:
+
+            # create camera object
+            bpy.ops.object.camera_add(location=camera.position_base)
+            obj = bpy.context.scene.objects.active
+            obj.wow_m2_camera.type = str(camera.type)
+            obj.wow_m2_camera.clip_start = camera.near_clip
+            obj.wow_m2_camera.clip_end = camera.far_clip
+            obj.data.lens_unit = 'FOV'
+            obj.data.angle = camera.fov
+
+            # add track to contraint to camera to make it face the target object
+            bpy.ops.object.constraint_add(type='TRACK_TO')
+            track_to = obj.constraints[-1]
+            track_to.up_axis = 'UP_Y'
+            track_to.track_axis = 'TRACK_NEGATIVE_Z'
+
+            # create camera target object
+            bpy.ops.object.empty_add(type='CONE', location=camera.target_position_base)
+            t_obj = bpy.context.scene.objects.active
+            t_obj.name = "{}_Target".format(obj.name)
+            t_obj.empty_draw_size = 0.07
+            track_to.target = t_obj  # bind target object to camera's constraint
 
     def load_particles(self):
         if not len(self.m2.root.particles):

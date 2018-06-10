@@ -41,6 +41,7 @@ def import_m2(version, file, load_textures):  # TODO: implement multiversioning
         bl_m2.load_attachments()
         bl_m2.load_lights()
         bl_m2.load_events()
+        bl_m2.load_cameras()
 
     else:
         pass

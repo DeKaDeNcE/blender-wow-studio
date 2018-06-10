@@ -910,6 +910,49 @@ def unregister_wow_m2_transparency_properties():
     del bpy.types.Scene.WowM2CurTransparencyIndex
 
 
+###############################
+## Camera
+###############################
+
+class WowM2CameraPanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "object"
+    bl_label = "M2 Camera"
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(context.object.wow_m2_camera, 'type')
+
+    @classmethod
+    def poll(cls, context):
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'M2'
+                and context.object is not None
+                and context.object.type == 'CAMERA'
+        )
+
+
+class WowM2CameraPropertyGroup(bpy.types.PropertyGroup):
+
+    type = bpy.props.EnumProperty(
+        name='Type',
+        description='Type of this camera',
+        items=[("0", "Portrait", "", 'OUTLINER_OB_ARMATURE', 0),
+               ("1", "Character info", "", 'MOD_ARMATURE', 1),
+               ("-1", "Flyby", "", 'FORCE_BOID', -1)]
+    )
+
+
+def register_wow_m2_camera_properties():
+    bpy.types.Object.wow_m2_camera = bpy.props.PointerProperty(type=WowM2CameraPropertyGroup)
+
+
+def unregister_wow_m2_camera_properties():
+    bpy.types.Object.wow_m2_camera = None
+
+
 def register():
     register_wow_m2_material_properties()
     register_wow_m2_geoset_properties()
@@ -922,6 +965,7 @@ def register():
     register_wow_m2_texture_transform_controller_properties()
     register_wow_m2_colors_properties()
     register_wow_m2_transparency_properties()
+    register_wow_m2_camera_properties()
 
 
 def unregister():
@@ -936,5 +980,6 @@ def unregister():
     unregister_wow_m2_texture_transform_controller_properties()
     unregister_wow_m2_colors_properties()
     unregister_wow_m2_transparency_properties()
+    unregister_wow_m2_camera_properties()
 
 
