@@ -1434,7 +1434,7 @@ class BlenderM2Scene:
             if new_obj.vertex_groups:
                 bpy.ops.object.vertex_group_limit_total(limit=4)
 
-            if bpy.data.actions:
+            if self.rig:
 
                 bone_indices = []
                 bone_weights = []
@@ -1458,7 +1458,7 @@ class BlenderM2Scene:
                     bone_weights.append(v_bone_weights)
 
             else:
-                bone_indices = [[0, 0, 0 ,0] for _ in mesh.vertices]
+                bone_indices = [[0, 0, 0, 0] for _ in mesh.vertices]
                 bone_weights = [[255, 0, 0, 0] for _ in mesh.vertices]
 
             # add geoset
