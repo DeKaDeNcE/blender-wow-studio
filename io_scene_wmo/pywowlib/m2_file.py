@@ -3,7 +3,6 @@ import os
 from itertools import chain
 from .file_formats.m2_format import *
 from .file_formats.skin_format import M2SkinProfile, M2SkinSubmesh, M2SkinTextureUnit
-from ..pywowlib.io_utils.types import uint32, vec3D
 
 
 class M2File:

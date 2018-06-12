@@ -30,9 +30,9 @@ class M2SkinSubmesh:
     def read(self, f):
         self.skin_section_id = uint16.read(f)
         self.level = uint16.read(f)
-        self.vertex_start = uint16.read(f)
+        self.vertex_start = uint16.read(f) + (self.level << 16)
         self.vertex_count = uint16.read(f)
-        self.index_start = uint16.read(f)
+        self.index_start = uint16.read(f) + (self.level << 16)
         self.index_count = uint16.read(f)
         self.bone_count = uint16.read(f)
         self.bone_combo_index = uint16.read(f)

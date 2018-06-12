@@ -1095,7 +1095,7 @@ class M2Camera:
             self.fov = M2Track(M2SplineKey << float32)          # Diagonal FOV in radians. float vfov = dfov / sqrt(1.0 + pow(aspect, 2.0));
 
     def read(self, f):
-        self.type = uint32.read(f)
+        self.type = int32.read(f)
         if VERSION < M2Versions.CATA:
             self.fov = float32.read(f)
         self.far_clip = float32.read(f)
@@ -1111,7 +1111,7 @@ class M2Camera:
         return self
 
     def write(self, f):
-        uint32.write(f, self.type)
+        int32.write(f, self.type)
         if VERSION < M2Versions.CATA:
             float32.write(f, self.fov)
         float32.write(f, self.far_clip)

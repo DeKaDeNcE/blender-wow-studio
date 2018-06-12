@@ -1156,12 +1156,116 @@ class BlenderM2Scene:
                     animate_event(event, obj, name, frames)
 
     def load_cameras(self):
+
+        def animate_camera_loc(anim_pair, name, cam_track, anim_index):
+
+            action = anim_pair.Action
+
+            try:
+                frames = cam_track.timestamps[anim_index]
+                track = cam_track.values[anim_index]
+            except IndexError:
+                return
+
+            if not len(frames):
+                return
+
+            curve_name = '{}_Path'.format(anim_pair.Object.name)
+            curve = bpy.data.curves.new(name=curve_name, type='CURVE')
+            curve_obj = bpy.data.objects.new(name=curve_name, object_data=curve)
+            bpy.context.scene.objects.link(curve_obj)
+
+            curve.dimensions = '3D'
+
+            spline = curve.splines.new('BEZIER')
+            spline.bezier_points.add(count=len(frames))
+
+            for i, timestamp in enumerate(frames):
+                # frame = timestamp * 0.0266666
+                spline_point = spline.bezier_points[i]
+                spline_point.co = Vector(track[i].value) + anim_pair.Object.location
+                spline_point.handle_left = Vector(track[i].in_tan) + anim_pair.Object.location
+                spline_point.handle_right = Vector(track[i].out_tan) + anim_pair.Object.location
+
+            # zero in tan of frist point and out tan of last point
+            first_point = spline.bezier_points[0]
+            first_point.handle_left = first_point.co
+            last_point = spline.bezier_points[-1]
+            last_point.handle_right = last_point.co
+
+            if not action:
+                action = anim_pair.Action = bpy.data.actions.new(name=name)
+
+            '''
+
+            # create fcurve
+            f_curves = [action.fcurves.new(data_path='location', index=k, action_group='Location') for k in range(3)]
+
+            # init keyframes on the curve
+            for f_curve in f_curves:
+                f_curve.keyframe_points.add(len(frames))
+
+            # set translation values for each channel
+            for i, timestamp in enumerate(frames):
+                frame = timestamp * 0.0266666
+                trans_vec = Vector(track[i].value) + anim_pair.Object.location
+                in_tan_vec = Vector(track[i].in_tan) + anim_pair.Object.location
+                out_tan_vec = Vector(track[i].out_tan) + anim_pair.Object.location
+
+                for j in range(3):
+                    keyframe = f_curves[j].keyframe_points[i]
+                    keyframe.co = frame, trans_vec[j]
+                    keyframe.handle_left = frame, in_tan_vec[j]
+                    keyframe.handle_left_type = 'ALIGNED'
+                    keyframe.handle_right = frame, out_tan_vec[j]
+                    keyframe.handle_right_type = 'ALIGNED'
+                    keyframe.interpolation = 'BEZIER'  # TODO: hermite
+
+            '''
+
+            return curve_obj
+
+        def animate_camera_roll(anim_pair, name, cam_track, anim_index):
+
+            action = anim_pair.Action
+
+            try:
+                frames = cam_track.timestamps[anim_index]
+                track = cam_track.values[anim_index]
+            except IndexError:
+                return
+
+            if not len(frames):
+                return
+
+            if not action:
+                action = anim_pair.Action = bpy.data.actions.new(name=name)
+
+            # create fcurve
+            f_curve = action.fcurves.new(data_path='rotation_axis_angle', index=0, action_group='Roll')
+
+            # init keyframes on the curve
+            f_curve.keyframe_points.add(len(frames))
+
+            # set translation values for each channel
+            for i, timestamp in enumerate(frames):
+                frame = timestamp * 0.0266666
+
+                keyframe = f_curve.keyframe_points[i]
+                keyframe.co = frame, track[i].value
+                keyframe.handle_left = frame, track[i].in_tan
+                keyframe.handle_left_type = 'ALIGNED'
+                keyframe.handle_right = frame, track[i].out_tan
+                keyframe.handle_right_type = 'ALIGNED'
+                keyframe.interpolation = 'BEZIER'  # TODO: hermite
+
         if not len(self.m2.root.cameras):
             print("\nNo cameras found to import.")
             return
         else:
             print("\nImporting cameras.")
 
+        anim_data_dbc = load_game_data().db_files_client.AnimationData
         for camera in self.m2.root.cameras:
 
             # create camera object
@@ -1172,19 +1276,114 @@ class BlenderM2Scene:
             obj.wow_m2_camera.clip_end = camera.far_clip
             obj.data.lens_unit = 'FOV'
             obj.data.angle = camera.fov
-
-            # add track to contraint to camera to make it face the target object
-            bpy.ops.object.constraint_add(type='TRACK_TO')
-            track_to = obj.constraints[-1]
-            track_to.up_axis = 'UP_Y'
-            track_to.track_axis = 'TRACK_NEGATIVE_Z'
+            obj.animation_data_create()
+            obj.animation_data.action_blend_type = 'ADD'
 
             # create camera target object
             bpy.ops.object.empty_add(type='CONE', location=camera.target_position_base)
             t_obj = bpy.context.scene.objects.active
             t_obj.name = "{}_Target".format(obj.name)
+            t_obj.animation_data_create()
+            t_obj.animation_data.action_blend_type = 'ADD'
             t_obj.empty_draw_size = 0.07
-            track_to.target = t_obj  # bind target object to camera's constraint
+            t_obj.rotation_mode = 'AXIS_ANGLE'
+            t_obj.rotation_axis_angle = (0, 1, 0, 0)
+            t_obj.lock_rotation = (True, True, True)
+
+            curve_cam_path = None
+            curve_target_path = None
+
+            # animate camera
+            # load global sequences
+            n_global_sequences = len(self.global_sequences)
+            for j, seq_index in enumerate(self.global_sequences):
+                anim = bpy.context.scene.wow_m2_animations[j]
+
+                c_anim_pair = anim.AnimPairs.add()
+                c_anim_pair.Object = obj
+                c_anim_pair.Type = 'OBJECT'
+
+                t_anim_pair = anim.AnimPairs.add()
+                t_anim_pair.Object = t_obj
+                t_anim_pair.Type = 'OBJECT'
+
+                name = '{}_UnkAnim'.format(str(j).zfill(3))
+                c_name = "CM{}".format(name)
+                t_name = "CT{}".format(name)
+
+                if len(camera.positions.timestamps) > 1 and camera.positions.global_sequence == seq_index:
+                    curve_cam_path = animate_camera_loc(c_anim_pair, c_name, camera.positions, 0)
+
+                if len(camera.target_position.timestamps) > 1 and camera.target_position.global_sequence == seq_index:
+                    curve_target_path = animate_camera_loc(t_anim_pair, t_name, camera.target_position, 0)
+
+                if len(camera.roll.timestamps) > 1 and camera.roll.global_sequence == seq_index:
+                    animate_camera_roll(t_anim_pair, t_name, camera.roll, 0)
+
+            # load animations
+            for j, anim_index in enumerate(self.animations):
+                anim = bpy.context.scene.wow_m2_animations[j + n_global_sequences]
+                sequence = self.m2.root.sequences[anim_index]
+
+                c_anim_pair = anim.AnimPairs.add()
+                c_anim_pair.Object = obj
+                c_anim_pair.Type = 'OBJECT'
+
+                t_anim_pair = anim.AnimPairs.add()
+                t_anim_pair.Object = t_obj
+                t_anim_pair.Type = 'OBJECT'
+
+                field_name = anim_data_dbc.get_field(sequence.id, 'Name')
+                name = '_{}_UnkAnim'.format(str(anim_index).zfill(3)) if not field_name \
+                    else "_{}_{}_({})".format(str(anim_index).zfill(3), field_name, sequence.variation_index)
+
+                c_name = "CM{}".format(name)
+                t_name = "CT{}".format(name)
+
+                if len(camera.positions.timestamps) > 1 and camera.positions.global_sequence < 0:
+                    curve_cam_path = animate_camera_loc(c_anim_pair, c_name, camera.positions, anim_index)
+
+                if len(camera.target_position.timestamps) > 1 and camera.target_position.global_sequence < 0:
+                    curve_target_path = animate_camera_loc(t_anim_pair, t_name, camera.target_position, anim_index)
+
+                if len(camera.roll.timestamps) > 1 and camera.roll.global_sequence < 0:
+                    animate_camera_roll(t_anim_pair, t_name, camera.roll, anim_index)
+
+            # add follow path contraint to camera if animated
+            if curve_cam_path:
+                bpy.context.scene.objects.active = obj
+                bpy.ops.object.constraint_add(type='FOLLOW_PATH')
+                follow_path = obj.constraints[-1]
+                follow_path.use_curve_follow = True
+                follow_path.use_fixed_location = True
+                follow_path.target = curve_cam_path
+
+                obj.location = (0, 0, 0)
+
+            # add follow_path contraint to target object
+            if curve_target_path:
+                bpy.context.scene.objects.active = t_obj
+                bpy.ops.object.constraint_add(type='FOLLOW_PATH')
+                follow_path_t = t_obj.constraints[-1]
+                follow_path_t.use_curve_follow = True
+                follow_path_t.use_fixed_location = True
+                follow_path_t.target = curve_target_path
+
+                t_obj.location = (0, 0, 0)
+
+            # add track_to contraint to camera to make it face the target object
+            bpy.context.scene.objects.active = obj
+            bpy.ops.object.constraint_add(type='TRACK_TO')
+            track_to = obj.constraints[-1]
+            track_to.up_axis = 'UP_Y'
+            track_to.track_axis = 'TRACK_NEGATIVE_Z'
+            track_to.use_target_z = True
+            track_to.target = t_obj
+
+
+
+
+
 
     def load_particles(self):
         if not len(self.m2.root.particles):
