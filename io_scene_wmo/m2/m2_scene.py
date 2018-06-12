@@ -1167,7 +1167,7 @@ class BlenderM2Scene:
             except IndexError:
                 return
 
-            if not len(frames):
+            if not len(frames) > 1:
                 return
 
             curve_name = '{}_Path'.format(anim_pair.Object.name)
@@ -1311,13 +1311,13 @@ class BlenderM2Scene:
                 c_name = "CM{}".format(name)
                 t_name = "CT{}".format(name)
 
-                if len(camera.positions.timestamps) > 1 and camera.positions.global_sequence == seq_index:
+                if camera.positions.global_sequence == seq_index:
                     curve_cam_path = animate_camera_loc(c_anim_pair, c_name, camera.positions, 0)
 
-                if len(camera.target_position.timestamps) > 1 and camera.target_position.global_sequence == seq_index:
+                if camera.target_position.global_sequence == seq_index:
                     curve_target_path = animate_camera_loc(t_anim_pair, t_name, camera.target_position, 0)
 
-                if len(camera.roll.timestamps) > 1 and camera.roll.global_sequence == seq_index:
+                if camera.roll.global_sequence == seq_index:
                     animate_camera_roll(t_anim_pair, t_name, camera.roll, 0)
 
             # load animations
@@ -1340,13 +1340,13 @@ class BlenderM2Scene:
                 c_name = "CM{}".format(name)
                 t_name = "CT{}".format(name)
 
-                if len(camera.positions.timestamps) > 1 and camera.positions.global_sequence < 0:
+                if camera.positions.global_sequence < 0:
                     curve_cam_path = animate_camera_loc(c_anim_pair, c_name, camera.positions, anim_index)
 
-                if len(camera.target_position.timestamps) > 1 and camera.target_position.global_sequence < 0:
+                if camera.target_position.global_sequence < 0:
                     curve_target_path = animate_camera_loc(t_anim_pair, t_name, camera.target_position, anim_index)
 
-                if len(camera.roll.timestamps) > 1 and camera.roll.global_sequence < 0:
+                if camera.roll.global_sequence < 0:
                     animate_camera_roll(t_anim_pair, t_name, camera.roll, anim_index)
 
             # add follow path contraint to camera if animated
