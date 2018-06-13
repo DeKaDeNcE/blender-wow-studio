@@ -1170,31 +1170,44 @@ class BlenderM2Scene:
             if not len(frames) > 1:
                 return
 
-            curve_name = '{}_Path'.format(anim_pair.Object.name)
-            curve = bpy.data.curves.new(name=curve_name, type='CURVE')
-            curve_obj = bpy.data.objects.new(name=curve_name, object_data=curve)
-            bpy.context.scene.objects.link(curve_obj)
-
-            curve.dimensions = '3D'
-
-            spline = curve.splines.new('BEZIER')
-            spline.bezier_points.add(count=len(frames))
-
-            for i, timestamp in enumerate(frames):
-                # frame = timestamp * 0.0266666
-                spline_point = spline.bezier_points[i]
-                spline_point.co = Vector(track[i].value) + anim_pair.Object.location
-                spline_point.handle_left = Vector(track[i].in_tan) + anim_pair.Object.location
-                spline_point.handle_right = Vector(track[i].out_tan) + anim_pair.Object.location
-
-            # zero in tan of frist point and out tan of last point
-            first_point = spline.bezier_points[0]
-            first_point.handle_left = first_point.co
-            last_point = spline.bezier_points[-1]
-            last_point.handle_right = last_point.co
-
             if not action:
                 action = anim_pair.Action = bpy.data.actions.new(name=name)
+
+            curves = []
+            for i in range(1, len(frames)):
+                frame1 = frames[i - 1] * 0.0266666
+                frame2 = frames[i] * 0.0266666
+
+                curve_name = '{}_Path'.format(anim_pair.Object.name)
+                curve = bpy.data.curves.new(name=curve_name, type='CURVE')
+                curve_obj = bpy.data.objects.new(name=curve_name, object_data=curve)
+                bpy.context.scene.objects.link(curve_obj)
+
+                curve.dimensions = '3D'
+                curve.resolution_u = 64
+
+                spline = curve.splines.new('BEZIER')
+                spline.bezier_points.add(count=2)
+
+                for j in range(2):
+                    spline_point = spline.bezier_points[i + j]
+                    spline_point.resolution_u = 64
+                    spline_point.co = Vector(track[i + j].value) + anim_pair.Object.location
+                    spline_point.handle_left_type = 'FREE'
+                    spline_point.handle_left = Vector(track[i + j].in_tan) + anim_pair.Object.location
+                    spline_point.handle_right_type = 'FREE'
+                    spline_point.handle_right = Vector(track[i + j].out_tan) + anim_pair.Object.location
+
+
+
+                curves.append(curve_obj)
+
+            # zero in tan of frist point and out tan of last point
+            first_point = curves[0].splines[0].bezier_points[0]
+            first_point.handle_left = first_point.co
+            last_point = curves[-1].splines[0].bezier_points[-1]
+            last_point.handle_right = last_point.co
+
 
             '''
 

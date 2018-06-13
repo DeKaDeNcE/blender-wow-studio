@@ -398,8 +398,8 @@ class AnimationEditor_GoToAnimation(bpy.types.Operator):
             self.report({'ERROR'}, "Invalid animation index")
             return {'CANCELLED'}
 
-# Object list
 
+# Object list
 class AnimationEditor_SequenceObjectList(bpy.types.UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
