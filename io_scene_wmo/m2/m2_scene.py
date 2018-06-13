@@ -1187,25 +1187,29 @@ class BlenderM2Scene:
                 curve.resolution_u = 64
 
                 spline = curve.splines.new('BEZIER')
-                spline.bezier_points.add(count=2)
+                spline.resolution_u = 64
+                spline.bezier_points.add(count=1)
 
-                for j in range(2):
-                    spline_point = spline.bezier_points[i + j]
-                    spline_point.resolution_u = 64
-                    spline_point.co = Vector(track[i + j].value) + anim_pair.Object.location
+                print(len(spline.bezier_points))
+
+                for j, k in enumerate((i - 1, i)):
+                    spline_point = spline.bezier_points[j]
+                    spline_point.co = Vector(track[k].value) + anim_pair.Object.location
                     spline_point.handle_left_type = 'FREE'
-                    spline_point.handle_left = Vector(track[i + j].in_tan) + anim_pair.Object.location
+                    spline_point.handle_left = Vector(track[k].in_tan) + anim_pair.Object.location
                     spline_point.handle_right_type = 'FREE'
-                    spline_point.handle_right = Vector(track[i + j].out_tan) + anim_pair.Object.location
+                    spline_point.handle_right = Vector(track[k].out_tan) + anim_pair.Object.location
 
-
+                curve_slot = anim_pair.Object.wow_m2_camera.animation_curves.add()
+                curve_slot.object = curve_obj
+                curve_slot.duration = frame2 - frame1
 
                 curves.append(curve_obj)
 
             # zero in tan of frist point and out tan of last point
-            first_point = curves[0].splines[0].bezier_points[0]
+            first_point = curves[0].data.splines[0].bezier_points[0]
             first_point.handle_left = first_point.co
-            last_point = curves[-1].splines[0].bezier_points[-1]
+            last_point = curves[-1].data.splines[0].bezier_points[-1]
             last_point.handle_right = last_point.co
 
 

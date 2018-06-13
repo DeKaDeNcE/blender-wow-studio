@@ -928,7 +928,7 @@ class WowM2CameraPanel(bpy.types.Panel):
         row = col.row()
         sub_col1 = row.column()
 
-        sub_col1.template_list("WoWM2Camera_CurveList", "", context.object.wow_m2_camera, "animation_curves",
+        sub_col1.template_list("WowM2Camera_CurveList", "", context.object.wow_m2_camera, "animation_curves",
                                context.object.wow_m2_camera, "cur_anim_curve_index")
 
         sub_col_parent = row.column()
@@ -999,7 +999,7 @@ class WowM2CameraPropertyGroup(bpy.types.PropertyGroup):
     cur_anim_curve_index = bpy.props.IntProperty()
 
 
-class WoWM2Camera_CurveList(bpy.types.UIList):
+class WowM2Camera_CurveList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
         self.use_filter_show = False
 
