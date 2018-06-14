@@ -1090,7 +1090,7 @@ class BlenderM2Scene:
                         animate_property(anim_pair, light, channel, array_length, action_name, 0)
 
                 if not anim_pair.action:
-                    anim_pair.anim_pairs.remove(-1)
+                    anim.anim_pairs.remove(-1)
 
             # load animations
             for j, anim_index in enumerate(self.animations):
@@ -1111,7 +1111,7 @@ class BlenderM2Scene:
                         animate_property(anim_pair, light, channel, array_length, action_name, anim_index)
 
                 if not anim_pair.action:
-                    anim_pair.anim_pairs.remove(-1)
+                    anim.anim_pairs.remove(-1)
 
     def load_events(self):
 

@@ -35,7 +35,7 @@ class WowM2Colors_ColorList(bpy.types.UIList):
             row = layout.row(align=True)
             cur_color_prop_group = context.scene.wow_m2_colors[index]
             row.prop(cur_color_prop_group, "name", text="", icon='COLOR', emboss=False)
-            row.prop(cur_color_prop_group, "Color", text="")
+            row.prop(cur_color_prop_group, "color", text="")
 
         elif self.layout_type in {'GRID'}:
             pass
