@@ -1045,7 +1045,7 @@ class BlenderM2Scene:
 
                 for j in range(length):
                     keyframe = f_curves[j].keyframe_points[i]
-                    keyframe.co = frame, track[i][j]
+                    keyframe.co = frame, track[i][j] if length > 1 else track[i]
                     keyframe.interpolation = 'LINEAR' if prop_track.interpolation_type == 1 else 'CONSTANT'
 
         for i, light in enumerate(self.m2.root.lights):
