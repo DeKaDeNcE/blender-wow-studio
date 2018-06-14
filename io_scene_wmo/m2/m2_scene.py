@@ -1219,7 +1219,6 @@ class BlenderM2Scene:
                 # add follow path constraint
                 bpy.ops.object.constraint_add(type='FOLLOW_PATH')
                 follow_path = anim_pair.Object.constraints[-1]
-                follow_path.use_curve_follow = True
                 follow_path.use_fixed_location = True
                 follow_path.target = curve
 

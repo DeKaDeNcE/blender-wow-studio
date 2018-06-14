@@ -852,10 +852,21 @@ def update_scene_frame_range():
     frame_end = 0
 
     for obj in bpy.context.scene.objects:
-        if obj.animation_data and not obj.wow_m2_event.Enabled: # TODO: wtf?
+        if obj.animation_data and not obj.wow_m2_event.Enabled:  # TODO: wtf?
 
+            # set scene frame range based on action length
             if obj.animation_data.action and obj.animation_data.action.frame_range[1] > frame_end:
                 frame_end = obj.animation_data.action.frame_range[1]
+
+            # set scene frame range based on camera animation length
+            if obj.type == 'CAMERA' or (obj.type == 'EMPTY' and obj.wow_m2_camera.enanled):
+
+                max_frame = 0
+                for curve in obj.wow_m2_camera.animation_curves:
+                    max_frame += curve.duration
+
+                if max_frame > frame_end:
+                    frame_end = max_frame
 
             for nla_track in obj.animation_data.nla_tracks:
                 if not nla_track.mute:
@@ -863,6 +874,7 @@ def update_scene_frame_range():
                         if strip.frame_end > frame_end:
                             frame_end = strip.frame_end
 
+    # set scene frame range based on scene action length
     if bpy.context.scene.animation_data and bpy.context.scene.animation_data.action:
         if bpy.context.scene.animation_data.action.frame_range[1] > frame_end:
             frame_end = bpy.context.scene.animation_data.action.frame_range[1]
@@ -870,6 +882,7 @@ def update_scene_frame_range():
     bpy.context.scene.frame_start = 0
     bpy.context.scene.frame_end = frame_end
 
+    # update NLA tracks length
     for anim in bpy.context.scene.wow_m2_animations:
         if anim.IsGlobalSequence and anim.StashToNLA:
             for anim_pair in anim.AnimPairs:
