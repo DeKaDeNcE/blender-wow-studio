@@ -33,7 +33,9 @@ class WowM2EventPanel(bpy.types.Panel):
                 and context.scene.WowScene.Type == 'M2'
                 and context.object is not None
                 and context.object.type == 'EMPTY'
-                and not (context.object.wow_m2_attachment.Enabled or context.object.wow_m2_uv_transform.Enabled)
+                and not (context.object.wow_m2_attachment.Enabled
+                         or context.object.wow_m2_uv_transform.Enabled
+                         or context.object.wow_m2_camera.enabled)
         )
 
 

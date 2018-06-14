@@ -1218,7 +1218,7 @@ class BlenderM2Scene:
 
                 # add follow path constraint
                 bpy.ops.object.constraint_add(type='FOLLOW_PATH')
-                follow_path = obj.constraints[-1]
+                follow_path = anim_pair.Object.constraints[-1]
                 follow_path.use_curve_follow = True
                 follow_path.use_fixed_location = True
                 follow_path.target = curve
@@ -1316,9 +1316,6 @@ class BlenderM2Scene:
             t_obj.rotation_axis_angle = (0, 1, 0, 0)
             t_obj.lock_rotation = (True, True, True)
 
-            curve_cam_path = None
-            curve_target_path = None
-
             # animate camera
             # load global sequences
             n_global_sequences = len(self.global_sequences)
@@ -1326,22 +1323,22 @@ class BlenderM2Scene:
                 anim = bpy.context.scene.wow_m2_animations[j]
 
                 c_anim_pair = anim.AnimPairs.add()
-                c_anim_pair.Object = obj
                 c_anim_pair.Type = 'OBJECT'
+                c_anim_pair.Object = obj
 
                 t_anim_pair = anim.AnimPairs.add()
-                t_anim_pair.Object = t_obj
                 t_anim_pair.Type = 'OBJECT'
+                t_anim_pair.Object = t_obj
 
                 name = '{}_UnkAnim'.format(str(j).zfill(3))
                 c_name = "CM{}".format(name)
                 t_name = "CT{}".format(name)
 
                 if camera.positions.global_sequence == seq_index:
-                    curve_cam_path = animate_camera_loc(c_anim_pair, c_name, camera.positions, 0)
+                    animate_camera_loc(c_anim_pair, c_name, camera.positions, 0)
 
                 if camera.target_position.global_sequence == seq_index:
-                    curve_target_path = animate_camera_loc(t_anim_pair, t_name, camera.target_position, 0)
+                    animate_camera_loc(t_anim_pair, t_name, camera.target_position, 0)
 
                 if camera.roll.global_sequence == seq_index:
                     animate_camera_roll(t_anim_pair, t_name, camera.roll, 0)
@@ -1352,12 +1349,12 @@ class BlenderM2Scene:
                 sequence = self.m2.root.sequences[anim_index]
 
                 c_anim_pair = anim.AnimPairs.add()
-                c_anim_pair.Object = obj
                 c_anim_pair.Type = 'OBJECT'
+                c_anim_pair.Object = obj
 
                 t_anim_pair = anim.AnimPairs.add()
-                t_anim_pair.Object = t_obj
                 t_anim_pair.Type = 'OBJECT'
+                t_anim_pair.Object = t_obj
 
                 field_name = anim_data_dbc.get_field(sequence.id, 'Name')
                 name = '_{}_UnkAnim'.format(str(anim_index).zfill(3)) if not field_name \
@@ -1367,35 +1364,13 @@ class BlenderM2Scene:
                 t_name = "CT{}".format(name)
 
                 if camera.positions.global_sequence < 0:
-                    curve_cam_path = animate_camera_loc(c_anim_pair, c_name, camera.positions, anim_index)
+                    animate_camera_loc(c_anim_pair, c_name, camera.positions, anim_index)
 
                 if camera.target_position.global_sequence < 0:
-                    curve_target_path = animate_camera_loc(t_anim_pair, t_name, camera.target_position, anim_index)
+                    animate_camera_loc(t_anim_pair, t_name, camera.target_position, anim_index)
 
                 if camera.roll.global_sequence < 0:
                     animate_camera_roll(t_anim_pair, t_name, camera.roll, anim_index)
-
-            # add follow path contraint to camera if animated
-            if curve_cam_path:
-                bpy.context.scene.objects.active = obj
-                bpy.ops.object.constraint_add(type='FOLLOW_PATH')
-                follow_path = obj.constraints[-1]
-                follow_path.use_curve_follow = True
-                follow_path.use_fixed_location = True
-                follow_path.target = curve_cam_path
-
-                obj.location = (0, 0, 0)
-
-            # add follow_path contraint to target object
-            if curve_target_path:
-                bpy.context.scene.objects.active = t_obj
-                bpy.ops.object.constraint_add(type='FOLLOW_PATH')
-                follow_path_t = t_obj.constraints[-1]
-                follow_path_t.use_curve_follow = True
-                follow_path_t.use_fixed_location = True
-                follow_path_t.target = curve_target_path
-
-                t_obj.location = (0, 0, 0)
 
             # add track_to contraint to camera to make it face the target object
             bpy.context.scene.objects.active = obj

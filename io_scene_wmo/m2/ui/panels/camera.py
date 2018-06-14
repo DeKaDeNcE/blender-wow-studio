@@ -1,20 +1,43 @@
 import bpy
 
 
+def poll_camera_path_curve(self, obj):
+    return obj.type == 'CURVE' and len(obj.data.splines) == 1 and len(obj.data.splines[0].bezier_points)
+
+
+def update_camera_path_curve(self, context):
+    # double check is needed because pippete selector ignores polling
+    if self.object:
+        self.name = self.object.name
+
+        if not poll_camera_path_curve(None, self.object):
+            self.object = None
+            self.name = ""
+
+
 class WowM2CameraPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
     bl_label = "M2 Camera"
 
+    def draw_header(self, context):
+        if context.object.type == 'EMPTY':
+            self.layout.prop(context.object.wow_m2_camera, 'enabled', text='')
+
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(context.object.wow_m2_camera, 'type')
+        if context.object.type == 'CAMERA':
+            col.prop(context.object.wow_m2_camera, 'type')
+            col.separator()
+        else:
+            layout.enabled = context.object.wow_m2_camera.enabled
+            self.bl_label = 'M2 Camera Target'
 
+        col.label('Path curves:')
         row = col.row()
         sub_col1 = row.column()
-
         sub_col1.template_list("WowM2Camera_CurveList", "", context.object.wow_m2_camera, "animation_curves",
                                context.object.wow_m2_camera, "cur_anim_curve_index")
 
@@ -34,22 +57,13 @@ class WowM2CameraPanel(bpy.types.Panel):
         return (context.scene is not None
                 and context.scene.WowScene.Type == 'M2'
                 and context.object is not None
-                and context.object.type == 'CAMERA'
+                and context.object.type == 'CAMERA' or (
+                    context.object.type == 'EMPTY'
+                    and not (context.object.wow_m2_attachment.Enabled
+                             or context.object.wow_m2_uv_transform.Enabled
+                             or context.object.wow_m2_event.Enabled)
+                )
         )
-
-
-def poll_camera_path_curve(self, obj):
-    return obj.type == 'CURVE' and len(obj.data.splines) == 1 and len(obj.data.splines[0].bezier_points)
-
-
-def update_camera_path_curve(self, context):
-    # double check is needed because pippete selector ignores polling
-    if self.object:
-        self.name = self.object.name
-
-        if not poll_camera_path_curve(None, self.object):
-            self.object = None
-            self.name = ""
 
 
 class WowM2CameraPathPropertyGroup(bpy.types.PropertyGroup):
@@ -74,6 +88,13 @@ class WowM2CameraPathPropertyGroup(bpy.types.PropertyGroup):
 
 
 class WowM2CameraPropertyGroup(bpy.types.PropertyGroup):
+
+    enabled = bpy.props.BoolProperty(
+        name='Enabled',
+        description='Enable this empty to be a camera target controller.',
+        default=False,
+        update=lambda self, context: context.object.empty_draw_type == 'CONE'
+    )
 
     type = bpy.props.EnumProperty(
         name='Type',
