@@ -126,9 +126,9 @@ class AnimationEditorDialog(bpy.types.Operator):
                 if cur_anim_pair.type == 'OBJECT':
                     row.prop(cur_anim_pair, "object", text='')
 
-                    if cur_anim_pair.Object:
+                    if cur_anim_pair.object:
                         row.row().operator("scene.wow_m2_animation_editor_select_object",
-                                            text='', icon='ZOOM_SELECTED').name = cur_anim_pair.Object.name
+                                            text='', icon='ZOOM_SELECTED').name = cur_anim_pair.object.name
                     else:
                         sub_row = row.row()
                         sub_row.enabled = False
@@ -415,7 +415,7 @@ class AnimationEditor_SequenceObjectList(bpy.types.UIList):
                 if item.object.type == 'ARMATURE':
                     icon = 'OUTLINER_OB_ARMATURE'
                 elif item.object.type == 'LAMP':
-                    icon = 'LAMP_SUN',
+                    icon = 'LAMP_SUN'
                 elif item.object.type == 'CAMERA':
                     icon = 'RESTRICT_RENDER_OFF'
                 elif item.object.type == 'EMPTY':
@@ -443,15 +443,15 @@ class AnimationEditor_SequenceObjectList(bpy.types.UIList):
         filter_name = self.filter_name.lower()
 
         flt_flags = [self.bitflag_filter_item
-                     if any(filter_name in filter_set for filter_set in (str(i), item.Object.name.lower()
-                                                                         if item.Object else 'Empty slot'))
+                     if any(filter_name in filter_set for filter_set in (str(i), item.object.name.lower()
+                                                                         if item.object else 'Empty slot'))
                      else 0 for i, item in enumerate(col, 1)
                      ]
 
         if self.use_filter_sort_alpha:
             flt_neworder = [x[1] for x in sorted(
-                zip([x[0] for x in sorted(enumerate(col),key=lambda x: x[1].Object.name
-                                          if x[1].Object else 'Empty slot')], range(len(col)))
+                zip([x[0] for x in sorted(enumerate(col),key=lambda x: x[1].object.name
+                                          if x[1].object else 'Empty slot')], range(len(col)))
             )
             ]
         else:
@@ -810,7 +810,7 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         update=update_animation_flags
     )
 
-    movespeed = bpy.props.FloatProperty(
+    move_speed = bpy.props.FloatProperty(
         name="Move speed",
         description="The speed the character moves with in this animation",
         min=0.0,
@@ -890,7 +890,7 @@ def update_scene_frame_range():
     for anim in bpy.context.scene.wow_m2_animations:
         if anim.is_global_sequence and anim.stash_to_nla:
             for anim_pair in anim.anim_pairs:
-                if anim_pair.Object and anim_pair.action:
+                if anim_pair.object and anim_pair.action:
                     nla_track = anim_pair.object.animation_data.nla_tracks.get(anim_pair.action.name)
 
                     if nla_track and len(nla_track.strips):
