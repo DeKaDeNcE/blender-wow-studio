@@ -419,10 +419,14 @@ class AnimationEditor_SequenceObjectList(bpy.types.UIList):
                 elif item.Object.type == 'CAMERA':
                     icon = 'RESTRICT_RENDER_OFF'
                 elif item.Object.type == 'EMPTY':
-                    if item.Object.empty_draw_type == 'SPHERE':
+                    if item.Object.wow_m2_attachment.Enabled:
                         icon = 'CONSTRAINT'
-                    elif item.Object.empty_draw_type == 'CUBE':
+                    elif item.Object.wow_m2_event.Enabled:
                         icon = 'PLUGIN'
+                    elif item.Object.wow_m2_camera.enabled:
+                        icon = 'BBOX'
+                    elif item.Object.wow_m2_uv_transform.Enabled:
+                        icon = 'ASSET_MANAGER'
 
                 row.label(item.Object.name, icon=icon)
             elif item.Type == 'SCENE' and item.Scene:
@@ -565,7 +569,8 @@ def poll_object(self, obj):
 
     if obj.type == 'EMPTY' and not (obj.wow_m2_uv_transform.Enabled
                                     or obj.wow_m2_attachment.Enabled
-                                    or obj.wow_m2_event.Enabled):
+                                    or obj.wow_m2_event.Enabled
+                                    or obj.wow_m2_camera.enabled):
         return False
 
     return True

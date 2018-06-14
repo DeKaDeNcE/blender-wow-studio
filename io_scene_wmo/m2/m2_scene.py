@@ -1308,6 +1308,7 @@ class BlenderM2Scene:
             bpy.ops.object.empty_add(type='CONE', location=camera.target_position_base)
             t_obj = bpy.context.scene.objects.active
             t_obj.name = "{}_Target".format(obj.name)
+            t_obj.wow_m2_camera.enabled = True
             t_obj.animation_data_create()
             t_obj.animation_data.action_blend_type = 'ADD'
             t_obj.empty_draw_size = 0.07
