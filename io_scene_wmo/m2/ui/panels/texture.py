@@ -1,0 +1,69 @@
+import bpy
+from ..enums import *
+
+
+class WowM2TexturePanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "texture"
+    bl_label = "M2 Texture"
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(context.texture.wow_m2_texture, "Flags")
+        col.separator()
+        col.prop(context.texture.wow_m2_texture, "TextureType")
+        col.separator()
+        col.prop(context.texture.wow_m2_texture, "Path", text='Path')
+        col.separator()
+        col.prop_search(context.texture.wow_m2_texture, "Color",
+                        context.scene, "wow_m2_colors", text='Color', icon='COLOR')
+        col.prop_search(context.texture.wow_m2_texture, "Transparency",
+                        context.scene, "wow_m2_transparency", text='Transparency', icon='RESTRICT_VIEW_OFF')
+
+    @classmethod
+    def poll(cls, context):
+        return (context.scene is not None
+                and context.scene.WowScene.Type == 'M2'
+                and context.texture is not None)
+
+
+class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
+
+    Flags = bpy.props.EnumProperty(
+        name="Texture flags",
+        description="WoW  M2 texture flags",
+        items=TEXTURE_FLAGS,
+        options={"ENUM_FLAG"},
+        default={'1', '2'}
+        )
+
+    TextureType = bpy.props.EnumProperty(
+        name="Texture type",
+        description="WoW  M2 texture type",
+        items=TEXTURE_TYPES
+        )
+
+    Path = bpy.props.StringProperty(
+        name='Path',
+        description='Path to .blp file in wow file system.'
+    )
+
+    Color = bpy.props.StringProperty(
+        name='Color',
+        description='Color track linked to this texture.'
+    )
+
+    Transparency = bpy.props.StringProperty(
+        name='Transparency',
+        description='Transparency track linked to this texture.'
+    )
+
+
+def register():
+    bpy.types.ImageTexture.wow_m2_texture = bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)
+
+
+def unregister():
+    del bpy.types.ImageTexture.wow_m2_texture

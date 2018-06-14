@@ -1,7 +1,6 @@
 import bpy
 
-from ..m2.ui.panels import register as register_m2_ui
-from ..m2.ui.panels import unregister as unregister_m2_ui
+from ..m2.ui import register_m2_panels, unregister_m2_panels
 from ..m2.creature_editor import register_creature_editor, unregister_creature_editor
 from ..m2.animation_editor import register_animation_editor, unregister_animation_editor
 from ..wmo.ui.panels import register as register_wmo_ui
@@ -16,7 +15,7 @@ def get_addon_prefs():
 
 def register_ui():
     register_handlers()
-    register_m2_ui()
+    register_m2_panels()
     register_creature_editor()
     register_animation_editor()
     register_wmo_ui()
@@ -25,7 +24,7 @@ def register_ui():
 
 def unregister_ui():
     unregister_handlers()
-    unregister_m2_ui()
+    unregister_m2_panels()
     unregister_creature_editor()
     unregister_animation_editor()
     unregister_wmo_ui()
