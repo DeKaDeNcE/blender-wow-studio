@@ -9,14 +9,14 @@ class M2GeosetPanel(bpy.types.Panel):
     bl_label = "M2 Geoset"
 
     def draw(self, context):
-        self.layout.prop(context.object.wow_m2_geoset, "CollisionMesh")
+        self.layout.prop(context.object.wow_m2_geoset, "collision_mesh")
 
-        if not context.object.wow_m2_geoset.CollisionMesh:
-            self.layout.prop(context.object.wow_m2_geoset, "MeshPartGroup")
-            self.layout.prop(context.object.wow_m2_geoset, "MeshPartID")
+        if not context.object.wow_m2_geoset.collision_mesh:
+            self.layout.prop(context.object.wow_m2_geoset, "mesh_part_group")
+            self.layout.prop(context.object.wow_m2_geoset, "mesh_part_id")
 
             row = self.layout.row(align=True)
-            row.prop(context.object.wow_m2_geoset, "UVTransform")
+            row.prop(context.object.wow_m2_geoset, "uv_transform")
             row.operator("scene.wow_m2_geoset_add_texture_transform", text='', icon='RNA_ADD')
 
     @classmethod
@@ -29,13 +29,13 @@ class M2GeosetPanel(bpy.types.Panel):
 
 
 def update_geoset_uv_transform(self, context):
-    c_obj = context.object.wow_m2_geoset.UVTransform
+    c_obj = context.object.wow_m2_geoset.uv_transform
 
     uv_transform = context.object.modifiers.get('M2TexTransform')
 
     if c_obj:
-        if not c_obj.wow_m2_uv_transform.Enabled:
-            context.object.wow_m2_geoset.UVTransform = None
+        if not c_obj.wow_m2_uv_transform.enabled:
+            context.object.wow_m2_geoset.uv_transform = None
 
         if not uv_transform:
             bpy.ops.object.modifier_add(type='UV_WARP')
@@ -52,27 +52,27 @@ def update_geoset_uv_transform(self, context):
 
 
 class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
-    CollisionMesh = bpy.props.BoolProperty(
+    collision_mesh = bpy.props.BoolProperty(
         name='Collision mesh',
         default=False
     )
 
-    MeshPartGroup = bpy.props.EnumProperty(
+    mesh_part_group = bpy.props.EnumProperty(
         name="Geoset group",
         description="Group of this geoset",
         items=MESH_PART_TYPES
     )
 
-    MeshPartID = bpy.props.EnumProperty(
+    mesh_part_id = bpy.props.EnumProperty(
         name="Geoset ID",
         description="Mesh part ID of this geoset",
         items=mesh_part_id_menu
     )
 
-    UVTransform = bpy.props.PointerProperty(
+    uv_transform = bpy.props.PointerProperty(
         name="UV Transform",
         type=bpy.types.Object,
-        poll=lambda self, obj: obj.wow_m2_uv_transform.Enabled,
+        poll=lambda self, obj: obj.wow_m2_uv_transform.enabled,
         update=update_geoset_uv_transform
     )
 
@@ -89,14 +89,14 @@ class WowM2Geoset_AddTextureTransform(bpy.types.Operator):
         bpy.ops.object.empty_add(type='SINGLE_ARROW', location=(0, 0, 0))
         c_obj = bpy.context.scene.objects.active
         c_obj.name = "TT_Controller"
-        c_obj.wow_m2_uv_transform.Enabled = True
+        c_obj.wow_m2_uv_transform.enabled = True
         c_obj = bpy.context.scene.objects.active
         c_obj.rotation_mode = 'QUATERNION'
         c_obj.empty_draw_size = 0.5
         c_obj.animation_data_create()
         c_obj.animation_data.action_blend_type = 'ADD'
 
-        obj.wow_m2_geoset.UVTransform = c_obj
+        obj.wow_m2_geoset.uv_transform = c_obj
         bpy.context.scene.objects.active = obj
 
         return {'FINISHED'}

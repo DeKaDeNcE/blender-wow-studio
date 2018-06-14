@@ -11,9 +11,9 @@ class WowM2BonePanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(context.edit_bone.WowM2Bone, "KeyBoneID")
+        col.prop(context.edit_bone.wow_m2_bone, "key_bone_id")
         col.separator()
-        col.prop(context.edit_bone.WowM2Bone, "Flags")
+        col.prop(context.edit_bone.wow_m2_bone, "flags")
 
     @classmethod
     def poll(cls, context):
@@ -23,13 +23,13 @@ class WowM2BonePanel(bpy.types.Panel):
 
 
 class WowM2BonePropertyGroup(bpy.types.PropertyGroup):
-    KeyBoneID = bpy.props.EnumProperty(
+    key_bone_id = bpy.props.EnumProperty(
         name="Keybone",
         description="WoW bone keybone ID",
         items=get_keybone_ids
     )
 
-    Flags = bpy.props.EnumProperty(
+    flags = bpy.props.EnumProperty(
         name="Bone flags",
         description="WoW bone flags",
         items=BONE_FLAGS,
@@ -38,8 +38,9 @@ class WowM2BonePropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.EditBone.WowM2Bone = bpy.props.PointerProperty(type=WowM2BonePropertyGroup)
+    bpy.types.EditBone.wow_m2_bone = bpy.props.PointerProperty(type=WowM2BonePropertyGroup)
 
 
 def unregister():
-   del bpy.types.EditBone.WowM2Bone
+    del bpy.types.EditBone.wow_m2_bone
+

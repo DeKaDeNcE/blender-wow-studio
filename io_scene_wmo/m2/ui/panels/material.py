@@ -12,16 +12,16 @@ class WowM2MaterialPanel(bpy.types.Panel):
         layout = self.layout
         col = layout.column()
         col.label('Render settings:')
-        col.prop(context.material.wow_m2_material, "LiveUpdate")
+        col.prop(context.material.wow_m2_material, "live_update")
         col.separator()
-        col.label('Flags:')
-        col.prop(context.material.wow_m2_material, "Flags")
+        col.label('flags:')
+        col.prop(context.material.wow_m2_material, "flags")
         col.separator()
-        col.label('Render Flags:')
-        col.prop(context.material.wow_m2_material, "RenderFlags")
+        col.label('Render flags:')
+        col.prop(context.material.wow_m2_material, "render_flags")
         col.separator()
-        col.prop(context.material.wow_m2_material, "BlendingMode")
-        col.prop(context.material.wow_m2_material, "Shader")
+        col.prop(context.material.wow_m2_material, "blending_mode")
+        col.prop(context.material.wow_m2_material, "shader")
 
     @classmethod
     def poll(cls, context):
@@ -32,27 +32,27 @@ class WowM2MaterialPanel(bpy.types.Panel):
 
 class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
 
-    Flags = bpy.props.EnumProperty(
+    flags = bpy.props.EnumProperty(
         name="Material flags",
         description="WoW  M2 material flags",
         items=TEX_UNIT_FLAGS,
         options={"ENUM_FLAG"}
         )
 
-    RenderFlags = bpy.props.EnumProperty(
+    render_flags = bpy.props.EnumProperty(
         name="Render flags",
         description="WoW  M2 render flags",
         items=RENDER_FLAGS,
         options={"ENUM_FLAG"}
         )
 
-    Shader = bpy.props.EnumProperty(
+    shader = bpy.props.EnumProperty(
         items=SHADERS,
-        name="Shader",
+        name="shader",
         description="WoW shader assigned to this material"
         )
 
-    BlendingMode = bpy.props.EnumProperty(
+    blending_mode = bpy.props.EnumProperty(
         items=BLENDING_MODES,
         name="Blending",
         description="WoW material blending mode"
@@ -60,7 +60,7 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
 
     # Blender animation playback settings
 
-    LiveUpdate = bpy.props.BoolProperty(
+    live_update = bpy.props.BoolProperty(
         name='Live update',
         description='Automatically update this material on scene frame changes, if global live update is on. May decrease FPS.',
         default=False

@@ -139,7 +139,7 @@ def generate_enumerated_list(irange, name):
 
 def mesh_part_id_menu(self, context):
 
-    geoset_group = self.MeshPartGroup
+    geoset_group = self.mesh_part_group
     if geoset_group == 'Skin':
         return [('0', 'No subtype', "")]
 

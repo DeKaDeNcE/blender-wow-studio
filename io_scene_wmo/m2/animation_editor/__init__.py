@@ -67,14 +67,14 @@ class AnimationEditorDialog(bpy.types.Operator):
             row = col.row()
             sub_col1 = row.column()
 
-            sub_col1.template_list("AnimationEditor_SequenceObjectList", "", cur_anim_track, "AnimPairs",
-                                   cur_anim_track, "ActiveObjectIndex")
+            sub_col1.template_list("AnimationEditor_SequenceObjectList", "", cur_anim_track, "anim_pairs",
+                                   cur_anim_track, "active_object_index")
             sub_col2 = row.column(align=True)
             sub_col2.operator("scene.wow_m2_animation_editor_object_add", text='', icon='ZOOMIN')
             sub_col2.operator("scene.wow_m2_animation_editor_object_remove", text='', icon='ZOOMOUT')
 
             try:
-                cur_anim_pair = cur_anim_track.AnimPairs[cur_anim_track.ActiveObjectIndex]
+                cur_anim_pair = cur_anim_track.anim_pairs[cur_anim_track.active_object_index]
             except IndexError:
                 pass
         else:
@@ -88,7 +88,7 @@ class AnimationEditorDialog(bpy.types.Operator):
             row = col.row()
             row_split = row.split(percentage=0.935)
             row_split = row_split.row(align=True)
-            row_split.prop(cur_anim_track, "PlaybackSpeed", text='Speed')
+            row_split.prop(cur_anim_track, "playback_speed", text='Speed')
 
             if context.scene.sync_mode == 'AUDIO_SYNC' and context.user_preferences.system.audio_device == 'JACK':
                 sub = row_split.row(align=True)
@@ -119,12 +119,12 @@ class AnimationEditorDialog(bpy.types.Operator):
                 row_split = col.row().split(percentage=0.93)
                 row = row_split.row(align=True)
                 row_split = row.split(percentage=0.30)
-                row_split.row().label('Object' if cur_anim_pair.Type == 'OBJECT' else 'Scene')
+                row_split.row().label('Object' if cur_anim_pair.type == 'OBJECT' else 'Scene')
                 row = row_split.row(align=True)
-                row.prop(cur_anim_pair, "Type", text="", expand=True)
+                row.prop(cur_anim_pair, "type", text="", expand=True)
 
-                if cur_anim_pair.Type == 'OBJECT':
-                    row.prop(cur_anim_pair, "Object", text='')
+                if cur_anim_pair.type == 'OBJECT':
+                    row.prop(cur_anim_pair, "object", text='')
 
                     if cur_anim_pair.Object:
                         row.row().operator("scene.wow_m2_animation_editor_select_object",
@@ -134,7 +134,7 @@ class AnimationEditorDialog(bpy.types.Operator):
                         sub_row.enabled = False
                         sub_row.label("", icon='ZOOM_SELECTED')
                 else:
-                    row.prop(cur_anim_pair, "Scene", text='')
+                    row.prop(cur_anim_pair, "scene", text='')
 
                 row_split = col.row().split(percentage=0.93)
                 row = row_split.row(align=True)
@@ -143,8 +143,8 @@ class AnimationEditorDialog(bpy.types.Operator):
                 col.label("Action:")
 
                 col = row.column(align=True)
-                col.scale_x = 1.0 if cur_anim_pair.Action else 1.55
-                col.template_ID(cur_anim_pair, "Action", new="scene.wow_m2_animation_editor_action_add",
+                col.scale_x = 1.0 if cur_anim_pair.action else 1.55
+                col.template_ID(cur_anim_pair, "action", new="scene.wow_m2_animation_editor_action_add",
                                 unlink="scene.wow_m2_animation_editor_action_unlink")
 
             else:
@@ -170,37 +170,37 @@ class AnimationEditorDialog(bpy.types.Operator):
 
             col = split.column()
             col.separator()
-            col.prop(cur_anim_track, 'IsGlobalSequence', text='Global sequence')
+            col.prop(cur_anim_track, 'is_global_sequence', text='Global sequence')
 
             col = col.column()
-            col.enabled = not cur_anim_track.IsGlobalSequence
+            col.enabled = not cur_anim_track.is_global_sequence
 
             row = col.row(align=True)
             row.label("Animation ID: ")
             anim_ids = get_anim_ids(None, None)
-            row.operator("scene.wow_m2_animation_id_search", text=anim_ids[int(cur_anim_track.AnimationID)][1],
+            row.operator("scene.wow_m2_animation_id_search", text=anim_ids[int(cur_anim_track.animation_id)][1],
                          icon='VIEWZOOM')
-            col.prop(cur_anim_track, 'Movespeed', text="Move speed")
-            col.prop(cur_anim_track, 'BlendTime', text="Blend time")
-            col.prop(cur_anim_track, 'Frequency', text="Frequency")
+            col.prop(cur_anim_track, 'move_speed', text="Move speed")
+            col.prop(cur_anim_track, 'blend_time', text="Blend time")
+            col.prop(cur_anim_track, 'frequency', text="Frequency")
 
             col.label(text='Random repeat:')
-            col.prop(cur_anim_track, 'ReplayMin', text="Min")
-            col.prop(cur_anim_track, 'ReplayMax', text="Max")
+            col.prop(cur_anim_track, 'replay_min', text="Min")
+            col.prop(cur_anim_track, 'replay_max', text="Max")
 
             col.label(text='Relations:')
             row = col.row(align=True)
-            row.enabled = cur_anim_track.IsAlias
-            row.label('', icon='FILE_TICK' if cur_anim_track.AliasNext < len(context.scene.wow_m2_animations) else 'ERROR')
-            row.prop(cur_anim_track, 'AliasNext', text="Next alias")
+            row.enabled = cur_anim_track.is_alias
+            row.label('', icon='FILE_TICK' if cur_anim_track.alias_next < len(context.scene.wow_m2_animations) else 'ERROR')
+            row.prop(cur_anim_track, 'alias_next', text="Next alias")
             row.operator("scene.wow_m2_animation_editor_go_to_index", text="", icon='ZOOM_SELECTED').anim_index = \
-                cur_anim_track.AliasNext
+                cur_anim_track.alias_next
 
             col = split.column()
-            col.enabled = not cur_anim_track.IsGlobalSequence
+            col.enabled = not cur_anim_track.is_global_sequence
             col.label(text='Flags:')
             col.separator()
-            col.prop(cur_anim_track, 'Flags', text="Flags")
+            col.prop(cur_anim_track, 'flags', text="Flags")
             col.separator()
 
     def check(self, context):  # redraw the popup window
@@ -212,13 +212,13 @@ class AnimationEditor_IDSearch(bpy.types.Operator):
     bl_label = "Search animation ID"
     bl_description = "Select WoW M2 animation ID"
     bl_options = {'REGISTER', 'INTERNAL'}
-    bl_property = "AnimationID"
+    bl_property = "animation_id"
 
-    AnimationID = bpy.props.EnumProperty(items=get_anim_ids)
+    animation_id = bpy.props.EnumProperty(items=get_anim_ids)
 
     def execute(self, context):
 
-        context.scene.wow_m2_animations[bpy.context.scene.wow_m2_cur_anim_index].AnimationID = self.AnimationID
+        context.scene.wow_m2_animations[bpy.context.scene.wow_m2_cur_anim_index].animation_id = self.animation_id
 
         # refresh UI after setting the property
         for region in context.area.regions:
@@ -243,24 +243,24 @@ def update_animation_collection(self, context):
     index_cache = {}
 
     for i, anim in enumerate(bpy.context.scene.wow_m2_animations):
-        anim_id = int(anim.AnimationID) if not anim.IsGlobalSequence else -1
+        anim_id = int(anim.animation_id) if not anim.is_global_sequence else -1
         last_idx = index_cache.get(anim_id)
 
         if last_idx is not None:
-            anim.ChainIndex = last_idx + 1
+            anim.chain_index = last_idx + 1
             index_cache[anim_id] += 1
         else:
-            anim.ChainIndex = 0
+            anim.chain_index = 0
             index_cache[anim_id] = 0
 
-        if not anim.IsGlobalSequence:
-            if not anim.IsAlias:
-                anim.Name = "#{} {} ({})".format(i, anim_ids[int(anim.AnimationID)][1], anim.ChainIndex)
+        if not anim.is_global_sequence:
+            if not anim.is_alias:
+                anim.name = "#{} {} ({})".format(i, anim_ids[int(anim.animation_id)][1], anim.chain_index)
             else:
-                anim.Name = "#{} {} ({}) -> #{}".format(i, anim_ids[int(anim.AnimationID)][1],
-                                                        anim.ChainIndex, anim.AliasNext)
+                anim.name = "#{} {} ({}) -> #{}".format(i, anim_ids[int(anim.animation_id)][1],
+                                                        anim.chain_index, anim.alias_next)
         else:
-            anim.Name = "#{} Global Sequence ({})".format(i, anim.ChainIndex)
+            anim.name = "#{} Global Sequence ({})".format(i, anim.chain_index)
 
 
 class AnimationEditor_AnimationList(bpy.types.UIList):
@@ -270,20 +270,20 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
 
             row = layout.row()
-            row.label(item.Name, icon='SEQUENCE')
+            row.label(item.name, icon='SEQUENCE')
 
-            if not item.IsGlobalSequence:
-                if item.IsAlias and len(data.wow_m2_animations) < item.AliasNext:
+            if not item.is_global_sequence:
+                if item.is_alias and len(data.wow_m2_animations) < item.alias_next:
                     row.label("", icon='ERROR')
-                row.prop(item, "IsPrimarySequence", emboss=False, text="",
-                         icon='POSE_HLT' if item.IsPrimarySequence else 'OUTLINER_DATA_POSE')
-                row.prop(item, "IsAlias", emboss=False, text="",
-                         icon='GHOST_ENABLED' if item.IsAlias else 'GHOST_DISABLED')
+                row.prop(item, "is_primary_sequence", emboss=False, text="",
+                         icon='POSE_HLT' if item.is_primary_sequence else 'OUTLINER_DATA_POSE')
+                row.prop(item, "is_alias", emboss=False, text="",
+                         icon='GHOST_ENABLED' if item.is_alias else 'GHOST_DISABLED')
             else:
-                row.prop(item, 'StashToNLA', emboss=False, text="",
-                         icon='RESTRICT_RENDER_OFF' if item.StashToNLA else 'RESTRICT_RENDER_ON')
+                row.prop(item, 'stash_to_nla', emboss=False, text="",
+                         icon='RESTRICT_RENDER_OFF' if item.stash_to_nla else 'RESTRICT_RENDER_ON')
 
-            row.prop(item, "LiveUpdate", emboss=False, text="", icon='PMARKER_SEL' if item.LiveUpdate else 'PMARKER')
+            row.prop(item, "live_update", emboss=False, text="", icon='PMARKER_SEL' if item.live_update else 'PMARKER')
 
         elif self.layout_type in {'GRID'}:
             pass
@@ -294,7 +294,7 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
         filter_name = self.filter_name.lower()
 
         flt_flags = [self.bitflag_filter_item
-                     if any(filter_name in filter_set for filter_set in (str(i), item.Name.lower()))
+                     if any(filter_name in filter_set for filter_set in (str(i), item.name.lower()))
                      else 0 for i, item in enumerate(col, 1)
                      ]
 
@@ -302,7 +302,7 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
             flt_neworder = [x[1] for x in sorted(
                 zip(
                     [x[0] for x in sorted(enumerate(col),
-                                          key=lambda x: x[1].Name.split()[1] + x[1].Name.split()[2])], range(len(col))
+                                          key=lambda x: x[1].name.split()[1] + x[1].name.split()[2])], range(len(col))
                 )
             )
             ]
@@ -408,29 +408,29 @@ class AnimationEditor_SequenceObjectList(bpy.types.UIList):
         ob = data
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             row = layout.row()
-            if item.Type == 'OBJECT' and item.Object:
+            if item.type == 'OBJECT' and item.object:
 
                 icon = 'OBJECT_DATA'
 
-                if item.Object.type == 'ARMATURE':
+                if item.object.type == 'ARMATURE':
                     icon = 'OUTLINER_OB_ARMATURE'
-                elif item.Object.type == 'LAMP':
+                elif item.object.type == 'LAMP':
                     icon = 'LAMP_SUN',
-                elif item.Object.type == 'CAMERA':
+                elif item.object.type == 'CAMERA':
                     icon = 'RESTRICT_RENDER_OFF'
-                elif item.Object.type == 'EMPTY':
-                    if item.Object.wow_m2_attachment.Enabled:
+                elif item.object.type == 'EMPTY':
+                    if item.object.wow_m2_attachment.enabled:
                         icon = 'CONSTRAINT'
-                    elif item.Object.wow_m2_event.Enabled:
+                    elif item.object.wow_m2_event.enabled:
                         icon = 'PLUGIN'
-                    elif item.Object.wow_m2_camera.enabled:
+                    elif item.object.wow_m2_camera.enabled:
                         icon = 'BBOX'
-                    elif item.Object.wow_m2_uv_transform.Enabled:
+                    elif item.object.wow_m2_uv_transform.enabled:
                         icon = 'ASSET_MANAGER'
 
-                row.label(item.Object.name, icon=icon)
-            elif item.Type == 'SCENE' and item.Scene:
-                row.label(item.Scene.name, icon='SCENE_DATA')
+                row.label(item.object.name, icon=icon)
+            elif item.type == 'SCENE' and item.scene:
+                row.label(item.scene.name, icon='SCENE_DATA')
             else:
                 row.label("Empty slot", icon='MATCUBE')
 
@@ -472,7 +472,7 @@ class AnimationEditor_ObjectAdd(bpy.types.Operator):
 
         try:
             sequence = scene.wow_m2_animations[scene.wow_m2_cur_anim_index]
-            sequence.AnimPairs.add()
+            sequence.anim_pairs.add()
 
         except IndexError:
             self.report({'ERROR'}, "No animation sequence selected")
@@ -493,7 +493,7 @@ class AnimationEditor_ObjectRemove(bpy.types.Operator):
 
         try:
             sequence = scene.wow_m2_animations[scene.wow_m2_cur_anim_index]
-            sequence.AnimPairs.remove(sequence.ActiveObjectIndex)
+            sequence.anim_pairs.remove(sequence.active_object_index)
 
         except IndexError:
             self.report({'ERROR'}, "No animation sequence selected")
@@ -522,9 +522,9 @@ class AnimationEditor_ActionAdd(bpy.types.Operator):
     def execute(self, context):
         scene = context.scene
         sequence = scene.wow_m2_animations[scene.wow_m2_cur_anim_index]
-        anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
-        anim_pair.Action = bpy.data.actions.new(name="")
-        anim_pair.Action.use_fake_user = True
+        anim_pair = sequence.anim_pairs[sequence.active_object_index]
+        anim_pair.action = bpy.data.actions.new(name="")
+        anim_pair.action.use_fake_user = True
 
         return {'FINISHED'}
 
@@ -537,14 +537,14 @@ class AnimationEditor_ActionUnlink(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         sequence = context.scene.wow_m2_animations[context.scene.wow_m2_cur_anim_index]
-        anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
-        return anim_pair.Action is not None
+        anim_pair = sequence.anim_pairs[sequence.active_object_index]
+        return anim_pair.action is not None
 
     def execute(self, context):
         scene = context.scene
         sequence = scene.wow_m2_animations[scene.wow_m2_cur_anim_index]
-        anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
-        anim_pair.Action = None
+        anim_pair = sequence.anim_pairs[sequence.active_object_index]
+        anim_pair.action = None
         return {'FINISHED'}
 
 ###############################
@@ -560,16 +560,16 @@ def poll_object(self, obj):
 
     sequence = bpy.context.scene.wow_m2_animations[bpy.context.scene.wow_m2_cur_anim_index]
 
-    for anim_pair in sequence.AnimPairs:
-        if anim_pair.Object == obj:
+    for anim_pair in sequence.anim_pairs:
+        if anim_pair.object == obj:
             return False
 
     if obj.type not in ('CAMERA', 'ARMATURE', 'LAMP', 'EMPTY'):
         return False
 
-    if obj.type == 'EMPTY' and not (obj.wow_m2_uv_transform.Enabled
-                                    or obj.wow_m2_attachment.Enabled
-                                    or obj.wow_m2_event.Enabled
+    if obj.type == 'EMPTY' and not (obj.wow_m2_uv_transform.enabled
+                                    or obj.wow_m2_attachment.enabled
+                                    or obj.wow_m2_event.enabled
                                     or obj.wow_m2_camera.enabled):
         return False
 
@@ -583,53 +583,52 @@ def poll_scene(self, scene):
 
     sequence = bpy.context.scene.wow_m2_animations[bpy.context.scene.wow_m2_cur_anim_index]
 
-    for anim_pair in sequence.AnimPairs:
-        if anim_pair.Scene == scene:
+    for anim_pair in sequence.anim_pairs:
+        if anim_pair.scene == scene:
             return False
 
     return True
 
 
 def update_object(self, context):
-
     sequence = bpy.context.scene.wow_m2_animations[bpy.context.scene.wow_m2_cur_anim_index]
-    anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
+    anim_pair = sequence.anim_pairs[sequence.active_object_index]
 
-    if anim_pair.Object:
-        anim_pair.Object.animation_data_create()
-        anim_pair.Object.animation_data.action_blend_type = 'ADD'
+    if anim_pair.object:
+        anim_pair.object.animation_data_create()
+        anim_pair.object.animation_data.action_blend_type = 'ADD'
 
 
 def update_scene(self, context):
     sequence = bpy.context.scene.wow_m2_animations[bpy.context.scene.wow_m2_cur_anim_index]
-    anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
+    anim_pair = sequence.anim_pairs[sequence.active_object_index]
 
-    if anim_pair.Scene:
-        anim_pair.Scene.animation_data_create()
-        anim_pair.Scene.animation_data.action_blend_type = 'ADD'
+    if anim_pair.scene:
+        anim_pair.scene.animation_data_create()
+        anim_pair.scene.animation_data.action_blend_type = 'ADD'
 
 
 def update_action(self, context):
     sequence = bpy.context.scene.wow_m2_animations[bpy.context.scene.wow_m2_cur_anim_index]
-    anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
-    if anim_pair.Type == 'OBJECT' and anim_pair.Object and anim_pair.Object.animation_data:
-        anim_pair.Object.animation_data.action = anim_pair.Action
-    elif anim_pair.Type == 'SCENE' and anim_pair.Scene and anim_pair.Scene.animation_data:
-        anim_pair.Scene.animation_data.action = anim_pair.Action
+    anim_pair = sequence.anim_pairs[sequence.active_object_index]
+    if anim_pair.type == 'OBJECT' and anim_pair.object and anim_pair.object.animation_data:
+        anim_pair.object.animation_data.action = anim_pair.action
+    elif anim_pair.type == 'SCENE' and anim_pair.scene and anim_pair.scene.animation_data:
+        anim_pair.scene.animation_data.action = anim_pair.action
 
 
 def update_anim_pair_type(self, context):
     sequence = bpy.context.scene.wow_m2_animations[bpy.context.scene.wow_m2_cur_anim_index]
-    anim_pair = sequence.AnimPairs[sequence.ActiveObjectIndex]
-    if anim_pair.Type == 'OBJECT':
-        anim_pair.Scene = None
+    anim_pair = sequence.anim_pairs[sequence.active_object_index]
+    if anim_pair.type == 'OBJECT':
+        anim_pair.scene = None
     else:
-        anim_pair.Object = None
+        anim_pair.object = None
 
 
 class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
 
-    Type = bpy.props.EnumProperty(
+    type = bpy.props.EnumProperty(
         name="Type",
         description="Defines whether object or scene is animated",
         items=[('OBJECT', "Object", "", 'OBJECT_DATA', 0),
@@ -638,7 +637,7 @@ class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
         update=update_anim_pair_type
     )
 
-    Object = bpy.props.PointerProperty(
+    object = bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Object",
         description="Object to animate in this animation sequence",
@@ -646,7 +645,7 @@ class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
         update=update_object
     )
 
-    Scene = bpy.props.PointerProperty(
+    scene = bpy.props.PointerProperty(
         type=bpy.types.Scene,
         name="Scene",
         description="Scene to animate in this animation sequence",
@@ -654,7 +653,7 @@ class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
         update=update_scene
     )
 
-    Action = bpy.props.PointerProperty(
+    action = bpy.props.PointerProperty(
         type=bpy.types.Action,
         name="Action",
         description="Action to use in this animation sequence",
@@ -664,53 +663,53 @@ class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
 
 def update_playback_speed(self, context):
     sequence = bpy.context.scene.wow_m2_animations[bpy.context.scene.wow_m2_cur_anim_index]
-    context.scene.render.fps_base = sequence.PlaybackSpeed
+    context.scene.render.fps_base = sequence.playback_speed
 
 
 def update_primary_sequence(self, context):
-    flag_set = self.Flags
+    flag_set = self.flags
     is_changed = False
 
-    if self.IsPrimarySequence and '32' not in flag_set:
+    if self.is_primary_sequence and '32' not in flag_set:
         flag_set.add('32')
         is_changed = True
-    elif not self.IsPrimarySequence and '32' in flag_set:
+    elif not self.is_primary_sequence and '32' in flag_set:
         flag_set.remove('32')
         is_changed = True
 
     if is_changed:
-        self.Flags = flag_set
+        self.flags = flag_set
 
 
 def update_animation_flags(self, context):
-    self.IsPrimarySequence = '32' in self.Flags
-    self.IsAlias = '64' in self.Flags
+    self.is_primary_sequence = '32' in self.flags
+    self.is_alias = '64' in self.flags
 
 
 def update_alias(self, context):
-    flag_set = self.Flags
+    flag_set = self.flags
     is_changed = False
 
-    if self.IsAlias and '64' not in flag_set:
+    if self.is_alias and '64' not in flag_set:
         flag_set.add('64')
         is_changed = True
-    elif not self.IsAlias and '64' in flag_set:
+    elif not self.is_alias and '64' in flag_set:
         flag_set.remove('64')
         is_changed = True
 
     if is_changed:
-        self.Flags = flag_set
+        self.flags = flag_set
 
     update_animation_collection(None, None)
 
 
 def update_stash_to_nla(self, context):
-    if self.StashToNLA and not context.scene.wow_m2_animations[context.scene.wow_m2_cur_anim_index] == self:
-        for anim_pair in self.AnimPairs:
-            if (anim_pair.Object or anim_pair.Scene) and anim_pair.Action:
-                obj = anim_pair.Object if anim_pair.Type == 'OBJECT' else anim_pair.Scene
+    if self.stash_to_nla and not context.scene.wow_m2_animations[context.scene.wow_m2_cur_anim_index] == self:
+        for anim_pair in self.anim_pairs:
+            if (anim_pair.object or anim_pair.scene) and anim_pair.action:
+                obj = anim_pair.object if anim_pair.type == 'OBJECT' else anim_pair.scene
 
-                nla_track = obj.animation_data.nla_tracks.get(anim_pair.Action.name)
+                nla_track = obj.animation_data.nla_tracks.get(anim_pair.action.name)
 
                 if not nla_track:
                     nla_track = obj.animation_data.nla_tracks.new()
@@ -718,21 +717,21 @@ def update_stash_to_nla(self, context):
                     nla_track.lock = True
                     nla_track.mute = False
 
-                nla_track.name = anim_pair.Action.name
+                nla_track.name = anim_pair.action.name
 
                 for strip in nla_track.strips:
                     nla_track.strips.remove(strip)
 
-                strip = nla_track.strips.new(name=anim_pair.Action.name, start=0, action=anim_pair.Action)
+                strip = nla_track.strips.new(name=anim_pair.action.name, start=0, action=anim_pair.action)
                 strip.blend_type = 'ADD'
 
                 if obj.animation_data.action:
                     strip.frame_end = obj.animation_data.action.frame_range[1]
     else:
-        for anim_pair in self.AnimPairs:
-            if (anim_pair.Object or anim_pair.Scene) and anim_pair.Action:
-                obj = anim_pair.Object if anim_pair.Type == 'OBJECT' else anim_pair.Scene
-                nla_track = obj.animation_data.nla_tracks.get(anim_pair.Action.name)
+        for anim_pair in self.anim_pairs:
+            if (anim_pair.object or anim_pair.scene) and anim_pair.action:
+                obj = anim_pair.object if anim_pair.type == 'OBJECT' else anim_pair.scene
+                nla_track = obj.animation_data.nla_tracks.get(anim_pair.action.name)
 
                 if nla_track:
                     obj.animation_data.nla_tracks.remove(nla_track)
@@ -744,17 +743,17 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
 
     # Collection
 
-    AnimPairs = bpy.props.CollectionProperty(type=WowM2AnimationEditorAnimationPairsPropertyGroup)
+    anim_pairs = bpy.props.CollectionProperty(type=WowM2AnimationEditorAnimationPairsPropertyGroup)
 
-    ActiveObjectIndex = bpy.props.IntProperty(update=update_animation_collection)
+    active_object_index = bpy.props.IntProperty(update=update_animation_collection)
 
-    ChainIndex = bpy.props.IntProperty()
+    chain_index = bpy.props.IntProperty()
 
-    Name = bpy.props.StringProperty()
+    name = bpy.props.StringProperty()
 
     # Playback properties
 
-    PlaybackSpeed = bpy.props.FloatProperty(
+    playback_speed = bpy.props.FloatProperty(
         name="Speed",
         description="Playback speed of this animation. Does not affect in-game playback speed.",
         min=0.1,
@@ -763,26 +762,26 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         update=update_playback_speed
     )
 
-    StashToNLA = bpy.props.BoolProperty(
+    stash_to_nla = bpy.props.BoolProperty(
         name='Enable persistent playing',
         description='Enable persistent playing of this global sequences, no matter what animation is chosen',
         update=update_stash_to_nla
     )
 
-    LiveUpdate = bpy.props.BoolProperty(
+    live_update = bpy.props.BoolProperty(
         name='Live update',
         description='Automatically update materials that have live update turned on. May decrease FPS.'
     )
 
     # Layout properties
-    IsPrimarySequence = bpy.props.BoolProperty(
+    is_primary_sequence = bpy.props.BoolProperty(
         name='Primary sequence',
         description="If set, the animation data is in the .m2 file, else in an .anim file",
         default=True,
         update=update_primary_sequence
     )
 
-    IsAlias = bpy.props.BoolProperty(
+    is_alias = bpy.props.BoolProperty(
         name='Is alias',
         description="The animation uses transformation data from another sequence, changing its action won't affect the in-game track",
         default=False,
@@ -790,20 +789,20 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
     )
 
     # Actual properties
-    IsGlobalSequence = bpy.props.BoolProperty(
+    is_global_sequence = bpy.props.BoolProperty(
         name="Global sequence",
         description='Global sequences are animation loops that are constantly played and blended with current animation',
         default=False
     )
 
-    AnimationID = bpy.props.EnumProperty(
-        name="AnimationID",
+    animation_id = bpy.props.EnumProperty(
+        name="animation_id",
         description="WoW Animation ID",
         items=get_anim_ids,
         update=update_animation_collection
     )
 
-    Flags = bpy.props.EnumProperty(
+    flags = bpy.props.EnumProperty(
         name='Flags',
         description="WoW M2 Animation Flags",
         items=ANIMATION_FLAGS,
@@ -811,41 +810,41 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         update=update_animation_flags
     )
 
-    Movespeed = bpy.props.FloatProperty(
+    movespeed = bpy.props.FloatProperty(
         name="Move speed",
         description="The speed the character moves with in this animation",
         min=0.0,
         default=1.0
     )
 
-    BlendTime = bpy.props.IntProperty(
+    blend_time = bpy.props.IntProperty(
         name="Blend time",
         description="",
         min=0
     )
 
-    Frequency = bpy.props.IntProperty(
+    frequency = bpy.props.IntProperty(
         name="Frequency",
         description="This is used to determine how often the animation is played.",
         min=0,
         max=32767
     )
 
-    ReplayMin = bpy.props.IntProperty(
+    replay_min = bpy.props.IntProperty(
         name="Replay Min",
         description="Client will pick a random number of repetitions within bounds if given.",
         min=0,
         max=65535
     )
 
-    ReplayMax = bpy.props.IntProperty(
+    replay_max = bpy.props.IntProperty(
         name="Replay Max",
         description="Client will pick a random number of repetitions within bounds if given.",
         min=0,
         max=65535
     )
 
-    AliasNext = bpy.props.IntProperty(
+    alias_next = bpy.props.IntProperty(
         name='Alias',
         description='Index of animation used as a alias for this one',
         min=0,
@@ -857,14 +856,14 @@ def update_scene_frame_range():
     frame_end = 0
 
     for obj in bpy.context.scene.objects:
-        if obj.animation_data and not obj.wow_m2_event.Enabled:  # TODO: wtf?
+        if obj.animation_data and not obj.wow_m2_event.enabled:  # TODO: wtf?
 
             # set scene frame range based on action length
             if obj.animation_data.action and obj.animation_data.action.frame_range[1] > frame_end:
                 frame_end = obj.animation_data.action.frame_range[1]
 
             # set scene frame range based on camera animation length
-            if obj.type == 'CAMERA' or (obj.type == 'EMPTY' and obj.wow_m2_camera.enanled):
+            if obj.type == 'CAMERA' or (obj.type == 'EMPTY' and obj.wow_m2_camera.enabled):
 
                 max_frame = 0
                 for curve in obj.wow_m2_camera.animation_curves:
@@ -889,10 +888,10 @@ def update_scene_frame_range():
 
     # update NLA tracks length
     for anim in bpy.context.scene.wow_m2_animations:
-        if anim.IsGlobalSequence and anim.StashToNLA:
-            for anim_pair in anim.AnimPairs:
-                if anim_pair.Object and anim_pair.Action:
-                    nla_track = anim_pair.Object.animation_data.nla_tracks.get(anim_pair.Action.name)
+        if anim.is_global_sequence and anim.stash_to_nla:
+            for anim_pair in anim.anim_pairs:
+                if anim_pair.Object and anim_pair.action:
+                    nla_track = anim_pair.object.animation_data.nla_tracks.get(anim_pair.action.name)
 
                     if nla_track and len(nla_track.strips):
                         nla_track.strips[-1].frame_end = bpy.context.scene.frame_end
@@ -904,7 +903,7 @@ def update_animation(self, context):
     except IndexError:
         return
 
-    context.scene.render.fps_base = sequence.PlaybackSpeed
+    context.scene.render.fps_base = sequence.playback_speed
 
     for obj in context.scene.objects:
         if obj.animation_data:
@@ -918,10 +917,10 @@ def update_animation(self, context):
                     bone.scale = (1, 1, 1)
 
     for color in context.scene.wow_m2_colors:
-        color.Color = (0.5, 0.5, 0.5, 1.0)
+        color.color = (0.5, 0.5, 0.5, 1.0)
 
     for trans in context.scene.wow_m2_transparency:
-        trans.Value = 1.0
+        trans.value = 1.0
 
     if bpy.context.scene.animation_data:
         bpy.context.scene.animation_data.action = None
@@ -931,13 +930,13 @@ def update_animation(self, context):
     for i, anim in enumerate(context.scene.wow_m2_animations):
 
         if i == context.scene.wow_m2_cur_anim_index:
-            for anim_pair in anim.AnimPairs:
-                if anim_pair.Type == 'OBJECT':
-                    anim_pair.Object.animation_data.action = anim_pair.Action
+            for anim_pair in anim.anim_pairs:
+                if anim_pair.type == 'OBJECT':
+                    anim_pair.object.animation_data.action = anim_pair.action
                 else:
-                    anim_pair.Scene.animation_data.action = anim_pair.Action
+                    anim_pair.scene.animation_data.action = anim_pair.action
 
-        if anim.IsGlobalSequence:
+        if anim.is_global_sequence:
             global_seqs.append(anim)
 
     update_scene_frame_range()

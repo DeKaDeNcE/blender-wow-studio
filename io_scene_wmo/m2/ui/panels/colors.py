@@ -15,7 +15,7 @@ class WowM2ColorsPanel(bpy.types.Panel):
         row = col.row()
         sub_col1 = row.column()
         sub_col1.template_list("WowM2Colors_ColorList", "", context.scene, "wow_m2_colors", context.scene,
-                               "WowM2CurColorIndex")
+                               "wow_m2_cur_color_index")
 
         sub_col2 = row.column().column(align=True)
         sub_col2.operator("scene.wow_m2_colors_add_color", text='', icon='ZOOMIN')
@@ -49,8 +49,8 @@ class WowM2Colors_ColorAdd(bpy.types.Operator):
 
     def execute(self, context):
         color = context.scene.wow_m2_colors.add()
-        context.scene.WowM2CurColorIndex = len(context.scene.wow_m2_colors) - 1
-        color.name = 'Color_{}'.format(context.scene.WowM2CurColorIndex)
+        context.scene.wow_m2_cur_color_index = len(context.scene.wow_m2_colors) - 1
+        color.name = 'Color_{}'.format(context.scene.wow_m2_cur_color_index)
 
         return {'FINISHED'}
 
@@ -62,21 +62,21 @@ class WowM2Colors_ColorRemove(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-        context.scene.wow_m2_colors.remove(context.scene.WowM2CurColorIndex)
+        context.scene.wow_m2_colors.remove(context.scene.wow_m2_cur_color_index)
 
         return {'FINISHED'}
 
 
 def update_color_change(self, context):
     for mat in bpy.data.materials:
-        if mat.use_nodes and mat.texture_slots[mat.active_texture_index].texture.wow_m2_texture.Color == self.name:
-            mat.node_tree.nodes['ColorRamp'].color_ramp.elements[0].color = self.Color
+        if mat.use_nodes and mat.texture_slots[mat.active_texture_index].texture.wow_m2_texture.color == self.name:
+            mat.node_tree.nodes['ColorRamp'].color_ramp.elements[0].color = self.color
             mat.invert_z = mat.invert_z
 
 
 class WowM2ColorPropertyGroup(bpy.types.PropertyGroup):
 
-    Color = bpy.props.FloatVectorProperty(
+    color = bpy.props.FloatVectorProperty(
         name='Color',
         description='The color applied to WoW material. Can be animated. Alpha defines model transparency and is multiplied with transparency value',
         subtype='COLOR',
@@ -99,9 +99,10 @@ def register():
         type=WowM2ColorPropertyGroup
     )
 
-    bpy.types.Scene.WowM2CurColorIndex = bpy.props.IntProperty()
+    bpy.types.Scene.wow_m2_cur_color_index = bpy.props.IntProperty()
 
 
 def unregister():
     del bpy.types.Scene.wow_m2_colors
-    del bpy.types.Scene.WowM2CurColorIndex
+    del bpy.types.Scene.wow_m2_cur_color_index
+

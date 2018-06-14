@@ -18,7 +18,7 @@ class WowM2AnimationsPanel(bpy.types.Panel):
 
             row = col.row()
             row_split = row.split().row(align=True)
-            row_split.prop(cur_anim_track, "PlaybackSpeed", text='Speed')
+            row_split.prop(cur_anim_track, "playback_speed", text='Speed')
 
             if context.scene.sync_mode == 'AUDIO_SYNC' and context.user_preferences.system.audio_device == 'JACK':
                 sub = row_split.row(align=True)

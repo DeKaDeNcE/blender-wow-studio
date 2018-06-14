@@ -15,6 +15,10 @@ def update_camera_path_curve(self, context):
             self.name = ""
 
 
+def update_empty_draw_type(self, context):
+    context.object.empty_draw_type = 'CONE'
+
+
 class WowM2CameraPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -59,9 +63,9 @@ class WowM2CameraPanel(bpy.types.Panel):
                 and context.object is not None
                 and context.object.type == 'CAMERA' or (
                     context.object.type == 'EMPTY'
-                    and not (context.object.wow_m2_attachment.Enabled
-                             or context.object.wow_m2_uv_transform.Enabled
-                             or context.object.wow_m2_event.Enabled)
+                    and not (context.object.wow_m2_attachment.enabled
+                             or context.object.wow_m2_uv_transform.enabled
+                             or context.object.wow_m2_event.enabled)
                 )
         )
 
@@ -93,7 +97,7 @@ class WowM2CameraPropertyGroup(bpy.types.PropertyGroup):
         name='Enabled',
         description='Enable this empty to be a camera target controller.',
         default=False,
-        update=lambda self, context: context.object.empty_draw_type == 'CONE'
+        update=update_empty_draw_type
     )
 
     type = bpy.props.EnumProperty(

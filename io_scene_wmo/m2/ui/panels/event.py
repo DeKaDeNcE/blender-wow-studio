@@ -9,23 +9,23 @@ class WowM2EventPanel(bpy.types.Panel):
     bl_label = "M2 Event"
 
     def draw_header(self, context):
-        self.layout.prop(context.object.wow_m2_event, "Enabled", text="")
+        self.layout.prop(context.object.wow_m2_event, "enabled", text="")
 
     def draw(self, context):
         layout = self.layout
-        layout.enabled = context.object.wow_m2_event.Enabled
+        layout.enabled = context.object.wow_m2_event.enabled
 
         col = layout.column()
-        col.prop(context.object.wow_m2_event, 'Token')
-        col.prop(context.object.wow_m2_event, 'Enabled')
+        col.prop(context.object.wow_m2_event, 'token')
+        col.prop(context.object.wow_m2_event, 'enabled')
 
-        event_name = M2EventTokens.get_event_name(context.object.wow_m2_event.Token)
+        event_name = M2EventTokens.get_event_name(context.object.wow_m2_event.token)
         if event_name in ('PlayEmoteSound', 'DoodadSoundUnknown', 'DoodadSoundOneShot', 'GOPlaySoundKitCustom'):
             col.label(text='SoundEntryID')
-            col.prop(context.object.wow_m2_event, 'Data')
+            col.prop(context.object.wow_m2_event, 'data')
         elif event_name == 'GOAddShake':
             col.label(text='SpellEffectCameraShakesID')
-            col.prop(context.object.wow_m2_event, 'Data')
+            col.prop(context.object.wow_m2_event, 'data')
 
     @classmethod
     def poll(cls, context):
@@ -33,33 +33,33 @@ class WowM2EventPanel(bpy.types.Panel):
                 and context.scene.WowScene.Type == 'M2'
                 and context.object is not None
                 and context.object.type == 'EMPTY'
-                and not (context.object.wow_m2_attachment.Enabled
-                         or context.object.wow_m2_uv_transform.Enabled
+                and not (context.object.wow_m2_attachment.enabled
+                         or context.object.wow_m2_uv_transform.enabled
                          or context.object.wow_m2_camera.enabled)
         )
 
 
 class WowM2EventPropertyGroup(bpy.types.PropertyGroup):
 
-    Enabled = bpy.props.BoolProperty(
+    enabled = bpy.props.BoolProperty(
         name='Enabled',
         description='Enabled this object to be a WoW M2 event',
         default=False
     )
 
-    Token = bpy.props.EnumProperty(
+    token = bpy.props.EnumProperty(
         name='Token',
         description='This token defines the purpose of the event',
         items=get_event_names
     )
 
-    Data = bpy.props.IntProperty(
+    data = bpy.props.IntProperty(
         name='Data',
         description='Data passed when this event is fired',
         min=0
     )
 
-    Fire = bpy.props.BoolProperty(
+    fire = bpy.props.BoolProperty(
         name='Enabled',
         description='Enable this event in this specific animation keyframe',
         default=False

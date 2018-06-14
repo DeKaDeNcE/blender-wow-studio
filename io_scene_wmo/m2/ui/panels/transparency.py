@@ -14,8 +14,8 @@ class WowM2TransparencyPanel(bpy.types.Panel):
 
         row = col.row()
         sub_col1 = row.column()
-        sub_col1.template_list("WowM2Transparency_TransparencyList", "", context.scene, "wow_m2_transparency", context.scene,
-                               "WowM2CurTransparencyIndex")
+        sub_col1.template_list("WowM2Transparency_TransparencyList", "", context.scene, "wow_m2_transparency",
+                               context.scene, "wow_m2_cur_transparency_index")
 
         sub_col2 = row.column().column(align=True)
         sub_col2.operator("scene.wow_m2_transparency_add_value", text='', icon='ZOOMIN')
@@ -35,7 +35,7 @@ class WowM2Transparency_TransparencyList(bpy.types.UIList):
             row = layout.row(align=True)
             cur_trans_prop_group = context.scene.wow_m2_transparency[index]
             row.prop(cur_trans_prop_group, "name", text="", icon='RESTRICT_VIEW_OFF', emboss=False)
-            row.prop(cur_trans_prop_group, "Value", text="")
+            row.prop(cur_trans_prop_group, "value", text="")
 
         elif self.layout_type in {'GRID'}:
             pass
@@ -49,8 +49,8 @@ class WowM2Transparency_ValueAdd(bpy.types.Operator):
 
     def execute(self, context):
         value = context.scene.wow_m2_transparency.add()
-        context.scene.WowM2CurTransparencyIndex = len(context.scene.wow_m2_transparency) - 1
-        value.name = 'Transparency_{}'.format(context.scene.WowM2CurTransparencyIndex)
+        context.scene.wow_m2_cur_transparency_index = len(context.scene.wow_m2_transparency) - 1
+        value.name = 'Transparency_{}'.format(context.scene.wow_m2_cur_transparency_index)
 
         return {'FINISHED'}
 
@@ -62,21 +62,21 @@ class WowM2Transparency_ValueRemove(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-        context.scene.wow_m2_transparency.remove(context.scene.WowM2CurTransparencyIndex)
+        context.scene.wow_m2_transparency.remove(context.scene.wow_m2_cur_transparency_index)
 
         return {'FINISHED'}
 
 
 def update_transparency_change(self, context):
     for mat in bpy.data.materials:
-        if mat.use_nodes and mat.texture_slots[mat.active_texture_index].texture.wow_m2_texture.Transparency == self.name:
-            mat.node_tree.nodes['Math'].inputs[1].default_value = self.Value
+        if mat.use_nodes and mat.texture_slots[mat.active_texture_index].texture.wow_m2_texture.transparency == self.name:
+            mat.node_tree.nodes['Math'].inputs[1].default_value = self.value
             mat.invert_z = mat.invert_z
 
 
 class WowM2TransprencyPropertyGroup(bpy.types.PropertyGroup):
 
-    Value = bpy.props.FloatProperty(
+    value = bpy.props.FloatProperty(
         name='Transparency',
         description='Defines transparency for M2 material. Can be animated. Multiplied by alpha channel of color block.',
         min=0.0,
@@ -97,9 +97,10 @@ def register():
         type=WowM2TransprencyPropertyGroup
     )
 
-    bpy.types.Scene.WowM2CurTransparencyIndex = bpy.props.IntProperty()
+    bpy.types.Scene.wow_m2_cur_transparency_index = bpy.props.IntProperty()
 
 
 def unregister():
     del bpy.types.Scene.wow_m2_transparency
-    del bpy.types.Scene.WowM2CurTransparencyIndex
+    del bpy.types.Scene.wow_m2_cur_transparency_index
+

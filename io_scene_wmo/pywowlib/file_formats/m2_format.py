@@ -373,7 +373,7 @@ class M2Sequence:
             self.blend_time_out = 0                             # The client blends between this sequence and the next sequence for blendTimeOut milliseconds.
                                                                 # For both blendTimeIn and blendTimeOut, the client plays both sequences simultaneously while interpolating between their animation transforms.
         self.bounds = M2Bounds()
-        self.variation_next = 0                                 # id of the following animation of this AnimationID, points to an Index or is -1 if none.
+        self.variation_next = 0                                 # id of the following animation of this animation_id, points to an Index or is -1 if none.
         self.alias_next = 0                                     # id in the list of animations. Used to find actual animation if this sequence is an alias (flags & 0x40)
 
     def read(self, f):

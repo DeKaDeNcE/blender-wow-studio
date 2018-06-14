@@ -8,7 +8,7 @@ class WowM2TextureTransformControllerPanel(bpy.types.Panel):
     bl_label = "M2 Texture Transform"
 
     def draw_header(self, context):
-        self.layout.prop(context.object.wow_m2_uv_transform, "Enabled", text="")
+        self.layout.prop(context.object.wow_m2_uv_transform, "enabled", text="")
 
     def draw(self, context):
         pass
@@ -19,15 +19,15 @@ class WowM2TextureTransformControllerPanel(bpy.types.Panel):
                 and context.scene.WowScene.Type == 'M2'
                 and context.object is not None
                 and context.object.type == 'EMPTY'
-                and not (context.object.wow_m2_event.Enabled
-                         or context.object.wow_m2_attachment.Enabled
+                and not (context.object.wow_m2_event.enabled
+                         or context.object.wow_m2_attachment.enabled
                          or context.object.wow_m2_camera.enabled)
         )
 
 
 class WowM2TextureTransformControllerPropertyGroup(bpy.types.PropertyGroup):
 
-    Enabled = bpy.props.BoolProperty(
+    enabled = bpy.props.BoolProperty(
         name='Enabled',
         description='Enable this object to be WoW M2 texture transform controller',
         default=False

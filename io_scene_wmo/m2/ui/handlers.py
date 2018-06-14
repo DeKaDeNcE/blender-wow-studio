@@ -7,9 +7,9 @@ from .drivers import register_m2_driver_utils, unregister_m2_driver_utils
 def live_update_materials(dummy):
     try:
         anim = bpy.context.scene.wow_m2_animations[bpy.context.scene.wow_m2_cur_anim_index]
-        if anim.LiveUpdate:
+        if anim.live_update:
             for mat in bpy.data.materials:
-                if mat.wow_m2_material.LiveUpdate:
+                if mat.wow_m2_material.live_update:
                     mat.invert_z = mat.invert_z
     except IndexError:
         pass

@@ -10,7 +10,7 @@ class WowM2ParticlePanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(context.object.particle_systems.active.settings.WowM2Particle, 'Type')
+        col.prop(context.object.particle_systems.active.settings.wow_m2_particle, 'type')
 
     @classmethod
     def poll(cls, context):
@@ -21,12 +21,14 @@ class WowM2ParticlePanel(bpy.types.Panel):
 
 
 class WowM2ParticlePropertyGroup(bpy.types.PropertyGroup):
-    Type = bpy.props.IntProperty()
+
+    type = bpy.props.IntProperty()
 
 
 def register():
-    bpy.types.ParticleSettings.WowM2Particle = bpy.props.PointerProperty(type=WowM2ParticlePropertyGroup)
+    bpy.types.ParticleSettings.wow_m2_particle = bpy.props.PointerProperty(type=WowM2ParticlePropertyGroup)
 
 
 def unregister():
-    del bpy.types.ParticleSettings.WowM2Particle
+    del bpy.types.ParticleSettings.wow_m2_particle
+
