@@ -1,7 +1,6 @@
 import bpy
 
 from .enums import *
-from .handlers import live_update_materials
 
 
 ###############################
@@ -952,7 +951,7 @@ class WowM2CameraPanel(bpy.types.Panel):
 
 
 def poll_camera_path_curve(self, obj):
-    return obj.type == 'CURVE'and len(obj.data.splines) == 1 and len(obj.data.splines[0].bezier_points)
+    return obj.type == 'CURVE' and len(obj.data.splines) == 1 and len(obj.data.splines[0].bezier_points)
 
 
 def update_camera_path_curve(self, context):
@@ -966,8 +965,6 @@ def update_camera_path_curve(self, context):
 
 
 class WowM2CameraPathPropertyGroup(bpy.types.PropertyGroup):
-
-    name = bpy.props.StringProperty()  # for internal use only
 
     object = bpy.props.PointerProperty(
         type=bpy.types.Object,
@@ -983,6 +980,9 @@ class WowM2CameraPathPropertyGroup(bpy.types.PropertyGroup):
         description="Duration in frames of the camera travelling along this path segment.",
         min=0
     )
+
+    # for internal use only
+    name = bpy.props.StringProperty()
 
 
 class WowM2CameraPropertyGroup(bpy.types.PropertyGroup):

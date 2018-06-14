@@ -1190,8 +1190,6 @@ class BlenderM2Scene:
                 spline.resolution_u = 64
                 spline.bezier_points.add(count=1)
 
-                print(len(spline.bezier_points))
-
                 for j, k in enumerate((i - 1, i)):
                     spline_point = spline.bezier_points[j]
                     spline_point.co = Vector(track[k].value) + anim_pair.Object.location
@@ -1212,35 +1210,46 @@ class BlenderM2Scene:
             last_point = curves[-1].data.splines[0].bezier_points[-1]
             last_point.handle_right = last_point.co
 
+            # create contraints and set appropriate drivers for each curve
+            bpy.context.scene.objects.active = anim_pair.Object
+            anim_pair.Object.location = (0, 0, 0)
 
-            '''
+            for curve in curves:
 
-            # create fcurve
-            f_curves = [action.fcurves.new(data_path='location', index=k, action_group='Location') for k in range(3)]
+                # add follow path constraint
+                bpy.ops.object.constraint_add(type='FOLLOW_PATH')
+                follow_path = obj.constraints[-1]
+                follow_path.use_curve_follow = True
+                follow_path.use_fixed_location = True
+                follow_path.target = curve
 
-            # init keyframes on the curve
-            for f_curve in f_curves:
-                f_curve.keyframe_points.add(len(frames))
+                # drive offset
+                offset_fcurve = follow_path.driver_add("offset_factor")
+                driver = offset_fcurve.driver
+                driver.type = 'SCRIPTED'
+                driver.use_self = True
 
-            # set translation values for each channel
-            for i, timestamp in enumerate(frames):
-                frame = timestamp * 0.0266666
-                trans_vec = Vector(track[i].value) + anim_pair.Object.location
-                in_tan_vec = Vector(track[i].in_tan) + anim_pair.Object.location
-                out_tan_vec = Vector(track[i].out_tan) + anim_pair.Object.location
+                obj_name_var = driver.variables.new()
+                obj_name_var.name = 'obj_name'
+                obj_name_var.targets[0].id_type = 'OBJECT'
+                obj_name_var.targets[0].id = anim_pair.Object
+                obj_name_var.targets[0].data_path = 'name'
 
-                for j in range(3):
-                    keyframe = f_curves[j].keyframe_points[i]
-                    keyframe.co = frame, trans_vec[j]
-                    keyframe.handle_left = frame, in_tan_vec[j]
-                    keyframe.handle_left_type = 'ALIGNED'
-                    keyframe.handle_right = frame, out_tan_vec[j]
-                    keyframe.handle_right_type = 'ALIGNED'
-                    keyframe.interpolation = 'BEZIER'  # TODO: hermite
+                driver.expression = 'calc_segment_offset(self, bpy.data.objects[obj_name], frame)'
 
-            '''
+                # drive influence
+                influence_fcurve = follow_path.driver_add("influence")
+                driver = influence_fcurve.driver
+                driver.type = 'SCRIPTED'
+                driver.use_self = True
 
-            return curve_obj
+                obj_name_var = driver.variables.new()
+                obj_name_var.name = 'obj_name'
+                obj_name_var.targets[0].id_type = 'OBJECT'
+                obj_name_var.targets[0].id = anim_pair.Object
+                obj_name_var.targets[0].data_path = 'name'
+
+                driver.expression = 'in_path_segment(self, bpy.data.objects[obj_name], frame)'
 
         def animate_camera_roll(anim_pair, name, cam_track, anim_index):
 
