@@ -1031,7 +1031,7 @@ class BlenderM2Scene:
                 anim_pair.action = action = bpy.data.actions.new(name=action_name)
 
             # create fcurve
-            f_curves = [action.fcurves.new(data_path='wow_m2_light.{}'.format(prop_name),
+            f_curves = [action.fcurves.new(data_path='data.wow_m2_light.{}'.format(prop_name),
                                            index=k,
                                            action_group='Color_{}'.format(prop_name)) for k in range(length)]
 

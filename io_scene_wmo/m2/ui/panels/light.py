@@ -85,7 +85,7 @@ class WowM2LightPropertyGroup(bpy.types.PropertyGroup):
     )
 
     visibility = bpy.props.BoolProperty(
-        name='enabled',
+        name='Enabled',
         default=True
     )
 
