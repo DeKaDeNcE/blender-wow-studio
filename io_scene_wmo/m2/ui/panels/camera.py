@@ -467,6 +467,10 @@ class WowM2Camera_CurveDecompose(bpy.types.Operator):
         if not self.preserve_timing:
             camera_props.animation_curves.clear()
 
+        # create a parent for curve segments
+        p_obj = bpy.data.objects.new("{}_Decomposed".format(curve_obj.name), None)
+        bpy.context.scene.objects.link(p_obj)
+
         # create segment curves
         new_segments = []
         points = curve_obj.data.splines[0].bezier_points
@@ -478,6 +482,7 @@ class WowM2Camera_CurveDecompose(bpy.types.Operator):
             curve = bpy.data.curves.new(name=name, type='CURVE')
             new_obj = bpy.data.objects.new(name=name, object_data=curve)
             bpy.context.scene.objects.link(new_obj)
+            new_obj.parent = p_obj
 
             curve.dimensions = '3D'
             curve.resolution_u = 64
