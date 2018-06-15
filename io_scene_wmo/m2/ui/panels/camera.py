@@ -366,7 +366,7 @@ class WowM2Camera_CurveDecompose(bpy.types.Operator):
         points = curve_obj.data.splines[0].bezier_points
         for i in range(1, len(points)):
             first_point = points[i - 1]
-            last_point = points[i - 2]
+            last_point = points[i]
 
             name = "{}_BakedSegment".format(curve_obj.name)
             curve = bpy.data.curves.new(name=name, type='CURVE')
@@ -384,12 +384,12 @@ class WowM2Camera_CurveDecompose(bpy.types.Operator):
             seg_last_point = spline.bezier_points[1]
 
             seg_first_point.co = first_point.co
-            seg_first_point.handle_right = first_point.handle_left
-            seg_first_point.handle_left = first_point.handle_right
+            seg_first_point.handle_right = first_point.handle_right
+            seg_first_point.handle_left = first_point.handle_left
 
             seg_last_point.co = last_point.co
-            seg_last_point.handle_right = last_point.handle_left
-            seg_last_point.handle_left = last_point.handle_right
+            seg_last_point.handle_right = last_point.handle_right
+            seg_last_point.handle_left = last_point.handle_left
 
             new_segments.append(new_obj)
 
