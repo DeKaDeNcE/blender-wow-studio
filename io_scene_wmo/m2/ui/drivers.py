@@ -17,8 +17,11 @@ def update_frame_range(obj):
 def in_path_segment(constraint, obj, frame):
     segment = constraint.target
     if not segment:
+        '''
         raise Exception('\nConstraint \"{}\" does not have a target or the target is invalid.'
                         ' Path animation cannot be evaluated.'.format(constraint.name))
+        '''
+        pass
 
     frame_start = 0
     frame_end = 0
@@ -36,8 +39,11 @@ def in_path_segment(constraint, obj, frame):
 def calc_segment_offset(constraint, obj, frame):
     segment = constraint.target
     if not segment:
+        '''
         raise Exception('\nConstraint \"{}\" does not have a target or the target is invalid.'
                         ' Path animation cannot be evaluated.'.format(constraint.name))
+        '''
+        pass
 
     frame_end = 0
 

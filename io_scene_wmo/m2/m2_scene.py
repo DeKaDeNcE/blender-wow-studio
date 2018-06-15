@@ -7,6 +7,7 @@ from ..utils import resolve_texture_path, get_origin_position, get_objs_boundbox
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
 from ..utils import parse_bitfield, construct_bitfield, load_game_data
 from .ui.enums import mesh_part_id_menu
+from .ui.panels.camera import update_follow_path_constraints
 
 
 class BlenderM2Scene:
@@ -1263,41 +1264,9 @@ class BlenderM2Scene:
             # create contraints and set appropriate drivers for each curve
             anim_pair.object.location = (0, 0, 0)
 
-            for curve in curves:
-
-                # add follow path constraint
-                follow_path = anim_pair.object.constraints.new('FOLLOW_PATH')
-                follow_path.name = 'M2FollowPath'
-                follow_path.use_fixed_location = True
-                follow_path.target = curve
-
-                # drive offset
-                offset_fcurve = follow_path.driver_add("offset_factor")
-                driver = offset_fcurve.driver
-                driver.type = 'SCRIPTED'
-                driver.use_self = True
-
-                obj_name_var = driver.variables.new()
-                obj_name_var.name = 'obj_name'
-                obj_name_var.targets[0].id_type = 'OBJECT'
-                obj_name_var.targets[0].id = anim_pair.object
-                obj_name_var.targets[0].data_path = 'name'
-
-                driver.expression = 'calc_segment_offset(self, bpy.data.objects[obj_name], frame)'
-
-                # drive influence
-                influence_fcurve = follow_path.driver_add("influence")
-                driver = influence_fcurve.driver
-                driver.type = 'SCRIPTED'
-                driver.use_self = True
-
-                obj_name_var = driver.variables.new()
-                obj_name_var.name = 'obj_name'
-                obj_name_var.targets[0].id_type = 'OBJECT'
-                obj_name_var.targets[0].id = anim_pair.object
-                obj_name_var.targets[0].data_path = 'name'
-
-                driver.expression = 'in_path_segment(self, bpy.data.objects[obj_name], frame)'
+            # active object is required for constraints / drivers to install properly
+            bpy.context.scene.objects.active = anim_pair.object
+            update_follow_path_constraints(None, bpy.context)
 
         def animate_camera_roll(anim_pair, name, cam_track, anim_index):
 
@@ -1373,6 +1342,7 @@ class BlenderM2Scene:
             t_obj.animation_data.action_blend_type = 'ADD'
 
             # animate camera
+
             # load global sequences
             n_global_sequences = len(self.global_sequences)
             for j, seq_index in enumerate(self.global_sequences):
@@ -1428,13 +1398,9 @@ class BlenderM2Scene:
                 if camera.roll.global_sequence < 0:
                     animate_camera_roll(t_anim_pair, t_name, camera.roll, anim_index)
 
-            # add track_to contraint to camera to make it face the target object
-            track_to = obj.constraints.new('TRACK_TO')
-            track_to.name = 'M2TrackTo'
-            track_to.up_axis = 'UP_Y'
-            track_to.track_axis = 'TRACK_NEGATIVE_Z'
-            track_to.use_target_z = True
-            track_to.target = t_obj
+            # set target for camera
+            bpy.context.scene.objects.active = obj  # active object is required for constraints to install properly
+            obj.wow_m2_camera.target = t_obj
 
 
 

@@ -9,28 +9,51 @@ class CameraErrors:
     BAD_GEOMETRY = 2
 
 
-def poll_camera_path_curve(self, obj):
-    return obj.type == 'CURVE' and len(obj.data.splines) == 1 and len(obj.data.splines[0].bezier_points)
+def update_follow_path_constraints(self, context):
+    for constraint in context.object.constraints:
+        if constraint.type == 'FOLLOW_PATH':
+            constraint.driver_remove("offset_factor")
+            constraint.driver_remove("influence")
+            context.object.constraints.remove(constraint)
 
+    for segment in context.object.wow_m2_camera.animation_curves:
+        # add follow path constraint
+        follow_path = context.object.constraints.new('FOLLOW_PATH')
+        follow_path.name = 'M2FollowPath'
+        follow_path.use_fixed_location = True
+        follow_path.target = segment.object
 
-def update_camera_path_curve(self, context):
-    # double check is needed because pippete selector ignores polling
-    if self.object:
-        self.name = self.object.name
+        # drive offset
+        offset_fcurve = follow_path.driver_add("offset_factor")
+        driver = offset_fcurve.driver
+        driver.type = 'SCRIPTED'
+        driver.use_self = True
 
-        if not poll_camera_path_curve(None, self.object):
-            self.object = None
-            self.name = ""
+        obj_name_var = driver.variables.new()
+        obj_name_var.name = 'obj_name'
+        obj_name_var.targets[0].id_type = 'OBJECT'
+        obj_name_var.targets[0].id = context.object
+        obj_name_var.targets[0].data_path = 'name'
 
+        driver.expression = 'calc_segment_offset(self, bpy.data.objects[obj_name], frame)'
 
-def update_empty_draw_type(self, context):
-    context.object.empty_draw_type = 'CONE'
+        # drive influence
+        influence_fcurve = follow_path.driver_add("influence")
+        driver = influence_fcurve.driver
+        driver.type = 'SCRIPTED'
+        driver.use_self = True
 
+        obj_name_var = driver.variables.new()
+        obj_name_var.name = 'obj_name'
+        obj_name_var.targets[0].id_type = 'OBJECT'
+        obj_name_var.targets[0].id = context.object
+        obj_name_var.targets[0].data_path = 'name'
 
-def update_scene_animation(self, context):
-    context.scene.wow_m2_cur_anim_index = context.scene.wow_m2_cur_anim_index
+        driver.expression = 'in_path_segment(self, bpy.data.objects[obj_name], frame)'
 
-
+    # ensure track to constrain stays on top
+    if context.object.type == 'CAMERA':
+        context.object.wow_m2_camera.target = context.object.wow_m2_camera.target
 
 
 def validate_camera_path(m2_camera):
@@ -82,6 +105,72 @@ def validate_camera_path(m2_camera):
     return errors
 
 
+def poll_camera_path_curve(self, obj):
+    return obj.type == 'CURVE' and len(obj.data.splines) == 1 and len(obj.data.splines[0].bezier_points)
+
+
+def update_camera_path_curve(self, context):
+    # double check is needed because pippete selector ignores polling
+    if self.object:
+        self.name = self.object.name
+
+        if not poll_camera_path_curve(None, self.object):
+            self.object = None
+            self.name = ""
+
+    update_follow_path_constraints(None, context)
+
+
+def update_empty_draw_type(self, context):
+    context.object.empty_draw_type = 'CONE'
+
+
+def update_scene_animation(self, context):
+    context.scene.wow_m2_cur_anim_index = context.scene.wow_m2_cur_anim_index
+
+
+def update_camera_target(self, context):
+    if self.target is not None and (self.target.type != 'EMPTY' or not self.target.wow_m2_camera.enabled):
+        self.target = None
+
+        try:
+            context.object.constraints.remove(context.object.constraints['M2TrackTo'])
+        except KeyError:
+            pass
+
+        return
+
+    if self.target is None:
+
+        try:
+            context.object.constraints.remove(context.object.constraints['M2TrackTo'])
+        except KeyError:
+            pass
+
+        return
+
+    try:
+        context.object.constraints['M2TrackTo'].target = self.target
+    except KeyError:
+
+        # add track_to contraint to camera to make it face the target object
+        track_to = context.object.constraints.new('TRACK_TO')
+        track_to.name = 'M2TrackTo'
+        track_to.up_axis = 'UP_Y'
+        track_to.track_axis = 'TRACK_NEGATIVE_Z'
+        track_to.use_target_z = True
+        track_to.target = self.target
+
+    finally:
+        # move camera down the constraints stack
+        ctx_override = bpy.context.copy()
+        track_to = context.object.constraints['M2TrackTo']
+        ctx_override["constraint"] = track_to
+
+        for _ in range(len(context.object.constraints) - 1):
+            bpy.ops.constraint.move_down(ctx_override, constraint=track_to.name, owner='OBJECT')
+
+
 class WowM2CameraPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -98,6 +187,7 @@ class WowM2CameraPanel(bpy.types.Panel):
         col = layout.column()
         if context.object.type == 'CAMERA':
             col.prop(context.object.wow_m2_camera, 'type')
+            col.prop(context.object.wow_m2_camera, 'target')
             col.separator()
         else:
             layout.enabled = context.object.wow_m2_camera.enabled
@@ -198,6 +288,14 @@ class WowM2CameraPropertyGroup(bpy.types.PropertyGroup):
     animation_curves = bpy.props.CollectionProperty(type=WowM2CameraPathPropertyGroup)
     cur_anim_curve_index = bpy.props.IntProperty()
 
+    target = bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name='Target',
+        description='Target of the camera. Can be animated using curves.',
+        poll=lambda self, obj: obj.type == 'EMPTY' and obj.wow_m2_camera.enabled,
+        update=update_camera_target
+    )
+
 
 class WowM2Camera_CurveList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
@@ -225,6 +323,7 @@ class WowM2Camera_CurveAdd(bpy.types.Operator):
         curve = context.object.wow_m2_camera.animation_curves.add()
         curve.this_object = context.object
         context.object.wow_m2_camera.cur_anim_curve_index = len(context.object.wow_m2_camera.animation_curves) - 1
+        update_follow_path_constraints(None, context)
 
         return {'FINISHED'}
 
@@ -236,6 +335,7 @@ class WowM2Camera_CurveRemove(bpy.types.Operator):
 
     def execute(self, context):
         context.object.wow_m2_camera.animation_curves.remove(context.object.wow_m2_camera.cur_anim_curve_index)
+        update_follow_path_constraints(None, context)
 
         return {'FINISHED'}
 
@@ -261,6 +361,8 @@ class WowM2Camera_CurveMove(bpy.types.Operator):
 
         else:
             raise NotImplementedError("Only UP and DOWN movement in the UI list in supported.")
+
+        update_follow_path_constraints(None, context)
 
         return {'FINISHED'}
 
@@ -408,6 +510,8 @@ class WowM2Camera_CurveDecompose(bpy.types.Operator):
             segment = camera_props.animation_curves.add()
             segment.object = new_segments[i]
             segment.this_object = context.object
+
+        update_follow_path_constraints(None, context)
 
         return {'FINISHED'}
 
