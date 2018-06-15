@@ -31,6 +31,8 @@ def update_scene_animation(self, context):
     context.scene.wow_m2_cur_anim_index = context.scene.wow_m2_cur_anim_index
 
 
+
+
 def validate_camera_path(m2_camera):
     errors = []
 
@@ -173,6 +175,7 @@ class WowM2CameraPathPropertyGroup(bpy.types.PropertyGroup):
 
     # for internal use only
     name = bpy.props.StringProperty()
+    this_object = bpy.props.PointerProperty(type=bpy.types.Object)
 
 
 class WowM2CameraPropertyGroup(bpy.types.PropertyGroup):
@@ -219,7 +222,8 @@ class WowM2Camera_CurveAdd(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-        context.object.wow_m2_camera.animation_curves.add()
+        curve = context.object.wow_m2_camera.animation_curves.add()
+        curve.this_object = context.object
         context.object.wow_m2_camera.cur_anim_curve_index = len(context.object.wow_m2_camera.animation_curves) - 1
 
         return {'FINISHED'}
@@ -403,6 +407,7 @@ class WowM2Camera_CurveDecompose(bpy.types.Operator):
         for i in range(segments_overlap, len(new_segments) - segments_overlap):
             segment = camera_props.animation_curves.add()
             segment.object = new_segments[i]
+            segment.this_object = context.object
 
         return {'FINISHED'}
 
