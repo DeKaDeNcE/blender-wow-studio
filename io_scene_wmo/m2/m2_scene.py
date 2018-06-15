@@ -1209,8 +1209,6 @@ class BlenderM2Scene:
 
         def animate_camera_loc(anim_pair, name, cam_track, anim_index):
 
-            action = anim_pair.action
-
             try:
                 frames = cam_track.timestamps[anim_index]
                 track = cam_track.values[anim_index]
@@ -1220,8 +1218,9 @@ class BlenderM2Scene:
             if not len(frames) > 1:
                 return
 
-            if not action:
-                action = anim_pair.action = bpy.data.actions.new(name=name)
+            # create a parent for curve segments
+            p_obj = bpy.data.objects.new(name, None)
+            bpy.context.scene.objects.link(p_obj)
 
             curves = []
             for i in range(1, len(frames)):
@@ -1231,6 +1230,7 @@ class BlenderM2Scene:
                 curve_name = '{}_Path'.format(anim_pair.object.name)
                 curve = bpy.data.curves.new(name=curve_name, type='CURVE')
                 curve_obj = bpy.data.objects.new(name=curve_name, object_data=curve)
+                curve_obj.parent = p_obj
                 bpy.context.scene.objects.link(curve_obj)
 
                 curve.dimensions = '3D'
@@ -1261,14 +1261,13 @@ class BlenderM2Scene:
             last_point.handle_right = last_point.co
 
             # create contraints and set appropriate drivers for each curve
-            bpy.context.scene.objects.active = anim_pair.object
             anim_pair.object.location = (0, 0, 0)
 
             for curve in curves:
 
                 # add follow path constraint
-                bpy.ops.object.constraint_add(type='FOLLOW_PATH')
-                follow_path = anim_pair.object.constraints[-1]
+                follow_path = anim_pair.object.constraints.new('FOLLOW_PATH')
+                follow_path.name = 'M2FollowPath'
                 follow_path.use_fixed_location = True
                 follow_path.target = curve
 
@@ -1344,27 +1343,34 @@ class BlenderM2Scene:
         for camera in self.m2.root.cameras:
 
             # create camera object
-            bpy.ops.object.camera_add(location=camera.position_base)
-            obj = bpy.context.scene.objects.active
+            cam = bpy.data.cameras.new('Camera')
+            obj = bpy.data.objects.new('Camera', cam)
+            bpy.context.scene.objects.link(obj)
+
+            obj.location = camera.position_base
             obj.wow_m2_camera.type = str(camera.type)
             obj.wow_m2_camera.clip_start = camera.near_clip
             obj.wow_m2_camera.clip_end = camera.far_clip
             obj.data.lens_unit = 'FOV'
             obj.data.angle = camera.fov
+
             obj.animation_data_create()
             obj.animation_data.action_blend_type = 'ADD'
 
             # create camera target object
-            bpy.ops.object.empty_add(type='CONE', location=camera.target_position_base)
-            t_obj = bpy.context.scene.objects.active
-            t_obj.name = "{}_Target".format(obj.name)
+            t_obj = bpy.data.objects.new("{}_Target".format(obj.name), None)
+            bpy.context.scene.objects.link(t_obj)
+
+            t_obj.location = camera.target_position_base
             t_obj.wow_m2_camera.enabled = True
-            t_obj.animation_data_create()
-            t_obj.animation_data.action_blend_type = 'ADD'
             t_obj.empty_draw_size = 0.07
+            t_obj.empty_draw_type = 'CONE'
             t_obj.rotation_mode = 'AXIS_ANGLE'
             t_obj.rotation_axis_angle = (0, 1, 0, 0)
             t_obj.lock_rotation = (True, True, True)
+
+            t_obj.animation_data_create()
+            t_obj.animation_data.action_blend_type = 'ADD'
 
             # animate camera
             # load global sequences
@@ -1423,9 +1429,8 @@ class BlenderM2Scene:
                     animate_camera_roll(t_anim_pair, t_name, camera.roll, anim_index)
 
             # add track_to contraint to camera to make it face the target object
-            bpy.context.scene.objects.active = obj
-            bpy.ops.object.constraint_add(type='TRACK_TO')
-            track_to = obj.constraints[-1]
+            track_to = obj.constraints.new('TRACK_TO')
+            track_to.name = 'M2TrackTo'
             track_to.up_axis = 'UP_Y'
             track_to.track_axis = 'TRACK_NEGATIVE_Z'
             track_to.use_target_z = True

@@ -2,7 +2,7 @@ import bpy
 
 
 ###############################
-## Camera Animation Drivers
+## Camera Animation Driver Utils
 ###############################
 
 def update_frame_range(obj):
@@ -52,6 +52,10 @@ def calc_segment_offset(constraint, obj, frame):
             return (frame - frame_start) / curve.duration
 
     return 0
+
+
+
+
 
 
 def register_camera_animation_driver_utils():
