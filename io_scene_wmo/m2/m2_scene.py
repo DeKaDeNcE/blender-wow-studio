@@ -1125,7 +1125,7 @@ class BlenderM2Scene:
             anim_pair.action = action
 
             # create fcurve
-            f_curve = action.fcurves.new(data_path='wow_m2_event.Fire')
+            f_curve = action.fcurves.new(data_path='wow_m2_event.fire')
 
             # init translation keyframes on the curve
             f_curve.keyframe_points.add(len(frames))
