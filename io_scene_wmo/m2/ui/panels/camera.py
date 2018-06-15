@@ -3,6 +3,12 @@ from math import ceil
 from ....utils import wrap_text
 
 
+class CameraErrors:
+    INVALID_OBJ = 0
+    DUPLICATE_OBJ = 1
+    BAD_GEOMETRY = 2
+
+
 def poll_camera_path_curve(self, obj):
     return obj.type == 'CURVE' and len(obj.data.splines) == 1 and len(obj.data.splines[0].bezier_points)
 
@@ -33,22 +39,24 @@ def validate_camera_path(m2_camera):
 
         # check if the used curve is None or invalid
         if curve.object is None or curve.object.name not in bpy.context.scene.objects:
-            errors.append("Curve slot #{} is invalid.".format(i))
+            errors.append(("Curve slot #{} is invalid.".format(i), CameraErrors.INVALID_OBJ))
             continue
 
         # check if the same path is used twice
         if curve.object in checked_curve_objs:
-            errors.append("Curve \"{}\" is used more than once.".format(curve.object.name))
+            errors.append(("Curve \"{}\" is used more than once.".format(curve.object.name), CameraErrors.DUPLICATE_OBJ))
 
         checked_curve_objs.append(curve.object)
 
         # check curve's geometry validity
         if len(curve.object.data.splines) > 1:
-            errors.append("Curve \"{}\" contains more than 1 spline.".format(curve.object.name))
+            errors.append(("Curve \"{}\" contains more than 1 spline.".format(curve.object.name),
+                           CameraErrors.BAD_GEOMETRY))
             continue
 
         if len(curve.object.data.splines[0].bezier_points) > 2:
-            errors.append("Curve \"{}\" contains more than 2 bezier points.".format(curve.object.name))
+            errors.append(("Curve \"{}\" contains more than 2 bezier points.".format(curve.object.name),
+                           CameraErrors.BAD_GEOMETRY))
             continue
 
         next_index = i + 1
@@ -66,7 +74,8 @@ def validate_camera_path(m2_camera):
             if last_point.co != next_point.co \
             or last_point.handle_left != next_point.handle_left \
             or last_point.handle_right != next_point.handle_right:
-                errors.append("Curve \"{}\" does not connect to next segment properly.".format(curve.object.name))
+                errors.append(("Curve \"{}\" does not connect to next segment properly.".format(curve.object.name),
+                               CameraErrors.BAD_GEOMETRY))
 
     return errors
 
@@ -110,20 +119,19 @@ class WowM2CameraPanel(bpy.types.Panel):
         sub_col3.operator("object.wow_m2_camera_curve_move", text='', icon='TRIA_DOWN').direction = 'DOWN'
 
         # draw error box
-        errors = validate_camera_path(context.object.wow_m2_camera)
+        errors = sorted(validate_camera_path(context.object.wow_m2_camera), key=lambda x: x[1])
         if errors:
             col.separator()
             col.label('Errors:')
             box = col.box()
 
-            for error_msg in errors:
+            for error_msg, error_code in errors:
                 sub_box = box.box()
                 lines = wrap_text(ceil(bpy.context.area.width / 9), error_msg)
                 sub_box.row(align=True).label(lines[0], icon='ERROR')
 
                 for i in range(1, len(lines)):
                     sub_box.row(align=True).label(lines[i])
-
 
     @classmethod
     def poll(cls, context):
