@@ -19,6 +19,10 @@ def update_empty_draw_type(self, context):
     context.object.empty_draw_type = 'CONE'
 
 
+def update_scene_animation(self, context):
+    context.scene.wow_m2_cur_anim_index = context.scene.wow_m2_cur_anim_index
+
+
 class WowM2CameraPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -84,7 +88,8 @@ class WowM2CameraPathPropertyGroup(bpy.types.PropertyGroup):
     duration = bpy.props.FloatProperty(
         name='Duration',
         description="Duration in frames of the camera travelling along this path segment.",
-        min=0
+        min=0,
+        update=update_scene_animation
     )
 
     # for internal use only
