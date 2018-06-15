@@ -139,7 +139,30 @@ def get_objs_boundbox_world(objects):
     return tuple(corner1), tuple(corner2)
 
 
+def wrap_text(width, text):
 
+    lines = []
+
+    arr = text.split()
+    length_sum = 0
+
+    str_sum = ""
+
+    for var in arr:
+        length_sum += len(var) + 1
+        if length_sum <= width:
+            str_sum += " " + var
+        else:
+            lines.append(str_sum)
+            length_sum = 0
+            str_sum = var
+
+    if length_sum != 0:
+        lines.append(str_sum)
+
+    # lines.append(" " + arr[len(arr) - 1])
+
+    return lines
 
 
 
