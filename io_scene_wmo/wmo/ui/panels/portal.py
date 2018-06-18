@@ -6,84 +6,84 @@ class WowPortalPlanePanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
-    bl_label = "WoW Portal Plane"
+    bl_label = "WMO Portal"
 
     def draw_header(self, context):
-        layout = self.layout
-        self.layout.prop(context.object.WowPortalPlane, "Enabled")
+        self.layout.prop(context.object.wow_wmo_portal, "enabled")
 
     def draw(self, context):
         layout = self.layout
 
         column = layout.column()
-        column.prop(context.object.WowPortalPlane, "First")
-        column.prop(context.object.WowPortalPlane, "Second")
+        column.prop(context.object.wow_wmo_portal, "first")
+        column.prop(context.object.wow_wmo_portal, "second")
 
         col = layout.column()
 
         col.separator()
         col.label("Relation direction:")
-        col.prop(context.object.WowPortalPlane, "Algorithm", expand=True)
+        col.prop(context.object.wow_wmo_portal, "algorithm", expand=True)
 
-        layout.enabled = context.object.WowPortalPlane.Enabled
+        layout.enabled = context.object.wow_wmo_portal.enabled
 
     @classmethod
     def poll(cls, context):
         return (context.scene is not None
-                and context.scene.WowScene.Type == 'WMO'
+                and context.scene.wow_scene.type == 'WMO'
                 and context.object is not None
                 and context.object.data is not None
                 and isinstance(context.object.data,bpy.types.Mesh)
-                and not context.object.WowWMOGroup.Enabled
-                and not context.object.WowLiquid.Enabled
-                and not context.object.WowFog.Enabled
-                and not context.object.WoWDoodad.Enabled
+                and not context.object.wow_wmo_group.enabled
+                and not context.object.wow_wmo_liquid.enabled
+                and not context.object.wow_wmo_fog.enabled
+                and not context.object.wow_wmo_doodad.enabled
                 )
 
 
 def portal_validator(self, context):
-    if self.Second and not self.Second.WowWMOGroup.Enabled:
-        self.Second = None
+    if self.second and not self.second.wow_wmo_group.enabled:
+        self.second = None
 
-    if self.First and not self.First.WowWMOGroup.Enabled:
-        self.First = None
+    if self.first and not self.first.wow_wmo_group.enabled:
+        self.first = None
 
 
 class WowPortalPlanePropertyGroup(bpy.types.PropertyGroup):
 
-    Enabled = bpy.props.BoolProperty(
+    enabled = bpy.props.BoolProperty(
         name="",
         description="Enable wow WMO group properties"
         )
 
-    First = bpy.props.PointerProperty(
+    first = bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="First group",
-        poll=lambda self, obj: obj.WowWMOGroup.Enabled and self.Second != obj and obj.name in bpy.context.scene.objects,
+        poll=lambda self, obj: obj.wow_wmo_group.enabled and self.Second != obj and obj.name in bpy.context.scene.objects,
         update=portal_validator
     )
 
-    Second = bpy.props.PointerProperty(
+    second = bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Second group",
-        poll=lambda self, obj: obj.WowWMOGroup.Enabled and self.First != obj and obj.name in bpy.context.scene.objects,
+        poll=lambda self, obj: obj.wow_wmo_group.enabled and self.First != obj and obj.name in bpy.context.scene.objects,
         update=portal_validator
     )
 
-    PortalID = bpy.props.IntProperty(
+    portal_id = bpy.props.IntProperty(
         name="Portal's ID",
         description="Portal ID"
         )
 
-    Algorithm = bpy.props.EnumProperty(
+    algorithm = bpy.props.EnumProperty(
         items=portal_dir_alg_enum,
         default="0"
         )
 
 
 def register():
-    bpy.types.Object.WowPortalPlane = bpy.props.PointerProperty(type=WowPortalPlanePropertyGroup)
+    bpy.types.Object.wow_wmo_portal = bpy.props.PointerProperty(type=WowPortalPlanePropertyGroup)
 
 
 def unregister():
-    bpy.types.Object.WowPortalPlane = None
+    del bpy.types.Object.wow_wmo_portal
+

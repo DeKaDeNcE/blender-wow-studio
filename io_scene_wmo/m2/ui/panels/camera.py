@@ -234,7 +234,7 @@ class WowM2CameraPanel(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         return (context.scene is not None
-                and context.scene.WowScene.Type == 'M2'
+                and context.scene.wow_scene.type == 'M2'
                 and context.object is not None
                 and context.object.type == 'CAMERA' or (
                     context.object.type == 'EMPTY'

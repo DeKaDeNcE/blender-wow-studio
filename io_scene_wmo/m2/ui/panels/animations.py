@@ -51,4 +51,4 @@ class WowM2AnimationsPanel(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.scene is not None and context.scene.WowScene.Type == 'M2'
+        return context.scene is not None and context.scene.wow_scene.type == 'M2'

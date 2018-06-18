@@ -6,67 +6,64 @@ class WoWRootPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
-    bl_label = "WoW Root"
-
-    def draw_header(self, context):
-        layout = self.layout
+    bl_label = "WMO Root"
 
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(context.scene.WoWRoot, "Flags")
+        col.prop(context.scene.wow_wmo_root, "flags")
         col.separator()
 
-        if "2" in context.scene.WoWRoot.Flags:
-            col.prop(context.scene.WoWRoot, "AmbientColor")
+        if "2" in context.scene.wow_wmo_root.flags:
+            col.prop(context.scene.wow_wmo_root, "ambient_color")
 
         col.separator()
 
-        col.prop(context.scene.WoWRoot, "SkyboxPath")
-        col.prop(context.scene.WoWRoot, "WMOid")
+        col.prop(context.scene.wow_wmo_root, "skybox_path")
+        col.prop(context.scene.wow_wmo_root, "wmo_id")
 
     @classmethod
     def poll(cls, context):
-        return context.scene is not None and context.scene.WowScene.Type == 'WMO'
+        return context.scene is not None and context.scene.wow_scene.type == 'WMO'
 
 
 class MODS_Set(bpy.types.PropertyGroup):
-    Name = bpy.props.StringProperty()
-    StartDoodad = bpy.props.IntProperty()
-    nDoodads = bpy.props.IntProperty()
-    Padding = bpy.props.IntProperty()
+    name = bpy.props.StringProperty()
+    start_doodad = bpy.props.IntProperty()
+    n_doodads = bpy.props.IntProperty()
+    padding = bpy.props.IntProperty()
 
 
 class MODN_String(bpy.types.PropertyGroup):
-    Ofs = bpy.props.IntProperty()
-    String = bpy.props.StringProperty()
+    ofs = bpy.props.IntProperty()
+    string = bpy.props.StringProperty()
 
 
 class MODD_Definition(bpy.types.PropertyGroup):
-    NameOfs = bpy.props.IntProperty()
-    Flags = bpy.props.IntProperty()
-    Position = bpy.props.FloatVectorProperty()
-    Rotation = bpy.props.FloatVectorProperty()
-    Tilt = bpy.props.FloatProperty()
-    Scale = bpy.props.FloatProperty()
-    Color = bpy.props.FloatVectorProperty()
-    ColorAlpha = bpy.props.FloatProperty()
+    name_ofs = bpy.props.IntProperty()
+    flags = bpy.props.IntProperty()
+    position = bpy.props.FloatVectorProperty()
+    rotation = bpy.props.FloatVectorProperty()
+    tilt = bpy.props.FloatProperty()
+    scale = bpy.props.FloatProperty()
+    color = bpy.props.FloatVectorProperty()
+    color_alpha = bpy.props.FloatProperty()
 
 
 class WowRootPropertyGroup(bpy.types.PropertyGroup):
 
-    MODS_Sets = bpy.props.CollectionProperty(type=MODS_Set)
-    MODN_StringTable = bpy.props.CollectionProperty(type=MODN_String)
-    MODD_Definitions = bpy.props.CollectionProperty(type=MODD_Definition)
+    mods_sets = bpy.props.CollectionProperty(type=MODS_Set)
+    modn_string_table = bpy.props.CollectionProperty(type=MODN_String)
+    modd_definitions = bpy.props.CollectionProperty(type=MODD_Definition)
 
-    Flags = bpy.props.EnumProperty(
+    flags = bpy.props.EnumProperty(
         name="Root flags",
         description="WoW WMO root flags",
         items=root_flags_enum,
         options={"ENUM_FLAG"}
         )
 
-    AmbientColor = bpy.props.FloatVectorProperty(
+    ambient_color = bpy.props.FloatVectorProperty(
         name="Ambient Color",
         subtype='COLOR',
         default=(1, 1, 1, 1),
@@ -75,22 +72,23 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
         max=1.0
         )
 
-    SkyboxPath = bpy.props.StringProperty(
-        name="SkyboxPath",
+    skybox_path = bpy.props.StringProperty(
+        name="Skybox Path",
         description="Skybox for WMO (.MDX)",
         default='',
         )
 
-    WMOid = bpy.props.IntProperty(
-        name="WMO DBC ID",
+    wmo_id = bpy.props.IntProperty(
+        name="DBC ID",
         description="Used in WMOAreaTable (optional)",
         default=0,
         )
 
 
 def register():
-    bpy.types.Scene.WoWRoot = bpy.props.PointerProperty(type=WowRootPropertyGroup)
+    bpy.types.Scene.wow_wmo_root = bpy.props.PointerProperty(type=WowRootPropertyGroup)
 
 
 def unregister():
-    bpy.types.Scene.WoWRoot = None
+    del bpy.types.Scene.wow_wmo_root
+

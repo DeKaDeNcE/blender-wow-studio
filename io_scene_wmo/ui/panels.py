@@ -11,8 +11,8 @@ class WowScenePanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(context.scene.WowScene, 'Type')
-        col.prop(context.scene.WowScene, 'GamePath')
+        col.prop(context.scene.wow_scene, 'type')
+        col.prop(context.scene.wow_scene, 'game_path')
 
     @classmethod
     def poll(cls, context):
@@ -20,7 +20,7 @@ class WowScenePanel(bpy.types.Panel):
 
 
 class WowScenePropertyGroup(bpy.types.PropertyGroup):
-    Type = bpy.props.EnumProperty(
+    type = bpy.props.EnumProperty(
         name='Scene type',
         description='Sets up the UI to work with a specific WoW game format',
         items=(
@@ -29,27 +29,25 @@ class WowScenePropertyGroup(bpy.types.PropertyGroup):
             )
         )
 
-    GamePath = bpy.props.StringProperty(
+    game_path = bpy.props.StringProperty(
         name='Game path',
         description='A path to the model in WoW filesystem.'
     )
 
 
 def register_wow_scene_properties():
-    bpy.types.Scene.WowScene = bpy.props.PointerProperty(type=WowScenePropertyGroup)
+    bpy.types.Scene.wow_scene = bpy.props.PointerProperty(type=WowScenePropertyGroup)
 
 
 def unregister_wow_scene_properties():
-    bpy.types.Scene.WowScene = None
+    del bpy.types.Scene.wow_scene
 
 
 def render_top_bar(self, context):
-    game_data_loaded = hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files
-
     layout = self.layout
     row = layout.row(align=True)
     row.label('Scene:')
-    row.prop(context.scene.WowScene, 'Type', text='')
+    row.prop(context.scene.wow_scene, 'type', text='')
     row.operator("scene.reload_wow_filesystem", text="", icon_value=ui_icons['WOW_STUDIO_RELOAD'])
 
 

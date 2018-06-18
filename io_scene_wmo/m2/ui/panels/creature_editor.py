@@ -13,7 +13,7 @@ def get_creature_model_data(self, context):
     creature_model_data_db = game_data.db_files_client.CreatureModelData
 
     cr_model_data_entries = [('None', 'None', '')]
-    model_path = os.path.splitext(context.scene.WowScene.GamePath.lower())[0]
+    model_path = os.path.splitext(context.scene.wow_scene.game_path.lower())[0]
     for record in creature_model_data_db.records:
         if os.path.splitext(record.ModelPath.lower())[0] == model_path:
             cr_model_data_entries.append((str(record.ID), 'ModelDataEntry_{}'.format(record.ID), ""))
@@ -101,7 +101,7 @@ class CreatureEditorDialog(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.scene is not None and context.scene.WowScene.Type == 'M2'
+        return context.scene is not None and context.scene.wow_scene.type == 'M2'
 
     def execute(self, context):
         return {'FINISHED'}
@@ -116,7 +116,7 @@ class CreatureEditorDialog(bpy.types.Operator):
         col = split.column()
         col1 = split.column()
 
-        if not context.scene.WowScene.GamePath:
+        if not context.scene.wow_scene.game_path:
             col.label('Model path is unknown.', icon='ERROR')
             return
 
@@ -429,11 +429,11 @@ class CreatureEditorLoadTextures(bpy.types.Operator):
                                 uv.data[poly.index].image = img
 
     def execute(self, context):
-        if not context.scene.WowScene.GamePath:
+        if not context.scene.wow_scene.game_path:
             self.report({'ERROR'}, 'Path to model is unknown.')
             return {'CANCELLED'}
 
-        base_path = os.path.dirname(context.scene.WowScene.GamePath)
+        base_path = os.path.dirname(context.scene.wow_scene.game_path)
 
         if self.LoadAll:
             if context.scene.wow_m2_creature.DisplayTexture1:

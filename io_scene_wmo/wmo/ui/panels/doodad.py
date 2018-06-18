@@ -5,63 +5,59 @@ class WoWDoodadPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
-    bl_label = "WoW Doodad"
-
-    def draw_header(self, context):
-        layout = self.layout
+    bl_label = "WMO Doodad"
 
     def draw(self, context):
         layout = self.layout
-        layout.prop(context.object.WoWDoodad, "Path")
-        layout.prop(context.object.WoWDoodad, "Color")
+        layout.prop(context.object.wow_wmo_doodad, "path")
+        layout.prop(context.object.wow_wmo_doodad, "color")
 
         col = layout.column()
         col.label("Flags:")
-        col.prop(context.object.WoWDoodad, "Flags")
-        layout.enabled = context.object.WoWDoodad.Enabled
+        col.prop(context.object.wow_wmo_doodad, "flags")
+        layout.enabled = context.object.wow_wmo_doodad.enabled
 
     @classmethod
     def poll(cls, context):
         return (context.scene is not None
-                and context.scene.WowScene.Type == 'WMO'
+                and context.scene.wow_scene.type == 'WMO'
                 and context.object is not None
-                and context.object.WoWDoodad.Enabled
+                and context.object.wow_wmo_doodad.enabled
                 and isinstance(context.object.data, bpy.types.Mesh))
 
 
 class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
 
-    Path = bpy.props.StringProperty()
+    path = bpy.props.StringProperty()
 
-    Color = bpy.props.FloatVectorProperty(
+    color = bpy.props.FloatVectorProperty(
         name="Color",
         subtype='COLOR',
         size=4,
-        default=(1,1,1,1),
+        default=(1, 1, 1, 1),
         min=0.0,
         max=1.0
-        )
+    )
 
-    Flags = bpy.props.EnumProperty(
-        name ="Doodad flags",
-        description ="WoW doodad instance flags",
-        items =[
-                ("1" , "Accept Projected Tex.", ""),
-                ("2", "Adjust lighting", ""),
-                ("4", "Unknown", ""),
-                ("8", "Unknown", "")],
+    flags = bpy.props.EnumProperty(
+        name="Doodad flags",
+        description="WoW doodad instance flags",
+        items=[("1", "Accept Projected Tex.", ""),
+               ("2", "Adjust lighting", ""),
+               ("4", "Unknown", ""),
+               ("8", "Unknown", "")],
         options={"ENUM_FLAG"}
-        )
+    )
 
-    Enabled = bpy.props.BoolProperty(
+    enabled = bpy.props.BoolProperty(
         name="",
-        description="Enable WoW Doodad properties"
-        )
+        description="Enable WoW WMO doodad properties"
+    )
 
 
 def register():
-    bpy.types.Object.WoWDoodad = bpy.props.PointerProperty(type=WoWDoodadPropertyGroup)
+    bpy.types.Object.wow_wmo_doodad = bpy.props.PointerProperty(type=WoWDoodadPropertyGroup)
 
 
 def unregister():
-    bpy.types.Object.WoWDoodad = None
+    bpy.types.Object.wow_wmo_doodad = None

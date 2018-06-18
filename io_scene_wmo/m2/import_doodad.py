@@ -1,6 +1,7 @@
 import bpy
 import os
 import io
+import traceback
 from struct import unpack
 
 from ..ui import get_addon_prefs
@@ -190,6 +191,7 @@ def m2_to_blender_mesh(dir, filepath, filedata):
         try:
             img = bpy.data.images.load(os.path.join(dir, tex_path), check_existing=True)
         except RuntimeError:
+            traceback.print_exc()
             print("\nFailed to load texture: <<{}>>. File is missing or corrupted.".format(tex_path))
 
         if img:
@@ -252,13 +254,10 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
         if dir:
             try:
                 obj = m2_to_blender_mesh(addon_preferences.cache_dir_path, m2_path, game_data)
-            except NotImplementedError:
-                bpy.ops.mesh.primitive_cube_add()
-                obj = bpy.context.scene.objects.active
-                self.report({'WARNING'}, "Model is encrypted. Placeholder is imported instead.")
             except:
                 bpy.ops.mesh.primitive_cube_add()
                 obj = bpy.context.scene.objects.active
+                traceback.print_exc()
                 self.report({'WARNING'}, "Failed to import model. Placeholder is imported instead.")
             else:
                 self.report({'INFO'}, "Imported model: {}".format(m2_path))
@@ -268,8 +267,8 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
             else:
                 obj.location = bpy.context.scene.cursor_location
 
-            obj.WoWDoodad.Enabled = True
-            obj.WoWDoodad.Path = m2_path
+            obj.wow_wmo_doodad.enabled = True
+            obj.wow_wmo_doodad.path = m2_path
 
             bpy.ops.object.select_all(action='DESELECT')
             bpy.context.scene.objects.active = obj

@@ -2,6 +2,7 @@ import bpy
 import subprocess
 import mathutils
 import operator
+import traceback
 import math
 import os
 import struct
@@ -44,10 +45,10 @@ class WoWWMOFixMaterailDuplicates_OP(bpy.types.Operator):
 
         duplicate_count = 0
         for source, duplicates in material_duplicates.items():
-            source_props = bpy.data.materials[source].WowMaterial
+            source_props = bpy.data.materials[source].wow_wmo_material
 
             for duplicate in duplicates:
-                dupli_props = bpy.data.materials[duplicate].WowMaterial
+                dupli_props = bpy.data.materials[duplicate].wow_wmo_material
                 if source != duplicate \
                 and source_props.Shader == dupli_props.Shader \
                 and source_props.TerrainType == dupli_props.TerrainType \
@@ -209,6 +210,7 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
                         bpy.ops.mesh.primitive_cube_add()
                         obj = bpy.context.scene.objects.active
                         obj.name = 'ERR_' + os.path.splitext(os.path.basename(doodad_path))[0]
+                        traceback.print_exc()
                         print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
 
                     instance_cache[doodad_path] = obj
@@ -221,8 +223,8 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
                 obj.scale = tuple((float(instance[7]) / 1024.0 for _ in range(3)))
 
                 if self.doodads_on:
-                    obj.WoWDoodad.Enabled = True
-                    obj.WoWDoodad.Path = doodad_path
+                    obj.wow_wmo_doodad.enabled = True
+                    obj.wow_wmo_doodad.path = doodad_path
 
                 if self.group_objects:
                     obj.parent = parent
@@ -266,6 +268,7 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
                         bpy.ops.mesh.primitive_cube_add()
                         obj = bpy.context.scene.objects.active
                         obj.name = os.path.basename(wmo_path) + ".wmo"
+                        traceback.print_exc()
                         print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(wmo_path))
 
                     instance_cache[wmo_path] = obj
@@ -377,8 +380,8 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
             for group_path in group_paths:
                 os.remove(os.path.join(cache_dir, *group_path.split('\\')))
 
-        except Exception as e:
-            print(e)
+        except:
+            traceback.print_exc()
             self.report({'ERROR'}, "Failed to import model.")
             return {'CANCELLED'}
 
@@ -397,23 +400,23 @@ def LoadDoodadsFromPreserved(dir, game_data):
     """ Load doodad sets to scene from preserved doodadset data"""
 
     def get_string(ofs):
-        for string in bpy.context.scene.WoWRoot.MODN_StringTable:
+        for string in bpy.context.scene.wow_wmo_root.modn_string_table:
             if string.Ofs == ofs:
                 return string.String
 
     scene = bpy.context.scene
     obj_map = {}
 
-    for doodad_set in scene.WoWRoot.MODS_Sets:
+    for doodad_set in scene.wow_wmo_root.mods_sets:
 
         bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
         anchor = bpy.context.scene.objects.active
-        anchor.name = doodad_set.Name
+        anchor.name = doodad_set.name
         anchor.hide = True
         anchor.hide_select = True
 
-        for i in range(doodad_set.StartDoodad, doodad_set.StartDoodad + doodad_set.nDoodads):
-            doodad = scene.WoWRoot.MODD_Definitions[i]
+        for i in range(doodad_set.start_doodad, doodad_set.start_doodad + doodad_set.n_doodads):
+            doodad = scene.wow_wmo_root.modd_definitions[i]
             doodad_path = os.path.splitext(get_string(doodad.NameOfs))[0] + ".m2"
 
             nobj = None
@@ -426,20 +429,21 @@ def LoadDoodadsFromPreserved(dir, game_data):
                     bpy.ops.mesh.primitive_cube_add()
                     obj = bpy.context.scene.objects.active
                     obj.name = 'ERR_' + os.path.splitext(os.path.basename(doodad_path))[0]
+                    traceback.print_exc()
                     print("#nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
 
-                obj.WoWDoodad.Enabled = True
-                obj.WoWDoodad.Path = doodad_path
+                obj.wow_wmo_doodad.enabled = True
+                obj.wow_wmo_doodad.path = doodad_path
 
                 obj_map[doodad_path] = obj
                 nobj = obj
             else:
                 nobj = obj.copy()
 
-                nobj.WoWDoodad.Color = (doodad.Color[0] / 255,
-                                        doodad.Color[1] / 255,
-                                        doodad.Color[2] / 255,
-                                        doodad.ColorAlpha / 255)
+                nobj.wow_wmo_doodad.color = (doodad.Color[0] / 255,
+                                             doodad.Color[1] / 255,
+                                             doodad.Color[2] / 255,
+                                             doodad.ColorAlpha / 255)
 
                 flags = []
                 bit = 1
@@ -448,7 +452,7 @@ def LoadDoodadsFromPreserved(dir, game_data):
                         flags.append(str(bit))
                     bit <<= 1
 
-                nobj.WoWDoodad.Flags = set(flags)
+                nobj.wow_wmo_doodad.flags = set(flags)
 
                 scene.objects.link(nobj)
 
@@ -552,12 +556,12 @@ class DOODADS_BAKE_COLOR(bpy.types.Operator):
         doodad_counter = 0
         len_objects = len(bpy.context.selected_objects)
 
-        groups = [obj for obj in bpy.context.scene.objects if obj.WowWMOGroup.Enabled]
+        groups = [obj for obj in bpy.context.scene.objects if obj.wow_wmo_group.enabled]
 
         window_manager.progress_begin(0, 100)
         for index, obj in enumerate(bpy.context.selected_objects):
-            if obj.WoWDoodad.Enabled:
-                obj.WoWDoodad.Color = self.gen_doodad_color(obj, DOODADS_BAKE_COLOR.find_nearest_object(obj, groups))
+            if obj.wow_wmo_doodad.enabled:
+                obj.wow_wmo_doodad.color = self.gen_doodad_color(obj, DOODADS_BAKE_COLOR.find_nearest_object(obj, groups))
                 print("\nBaking color to doodad instance <<{}>>".format(obj.name))
                 doodad_counter += 1
                 window_manager.progress_update(int(index / len_objects * 100))
@@ -604,21 +608,22 @@ class DOODAD_SET_CLEAR_PRESERVED(bpy.types.Operator):
             try:
                 LoadDoodadsFromPreserved(addon_prefs.cache_dir_path, game_data)
             except:
+                traceback.print_exc()
                 self.report({'ERROR'}, "An error occured while importing doodads.")
                 return {'CANCELLED'}
 
-            bpy.context.scene.WoWRoot.MODS_Sets.clear()
-            bpy.context.scene.WoWRoot.MODN_StringTable.clear()
-            bpy.context.scene.WoWRoot.MODD_Definitions.clear()
+            bpy.context.scene.wow_wmo_root.mods_sets.clear()
+            bpy.context.scene.wow_wmo_root.modn_string_table.clear()
+            bpy.context.scene.wow_wmo_root.modd_definitions.clear()
 
             update_wow_visibility(bpy.context.scene, None)
             self.report({'INFO'}, "Successfully imported doodad sets")
             return {'FINISHED'}
 
         else:
-            bpy.context.scene.WoWRoot.MODS_Sets.clear()
-            bpy.context.scene.WoWRoot.MODN_StringTable.clear()
-            bpy.context.scene.WoWRoot.MODD_Definitions.clear()
+            bpy.context.scene.wow_wmo_root.mods_sets.clear()
+            bpy.context.scene.wow_wmo_root.modn_string_table.clear()
+            bpy.context.scene.wow_wmo_root.modd_definitions.clear()
             self.report({'INFO'}, "Successfully cleared preserved doodad sets. Editing is now available")
             return {'FINISHED'}
 
@@ -673,7 +678,7 @@ class DOODAD_SET_ADD(bpy.types.Operator):
 
         selected_objs = []
         for obj in bpy.context.scene.objects:
-            if obj.select and obj.WoWDoodad.Enabled:
+            if obj.select and obj.wow_wmo_doodad.enabled:
                 selected_objs.append(obj)
 
         if self.Action == "ADD":
@@ -752,8 +757,8 @@ class DOODAD_SET_COLOR(bpy.types.Operator):
 
         success = False
         for obj in bpy.context.selected_objects:
-            if obj.WoWDoodad.Enabled:
-                obj.WoWDoodad.Color = self.Color
+            if obj.wow_wmo_doodad.enabled:
+                obj.wow_wmo_doodad.color = self.Color
                 success = True
 
         if success:
@@ -813,8 +818,8 @@ class DOODAD_SET_TEMPLATE_ACTION(bpy.types.Operator):
         target = None
         active = bpy.context.scene.objects.active
 
-        if active and active.WoWDoodad:
-            target = active.WoWDoodad.Path
+        if active and active.wow_wmo_doodad:
+            target = active.wow_wmo_doodad.path
         else:
             self.report({'ERROR'}, "Template functions require an active object.")
             return {'CANCELLED'}
@@ -847,7 +852,7 @@ class DOODAD_SET_TEMPLATE_ACTION(bpy.types.Operator):
             for obj in bpy.context.scene.objects:
                 is_selected = obj in selected_objects if selected_only else True
 
-                if obj.WoWDoodad.Path == target and is_selected:
+                if obj.wow_wmo_doodad.path == target and is_selected:
 
                     if self.Action == 'REPLACE':
 
@@ -855,8 +860,8 @@ class DOODAD_SET_TEMPLATE_ACTION(bpy.types.Operator):
                         rotation = obj.rotation_quaternion
                         scale = obj.scale
                         parent = obj.parent
-                        color = obj.WoWDoodad.Color
-                        flags = obj.WoWDoodad.Flags
+                        color = obj.wow_wmo_doodad.color
+                        flags = obj.wow_wmo_doodad.flags
 
                         bpy.data.objects.remove(obj, do_unlink=True)
 
@@ -869,8 +874,8 @@ class DOODAD_SET_TEMPLATE_ACTION(bpy.types.Operator):
                         obj.rotation_quaternion = rotation
                         obj.scale = scale
                         obj.parent = parent
-                        obj.WoWDoodad.Color = color
-                        obj.WoWDoodad.Flags = flags
+                        obj.wow_wmo_doodad.color = color
+                        obj.wow_wmo_doodad.flags = flags
                         objects_to_select.append(obj)
 
                     elif self.Action == 'RESIZE':
@@ -929,7 +934,7 @@ class OBJECT_OP_ADD_FLAG(bpy.types.Operator):
 
     def execute(self, context):
         water = bpy.context.scene.objects.active
-        if water.WowLiquid.Enabled:
+        if water.wow_wmo_liquid.enabled:
             mesh = water.data
 
             if self.Action == "ADD":
@@ -989,13 +994,13 @@ class OBJECT_OP_Bake_Portal_Relations(bpy.types.Operator):
 
         success = False
 
-        groups = tuple(x for x in bpy.context.scene.objects if x.WowWMOGroup.Enabled and not x.hide)
+        groups = tuple(x for x in bpy.context.scene.objects if x.wow_wmo_group.enabled and not x.hide)
 
         for obj in bpy.context.selected_objects:
-            if obj.WowPortalPlane.Enabled:
+            if obj.wow_wmo_portal.enabled:
                 direction = find_nearest_objects_pair(obj, groups)
-                obj.WowPortalPlane.First = direction[0] if direction[0] else ""
-                obj.WowPortalPlane.Second = direction[1] if direction[1] else ""
+                obj.wow_wmo_portal.first = direction[0] if direction[0] else ""
+                obj.wow_wmo_portal.second = direction[1] if direction[1] else ""
                 success = True
 
         if success:
@@ -1089,9 +1094,9 @@ class OBJECT_OP_Add_Water(bpy.types.Operator):
             mesh.vertex_colors.new("flag_" + hex(bit))
             bit <<= 1
 
-        water.WowLiquid.Enabled = True
+        water.wow_wmo_liquid.enabled = True
 
-        water.hide = False if "4" in bpy.context.scene.WoWVisibility else True
+        water.hide = False if "4" in bpy.context.scene.wow_visibility else True
 
         self.report({'INFO'}, "Successfully сreated WoW liquid: " + water.name)
         return {'FINISHED'}
@@ -1133,9 +1138,9 @@ class OBJECT_OP_Add_Fog(bpy.types.Operator):
         mesh.materials[0].use_transparency = True
         mesh.materials[0].alpha = 0.35
 
-        fog.WowFog.Enabled = True
+        fog.wow_wmo_fog.enabled = True
 
-        fog.hide = False if "3" in bpy.context.scene.WoWVisibility else True
+        fog.hide = False if "3" in bpy.context.scene.wow_visibility else True
 
         self.report({'INFO'}, "Successfully сreated WoW fog: " + fog.name)
         return {'FINISHED'}
@@ -1155,8 +1160,8 @@ class OBJECT_OP_Invert_Portals(bpy.types.Operator):
     def execute(self, context):
         success = False
         for ob in bpy.context.selected_objects:
-            if ob.WowPortalPlane.Enabled:
-                ob.WowPortalPlane.Algorithm = self.Algorithm
+            if ob.wow_wmo_portal.enabled:
+                ob.wow_wmo_portal.algorithm = self.Algorithm
                 success = True
 
         if success:
@@ -1187,7 +1192,7 @@ class OBJECT_OP_Fill_Textures(bpy.types.Operator):
                     except:
                         pass
 
-                if img and not material.WowMaterial.Texture1:
+                if img and not material.wow_wmo_material.texture1:
 
                     path = (os.path.splitext(bpy.path.abspath(img.filepath))[0] + ".blp", "")
                     rest_path = ""
@@ -1210,7 +1215,7 @@ class OBJECT_OP_Fill_Textures(bpy.types.Operator):
                         rest_path_n = rest_path_n[:-1] if rest_path_n.endswith('\\') else rest_path_n
 
                         if game_data.has_file(rest_path_n)[0]:
-                            material.WowMaterial.Texture1 = rest_path_n
+                            material.wow_wmo_material.texture1 = rest_path_n
                             break
 
             self.report({'INFO'}, "Done filling texture paths")
@@ -1242,32 +1247,32 @@ class OBJECT_OP_Quick_Collision(bpy.types.Operator):
 
         success = False
         for ob in bpy.context.selected_objects:
-            if ob.WowWMOGroup.Enabled:
+            if ob.wow_wmo_group.enabled:
                 bpy.context.scene.objects.active = ob
 
                 if self.CleanUp:
                     for vertex_group in ob.vertex_groups:
-                        if vertex_group.name != ob.WowVertexInfo.VertexGroup \
-                                and vertex_group.name != ob.WowVertexInfo.BatchTypeA \
-                                and vertex_group.name != ob.WowVertexInfo.BatchTypeB \
-                                and vertex_group.name != ob.WowVertexInfo.Lightmap \
-                                and vertex_group.name != ob.WowVertexInfo.Blendmap \
-                                and vertex_group.name != ob.WowVertexInfo.SecondUV:
+                        if vertex_group.name != ob.wow_wmo_vertex_info.vertex_group \
+                                and vertex_group.name != ob.wow_wmo_vertex_info.batch_type_a \
+                                and vertex_group.name != ob.wow_wmo_vertex_info.batch_type_b \
+                                and vertex_group.name != ob.wow_wmo_vertex_info.lightmap \
+                                and vertex_group.name != ob.wow_wmo_vertex_info.blendmap \
+                                and vertex_group.name != ob.wow_wmo_vertex_info.second_uv:
                             ob.vertex_groups.remove(vertex_group)
 
-                if ob.vertex_groups.get(ob.WowVertexInfo.VertexGroup):
-                    bpy.ops.object.vertex_group_set_active(group=ob.WowVertexInfo.VertexGroup)
+                if ob.vertex_groups.get(ob.wow_wmo_vertex_info.vertex_group):
+                    bpy.ops.object.vertex_group_set_active(group=ob.wow_wmo_vertex_info.vertex_group)
                 else:
                     new_vertex_group = ob.vertex_groups.new(name="Collision")
                     bpy.ops.object.vertex_group_set_active(group=new_vertex_group.name)
-                    ob.WowVertexInfo.VertexGroup = new_vertex_group.name
+                    ob.wow_wmo_vertex_info.vertex_group = new_vertex_group.name
 
                 bpy.ops.object.mode_set(mode='EDIT')
                 bpy.ops.mesh.select_all(action='SELECT')
                 bpy.ops.object.vertex_group_assign()
                 bpy.ops.mesh.select_all(action='DESELECT')
                 bpy.ops.object.mode_set(mode='OBJECT')
-                ob.WowVertexInfo.NodeSize = self.NodeSize
+                ob.wow_wmo_vertex_info.node_size = self.NodeSize
 
                 success = True
 
@@ -1308,12 +1313,12 @@ class OBJECT_OP_To_WMOPortal(bpy.types.Operator):
         success = False
         for ob in bpy.context.selected_objects:
             if ob.type == 'MESH':
-                ob.WowWMOGroup.Enabled = False
-                ob.WowLiquid.Enabled = False
-                ob.WowFog.Enabled = False
-                ob.WowPortalPlane.Enabled = True
+                ob.wow_wmo_group.enabled = False
+                ob.wow_wmo_liquid.enabled = False
+                ob.wow_wmo_fog.enabled = False
+                ob.wow_wmo_portal.enabled = True
 
-                ob.hide = False if "2" in bpy.context.scene.WoWVisibility else True
+                ob.hide = False if "2" in bpy.context.scene.wow_visibility else True
                 success = True
 
         if success:
@@ -1331,9 +1336,9 @@ class OBJECT_OP_To_Group(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     GroupName = bpy.props.StringProperty(name="Name")
-    GroupDesc = bpy.props.StringProperty(name="Description")
+    description = bpy.props.StringProperty(name="Description")
 
-    PlaceType = bpy.props.EnumProperty(
+    place_type = bpy.props.EnumProperty(
         items=place_type_enum,
         name="Place Type",
         description="Group is indoor or outdoor"
@@ -1362,19 +1367,19 @@ class OBJECT_OP_To_Group(bpy.types.Operator):
         success = False
         for ob in bpy.context.selected_objects:
             if ob.type == 'MESH':
-                ob.WowLiquid.Enabled = False
-                ob.WowFog.Enabled = False
-                ob.WowPortalPlane.Enabled = False
-                ob.WowWMOGroup.Enabled = True
-                ob.WowWMOGroup.PlaceType = self.PlaceType
-                ob.WowWMOGroup.GroupName = self.GroupName
-                ob.WowWMOGroup.GroupDesc = self.GroupDesc
-                ob.WowWMOGroup.Flags = self.Flags
-                ob.WowWMOGroup.GroupDBCid = self.GroupDBCid
-                ob.WowWMOGroup.LiquidType = self.LiquidType
+                ob.wow_wmo_liquid.enabled = False
+                ob.wow_wmo_fog.enabled = False
+                ob.wow_wmo_portal.enabled = False
+                ob.wow_wmo_group.enabled = True
+                ob.wow_wmo_group.place_type = self.place_type
+                ob.wow_wmo_group.GroupName = self.GroupName
+                ob.wow_wmo_group.description = self.description
+                ob.wow_wmo_group.flags = self.Flags
+                ob.wow_wmo_group.group_dbc_id = self.GroupDBCid
+                ob.wow_wmo_group.liquid_type = self.LiquidType
 
-                if self.PlaceType == "8" and "0" in scene.WoWVisibility \
-                        or self.PlaceType == "8192" and "1" in scene.WoWVisibility:
+                if self.place_type == "8" and "0" in scene.wow_visibility \
+                        or self.place_type == "8192" and "1" in scene.wow_visibility:
                     ob.hide = False
                 else:
                     ob.hide = True
@@ -1468,15 +1473,15 @@ class OBJECT_OP_To_WoWMaterial(bpy.types.Operator):
     def execute(self, context):
         success = False
         for ob in bpy.context.selected_objects:
-            if ob.WowWMOGroup.Enabled:
+            if ob.wow_wmo_group.enabled:
                 for material in ob.data.materials:
-                    material.WowMaterial.Enabled = True
-                    material.WowMaterial.Shader = self.Shader
-                    material.WowMaterial.BlendingMode = self.BlendingMode
-                    material.WowMaterial.TerrainType = self.TerrainType
-                    material.WowMaterial.Flags = self.Flags
-                    material.WowMaterial.EmissiveColor = self.EmissiveColor
-                    material.WowMaterial.DiffColor = self.DiffColor
+                    material.wow_wmo_material.enabled = True
+                    material.wow_wmo_material.shader = self.Shader
+                    material.wow_wmo_material.blending_mode = self.BlendingMode
+                    material.wow_wmo_material.terrain_type = self.TerrainType
+                    material.wow_wmo_material.flags = self.Flags
+                    material.wow_wmo_material.emissive_color = self.EmissiveColor
+                    material.wow_wmo_material.diff_color = self.DiffColor
                 success = True
 
         if success:
@@ -1499,11 +1504,11 @@ class WOW_WMO_SELECT_ENTITY(bpy.types.Operator):
         items=[
             ("Outdoor", "Outdoor", ""),
             ("Indoor", "Indoor", ""),
-            ("WowPortalPlane", "Portals", ""),
-            ("WowLiquid", "Liquids", ""),
-            ("WowFog", "Fogs", ""),
-            ("WowLight", "Lights", ""),
-            ("WoWDoodad", "Doodads", "")
+            ("wow_wmo_portal", "Portals", ""),
+            ("wow_wmo_liquid", "Liquids", ""),
+            ("wow_wmo_fog", "Fogs", ""),
+            ("wow_wmo_light", "Lights", ""),
+            ("wow_wmo_doodad", "Doodads", "")
         ]
     )
 
@@ -1514,17 +1519,17 @@ class WOW_WMO_SELECT_ENTITY(bpy.types.Operator):
                 continue
 
             if obj.type == 'MESH':
-                if obj.WowWMOGroup.Enabled:
-                    if self.Entity == "Outdoor" and obj.WowWMOGroup.PlaceType == '8':
+                if obj.wow_wmo_group.enabled:
+                    if self.Entity == "Outdoor" and obj.wow_wmo_group.place_type == '8':
                         obj.select = True
-                    elif self.Entity == "Indoor" and obj.WowWMOGroup.PlaceType == '8192':
+                    elif self.Entity == "Indoor" and obj.wow_wmo_group.place_type == '8192':
                         obj.select = True
-                elif self.Entity not in ("WowLight", "Outdoor", "Indoor"):
+                elif self.Entity not in ("wow_wmo_light", "Outdoor", "Indoor"):
                     if getattr(obj, self.Entity).Enabled:
                         obj.select = True
 
             elif obj.type == 'LAMP':
-               if self.Entity == "WowLight":
+               if self.Entity == "wow_wmo_light":
                    obj.select = True
 
         return {'FINISHED'}

@@ -5,7 +5,7 @@ __reload_order_index__ = 0
 
 
 def update_wow_visibility(self, context):
-    values = self.WoWVisibility
+    values = self.wow_visibility
 
     for obj in self.objects:
         if 'wow_hide' not in obj:
@@ -15,29 +15,29 @@ def update_wow_visibility(self, context):
             continue
 
         if obj.type == "MESH":
-            if obj.WowWMOGroup.Enabled:
-                if obj.WowWMOGroup.PlaceType == '8':
+            if obj.wow_wmo_group.enabled:
+                if obj.wow_wmo_group.place_type == '8':
                     obj.hide = '0' not in values
                 else:
                     obj.hide = '1' not in values
-            elif obj.WowPortalPlane.Enabled:
+            elif obj.wow_wmo_portal.enabled:
                 obj.hide = '2' not in values
-            elif obj.WowFog.Enabled:
+            elif obj.wow_wmo_fog.enabled:
                 obj.hide = '3' not in values
-            elif obj.WowLiquid.Enabled:
+            elif obj.wow_wmo_liquid.enabled:
                 obj.hide = '4' not in values
-        elif obj.type == "LAMP" and obj.data.WowLight.Enabled:
+        elif obj.type == "LAMP" and obj.data.wow_wmo_light.enabled:
             obj.hide = '5' not in values
 
         obj['wow_hide'] = obj.hide
 
 
 def update_liquid_flags(self, context):
-    value = self.WoWLiquidFlags
+    value = self.wow_liquid_flags
 
     water = bpy.context.scene.objects.active
     mesh = water.data
-    if water.WowLiquid.Enabled:
+    if water.wow_wmo_liquid.enabled:
         layer = mesh.vertex_colors.get("flag_" + value)
 
         if layer:
@@ -54,7 +54,7 @@ def get_doodad_sets(self, context):
     doodad_sets = []
 
     for obj in bpy.context.scene.objects:
-        if obj.WoWDoodad.Enabled and obj.parent:
+        if obj.wow_wmo_doodad.enabled and obj.parent:
             if obj.parent.name != "Set_$DefaultGlobal":
                 doodad_set_objects.add(obj.parent)
             else:
@@ -71,10 +71,10 @@ def get_doodad_sets(self, context):
 
 
 def switch_doodad_set(self, context):
-    set = self.WoWDoodadVisibility
+    set = self.wow_doodad_visibility
 
     for obj in bpy.context.scene.objects:
-        if obj.WoWDoodad.Enabled:
+        if obj.wow_wmo_doodad.enabled:
             if obj.parent:
                 name = obj.parent.name
                 obj.hide = set == "None" or name != set and name != "Set_$DefaultGlobal"
@@ -94,23 +94,23 @@ class WMOToolsPanelObjectModeDisplay(bpy.types.Panel):
         layout = self.layout.split()
         col = layout.column(align=True)
         col_row = col.row()
-        col_row.column(align=True).prop(context.scene, "WoWVisibility")
+        col_row.column(align=True).prop(context.scene, "wow_visibility")
         col_col = col_row.column(align=True)
         col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'Outdoor'
         col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'Indoor'
-        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'WowPortalPlane'
-        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'WowFog'
-        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'WowLiquid'
-        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'WowLight'
+        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'wow_wmo_portal'
+        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'wow_wmo_fog'
+        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'wow_wmo_liquid'
+        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'wow_wmo_light'
 
-        if not bpy.context.scene.WoWRoot.MODS_Sets:
+        if not bpy.context.scene.wow_wmo_root.mods_sets:
             box2_row2 = col.row()
-            box2_row2.prop(context.scene, "WoWDoodadVisibility", expand=False)
-            box2_row2.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'WoWDoodad'
+            box2_row2.prop(context.scene, "wow_doodad_visibility", expand=False)
+            box2_row2.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'wow_wmo_doodad'
 
     @classmethod
     def poll(cls, context):
-        return context.scene is not None and context.scene.WowScene.Type == 'WMO'
+        return context.scene is not None and context.scene.wow_scene.type == 'WMO'
 
 
 class WMOToolsPanelObjectModeAddToScene(bpy.types.Panel):
@@ -124,7 +124,7 @@ class WMOToolsPanelObjectModeAddToScene(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout.split()
 
-        has_sets = True if bpy.context.scene.WoWRoot.MODS_Sets else False
+        has_sets = True if bpy.context.scene.wow_wmo_root.mods_sets else False
         game_data_loaded = hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files
 
         col = layout.column(align=True)
@@ -152,7 +152,7 @@ class WMOToolsPanelObjectModeAddToScene(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.scene is not None and context.scene.WowScene.Type == 'WMO'
+        return context.scene is not None and context.scene.wow_scene.type == 'WMO'
 
 
 class WMOToolsPanelObjectModeActions(bpy.types.Panel):
@@ -185,7 +185,7 @@ class WMOToolsPanelObjectModeActions(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.scene is not None and context.scene.WowScene.Type == 'WMO'
+        return context.scene is not None and context.scene.wow_scene.type == 'WMO'
 
 
 class WMOToolsPanelObjectModeDoodads(bpy.types.Panel):
@@ -199,14 +199,14 @@ class WMOToolsPanelObjectModeDoodads(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         return (context.scene is not None
-                and context.scene.WowScene.Type == 'WMO'
-                and not bpy.context.scene.WoWRoot.MODS_Sets and bpy.context.selected_objects)
+                and context.scene.wow_scene.type == 'WMO'
+                and not bpy.context.scene.wow_wmo_root.mods_sets and bpy.context.selected_objects)
 
     def draw(self, context):
         layout = self.layout.split()
         col = layout.column(align=True)
 
-        has_sets = True if bpy.context.scene.WoWRoot.MODS_Sets else False
+        has_sets = True if bpy.context.scene.wow_wmo_root.mods_sets else False
         box = col.box()
         box_col2 = box.column(align=True)
 
@@ -234,7 +234,7 @@ class ConvertOperators(bpy.types.Menu):
 
     @classmethod
     def poll(cls, context):
-        return context.scene is not None and context.scene.WowScene.Type == 'WMO'
+        return context.scene is not None and context.scene.wow_scene.type == 'WMO'
 
 
 class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
@@ -257,7 +257,7 @@ class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
 
     @classmethod
     def poll(cls, context):
-        return context.scene is not None and context.scene.WowScene.Type == 'WMO'
+        return context.scene is not None and context.scene.wow_scene.type == 'WMO'
 
 
 def wow_components_add_menu_item(self, context):
@@ -278,7 +278,7 @@ class WoWToolsPanelLiquidFlags(bpy.types.Panel):
         col = layout.column()
 
         col.label(text="Flags")
-        col.prop(context.scene, "WoWLiquidFlags", expand=True)
+        col.prop(context.scene, "wow_liquid_flags", expand=True)
 
         col.label(text="Actions")
         col.operator("scene.wow_mliq_change_flags", text='Add flag', icon='MOD_SOFT').Action = "ADD"
@@ -289,16 +289,16 @@ class WoWToolsPanelLiquidFlags(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         return (context.scene is not None
-                and context.scene.WowScene.Type == 'WMO'
+                and context.scene.wow_scene.type == 'WMO'
                 and context.object is not None
                 and context.object.data is not None
                 and isinstance(context.object.data, bpy.types.Mesh)
-                and context.object.WowLiquid.Enabled
+                and context.object.wow_wmo_liquid.enabled
                 )
 
 
 def register():
-    bpy.types.Scene.WoWVisibility = bpy.props.EnumProperty(
+    bpy.types.Scene.wow_visibility = bpy.props.EnumProperty(
         items=[
             ('0', "Outdoor", "Display outdoor groups", 'OBJECT_DATA', 0x1),
             ('1', "Indoor", "Display indoor groups", 'MOD_SUBSURF', 0x2),
@@ -311,7 +311,7 @@ def register():
         update=update_wow_visibility
     )
 
-    bpy.types.Scene.WoWLiquidFlags = bpy.props.EnumProperty(
+    bpy.types.Scene.wow_liquid_flags = bpy.props.EnumProperty(
         items=[
             ('0x1', "Flag 0x01", "Switch to this flag", 'MOD_SOFT', 0),
             ('0x2', "Flag 0x02", "Switch to this flag", 'MOD_SOFT', 1),
@@ -325,7 +325,7 @@ def register():
         update=update_liquid_flags
     )
 
-    bpy.types.Scene.WoWDoodadVisibility = bpy.props.EnumProperty(
+    bpy.types.Scene.wow_doodad_visibility = bpy.props.EnumProperty(
         name="",
         description="Switch doodad sets",
         items=get_doodad_sets,
@@ -336,8 +336,8 @@ def register():
 
 
 def unregister():
-    del bpy.types.Scene.WoWVisibility
-    del bpy.types.Scene.WoWLiquidFlags
-    del bpy.types.Scene.WoWDoodadVisibility
+    del bpy.types.Scene.wow_visibility
+    del bpy.types.Scene.wow_liquid_flags
+    del bpy.types.Scene.wow_doodad_visibility
 
     bpy.types.INFO_MT_add.remove(wow_components_add_menu_item)

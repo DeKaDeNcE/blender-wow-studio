@@ -32,7 +32,7 @@ class MOHD_chunk:
         self.nPortals = 0
         self.nLights = 0
         self.nModels = 0
-        self.nDoodads = 0
+        self.n_doodads = 0
         self.nSets = 0
         self.AmbientColor = (0, 0, 0, 0)
         self.ID = 0
@@ -49,7 +49,7 @@ class MOHD_chunk:
         self.nPortals = unpack("I", f.read(4))[0]
         self.nLights = unpack("I", f.read(4))[0]
         self.nModels = unpack("I", f.read(4))[0]
-        self.nDoodads = unpack("I", f.read(4))[0]
+        self.n_doodads = unpack("I", f.read(4))[0]
         self.nSets = unpack("I", f.read(4))[0]
         self.AmbientColor = unpack("BBBB", f.read(4))
         self.ID = unpack("I", f.read(4))[0]
@@ -67,7 +67,7 @@ class MOHD_chunk:
         f.write(pack('I', self.nPortals))
         f.write(pack('I', self.nLights))
         f.write(pack('I', self.nModels))
-        f.write(pack('I', self.nDoodads))
+        f.write(pack('I', self.n_doodads))
         f.write(pack('I', self.nSets))
         f.write(pack('BBBB', *self.AmbientColor))
         f.write(pack('I', self.ID))
@@ -568,23 +568,24 @@ class MOLT_chunk:
         for light in self.Lights:
             light.write(f)
 
+
 class DoodadSet:
     def __init__(self):
         self.Name = ''
-        self.StartDoodad = 0
-        self.nDoodads = 0
+        self.start_doodad = 0
+        self.n_doodads = 0
         self.Padding = 0
 
     def read(self, f):
         self.Name = f.read(20).decode("ascii")
-        self.StartDoodad = unpack("I", f.read(4))[0]
-        self.nDoodads = unpack("I", f.read(4))[0]
+        self.start_doodad = unpack("I", f.read(4))[0]
+        self.n_doodads = unpack("I", f.read(4))[0]
         self.Padding = unpack("I", f.read(4))[0]
 
     def write(self, f):
         f.write(self.Name.ljust(20, '\0').encode('ascii'))
-        f.write(pack('I', self.StartDoodad))
-        f.write(pack('I', self.nDoodads))
+        f.write(pack('I', self.start_doodad))
+        f.write(pack('I', self.n_doodads))
         f.write(pack('I', self.Padding))
 
 # doodad sets

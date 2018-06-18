@@ -6,71 +6,70 @@ class WowMaterialPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "material"
-    bl_label = "WoW Material"
+    bl_label = "WMO Material"
 
     def draw_header(self, context):
-        layout = self.layout
-        self.layout.prop(context.material.WowMaterial, "Enabled")
+        self.layout.prop(context.material.wow_wmo_material, "enabled")
 
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(context.material.WowMaterial, "Shader")
-        col.prop(context.material.WowMaterial, "TerrainType")
-        col.prop(context.material.WowMaterial, "BlendingMode")
+        col.prop(context.material.wow_wmo_material, "shader")
+        col.prop(context.material.wow_wmo_material, "terrain_type")
+        col.prop(context.material.wow_wmo_material, "blending_mode")
 
         col.separator()
-        col.prop(context.material.WowMaterial, "Texture1")
-        col.prop(context.material.WowMaterial, "Texture2")
+        col.prop(context.material.wow_wmo_material, "texture1")
+        col.prop(context.material.wow_wmo_material, "texture2")
 
         col.separator()
         col.label("Flags:")
-        col.prop(context.material.WowMaterial, "Flags")
+        col.prop(context.material.wow_wmo_material, "flags")
 
-        layout.prop(context.material.WowMaterial, "EmissiveColor")
-        layout.prop(context.material.WowMaterial, "DiffColor")
-        layout.enabled = context.material.WowMaterial.Enabled
+        layout.prop(context.material.wow_wmo_material, "emissive_color")
+        layout.prop(context.material.wow_wmo_material, "diff_color")
+        layout.enabled = context.material.wow_wmo_material.enabled
 
     @classmethod
     def poll(cls, context):
         return (context.scene is not None
-                and context.scene.WowScene.Type == 'WMO'
+                and context.scene.wow_scene.type == 'WMO'
                 and context.material is not None
         )
 
 
 class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
 
-    Enabled = bpy.props.BoolProperty(
+    enabled = bpy.props.BoolProperty(
         name="",
         description="Enable WoW material properties"
         )
 
-    Flags = bpy.props.EnumProperty(
+    flags = bpy.props.EnumProperty(
         name="Material flags",
         description="WoW material flags",
         items=material_flag_enum,
         options={"ENUM_FLAG"}
         )
 
-    Shader = bpy.props.EnumProperty(
+    shader = bpy.props.EnumProperty(
         items=shader_enum,
         name="Shader",
         description="WoW shader assigned to this material"
         )
 
-    BlendingMode = bpy.props.EnumProperty(
+    blending_mode = bpy.props.EnumProperty(
         items=blending_enum,
         name="Blending",
         description="WoW material blending mode"
         )
 
-    Texture1 = bpy.props.StringProperty(
+    texture1 = bpy.props.StringProperty(
         name="Texture 1",
         description="Diffuse texture"
         )
 
-    EmissiveColor = bpy.props.FloatVectorProperty(
+    emissive_color = bpy.props.FloatVectorProperty(
         name="Emissive Color",
         subtype='COLOR',
         default=(1,1,1,1),
@@ -79,12 +78,12 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
         max=1.0
         )
 
-    Texture2 = bpy.props.StringProperty(
+    texture2 = bpy.props.StringProperty(
         name="Texture 2",
         description="Environment texture"
         )
 
-    DiffColor = bpy.props.FloatVectorProperty(
+    diff_color = bpy.props.FloatVectorProperty(
         name="Diffuse Color",
         subtype='COLOR',
         default=(1,1,1,1),
@@ -93,7 +92,7 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
         max=1.0
         )
 
-    TerrainType = bpy.props.EnumProperty(
+    terrain_type = bpy.props.EnumProperty(
         items=terrain_type_enum,
         name="Terrain Type",
         description="Terrain type assigned to this material. Used for producing correct footstep sounds."
@@ -101,8 +100,8 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Material.WowMaterial = bpy.props.PointerProperty(type=WowMaterialPropertyGroup)
+    bpy.types.Material.wow_wmo_material = bpy.props.PointerProperty(type=WowMaterialPropertyGroup)
 
 
 def unregister():
-    bpy.types.Material.WowMaterial = None
+    del bpy.types.Material.wow_wmo_material
