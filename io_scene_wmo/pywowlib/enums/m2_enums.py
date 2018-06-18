@@ -1,5 +1,7 @@
 from enum import IntEnum, Enum
 
+__reload_order_index__ = -1
+
 
 class M2GlobalFlags(IntEnum):
     TILT_X = 0x1

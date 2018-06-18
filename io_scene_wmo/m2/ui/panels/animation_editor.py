@@ -945,8 +945,7 @@ def update_animation(self, context):
         update_stash_to_nla(seq, bpy.context)
 
 
-def register_wow_m2_animation_editor_properties():
-
+def register():
     bpy.types.Scene.wow_m2_animations = bpy.props.CollectionProperty(
         type=WowM2AnimationEditorPropertyGroup,
         name="Animations",
@@ -960,14 +959,6 @@ def register_wow_m2_animation_editor_properties():
     )
 
 
-def unregister_wow_m2_animation_editor_properties():
+def unregister():
     del bpy.types.Scene.wow_m2_animations
     del bpy.types.Scene.wow_m2_cur_anim_index
-
-
-def register_animation_editor():
-    register_wow_m2_animation_editor_properties()
-
-
-def unregister_animation_editor():
-    unregister_wow_m2_animation_editor_properties()

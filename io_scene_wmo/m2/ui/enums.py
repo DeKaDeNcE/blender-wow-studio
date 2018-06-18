@@ -1,8 +1,8 @@
-import bpy
 from ...pywowlib.enums.m2_enums import *
 from ...utils import load_game_data
 from ... import ui_icons
 
+__reload_order_index__ = -1
 
 ###############################
 ## Enumerated constants

@@ -12,7 +12,9 @@ panels_list = [
     'colors',
     'light',
     'bone',
-    'transparency'
+    'transparency',
+    'animation_editor',
+    'creature_editor'
 ]
 
 

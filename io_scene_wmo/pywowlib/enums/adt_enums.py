@@ -1,5 +1,7 @@
 from enum import IntEnum
 
+__reload_order_index__ = -1
+
 
 class ADTChunkFlags(IntEnum):
     HAS_MCSH = 0x1

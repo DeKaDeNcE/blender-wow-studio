@@ -2,6 +2,8 @@ import bpy
 from bpy.app.handlers import persistent
 from .drivers import register_m2_driver_utils
 
+__reload_order_index__ = 0
+
 
 @persistent
 def live_update_materials(dummy):

@@ -1,5 +1,6 @@
 import bpy
 
+__reload_order_index__ = -1
 
 ###############################
 ## Camera Animation Driver Utils

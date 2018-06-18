@@ -461,17 +461,9 @@ class CreatureEditorLoadTextures(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def register_wow_m2_creature_editor_properties():
+def register():
     bpy.types.Scene.WowM2Creature = bpy.props.PointerProperty(type=WowM2CreaturePropertyGroup)
 
 
-def unregister_wow_m2_creature_editor_properties():
+def unregister():
     del bpy.types.Scene.WowM2Creature
-
-
-def register_creature_editor():
-    register_wow_m2_creature_editor_properties()
-
-
-def unregister_creature_editor():
-    unregister_wow_m2_creature_editor_properties()

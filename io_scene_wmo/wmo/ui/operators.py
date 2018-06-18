@@ -6,7 +6,8 @@ import math
 import os
 import struct
 
-from .panels import *
+from .enums import *
+from .panels.toolbar import switch_doodad_set, update_wow_visibility, get_doodad_sets
 from ...m2 import import_doodad as m2
 from ...ui import get_addon_prefs
 from ...utils import load_game_data
