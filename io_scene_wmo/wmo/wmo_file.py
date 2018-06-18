@@ -347,34 +347,34 @@ class WMOFile:
             bl_light_types = ['POINT', 'SPOT', 'SUN', 'POINT']
 
             try:
-                l_type = bl_light_types[l.LightType]
+                l_type = bl_light_types[l.light_type]
             except IndexError:
                 raise Exception("Light type unknown : {} (light nbr : {})".format(str(l.LightType), str(i)))
 
             light_name = self.display_name + "_Light_" + str(i).zfill(2)
             light = bpy.data.lamps.new(light_name, l_type)
-            light.color = (l.Color[2] / 255, l.Color[1] / 255, l.Color[0] / 255)
-            light.energy = l.Intensity
+            light.color = (l.color[2] / 255, l.color[1] / 255, l.color[0] / 255)
+            light.energy = l.intensity
 
-            if l.LightType in {0, 1}:
+            if l.light_type in {0, 1}:
                 light.falloff_type = 'INVERSE_LINEAR'
-                light.distance = l.Unknown4 / 2
+                light.distance = l.unknown4 / 2
                 light.use_sphere = True
 
             light.wow_wmo_light.enabled = True
-            light.wow_wmo_light.light_type = str(l.LightType)
-            light.wow_wmo_light.type = bool(l.Type)
-            light.wow_wmo_light.use_attenuation = bool(l.UseAttenuation)
-            light.wow_wmo_light.padding = bool(l.Padding)
-            light.wow_wmo_light.type = bool(l.Type)
+            light.wow_wmo_light.light_type = str(l.light_type)
+            light.wow_wmo_light.type = bool(l.type)
+            light.wow_wmo_light.use_attenuation = bool(l.use_attenuation)
+            light.wow_wmo_light.padding = bool(l.padding)
+            light.wow_wmo_light.type = bool(l.type)
             light.wow_wmo_light.color = light.color
-            light.wow_wmo_light.color_alpha = l.Color[3] / 255
-            light.wow_wmo_light.intensity = l.Intensity
-            light.wow_wmo_light.attenuation_start = l.AttenuationStart
-            light.wow_wmo_light.attenuation_end = l.AttenuationEnd
+            light.wow_wmo_light.color_alpha = l.color[3] / 255
+            light.wow_wmo_light.intensity = l.intensity
+            light.wow_wmo_light.attenuation_start = l.attenuation_start
+            light.wow_wmo_light.attenuation_end = l.attenuation_end
 
             obj = bpy.data.objects.new(light_name, light)
-            obj.location = self.molt.lights[i].Position
+            obj.location = self.molt.lights[i].position
 
             bpy.context.scene.objects.link(obj)
 
