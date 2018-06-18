@@ -989,15 +989,15 @@ class WMOGroupFile:
 
                     if vg_blendmap is not None:
                         for vertex_group_element in vertex.groups:
-                                    if vertex_group_element.group == vg_blendmap.index:
-                                        try:
-                                            weight = round(vertex.groups[vg_blendmap.index].weight * 255)
-                                        except IndexError:
-                                            weight = 1
-                                        self.mocv2.vertColors[new_index] = (0,
-                                                                            0,
-                                                                            0,
-                                                                            weight if weight > 0 else 0x00)
+                            if vertex_group_element.group == vg_blendmap.index:
+                                try:
+                                    weight = round(vertex.groups[vg_blendmap.index].weight * 255)
+                                except IndexError:
+                                    weight = 1
+                                self.mocv2.vertColors[new_index] = (0,
+                                                                    0,
+                                                                    0,
+                                                                    weight if weight > 0 else 0x00)
 
                         self.root.mohd.Flags |= 0x2
 
