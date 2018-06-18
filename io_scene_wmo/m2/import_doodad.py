@@ -249,8 +249,6 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
             Make sure to use compatible WMV version or open an .m2 there.""")
             return {'CANCELLED'}
 
-        obj = None
-
         if dir:
             try:
                 obj = m2_to_blender_mesh(addon_preferences.cache_dir_path, m2_path, game_data)

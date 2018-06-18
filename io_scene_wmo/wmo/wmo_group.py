@@ -992,7 +992,7 @@ class WMOGroupFile:
                                     if vertex_group_element.group == vg_blendmap.index:
                                         try:
                                             weight = round(vertex.groups[vg_blendmap.index].weight * 255)
-                                        except KeyError:
+                                        except IndexError:
                                             weight = 1
                                         self.mocv2.vertColors[new_index] = (0,
                                                                             0,
