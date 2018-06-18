@@ -45,7 +45,7 @@ def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_o
     print("\n\n### Importing WMO groups ###")
 
     for group in wmo.groups:
-        obj_name = wmo.mogn.get_string(group.mogp.GroupNameOfs)
+        obj_name = wmo.mogn.get_string(group.mogp.group_name_ofs)
         print("\nImporting group <<{}>>".format(obj_name))
         if not obj_name == 'antiportal':
             group.load_object(obj_name, import_doodads)

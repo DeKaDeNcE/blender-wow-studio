@@ -14,21 +14,21 @@ class WMOGroupFile:
         self.root = root
 
         self.mver = MVER_chunk()
-        self.mogp = MOGP_chunk()
-        self.mopy = MOPY_chunk()
-        self.movi = MOVI_chunk()
-        self.movt = MOVT_chunk()
-        self.monr = MONR_chunk()
-        self.motv = MOTV_chunk()
-        self.moba = MOBA_chunk()
-        self.molr = MOLR_chunk()
-        self.modr = MODR_chunk()
-        self.mobn = MOBN_chunk()
-        self.mobr = MOBR_chunk()
-        self.mocv = MOCV_chunk()
-        self.mliq = MLIQ_chunk()
-        self.motv2 = MOTV_chunk()
-        self.mocv2 = MOCV_chunk()
+        self.mogp = MOGP()
+        self.mopy = MOPY()
+        self.movi = MOVI()
+        self.movt = MOVT()
+        self.monr = MONR()
+        self.motv = MOTV()
+        self.moba = MOBA()
+        self.molr = MOLR()
+        self.modr = MODR()
+        self.mobn = MOBN()
+        self.mobr = MOBR()
+        self.mocv = MOCV()
+        self.mliq = MLIQ()
+        self.motv2 = MOTV()
+        self.mocv2 = MOCV()
 
     def read(self, f):
         """ Read WoW WMO group file """
@@ -42,28 +42,28 @@ class WMOGroupFile:
         self.motv.read(f)
         self.moba.read(f)
 
-        if self.mogp.Flags & MOGP_FLAG.HasLight:
+        if self.mogp.flags & MOGPFlags.HasLight:
             self.molr.read(f)
 
-        if self.mogp.Flags & MOGP_FLAG.HasDoodads:
+        if self.mogp.flags & MOGPFlags.HasDoodads:
             self.modr.read(f)
 
-        if self.mogp.Flags & MOGP_FLAG.HasCollision:
+        if self.mogp.flags & MOGPFlags.HasCollision:
             self.mobn.read(f)
             self.mobr.read(f)
 
-        if self.mogp.Flags & MOGP_FLAG.HasVertexColor:
+        if self.mogp.flags & MOGPFlags.HasVertexColor:
             self.mocv.read(f)
 
-        if self.mogp.Flags & MOGP_FLAG.HasWater:
-            if self.mogp.LiquidType in {3, 4, 7, 8, 11, 12}:
-                self.mliq.LiquidMaterial = False
+        if self.mogp.flags & MOGPFlags.HasWater:
+            if self.mogp.liquid_type in {3, 4, 7, 8, 11, 12}:
+                self.mliq.liquid_material = False
             self.mliq.read(f)
 
-        if self.mogp.Flags & MOGP_FLAG.HasTwoMOTV:
+        if self.mogp.flags & MOGPFlags.HasTwoMOTV:
             self.motv2.read(f)
 
-        if self.mogp.Flags & MOGP_FLAG.HasTwoMOCV:
+        if self.mogp.flags & MOGPFlags.HasTwoMOCV:
             self.mocv2.read(f)
 
     def write(self, f):
@@ -103,7 +103,7 @@ class WMOGroupFile:
 
         # get file size
         f.seek(0, 2)
-        self.mogp.Header.Size = f.tell() - 20
+        self.mogp.header.Size = f.tell() - 20
 
         # write header
         f.seek(0xC)
@@ -166,7 +166,7 @@ class WMOGroupFile:
 
         if basic_liquid_type < 20:
             if basic_liquid_type == 0:
-                real_liquid_type = 14 if self.mogp.Flags & 0x80000 else 13
+                real_liquid_type = 14 if self.mogp.flags & 0x80000 else 13
             elif basic_liquid_type == 1:
                 real_liquid_type = 14
             elif basic_liquid_type == 2:
@@ -186,20 +186,20 @@ class WMOGroupFile:
 
         # load vertices
         vertices = []
-        for y in range(0, self.mliq.yVerts):
-            y_pos = self.mliq.Position[1] + y * 4.1666625
-            for x in range(0 , self.mliq.xVerts):
-                x_pos = self.mliq.Position[0] + x * 4.1666625
-                vertices.append((x_pos, y_pos, self.mliq.VertexMap[y * self.mliq.xVerts + x].height[0]))
+        for y in range(0, self.mliq.y_verts):
+            y_pos = self.mliq.position[1] + y * 4.1666625
+            for x in range(0 , self.mliq.x_verts):
+                x_pos = self.mliq.position[0] + x * 4.1666625
+                vertices.append((x_pos, y_pos, self.mliq.vertex_map[y * self.mliq.x_verts + x].height[0]))
 
         # calculate faces
         indices = []
-        for y in range(self.mliq.yTiles):
-            for x in range(self.mliq.xTiles):
-                indices.append(y * self.mliq.xVerts + x)
-                indices.append(y * self.mliq.xVerts + x + 1)
-                indices.append((y + 1) * self.mliq.xVerts + x)
-                indices.append((y + 1) * self.mliq.xVerts + x + 1)
+        for y in range(self.mliq.y_tiles):
+            for x in range(self.mliq.x_tiles):
+                indices.append(y * self.mliq.x_verts + x)
+                indices.append(y * self.mliq.x_verts + x + 1)
+                indices.append((y + 1) * self.mliq.x_verts + x)
+                indices.append((y + 1) * self.mliq.x_verts + x + 1)
 
         faces = []
 
@@ -217,12 +217,12 @@ class WMOGroupFile:
         mesh.validate()
 
         # create uv map if liquid is lava
-        if self.mogp.LiquidType in {3, 4, 7, 8, 11, 12}:
+        if self.mogp.liquid_type in {3, 4, 7, 8, 11, 12}:
             uvMap = {}
 
             for vertex in mesh.vertices:
-                uvMap[vertex.index] = (self.mliq.VertexMap[vertex.index].u,
-                                       self.mliq.VertexMap[vertex.index].v)
+                uvMap[vertex.index] = (self.mliq.vertex_map[vertex.index].u,
+                                       self.mliq.vertex_map[vertex.index].v)
 
             uv1 = mesh.uv_textures.new("UVMap")
             uv_layer1 = mesh.uv_layers[0]
@@ -237,7 +237,7 @@ class WMOGroupFile:
         while bit <= 0x80:
             vc_layer = mesh.vertex_colors.new("flag_" + hex(bit))
             for poly in mesh.polygons:
-                tileFlag = self.mliq.TileFlags[poly.index]
+                tileFlag = self.mliq.tile_flags[poly.index]
                 for loop in poly.loop_indices:
                     if tileFlag & bit:
                         vc_layer.data[loop].color = (0, 0, 255)
@@ -264,11 +264,11 @@ class WMOGroupFile:
         real_liquid_type = 0
 
         if self.root.mohd.Flags & 0x4:
-            real_liquid_type = self.mogp.LiquidType
+            real_liquid_type = self.mogp.liquid_type
         else:
-            real_liquid_type = self.from_wmo_liquid_type(self.mogp.LiquidType)
+            real_liquid_type = self.from_wmo_liquid_type(self.mogp.liquid_type)
 
-        obj.wow_wmo_liquid.color = self.root.material_lookup[self.mliq.materialID].wow_wmo_material.diff_color
+        obj.wow_wmo_liquid.color = self.root.material_lookup[self.mliq.material_id].wow_wmo_material.diff_color
         obj.wow_wmo_liquid.liquid_type = str(real_liquid_type)
         try:
             obj.wow_wmo_liquid.wmo_group = bpy.context.scene.objects[group_name]
@@ -283,27 +283,27 @@ class WMOGroupFile:
         """ Get indices of a WMO BSP tree nodes """
         # last node in branch
         node_indices = []
-        if nodes[i_node].PlaneType & BSP_PLANE_TYPE.Leaf:
-            for i in range(nodes[i_node].FirstFace, nodes[i_node].FirstFace + nodes[i_node].NumFaces):
+        if nodes[i_node].plane_type & BSPPlaneType.Leaf:
+            for i in range(nodes[i_node].first_face, nodes[i_node].first_face + nodes[i_node].num_faces):
                 node_indices.append(faces[i])
 
-        if nodes[i_node].Children[0] != -1:
-            node_indices.extend(self.get_bsp_node_indices(nodes[i_node].Children[0], nodes, faces, indices))
+        if nodes[i_node].children[0] != -1:
+            node_indices.extend(self.get_bsp_node_indices(nodes[i_node].children[0], nodes, faces, indices))
 
-        if nodes[i_node].Children[1] != -1:
-            node_indices.extend(self.get_bsp_node_indices(nodes[i_node].Children[1], nodes, faces, indices))
+        if nodes[i_node].children[1] != -1:
+            node_indices.extend(self.get_bsp_node_indices(nodes[i_node].children[1], nodes, faces, indices))
 
         return node_indices
 
     def get_collision_indices(self):
         """ Get indices of a WMO BSP tree nodes that have collision """
-        node_indices = self.get_bsp_node_indices(0, self.mobn.Nodes, self.mobr.Faces, self.movi.Indices)
+        node_indices = self.get_bsp_node_indices(0, self.mobn.nodes, self.mobr.faces, self.movi.indices)
         indices = []
         for i in node_indices:
-            if not self.mopy.TriangleMaterials[i].Flags & 0x04:
-                indices.append(self.movi.Indices[i * 3])
-                indices.append(self.movi.Indices[i * 3 + 1])
-                indices.append(self.movi.Indices[i * 3 + 2])
+            if not self.mopy.triangle_materials[i].flags & 0x04:
+                indices.append(self.movi.indices[i * 3])
+                indices.append(self.movi.indices[i * 3 + 1])
+                indices.append(self.movi.indices[i * 3 + 2])
 
         return indices
 
@@ -311,10 +311,10 @@ class WMOGroupFile:
     def load_object(self, obj_name, editable_doodads):
         """ Load WoW WMO group as an object to the Blender scene """
 
-        vertices = self.movt.Vertices
-        normals = self.monr.Normals
-        tex_coords = self.motv.TexCoords
-        faces = [self.movi.Indices[i:i+3] for i in range(0, len(self.movi.Indices), 3)]
+        vertices = self.movt.vertices
+        normals = self.monr.normals
+        tex_coords = self.motv.tex_coords
+        faces = [self.movi.indices[i:i + 3] for i in range(0, len(self.movi.indices), 3)]
 
         # create mesh
         mesh = bpy.data.meshes.new(obj_name)
@@ -345,7 +345,7 @@ class WMOGroupFile:
         mesh.normals_split_custom_set(custom_normals)
 
         # set vertex color
-        if self.mogp.Flags & MOGP_FLAG.HasVertexColor:
+        if self.mogp.flags & MOGPFlags.HasVertexColor:
             flag_set = nobj.wow_wmo_group.flags
             flag_set.add('0')
             nobj.wow_wmo_group.flags = flag_set
@@ -353,25 +353,25 @@ class WMOGroupFile:
 
             lightmap = nobj.vertex_groups.new("Lightmap")
             nobj.wow_wmo_vertex_info.lightmap = lightmap.name
-            lightmap.add(self.movi.Indices, 1.0, 'ADD')
+            lightmap.add(self.movi.indices, 1.0, 'ADD')
 
             # loops and vertex_color are in the same order, so we use it to find vertex index
             for i in range(len(mesh.loops)):
 
-                vert_color_layer1.data[i].color = (self.mocv.vertColors[mesh.loops[i].vertex_index][2] / 255,
-                                                  self.mocv.vertColors[mesh.loops[i].vertex_index][1] / 255,
-                                                  self.mocv.vertColors[mesh.loops[i].vertex_index][0] / 255)
+                vert_color_layer1.data[i].color = (self.mocv.vert_colors[mesh.loops[i].vertex_index][2] / 255,
+                                                   self.mocv.vert_colors[mesh.loops[i].vertex_index][1] / 255,
+                                                   self.mocv.vert_colors[mesh.loops[i].vertex_index][0] / 255)
 
                 mesh.vertices[mesh.loops[i].vertex_index].groups[lightmap.index].weight \
-                = self.mocv.vertColors[mesh.loops[i].vertex_index][3] / 255
+                = self.mocv.vert_colors[mesh.loops[i].vertex_index][3] / 255
 
-        if self.mogp.Flags & MOGP_FLAG.HasTwoMOCV:
+        if self.mogp.flags & MOGPFlags.HasTwoMOCV:
             blendmap = nobj.vertex_groups.new("Blendmap")
             nobj.wow_wmo_vertex_info.blendmap = blendmap.name
-            blendmap.add(self.movi.Indices, 1.0, 'ADD')
+            blendmap.add(self.movi.indices, 1.0, 'ADD')
 
             for vertex in mesh.vertices:
-                vertex.groups[blendmap.index].weight = self.mocv2.vertColors[vertex.index][3] / 255
+                vertex.groups[blendmap.index].weight = self.mocv2.vert_colors[vertex.index][3] / 255
 
         # set uv
         uv1 = mesh.uv_textures.new("UVMap")
@@ -380,13 +380,13 @@ class WMOGroupFile:
             uv = tex_coords[mesh.loops[i].vertex_index]
             uv_layer1.data[i].uv = (uv[0], 1 - uv[1])
 
-        if self.mogp.Flags & MOGP_FLAG.HasTwoMOTV:
+        if self.mogp.flags & MOGPFlags.HasTwoMOTV:
             uv2 = mesh.uv_textures.new("UVMap_2")
             nobj.wow_wmo_vertex_info.second_uv = uv2.name
             uv_layer2 = mesh.uv_layers[1]
 
             for j in range(len(uv_layer2.data)):
-                uv = self.motv2.TexCoords[mesh.loops[j].vertex_index]
+                uv = self.motv2.tex_coords[mesh.loops[j].vertex_index]
                 uv_layer2.data[j].uv = (uv[0], 1 - uv[1])
 
         # map root material ID to index in mesh materials
@@ -398,24 +398,24 @@ class WMOGroupFile:
         batch_map_a = None
         batch_map_b = None
 
-        if self.mogp.nBatchesA != 0:
+        if self.mogp.n_batches_a != 0:
             batch_map_a = nobj.vertex_groups.new("BatchMapA")
             nobj.wow_wmo_vertex_info.batch_type_a = batch_map_a.name
-        if self.mogp.nBatchesB != 0:
+        if self.mogp.n_batches_b != 0:
             batch_map_b = nobj.vertex_groups.new("BatchMapB")
             nobj.wow_wmo_vertex_info.batch_type_b = batch_map_b.name
 
         batch_material_map = {}
 
         # add materials
-        for i in range(len(self.moba.Batches)):
+        for i in range(len(self.moba.batches)):
 
-            material = mesh.materials.get(self.root.material_lookup[self.moba.Batches[i].MaterialID].name)
+            material = mesh.materials.get(self.root.material_lookup[self.moba.batches[i].material_id].name)
 
             if not material:
                 mat_id = len(mesh.materials)
-                material_indices[self.moba.Batches[i].MaterialID] = mat_id
-                material = self.root.material_lookup[self.moba.Batches[i].MaterialID]
+                material_indices[self.moba.batches[i].material_id] = mat_id
+                material = self.root.material_lookup[self.moba.batches[i].material_id]
 
                 image = self.get_material_viewport_image(material)
                 material_viewport_textures[mat_id] = image
@@ -426,23 +426,23 @@ class WMOGroupFile:
                     texture_slot = material.texture_slots.add()
                     texture_slot.texture = texture
 
-                mesh.materials.append(self.root.material_lookup[self.moba.Batches[i].MaterialID])
+                mesh.materials.append(self.root.material_lookup[self.moba.batches[i].material_id])
 
                 material.wow_wmo_material.enabled = True
 
-            if i < self.mogp.nBatchesA:
-                batch_map_a.add(self.movi.Indices[self.moba.Batches[i].StartTriangle
-                              : self.moba.Batches[i].StartTriangle + self.moba.Batches[i].nTriangle], 1.0, 'ADD')
+            if i < self.mogp.n_batches_a:
+                batch_map_a.add(self.movi.indices[self.moba.batches[i].start_triangle
+                                                  : self.moba.batches[i].start_triangle + self.moba.batches[i].n_triangles], 1.0, 'ADD')
 
-            elif i < self.mogp.nBatchesA + self.mogp.nBatchesB:
-                batch_map_b.add(self.movi.Indices[self.moba.Batches[i].StartTriangle
-                              : self.moba.Batches[i].StartTriangle + self.moba.Batches[i].nTriangle], 1.0, 'ADD')
+            elif i < self.mogp.n_batches_a + self.mogp.n_batches_b:
+                batch_map_b.add(self.movi.indices[self.moba.batches[i].start_triangle
+                                                  : self.moba.batches[i].start_triangle + self.moba.batches[i].n_triangles], 1.0, 'ADD')
 
-            batch_material_map[(self.moba.Batches[i].StartTriangle // 3, (self.moba.Batches[i].StartTriangle + self.moba.Batches[i].nTriangle) // 3)] = self.moba.Batches[i].MaterialID
+            batch_material_map[(self.moba.batches[i].start_triangle // 3, (self.moba.batches[i].start_triangle + self.moba.batches[i].n_triangles) // 3)] = self.moba.batches[i].material_id
 
         # add ghost material
-        for i in self.mopy.TriangleMaterials:
-            if i.MaterialID == 0xFF:
+        for i in self.mopy.triangle_materials:
+            if i.material_id == 0xFF:
                 mat_ghost__id = len(mesh.materials)
                 mesh.materials.append(self.root.material_lookup[0xFF])
                 material_viewport_textures[mat_ghost__id] = None
@@ -451,7 +451,7 @@ class WMOGroupFile:
 
         # set faces material
         for i in range(len(mesh.polygons)):
-            mat_id = self.mopy.TriangleMaterials[i].MaterialID
+            mat_id = self.mopy.triangle_materials[i].material_id
 
             mesh.polygons[i].material_index = material_indices[mat_id]
 
@@ -487,16 +487,16 @@ class WMOGroupFile:
 
         # add WMO group properties
         nobj.wow_wmo_group.enabled = True
-        nobj.wow_wmo_group.description = self.root.mogn.get_string(self.mogp.DescGroupNameOfs)
-        nobj.wow_wmo_group.group_dbc_id = int(self.mogp.GroupID)
+        nobj.wow_wmo_group.description = self.root.mogn.get_string(self.mogp.desc_group_name_ofs)
+        nobj.wow_wmo_group.group_dbc_id = int(self.mogp.group_id)
 
         objects = bpy.context.scene.objects
-        nobj.wow_wmo_group.fog1 = objects[self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[0]).zfill(2)]
-        nobj.wow_wmo_group.fog2 = objects[self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[1]).zfill(2)]
-        nobj.wow_wmo_group.fog3 = objects[self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[2]).zfill(2)]
-        nobj.wow_wmo_group.fog4 = objects[self.root.display_name + "_Fog_" + str(self.mogp.FogIndices[3]).zfill(2)]
+        nobj.wow_wmo_group.fog1 = objects[self.root.display_name + "_Fog_" + str(self.mogp.fog_indices[0]).zfill(2)]
+        nobj.wow_wmo_group.fog2 = objects[self.root.display_name + "_Fog_" + str(self.mogp.fog_indices[1]).zfill(2)]
+        nobj.wow_wmo_group.fog3 = objects[self.root.display_name + "_Fog_" + str(self.mogp.fog_indices[2]).zfill(2)]
+        nobj.wow_wmo_group.fog4 = objects[self.root.display_name + "_Fog_" + str(self.mogp.fog_indices[3]).zfill(2)]
 
-        if self.mogp.Flags & MOGP_FLAG.HasWater:
+        if self.mogp.flags & MOGPFlags.HasWater:
             self.load_liquids(nobj.name, nobj.location)
 
         else:
@@ -504,36 +504,36 @@ class WMOGroupFile:
             real_liquid_type = 0
 
             if self.root.mohd.Flags & 0x4:
-                real_liquid_type = self.mogp.LiquidType
+                real_liquid_type = self.mogp.liquid_type
             else:
-                real_liquid_type = self.from_wmo_liquid_type(self.mogp.LiquidType)
+                real_liquid_type = self.from_wmo_liquid_type(self.mogp.liquid_type)
                 real_liquid_type = 0 if real_liquid_type == 17 else real_liquid_type
 
             nobj.wow_wmo_group.liquid_type = str(real_liquid_type)
 
-        if not editable_doodads and self.mogp.Flags & MOGP_FLAG.HasDoodads:
-            if self.modr.DoodadRefs:
-                for i in range(len(self.modr.DoodadRefs)):
+        if not editable_doodads and self.mogp.flags & MOGPFlags.HasDoodads:
+            if self.modr.doodad_refs:
+                for i in range(len(self.modr.doodad_refs)):
                     doodad = nobj.wow_wmo_group.modr.add()
-                    doodad.value = self.modr.DoodadRefs[i]
+                    doodad.value = self.modr.doodad_refs[i]
 
-        if self.mogp.Flags & MOGP_FLAG.Indoor:
+        if self.mogp.flags & MOGPFlags.Indoor:
             nobj.wow_wmo_group.place_type = str(0x2000)
         else:
             nobj.wow_wmo_group.place_type = str(0x8)
 
         flag_set = nobj.wow_wmo_group.flags
 
-        if self.mogp.Flags & MOGP_FLAG.DoNotUseLocalLighting:
+        if self.mogp.flags & MOGPFlags.DoNotUseLocalLighting:
             flag_set.add('1')
 
-        if self.mogp.Flags & MOGP_FLAG.AlwaysDraw:
+        if self.mogp.flags & MOGPFlags.AlwaysDraw:
             flag_set.add('2')
 
-        if self.mogp.Flags & MOGP_FLAG.IsMountAllowed:
+        if self.mogp.flags & MOGPFlags.IsMountAllowed:
             flag_set.add('3')
 
-        if self.mogp.Flags & MOGP_FLAG.HasSkybox:
+        if self.mogp.flags & MOGPFlags.HasSkybox:
             flag_set.add('4')
 
         nobj.wow_wmo_group.flags = flag_set
@@ -675,14 +675,14 @@ class WMOGroupFile:
                 start_vertex = vertex.index
                 sum = cur_sum
 
-        self.mliq.xTiles = round(ob.dimensions[0] / 4.1666625)
-        self.mliq.yTiles = round(ob.dimensions[1] / 4.1666625)
-        self.mliq.xVerts = self.mliq.xTiles + 1
-        self.mliq.yVerts = self.mliq.yTiles + 1
-        self.mliq.Position = mesh.vertices[start_vertex].co
+        self.mliq.x_tiles = round(ob.dimensions[0] / 4.1666625)
+        self.mliq.y_tiles = round(ob.dimensions[1] / 4.1666625)
+        self.mliq.x_verts = self.mliq.x_tiles + 1
+        self.mliq.y_verts = self.mliq.y_tiles + 1
+        self.mliq.position = mesh.vertices[start_vertex].co
 
-        self.mogp.Flags |= 0x1000 # do we really need that?
-        self.mogp.LiquidType = int(ob.wow_wmo_liquid.liquid_type)
+        self.mogp.flags |= 0x1000 # do we really need that?
+        self.mogp.liquid_type = int(ob.wow_wmo_liquid.liquid_type)
 
         # creating liquid material
 
@@ -695,15 +695,15 @@ class WMOGroupFile:
 
         material.wow_wmo_material.texture1 = "DUNGEONS\\TEXTURES\\STORMWIND\\GRAY12.BLP"
 
-        if self.mogp.LiquidType in types_1:
+        if self.mogp.liquid_type in types_1:
             material.wow_wmo_material.texture1 = "DUNGEONS\\TEXTURES\\METAL\\BM_BRSPIRE_CATWALK01.BLP"
 
-        elif self.mogp.LiquidType in types_2:
+        elif self.mogp.liquid_type in types_2:
             material.wow_wmo_material.texture1 = "DUNGEONS\\TEXTURES\\FLOOR\\JLO_UNDEADZIGG_SLIMEFLOOR.BLP"
 
-        self.mliq.materialID = self.root.add_material(material)
+        self.mliq.material_id = self.root.add_material(material)
 
-        if self.mogp.LiquidType in types_1 or self.mogp.LiquidType in types_2:
+        if self.mogp.liquid_type in types_1 or self.mogp.liquid_type in types_2:
 
             if mesh.uv_layers.active:
 
@@ -714,24 +714,24 @@ class WMOGroupFile:
                         if mesh.loops[loop_index].vertex_index not in uv_map:
                             uv_map[mesh.loops[loop_index].vertex_index] = mesh.uv_layers.active.data[loop_index].uv
 
-                for i in range(self.mliq.xVerts * self.mliq.yVerts):
+                for i in range(self.mliq.x_verts * self.mliq.y_verts):
                     vertex = MagmaVertex()
 
                     vertex.u = int(uv_map.get(mesh.vertices[i].index)[0])
                     vertex.v = int(uv_map.get(mesh.vertices[i].index)[1])
 
                     vertex.height = mesh.vertices[i].co[2]
-                    self.mliq.VertexMap.append(vertex)
+                    self.mliq.vertex_map.append(vertex)
             else:
                 raise Exception("\nSlime and magma (lava) liquids require a UV map to be created.")
 
         else:
 
-            for j in range(self.mliq.xVerts * self.mliq.yVerts):
+            for j in range(self.mliq.x_verts * self.mliq.y_verts):
                 vertex = WaterVertex()
 
                 vertex.height = mesh.vertices[j].co[2]
-                self.mliq.VertexMap.append(vertex)
+                self.mliq.vertex_map.append(vertex)
 
         for poly in mesh.polygons:
                 tile_flag = 0
@@ -745,7 +745,7 @@ class WMOGroupFile:
                         tile_flag |= bit
                     bit <<= 1
 
-                self.mliq.TileFlags.append(tile_flag)
+                self.mliq.tile_flags.append(tile_flag)
 
     def save(self, original_obj, obj, autofill_textures):
         """ Save WoW WMO group data for future export """
@@ -868,12 +868,12 @@ class WMOGroupFile:
 
         if obj.wow_wmo_vertex_info.blendmap != "":
             vg_blendmap = obj.vertex_groups.get(obj.wow_wmo_vertex_info.blendmap)
-            self.mogp.Flags |= MOGP_FLAG.HasTwoMOCV
+            self.mogp.flags |= MOGPFlags.HasTwoMOCV
             self.root.mohd.Flags |= 0x1
 
         if obj.wow_wmo_vertex_info.second_uv != "":
             uv_second_uv = obj.data.uv_textures.get(obj.wow_wmo_vertex_info.second_uv)
-            self.mogp.Flags |= MOGP_FLAG.HasTwoMOTV
+            self.mogp.flags |= MOGPFlags.HasTwoMOTV
 
         for poly in mesh.polygons:
             poly_batch_map.setdefault((material_indices.get(poly.material_index),
@@ -896,10 +896,10 @@ class WMOGroupFile:
                     n_batches_c += 1
 
         # resize chunk containers
-        self.moba.Batches = (n_batches_a + n_batches_b + n_batches_c) * [Batch()]
-        self.movt.Vertices = vertex_size * [(0, 0, 0)]
-        self.monr.Normals = vertex_size * [(0, 0, 0)]
-        self.motv.TexCoords = vertex_size * [(0, 0)]
+        self.moba.batches = (n_batches_a + n_batches_b + n_batches_c) * [Batch()]
+        self.movt.vertices = vertex_size * [(0, 0, 0)]
+        self.monr.normals = vertex_size * [(0, 0, 0)]
+        self.motv.tex_coords = vertex_size * [(0, 0)]
         self.motv2.TexCoords = vertex_size * [(0, 0)]
         self.mocv.vertColors = vertex_size * [(0x7F, 0x7F, 0x7F, 0x00)]
         self.mocv2.vertColors = vertex_size * [(0x7F, 0x7F, 0x7F, 0x00)]
@@ -916,7 +916,7 @@ class WMOGroupFile:
 
         for batch_key, poly_batch in poly_batch_map.items():
 
-            first_index = len(self.movi.Indices)
+            first_index = len(self.movi.indices)
 
             sentry_indices = [0xFFFF, 0x00]
 
@@ -931,12 +931,12 @@ class WMOGroupFile:
                         vertex_map[vertex_index] = new_index_last
                         new_index_current = new_index_last
                         new_index_last += 1
-                        self.movt.Vertices[new_index_current] = tuple(mesh.vertices[vertex_index].co)
+                        self.movt.vertices[new_index_current] = tuple(mesh.vertices[vertex_index].co)
 
                     sentry_indices[0] = min(sentry_indices[0], new_index_current)
                     sentry_indices[1] = max(sentry_indices[1], new_index_current)
 
-                    self.movi.Indices.append(new_index_current)
+                    self.movi.indices.append(new_index_current)
 
                     if vg_collision is not None:
                         for group_info in mesh.vertices[vertex_index].groups:
@@ -944,9 +944,9 @@ class WMOGroupFile:
                                 collision_counter += 1
 
                 tri_mat = TriangleMaterial()
-                tri_mat.MaterialID = batch_key[0]
-                tri_mat.Flags = 0x8 if tri_mat.MaterialID == 0xFF else 0x20
-                tri_mat.Flags |= 0x40 if collision_counter == len(mesh.polygons[poly].vertices) else 0x4 | 0x8
+                tri_mat.material_id = batch_key[0]
+                tri_mat.flags = 0x8 if tri_mat.material_id == 0xFF else 0x20
+                tri_mat.flags |= 0x40 if collision_counter == len(mesh.polygons[poly].vertices) else 0x4 | 0x8
 
                 for loop_index in mesh.polygons[poly].loop_indices:
 
@@ -954,8 +954,8 @@ class WMOGroupFile:
                     vertex = mesh.vertices[mesh.loops[loop_index].vertex_index]
 
                     if len(mesh.uv_layers) > 0:
-                        self.motv.TexCoords[new_index] = (mesh.uv_layers.active.data[loop_index].uv[0],
-                                                            1.0 - mesh.uv_layers.active.data[loop_index].uv[1])
+                        self.motv.tex_coords[new_index] = (mesh.uv_layers.active.data[loop_index].uv[0],
+                                                           1.0 - mesh.uv_layers.active.data[loop_index].uv[1])
 
                     if uv_second_uv:
                         self.motv2.TexCoords[new_index] = (mesh.uv_layers[uv_second_uv.name].data[loop_index].uv[0],
@@ -975,7 +975,7 @@ class WMOGroupFile:
                                         weight = round(vertex_group_element.weight * 255)
                                         vertex_color[3] = weight if weight > 0 else 0x00
                                         if weight > 0:
-                                            tri_mat.Flags |= 0x1
+                                            tri_mat.flags |= 0x1
 
                             self.mocv.vertColors[new_index] = vertex_color
 
@@ -1001,22 +1001,22 @@ class WMOGroupFile:
 
                     normal_map.setdefault(new_index, []).append(tuple(mesh.loops[loop_index].normal))
 
-                self.mopy.TriangleMaterials.append(tri_mat)
+                self.mopy.triangle_materials.append(tri_mat)
 
-            n_indices = len(self.movi.Indices) - first_index
+            n_indices = len(self.movi.indices) - first_index
 
             bounding_box = [32767, 32767, 32767, -32768, -32768, -32768]
 
             for poly in poly_batch:
                 for vertex_index in mesh.polygons[poly].vertices:
                     new_index = vertex_map.get(vertex_index)
-                    self.monr.Normals[new_index] = self.get_avg(normal_map.get(new_index))
+                    self.monr.normals[new_index] = self.get_avg(normal_map.get(new_index))
 
                     for i in range(0, 2):
                         for j in range(0, 3):
                             idx = i * 3 + j
-                            bounding_box[idx] = min(bounding_box[idx], floor(self.movt.Vertices[new_index][j])) \
-                                               if i == 0 else max(bounding_box[idx], ceil(self.movt.Vertices[new_index][j]))
+                            bounding_box[idx] = min(bounding_box[idx], floor(self.movt.vertices[new_index][j])) \
+                                               if i == 0 else max(bounding_box[idx], ceil(self.movt.vertices[new_index][j]))
 
             # skip batch writing if processed polyBatch is collision
             if batch_key[0] == 0xFF:
@@ -1025,49 +1025,49 @@ class WMOGroupFile:
             # write current batch
             batch = Batch()
 
-            batch.BoundingBox = bounding_box
+            batch.bounding_box = bounding_box
 
-            batch.StartTriangle = first_index
-            batch.nTriangle = n_indices
+            batch.start_triangle = first_index
+            batch.n_triangles = n_indices
 
-            batch.StartVertex = sentry_indices[0]
-            batch.LastVertex = sentry_indices[1]
+            batch.start_vertex = sentry_indices[0]
+            batch.last_vertex = sentry_indices[1]
 
-            batch.MaterialID = batch_key[0]
+            batch.material_id = batch_key[0]
 
             # sort and write batches
             if batch_key[1] == 0:
-                self.moba.Batches[batch_counter_a] = batch
+                self.moba.batches[batch_counter_a] = batch
                 batch_counter_a += 1
             elif batch_key[1] == 1:
-                self.moba.Batches[n_batches_a + batch_counter_b] = batch
+                self.moba.batches[n_batches_a + batch_counter_b] = batch
                 batch_counter_b += 1
             else:
-                self.moba.Batches[n_batches_a + n_batches_b + batch_counter_c] = batch
+                self.moba.batches[n_batches_a + n_batches_b + batch_counter_c] = batch
                 batch_counter_c += 1
 
         # write header
-        self.mogp.BoundingBoxCorner1 = [32767, 32767, 32767]
-        self.mogp.BoundingBoxCorner2 = [-32768, -32768, -32768]
+        self.mogp.bounding_box_corner1 = [32767, 32767, 32767]
+        self.mogp.bounding_box_corner2 = [-32768, -32768, -32768]
 
-        for vtx in self.movt.Vertices:
+        for vtx in self.movt.vertices:
             for i in range(0, 3):
-                self.mogp.BoundingBoxCorner1[i] = min(self.mogp.BoundingBoxCorner1[i], floor(vtx[i]))
-                self.mogp.BoundingBoxCorner2[i] = max(self.mogp.BoundingBoxCorner2[i], ceil(vtx[i]))
+                self.mogp.bounding_box_corner1[i] = min(self.mogp.bounding_box_corner1[i], floor(vtx[i]))
+                self.mogp.bounding_box_corner2[i] = max(self.mogp.bounding_box_corner2[i], ceil(vtx[i]))
 
-        self.mogp.Flags |= MOGP_FLAG.HasCollision # /!\ MUST HAVE 0x1 FLAG ELSE THE GAME CRASH !
+        self.mogp.flags |= MOGPFlags.HasCollision # /!\ MUST HAVE 0x1 FLAG ELSE THE GAME CRASH !
         if '0' in obj.wow_wmo_group.flags:
-            self.mogp.Flags |= MOGP_FLAG.HasVertexColor
+            self.mogp.flags |= MOGPFlags.HasVertexColor
         if '4' in obj.wow_wmo_group.flags:
-            self.mogp.Flags |= MOGP_FLAG.HasSkybox
+            self.mogp.flags |= MOGPFlags.HasSkybox
         if '1' in obj.wow_wmo_group.flags:
-            self.mogp.Flags |= MOGP_FLAG.DoNotUseLocalLighting
+            self.mogp.flags |= MOGPFlags.DoNotUseLocalLighting
         if '2' in obj.wow_wmo_group.flags:
-            self.mogp.Flags |= MOGP_FLAG.AlwaysDraw
+            self.mogp.flags |= MOGPFlags.AlwaysDraw
         if '3' in obj.wow_wmo_group.flags:
-            self.mogp.Flags |= MOGP_FLAG.IsMountAllowed
+            self.mogp.flags |= MOGPFlags.IsMountAllowed
 
-        self.mogp.Flags |= int(obj.wow_wmo_group.place_type)
+        self.mogp.flags |= int(obj.wow_wmo_group.place_type)
 
         has_lights = False
 
@@ -1079,48 +1079,48 @@ class WMOGroupFile:
         lamps = obj.wow_wmo_group.relations.lights
 
         # set fog references
-        self.mogp.FogIndices = (fogs[0].wow_wmo_fog.fog_id if fogs[0] else 0,
-                                fogs[1].wow_wmo_fog.fog_id if fogs[0] else 0,
-                                fogs[2].wow_wmo_fog.fog_id if fogs[0] else 0,
-                                fogs[3].wow_wmo_fog.fog_id if fogs[0] else 0)
+        self.mogp.fog_indices = (fogs[0].wow_wmo_fog.fog_id if fogs[0] else 0,
+                                 fogs[1].wow_wmo_fog.fog_id if fogs[0] else 0,
+                                 fogs[2].wow_wmo_fog.fog_id if fogs[0] else 0,
+                                 fogs[3].wow_wmo_fog.fog_id if fogs[0] else 0)
         # save lamps
         if lamps:
             has_lights = True
             for lamp in lamps:
                 self.molr.LightRefs.append(lamp.id)
 
-        self.mogp.nBatchesA = n_batches_a
-        self.mogp.nBatchesB = n_batches_b
-        self.mogp.nBatchesC = n_batches_c
-        self.mogp.nBatchesD = 0
-        self.mogp.GroupID = int(obj.wow_wmo_group.group_dbc_id)
-        self.mogp.Unknown1 = 0
-        self.mogp.Unknown2 = 0
+        self.mogp.n_batches_a = n_batches_a
+        self.mogp.n_batches_b = n_batches_b
+        self.mogp.n_batches_c = n_batches_c
+        self.mogp.n_batches_d = 0
+        self.mogp.group_id = int(obj.wow_wmo_group.group_dbc_id)
+        self.mogp.unknown1 = 0
+        self.mogp.unknown2 = 0
 
-        group_info = self.root.add_group_info(self.mogp.Flags,
-                                             [self.mogp.BoundingBoxCorner1, self.mogp.BoundingBoxCorner2],
-                                             original_obj.name,
-                                             obj.wow_wmo_group.description)
+        group_info = self.root.add_group_info(self.mogp.flags,
+                                              [self.mogp.bounding_box_corner1, self.mogp.bounding_box_corner2],
+                                              original_obj.name,
+                                              obj.wow_wmo_group.description)
 
-        self.mogp.GroupNameOfs = group_info[0]
-        self.mogp.DescGroupNameOfs = group_info[1]
+        self.mogp.group_name_ofs = group_info[0]
+        self.mogp.desc_group_name_ofs = group_info[1]
 
         if len(obj.wow_wmo_group.modr):
             for doodad in obj.wow_wmo_group.modr:
                 self.modr.DoodadRefs.append(doodad.value)
-            self.mogp.Flags |= MOGP_FLAG.HasDoodads
+            self.mogp.flags |= MOGPFlags.HasDoodads
         elif obj.wow_wmo_group.relations.doodads:
             for doodad in obj.wow_wmo_group.relations.doodads:
                 self.modr.DoodadRefs.append(doodad.id)
-            self.mogp.Flags |= MOGP_FLAG.HasDoodads
+            self.mogp.flags |= MOGPFlags.HasDoodads
         else:
             self.modr = None
 
         bsp_tree = BSPTree()
-        bsp_tree.GenerateBSP(self.movt.Vertices, self.movi.Indices, obj.wow_wmo_vertex_info.node_size)
+        bsp_tree.GenerateBSP(self.movt.vertices, self.movi.indices, obj.wow_wmo_vertex_info.node_size)
 
-        self.mobn.Nodes = bsp_tree.Nodes
-        self.mobr.Faces = bsp_tree.Faces
+        self.mobn.nodes = bsp_tree.Nodes
+        self.mobr.faces = bsp_tree.Faces
 
         if '0' not in obj.wow_wmo_group.flags:
             if obj.wow_wmo_group.place_type == '8192':
@@ -1128,20 +1128,20 @@ class WMOGroupFile:
                 and not len(mesh.vertex_colors):
                     self.mocv = None
                 else:
-                    self.mogp.Flags |= MOGP_FLAG.HasVertexColor
+                    self.mogp.flags |= MOGPFlags.HasVertexColor
             else:
                 self.mocv = None
 
-        if not self.mogp.Flags & MOGP_FLAG.HasWater:
+        if not self.mogp.flags & MOGPFlags.HasWater:
             self.mliq = None
-            self.mogp.Flags |= MOGP_FLAG.IsNotOcean # check if this is necessary
+            self.mogp.flags |= MOGPFlags.IsNotOcean # check if this is necessary
             self.root.mohd.Flags |= 0x4
-            self.mogp.LiquidType = int(obj.wow_wmo_group.liquid_type)
+            self.mogp.liquid_type = int(obj.wow_wmo_group.liquid_type)
 
         if not has_lights:
             self.molr = None
         else:
-            self.mogp.Flags |= MOGP_FLAG.HasLight
+            self.mogp.flags |= MOGPFlags.HasLight
 
         # write second MOTV and MOCV
         if uv_second_uv is None:

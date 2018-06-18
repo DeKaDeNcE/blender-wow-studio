@@ -1,7 +1,7 @@
 import sys
 from mathutils import Vector
 
-from ..pywowlib.file_formats.wmo_format_group import BSP_Node, BSP_PLANE_TYPE
+from ..pywowlib.file_formats.wmo_format_group import BSPNode, BSPPlaneType
 from .collision import *
 
 
@@ -40,18 +40,18 @@ class BSPTree:
     # return index of add
     def add_node(self, box, faces_in_box, vertices, indices, max_face_count):
 
-        node = BSP_Node()
+        node = BSPNode()
 
         i_node = len(self.Nodes)
         self.Nodes.append(node)
 
         # part contain less than 30 polygons, lets end this, add final node
         if len(faces_in_box) <= max_face_count:
-            node.PlaneType = BSP_PLANE_TYPE.Leaf
-            node.Children = (-1, -1)
-            node.NumFaces = len(faces_in_box)
-            node.FirstFace = len(self.Faces)
-            node.Dist = 0
+            node.plane_type = BSPPlaneType.Leaf
+            node.children = (-1, -1)
+            node.num_faces = len(faces_in_box)
+            node.first_face = len(self.Faces)
+            node.dist = 0
 
             self.Faces.extend(faces_in_box)
             return i_node
@@ -63,13 +63,13 @@ class BSPTree:
 
         if box_size_x > box_size_y and box_size_x > box_size_z:
             # split on axis X (YZ plane)
-            plane_type = BSP_PLANE_TYPE.YZ_plane
+            plane_type = BSPPlaneType.YZ_plane
         elif box_size_y > box_size_x and box_size_y > box_size_z:
             # split on axis Y (XZ plane)
-            plane_type = BSP_PLANE_TYPE.XZ_plane
+            plane_type = BSPPlaneType.XZ_plane
         else:
             # split on axis Z (XY plane)
-            plane_type = BSP_PLANE_TYPE.XY_plane
+            plane_type = BSPPlaneType.XY_plane
 
         split_result = self.split_box(box, faces_in_box, vertices, indices, plane_type)
 
@@ -111,11 +111,11 @@ class BSPTree:
             i_child2 = self.add_node(child2_box, child2_faces, vertices, indices, max_face_count)
 
         # node = BSP_Node()
-        node.PlaneType = plane_type
-        node.Children = (i_child1, i_child2)
-        node.NumFaces = 0
-        node.FirstFace = 0
-        node.Dist = split_dist
+        node.plane_type = plane_type
+        node.children = (i_child1, i_child2)
+        node.num_faces = 0
+        node.first_face = 0
+        node.dist = split_dist
 
         return i_node
 

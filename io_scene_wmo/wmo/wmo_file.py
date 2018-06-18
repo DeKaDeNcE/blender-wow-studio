@@ -584,7 +584,7 @@ class WMOFile:
 
             for relation in self.mopr.Relationships:
                 if relation.PortalIndex == index:
-                    group_name = self.mogn.get_string(self.groups[relation.GroupIndex].mogp.GroupNameOfs)
+                    group_name = self.mogn.get_string(self.groups[relation.GroupIndex].mogp.group_name_ofs)
                     if first_relationship:
                         obj.wow_wmo_portal.first = bpy.context.scene.objects[group_name]
                         first_relationship = False
