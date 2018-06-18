@@ -25,24 +25,24 @@ class WMOFile:
         self.display_name = os.path.basename(os.path.splitext(filepath)[0])
         self.parent = None
 
-        self.mver = MVER_chunk()
-        self.mohd = MOHD_chunk()
-        self.motx = MOTX_chunk()
-        self.momt = MOMT_chunk()
-        self.mogn = MOGN_chunk()
-        self.mogi = MOGI_chunk()
-        self.mosb = MOSB_chunk()
-        self.mopv = MOPV_chunk()
-        self.mopt = MOPT_chunk()
-        self.mopr = MOPR_chunk()
-        self.movv = MOVV_chunk()
-        self.movb = MOVB_chunk()
-        self.molt = MOLT_chunk()
-        self.mods = MODS_chunk()
-        self.modn = MODN_chunk()
-        self.modd = MODD_chunk()
-        self.mfog = MFOG_chunk()
-        self.mcvp = MCVP_chunk()
+        self.mver = MVER()
+        self.mohd = MOHD()
+        self.motx = MOTX()
+        self.momt = MOMT()
+        self.mogn = MOGN()
+        self.mogi = MOGI()
+        self.mosb = MOSB()
+        self.mopv = MOPV()
+        self.mopt = MOPT()
+        self.mopr = MOPR()
+        self.movv = MOVV()
+        self.movb = MOVB()
+        self.molt = MOLT()
+        self.mods = MODS()
+        self.modn = MODN()
+        self.modd = MODD()
+        self.mfog = MFOG()
+        self.mcvp = MCVP()
 
     def read(self):
         """ Read WMO data from files into memory """
@@ -82,7 +82,7 @@ class WMOFile:
                 print("\nDone reading root file: <<" + os.path.basename(f.name) + ">>")
                 root_name = os.path.splitext(self.filepath)[0]
 
-                for i in range(self.mohd.nGroups):
+                for i in range(self.mohd.n_groups):
                     group_name = root_name + "_" + str(i).zfill(3) + ".wmo"
 
                     if not os.path.isfile(group_name):
@@ -169,42 +169,42 @@ class WMOFile:
                 self.material_lookup[mat] = 0xFF
                 return 0xFF
             else:
-                self.material_lookup[mat] = len(self.momt.Materials)
+                self.material_lookup[mat] = len(self.momt.materials)
 
-                WowMat = WMO_Material()
+                WowMat = WMOMaterial()
 
-                WowMat.Shader = int(mat.wow_wmo_material.shader)
-                WowMat.BlendMode = int(mat.wow_wmo_material.blending_mode)
-                WowMat.TerrainType = int(mat.wow_wmo_material.terrain_type)
+                WowMat.shader = int(mat.wow_wmo_material.shader)
+                WowMat.blend_mode = int(mat.wow_wmo_material.blending_mode)
+                WowMat.terrain_type = int(mat.wow_wmo_material.terrain_type)
 
                 if mat.wow_wmo_material.texture1 in self.texture_lookup:
-                    WowMat.Texture1Ofs = self.texture_lookup[mat.wow_wmo_material.texture1]
+                    WowMat.texture1_ofs = self.texture_lookup[mat.wow_wmo_material.texture1]
                 else:
                     self.texture_lookup[mat.wow_wmo_material.texture1] = self.motx.add_string(mat.wow_wmo_material.texture1)
-                    WowMat.Texture1Ofs = self.texture_lookup[mat.wow_wmo_material.texture1]
+                    WowMat.texture1_ofs = self.texture_lookup[mat.wow_wmo_material.texture1]
 
-                WowMat.EmissiveColor = (int(mat.wow_wmo_material.emissive_color[0] * 255),
-                                        int(mat.wow_wmo_material.emissive_color[1] * 255),
-                                        int(mat.wow_wmo_material.emissive_color[2] * 255),
-                                        int(mat.wow_wmo_material.emissive_color[3] * 255))
+                WowMat.emissive_color = (int(mat.wow_wmo_material.emissive_color[0] * 255),
+                                         int(mat.wow_wmo_material.emissive_color[1] * 255),
+                                         int(mat.wow_wmo_material.emissive_color[2] * 255),
+                                         int(mat.wow_wmo_material.emissive_color[3] * 255))
 
                 WowMat.TextureFlags1 = 0
 
                 if mat.wow_wmo_material.texture2 in self.texture_lookup:
-                    WowMat.Texture2Ofs = self.texture_lookup[mat.wow_wmo_material.texture2]
+                    WowMat.texture2_ofs = self.texture_lookup[mat.wow_wmo_material.texture2]
                 else:
                     self.texture_lookup[mat.wow_wmo_material.texture2] = self.motx.add_string(mat.wow_wmo_material.texture2)
-                    WowMat.Texture2Ofs = self.texture_lookup[mat.wow_wmo_material.texture2]
+                    WowMat.texture2_ofs = self.texture_lookup[mat.wow_wmo_material.texture2]
 
-                WowMat.DiffColor = (int(mat.wow_wmo_material.diff_color[0] * 255),
-                                    int(mat.wow_wmo_material.diff_color[1] * 255),
-                                    int(mat.wow_wmo_material.diff_color[2] * 255),
-                                    int(mat.wow_wmo_material.diff_color[3] * 255))
+                WowMat.diff_color = (int(mat.wow_wmo_material.diff_color[0] * 255),
+                                     int(mat.wow_wmo_material.diff_color[1] * 255),
+                                     int(mat.wow_wmo_material.diff_color[2] * 255),
+                                     int(mat.wow_wmo_material.diff_color[3] * 255))
 
                 for flag in mat.wow_wmo_material.flags:
-                    WowMat.Flags |= int(flag)
+                    WowMat.flags |= int(flag)
 
-                self.momt.Materials.append(WowMat)
+                self.momt.materials.append(WowMat)
 
                 return self.material_lookup[mat]
 
@@ -212,16 +212,16 @@ class WMOFile:
         """ Add group info, then return offset of name and desc in a tuple """
         group_info = GroupInfo()
 
-        group_info.Flags = flags  # 8
-        group_info.BoundingBoxCorner1 = bounding_box[0].copy()
-        group_info.BoundingBoxCorner2 = bounding_box[1].copy()
-        group_info.NameOfs = self.mogn.add_string(name)  # 0xFFFFFFFF
+        group_info.flags = flags  # 8
+        group_info.bounding_box_corner1 = bounding_box[0].copy()
+        group_info.bounding_box_corner2 = bounding_box[1].copy()
+        group_info.name_ofs = self.mogn.add_string(name)  # 0xFFFFFFFF
 
         desc_ofs = self.mogn.add_string(desc)
 
-        self.mogi.Infos.append(group_info)
+        self.mogi.infos.append(group_info)
 
-        return group_info.NameOfs, desc_ofs
+        return group_info.name_ofs, desc_ofs
 
     def load_materials(self):
         """ Load materials from WoW WMO root file """
@@ -244,26 +244,26 @@ class WMOFile:
 
         self.material_lookup[0xFF] = mat
 
-        for index, wmo_material in enumerate(self.momt.Materials):
-            texture1 = self.motx.get_string(wmo_material.Texture1Ofs)
+        for index, wmo_material in enumerate(self.momt.materials):
+            texture1 = self.motx.get_string(wmo_material.texture1_ofs)
             material_name = os.path.basename(texture1)[:-4] + '.png'
 
             mat = bpy.data.materials.new(material_name)
             self.material_lookup[index] = mat
 
             mat.wow_wmo_material.enabled = True
-            mat.wow_wmo_material.shader = str(wmo_material.Shader)
-            mat.wow_wmo_material.blending_mode = str(wmo_material.BlendMode)
+            mat.wow_wmo_material.shader = str(wmo_material.shader)
+            mat.wow_wmo_material.blending_mode = str(wmo_material.blend_mode)
             mat.wow_wmo_material.texture1 = texture1
-            mat.wow_wmo_material.emissive_color = [x / 255 for x in wmo_material.EmissiveColor[0:4]]
-            mat.wow_wmo_material.texture2 = self.motx.get_string(wmo_material.Texture2Ofs)
-            mat.wow_wmo_material.diff_color = [x / 255 for x in wmo_material.DiffColor[0:4]]
-            mat.wow_wmo_material.terrain_type = str(wmo_material.TerrainType)
+            mat.wow_wmo_material.emissive_color = [x / 255 for x in wmo_material.emissive_color[0:4]]
+            mat.wow_wmo_material.texture2 = self.motx.get_string(wmo_material.texture2_ofs)
+            mat.wow_wmo_material.diff_color = [x / 255 for x in wmo_material.diff_color[0:4]]
+            mat.wow_wmo_material.terrain_type = str(wmo_material.terrain_type)
 
             mat_flags = set()
             bit = 1
             while bit <= 0x80:
-                if wmo_material.Flags & bit:
+                if wmo_material.flags & bit:
                     mat_flags.add(str(bit))
                 bit <<= 1
             mat.wow_wmo_material.flags = mat_flags
@@ -341,8 +341,8 @@ class WMOFile:
 
     def load_lights(self):
         """ Load WoW WMO MOLT lights """
-        for i in range(len(self.molt.Lights)):
-            l = self.molt.Lights[i]
+        for i in range(len(self.molt.lights)):
+            l = self.molt.lights[i]
 
             bl_light_types = ['POINT', 'SPOT', 'SUN', 'POINT']
 
@@ -374,7 +374,7 @@ class WMOFile:
             light.wow_wmo_light.attenuation_end = l.AttenuationEnd
 
             obj = bpy.data.objects.new(light_name, light)
-            obj.location = self.molt.Lights[i].Position
+            obj.location = self.molt.lights[i].Position
 
             bpy.context.scene.objects.link(obj)
 
@@ -383,27 +383,27 @@ class WMOFile:
 
     def load_fogs(self):
         """ Load WoW WMO fog objects """
-        for i in range(len(self.mfog.Fogs)):
+        for i in range(len(self.mfog.fogs)):
 
-            f = self.mfog.Fogs[i]
+            f = self.mfog.fogs[i]
 
             bpy.ops.mesh.primitive_uv_sphere_add()
             fog = bpy.context.scene.objects.active
 
-            if not f.BigRadius:
+            if not f.big_radius:
                 fog.hide = False
 
             fog.name = self.display_name + "_Fog_" + str(i).zfill(2)
 
             # applying real object transformation
-            fog.location = f.Position
-            bpy.ops.transform.resize(value=(f.BigRadius, f.BigRadius, f.BigRadius)) # 0.5 is the default sphere radius
+            fog.location = f.position
+            bpy.ops.transform.resize(value=(f.big_radius, f.big_radius, f.big_radius))  # 0.5 is the default sphere radius
 
             bpy.ops.object.shade_smooth()
             fog.draw_type = 'SOLID'
             fog.show_transparent = True
             fog.show_name = True
-            fog.color = (f.Color1[2] / 255, f.Color1[1] / 255, f.Color1[0] / 255, 0.0)
+            fog.color = (f.color1[2] / 255, f.color1[1] / 255, f.color1[0] / 255, 0.0)
 
             mesh = fog.data
 
@@ -427,22 +427,22 @@ class WMOFile:
             # applying object properties
 
             fog.wow_wmo_fog.enabled = True
-            if f.Flags & 0x01:
+            if f.flags & 0x01:
                 fog.wow_wmo_fog.ignore_radius = True
-            if f.Flags & 0x10:
+            if f.flags & 0x10:
                 fog.wow_wmo_fog.unknown = True
 
-            if f.SmallRadius != 0:
-                fog.wow_wmo_fog.inner_radius = int(f.SmallRadius / f.BigRadius * 100)
+            if f.small_radius != 0:
+                fog.wow_wmo_fog.inner_radius = int(f.small_radius / f.big_radius * 100)
             else:
                 fog.wow_wmo_fog.inner_radius = 0
 
-            fog.wow_wmo_fog.end_dist = f.EndDist
-            fog.wow_wmo_fog.start_factor = f.StartFactor
-            fog.wow_wmo_fog.color1 = (f.Color1[2] / 255, f.Color1[1] / 255, f.Color1[0] / 255)
-            fog.wow_wmo_fog.end_dist2 = f.EndDist2
-            fog.wow_wmo_fog.start_factor2 = f.StartFactor2
-            fog.wow_wmo_fog.color2 = (f.Color2[2] / 255, f.Color2[1] / 255, f.Color2[0] / 255)
+            fog.wow_wmo_fog.end_dist = f.end_dist
+            fog.wow_wmo_fog.start_factor = f.start_factor
+            fog.wow_wmo_fog.color1 = (f.color1[2] / 255, f.color1[1] / 255, f.color1[0] / 255)
+            fog.wow_wmo_fog.end_dist2 = f.end_dist
+            fog.wow_wmo_fog.start_factor2 = f.start_factor2
+            fog.wow_wmo_fog.color2 = (f.color2[2] / 255, f.color2[1] / 255, f.color2[0] / 255)
 
             if self.parent:
                 fog.parent = self.parent
@@ -453,11 +453,11 @@ class WMOFile:
         if game_data and dir:
             obj_map = {}
 
-            for doodad_set in self.mods.Sets:
+            for doodad_set in self.mods.sets:
 
                 bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
                 anchor = bpy.context.scene.objects.active
-                anchor.name = doodad_set.Name
+                anchor.name = doodad_set.name
                 anchor.hide = True
                 anchor.hide_select = True
                 anchor.lock_location = (True, True, True)
@@ -468,10 +468,9 @@ class WMOFile:
                     anchor.parent = self.parent
 
                 for i in range(doodad_set.start_doodad, doodad_set.start_doodad + doodad_set.n_doodads):
-                    doodad = self.modd.Definitions[i]
-                    doodad_path = os.path.splitext(self.modn.get_string(doodad.NameOfs))[0] + ".m2"
+                    doodad = self.modd.definitions[i]
+                    doodad_path = os.path.splitext(self.modn.get_string(doodad.name_ofs))[0] + ".m2"
 
-                    nobj = None
                     obj = obj_map.get(doodad_path)
 
                     if not obj:
@@ -492,29 +491,29 @@ class WMOFile:
                         nobj = obj.copy()
                         scene.objects.link(nobj)
 
-                    nobj.wow_wmo_doodad.color = (doodad.Color[2] / 255,
-                                            doodad.Color[1] / 255,
-                                            doodad.Color[0] / 255,
-                                            doodad.Color[3] / 255)
+                    nobj.wow_wmo_doodad.color = (doodad.color[2] / 255,
+                                                 doodad.color[1] / 255,
+                                                 doodad.color[0] / 255,
+                                                 doodad.color[3] / 255)
 
                     flags = []
                     bit = 1
                     while bit <= 0x8:
-                        if doodad.Flags & bit:
+                        if doodad.flags & bit:
                             flags.append(str(bit))
                         bit <<= 1
 
                     nobj.wow_wmo_doodad.flags = set(flags)
 
                     # place the object correctly on the scene
-                    nobj.location = doodad.Position
-                    nobj.scale = (doodad.Scale, doodad.Scale, doodad.Scale)
+                    nobj.location = doodad.position
+                    nobj.scale = (doodad.scale, doodad.scale, doodad.scale)
 
                     nobj.rotation_mode = 'QUATERNION'
-                    nobj.rotation_quaternion = (doodad.Rotation[3],
-                                                doodad.Rotation[0],
-                                                doodad.Rotation[1],
-                                                doodad.Rotation[2])
+                    nobj.rotation_quaternion = (doodad.rotation[3],
+                                                doodad.rotation[0],
+                                                doodad.rotation[1],
+                                                doodad.rotation[2])
                     nobj.parent = anchor
                     nobj.hide = True
 
@@ -525,51 +524,51 @@ class WMOFile:
             scene.wow_wmo_root.modn_string_table.clear()
             scene.wow_wmo_root.modd_definitions.clear()
 
-            for doodad_set in self.mods.Sets:
+            for doodad_set in self.mods.sets:
                 property_set = scene.wow_wmo_root.mods_sets.add()
-                property_set.Name = doodad_set.Name
+                property_set.name = doodad_set.name
                 property_set.start_doodad = doodad_set.start_doodad
                 property_set.n_doodads = doodad_set.n_doodads
-                property_set.Padding = doodad_set.Padding
+                property_set.padding = doodad_set.padding
 
-            for doodad_definition in self.modd.Definitions:
+            for doodad_definition in self.modd.definitions:
                 property_definition = scene.wow_wmo_root.modd_definitions.add()
-                property_definition.NameOfs = doodad_definition.NameOfs
-                property_definition.Flags = doodad_definition.Flags
-                property_definition.Position = doodad_definition.Position
+                property_definition.name_ofs = doodad_definition.name_ofs
+                property_definition.flags = doodad_definition.flags
+                property_definition.position = doodad_definition.position
 
-                property_definition.Rotation = (doodad_definition.Rotation[0],
-                                                doodad_definition.Rotation[1],
-                                                doodad_definition.Rotation[2])
+                property_definition.rotation = (doodad_definition.rotation[0],
+                                                doodad_definition.rotation[1],
+                                                doodad_definition.rotation[2])
 
-                property_definition.Tilt = doodad_definition.Rotation[3]
-                property_definition.Scale = doodad_definition.Scale
+                property_definition.tilt = doodad_definition.rotation[3]
+                property_definition.scale = doodad_definition.scale
 
-                property_definition.Color = (doodad_definition.Color[0],
-                                             doodad_definition.Color[1],
-                                             doodad_definition.Color[2])
+                property_definition.color = (doodad_definition.color[0],
+                                             doodad_definition.color[1],
+                                             doodad_definition.color[2])
 
-                property_definition.ColorAlpha = doodad_definition.Color[3]
+                property_definition.color_alpha = doodad_definition.color[3]
 
-                if property_definition.NameOfs not in string_filter:
+                if property_definition.name_ofs not in string_filter:
                     path = scene.wow_wmo_root.modn_string_table.add()
-                    path.Ofs = property_definition.NameOfs
-                    path.String = self.modn.get_string(property_definition.NameOfs)
-                    string_filter.append(property_definition.NameOfs)
+                    path.ofs = property_definition.name_ofs
+                    path.string = self.modn.get_string(property_definition.name_ofs)
+                    string_filter.append(property_definition.name_ofs)
 
     def load_portals(self):
         """ Load WoW WMO portal planes """
         vert_count = 0
-        for index, portal in enumerate(self.mopt.Infos):
+        for index, portal in enumerate(self.mopt.infos):
             portal_name = self.display_name + "_Portal_" + str(index).zfill(3)
 
             verts = []
             face = []
             faces = []
 
-            for j in range(portal.nVertices):
+            for j in range(portal.n_vertices):
                 if len(face) < 4:
-                    verts.append(self.mopv.PortalVertices[vert_count])
+                    verts.append(self.mopv.portal_vertices[vert_count])
                     face.append(j)
                 vert_count += 1
 
@@ -582,9 +581,9 @@ class WMOFile:
             obj.wow_wmo_portal.enabled = True
             first_relationship = True
 
-            for relation in self.mopr.Relationships:
-                if relation.PortalIndex == index:
-                    group_name = self.mogn.get_string(self.groups[relation.GroupIndex].mogp.group_name_ofs)
+            for relation in self.mopr.relationships:
+                if relation.portal_index == index:
+                    group_name = self.mogn.get_string(self.groups[relation.group_index].mogp.group_name_ofs)
                     if first_relationship:
                         obj.wow_wmo_portal.first = bpy.context.scene.objects[group_name]
                         first_relationship = False
@@ -601,24 +600,25 @@ class WMOFile:
     def load_properties(self):
         """ Load global WoW WMO properties """
         properties = bpy.context.scene.wow_wmo_root
-        properties.ambient_color = [float(self.mohd.AmbientColor[2] / 255),
-                                    float(self.mohd.AmbientColor[1] / 255),
-                                    float(self.mohd.AmbientColor[0]) / 255,
-                                    float(self.mohd.AmbientColor[3]) / 255]
+        properties.ambient_color = [float(self.mohd.ambient_color[2] / 255),
+                                    float(self.mohd.ambient_color[1] / 255),
+                                    float(self.mohd.ambient_color[0]) / 255,
+                                    float(self.mohd.ambient_color[3]) / 255]
 
         flags = set()
-        if self.mohd.Flags & 0x1:
+        if self.mohd.flags & 0x1:
             flags.add("0")
-        if self.mohd.Flags & 0x2:
+        if self.mohd.flags & 0x2:
             flags.add("2")
-        if self.mohd.Flags & 0x8:
+        if self.mohd.flags & 0x8:
             flags.add("1")
 
         properties.flags = flags
-        properties.skybox_path = self.mosb.Skybox
-        properties.wmo_id = self.mohd.ID
+        properties.skybox_path = self.mosb.skybox
+        properties.wmo_id = self.mohd.id
 
-    def get_object_bounding_box(self, obj):
+    @staticmethod
+    def get_object_bounding_box(obj):
         """ Calculate bounding box of an object """
         corner1 = [0.0, 0.0, 0.0]
         corner2 = [0.0, 0.0, 0.0]
@@ -642,10 +642,10 @@ class WMOFile:
 
     def get_global_bounding_box(self):
         """ Calculate bounding box of an entire scene """
-        corner1 = self.mogi.Infos[0].BoundingBoxCorner1
-        corner2 = self.mogi.Infos[0].BoundingBoxCorner2
+        corner1 = self.mogi.infos[0].BoundingBoxCorner1
+        corner2 = self.mogi.infos[0].BoundingBoxCorner2
 
-        for gi in self.mogi.Infos:
+        for gi in self.mogi.infos:
             v = gi.BoundingBoxCorner1
             if v[0] < corner1[0]:
                 corner1[0] = v[0]
@@ -677,56 +677,56 @@ class WMOFile:
                 print("\nSaving doodadset: <<{}>>".format(set_name))
 
                 doodad_set = DoodadSet()
-                doodad_set.Name = set_name
-                doodad_set.start_doodad = len(self.modd.Definitions)
+                doodad_set.name = set_name
+                doodad_set.start_doodad = len(self.modd.definitions)
 
                 for doodad in doodads:
                     doodad_def = DoodadDefinition()
 
                     path = os.path.splitext(doodad.wow_wmo_doodad.path)[0] + ".MDX"
 
-                    doodad_def.NameOfs = doodad_paths.get(path)
-                    if not doodad_def.NameOfs:
-                        doodad_def.NameOfs = self.modn.AddString(path)
-                        doodad_paths[path] = doodad_def.NameOfs
+                    doodad_def.name_ofs = doodad_paths.get(path)
+                    if not doodad_def.name_ofs:
+                        doodad_def.name_ofs = self.modn.add_string(path)
+                        doodad_paths[path] = doodad_def.name_ofs
 
-                    doodad_def.Position = doodad.matrix_world * Vector((0, 0, 0))
+                    doodad_def.position = doodad.matrix_world * Vector((0, 0, 0))
 
                     doodad.rotation_mode = 'QUATERNION'
 
-                    doodad_def.Rotation = (doodad.rotation_quaternion[1],
+                    doodad_def.rotation = (doodad.rotation_quaternion[1],
                                            doodad.rotation_quaternion[2],
                                            doodad.rotation_quaternion[3],
                                            doodad.rotation_quaternion[0])
 
-                    doodad_def.Scale = doodad.scale[0]
+                    doodad_def.scale = doodad.scale[0]
 
-                    doodad_def.Color = (int(doodad.wow_wmo_doodad.color[2] * 255),
+                    doodad_def.color = (int(doodad.wow_wmo_doodad.color[2] * 255),
                                         int(doodad.wow_wmo_doodad.color[1] * 255),
                                         int(doodad.wow_wmo_doodad.color[0] * 255),
                                         int(doodad.wow_wmo_doodad.color[3] * 255))
 
                     for flag in doodad.wow_wmo_doodad.flags:
-                        doodad_def.Flags |= int(flag)
+                        doodad_def.flags |= int(flag)
 
-                    self.modd.Definitions.append(doodad_def)
+                    self.modd.definitions.append(doodad_def)
 
-                doodad_set.n_doodads = len(self.modd.Definitions) - doodad_set.start_doodad
+                doodad_set.n_doodads = len(self.modd.definitions) - doodad_set.start_doodad
 
                 if set_name == "Set_$DefaultGlobal":
-                    self.mods.Sets.insert(0, doodad_set)
+                    self.mods.sets.insert(0, doodad_set)
                     has_global = True
                 else:
-                    self.mods.Sets.append(doodad_set)
+                    self.mods.sets.append(doodad_set)
 
                     print("Done saving doodadset: <<{}>>".format(set_name))
 
             if not has_global:
                 doodad_set = DoodadSet()
-                doodad_set.Name = "Set_$DefaultGlobal"
+                doodad_set.name = "Set_$DefaultGlobal"
                 doodad_set.start_doodad = 0
                 doodad_set.n_doodads = 0
-                self.mods.Sets.insert(0, doodad_set)
+                self.mods.sets.insert(0, doodad_set)
 
         elif len(bpy.context.scene.wow_wmo_root.mods_sets):
             print("\nSaving preserved doodadset data")
@@ -735,38 +735,38 @@ class WMOFile:
 
             for property_set in scene.wow_wmo_root.mods_sets:
                 doodad_set = DoodadSet()
-                doodad_set.Name = property_set.name
+                doodad_set.name = property_set.name
                 doodad_set.StartDoodad = property_set.start_doodad
                 doodad_set.nDoodads = property_set.n_doodads
-                doodad_set.Padding = property_set.padding
+                doodad_set.padding = property_set.padding
 
-                self.mods.Sets.append(doodad_set)
+                self.mods.sets.append(doodad_set)
 
             for modn_string in scene.wow_wmo_root.modn_string_table:
-                ofs_map[modn_string.ofs] = self.modn.AddString(modn_string.string)
+                ofs_map[modn_string.ofs] = self.modn.add_string(modn_string.string)
 
             for property_def in scene.wow_wmo_root.modd_definitions:
                 doodad_def = DoodadDefinition()
-                doodad_def.NameOfs = ofs_map.get(property_def.name_ofs)
-                doodad_def.Flags = property_def.flags
-                doodad_def.Position = property_def.position
+                doodad_def.name_ofs = ofs_map.get(property_def.name_ofs)
+                doodad_def.flags = property_def.flags
+                doodad_def.position = property_def.position
 
-                doodad_def.Rotation = [property_def.rotation[0],
+                doodad_def.rotation = [property_def.rotation[0],
                                        property_def.rotation[1],
                                        property_def.rotation[2],
                                        0.0]
 
-                doodad_def.Rotation[3] = property_def.tilt
-                doodad_def.Scale = property_def.scale
+                doodad_def.rotation[3] = property_def.tilt
+                doodad_def.scale = property_def.scale
 
-                doodad_def.Color = [int(property_def.color[0]),
+                doodad_def.color = [int(property_def.color[0]),
                                     int(property_def.color[1]),
                                     int(property_def.color[2]),
                                     0]
 
-                doodad_def.Color[3] = int(property_def.color_alpha)
+                doodad_def.color[3] = int(property_def.color_alpha)
 
-                self.modd.Definitions.append(doodad_def)
+                self.modd.definitions.append(doodad_def)
 
         print("\nDone saving doodad sets. "
               "\nTotal saving time: ", time.strftime("%M minutes %S seconds", time.gmtime(time.time() - start_time)))
@@ -779,25 +779,25 @@ class WMOFile:
             mesh = obj.data
 
             light = Light()
-            light.LightType = int(mesh.wow_wmo_light.light_type)
+            light.light_type = int(mesh.wow_wmo_light.light_type)
 
-            if light.LightType in {0, 1}:
-                light.Unknown4 = mesh.distance * 2
+            if light.light_type in {0, 1}:
+                light.unknown4 = mesh.distance * 2
 
-            light.Type = mesh.wow_wmo_light.type
-            light.UseAttenuation = mesh.wow_wmo_light.use_attenuation
-            light.Padding = mesh.wow_wmo_light.padding
+            light.type = mesh.wow_wmo_light.type
+            light.use_attenuation = mesh.wow_wmo_light.use_attenuation
+            light.padding = mesh.wow_wmo_light.padding
 
-            light.Color = (int(mesh.wow_wmo_light.color[2] * 255),
+            light.color = (int(mesh.wow_wmo_light.color[2] * 255),
                            int(mesh.wow_wmo_light.color[1] * 255),
                            int(mesh.wow_wmo_light.color[0] * 255),
                            int(mesh.wow_wmo_light.color_alpha * 255))
 
-            light.Position = obj.location
-            light.Intensity = mesh.wow_wmo_light.intensity
-            light.AttenuationStart = mesh.wow_wmo_light.attenuation_start
-            light.AttenuationEnd = mesh.wow_wmo_light.attenuation_end
-            self.molt.Lights.append(light)
+            light.position = obj.location
+            light.intensity = mesh.wow_wmo_light.intensity
+            light.attenuation_start = mesh.wow_wmo_light.attenuation_start
+            light.attenuation_end = mesh.wow_wmo_light.attenuation_end
+            self.molt.lights.append(light)
 
         print("\nDone saving lights. "
               "\nTotal saving time: ", time.strftime("%M minutes %S seconds", time.gmtime(time.time() - start_time)))
@@ -829,14 +829,14 @@ class WMOFile:
 
         saved_portals_ids = []
 
-        self.mopt.Infos = len(self.bl_scene_objects.portals) * [None]
+        self.mopt.infos = len(self.bl_scene_objects.portals) * [None]
 
         for group_obj in self.bl_scene_objects.groups:
 
             portal_relations = group_obj.wow_wmo_group.relations.portals
             group_index = group_obj.wow_wmo_group.group_id
             group = self.groups[group_index]
-            group.mogp.PortalStart = len(self.mopr.Relationships)
+            group.mogp.PortalStart = len(self.mopr.relationships)
 
             for relation in portal_relations:
                 portal_obj = bpy.context.scene.objects[relation.id]
@@ -847,14 +847,14 @@ class WMOFile:
 
                     portal_mesh = portal_obj.data
                     portal_info = PortalInfo()
-                    portal_info.StartVertex = len(self.mopv.PortalVertices)
+                    portal_info.start_vertex = len(self.mopv.portal_vertices)
                     v = []
 
                     for poly in portal_mesh.polygons:
                         for loop_index in poly.loop_indices:
                             vertex_pos = portal_mesh.vertices[portal_mesh.loops[loop_index].vertex_index].co \
                                          * portal_obj.matrix_world
-                            self.mopv.PortalVertices.append(vertex_pos)
+                            self.mopv.portal_vertices.append(vertex_pos)
                             v.append(vertex_pos)
 
                     v_A = v[0][1] * v[1][2] - v[1][1] * v[0][2] - v[0][1] * v[2][2] + v[2][1] * v[0][2] + v[1][1] * v[2][2] - \
@@ -866,11 +866,11 @@ class WMOFile:
                     v_D = -v[0][0] * v[1][1] * v[2][2] + v[0][0] * v[2][1] * v[1][2] + v[1][0] * v[0][1] * v[2][2] - v[1][0] * \
                           v[2][1] * v[0][2] - v[2][0] * v[0][1] * v[1][2] + v[2][0] * v[1][1] * v[0][2]
 
-                    portal_info.Unknown = v_D / sqrt(v_A * v_A + v_B * v_B + v_C * v_C)
-                    portal_info.nVertices = len(self.mopv.PortalVertices) - portal_info.StartVertex
-                    portal_info.Normal = tuple(portal_mesh.polygons[0].normal)
+                    portal_info.unknown = v_D / sqrt(v_A * v_A + v_B * v_B + v_C * v_C)
+                    portal_info.n_vertices = len(self.mopv.portal_vertices) - portal_info.start_vertex
+                    portal_info.normal = tuple(portal_mesh.polygons[0].normal)
 
-                    self.mopt.Infos[portal_index] = portal_info
+                    self.mopt.infos[portal_index] = portal_info
                     saved_portals_ids.append(portal_index)
 
                     print("Done saving portal: <<{}>>".format(portal_obj.name))
@@ -879,14 +879,14 @@ class WMOFile:
                 second = self.bl_scene_objects.portals[portal_index].wow_wmo_portal.second
 
                 # calculating portal relation
-                relation = PortalRelationship()
-                relation.PortalIndex = portal_index
-                relation.GroupIndex = second.wow_wmo_group.group_id if first.name == group_obj.name else first.wow_wmo_group.group_id
-                relation.Side = group.get_portal_direction(portal_obj, group_obj)
+                relation = PortalRelation()
+                relation.portal_index = portal_index
+                relation.group_index = second.wow_wmo_group.group_id if first.name == group_obj.name else first.wow_wmo_group.group_id
+                relation.side = group.get_portal_direction(portal_obj, group_obj)
 
-                self.mopr.Relationships.append(relation)
+                self.mopr.relationships.append(relation)
 
-            group.mogp.PortalCount = len(self.mopr.Relationships) - group.mogp.PortalStart
+            group.mogp.PortalCount = len(self.mopr.relationships) - group.mogp.PortalStart
 
         print("\nDone saving portals. "
               "\nTotal saving time: ", time.strftime("%M minutes %S seconds", time.gmtime(time.time() - start_time)))
@@ -899,31 +899,31 @@ class WMOFile:
             print("\nSaving fog: <<{}>>".format(fog_obj.name))
             fog = Fog()
 
-            fog.BigRadius = fog_obj.dimensions[2] / 2
-            fog.SmallRadius = fog.BigRadius * (fog_obj.wow_wmo_fog.inner_radius / 100)
+            fog.big_radius = fog_obj.dimensions[2] / 2
+            fog.small_radius = fog.big_radius * (fog_obj.wow_wmo_fog.inner_radius / 100)
 
-            fog.Color1 = (int(fog_obj.wow_wmo_fog.color1[2] * 255),
+            fog.color1 = (int(fog_obj.wow_wmo_fog.color1[2] * 255),
                           int(fog_obj.wow_wmo_fog.color1[1] * 255),
                           int(fog_obj.wow_wmo_fog.color1[0] * 255),
                           0xFF)
 
-            fog.Color2 = (int(fog_obj.wow_wmo_fog.color2[2] * 255),
+            fog.color2 = (int(fog_obj.wow_wmo_fog.color2[2] * 255),
                           int(fog_obj.wow_wmo_fog.color2[1] * 255),
                           int(fog_obj.wow_wmo_fog.color2[0] * 255),
                           0xFF)
 
-            fog.EndDist = fog_obj.wow_wmo_fog.end_dist
-            fog.EndDist2 = fog_obj.wow_wmo_fog.end_dist2
-            fog.Position = fog_obj.location
-            fog.StartFactor = fog_obj.wow_wmo_fog.start_factor
+            fog.end_dist = fog_obj.wow_wmo_fog.end_dist
+            fog.end_dist2 = fog_obj.wow_wmo_fog.end_dist2
+            fog.position = fog_obj.location
+            fog.start_factor = fog_obj.wow_wmo_fog.start_factor
             fog.StarFactor2 = fog_obj.wow_wmo_fog.start_factor2
 
             if fog_obj.wow_wmo_fog.ignore_radius:
-                fog.Flags |= 0x01
+                fog.flags |= 0x01
             if fog_obj.wow_wmo_fog.unknown:
-                fog.Flags |= 0x10
+                fog.flags |= 0x10
 
-            self.mfog.Fogs.append(fog)
+            self.mfog.fogs.append(fog)
 
             print("Done saving fog: <<{}>>".format(fog_obj.name))
 
@@ -935,49 +935,49 @@ class WMOFile:
 
         scene = bpy.context.scene
 
-        self.mver.Version = 17
+        self.mver.version = 17
 
         # setting up default fog with default blizzlike values.
-        if not len(self.mfog.Fogs):
+        if not len(self.mfog.fogs):
             empty_fog = Fog()
-            empty_fog.Color1 = (0xFF, 0xFF, 0xFF, 0xFF)
-            empty_fog.Color2 = (0x00, 0x00, 0x00, 0xFF)
-            empty_fog.EndDist = 444.4445
-            empty_fog.EndDist2 = 222.2222
-            empty_fog.StartFactor = 0.25
-            empty_fog.StartFactor2 = -0.5
-            self.mfog.Fogs.append(empty_fog)
+            empty_fog.color1 = (0xFF, 0xFF, 0xFF, 0xFF)
+            empty_fog.color2 = (0x00, 0x00, 0x00, 0xFF)
+            empty_fog.end_dist = 444.4445
+            empty_fog.end_dist2 = 222.2222
+            empty_fog.start_factor = 0.25
+            empty_fog.start_factor2 = -0.5
+            self.mfog.fogs.append(empty_fog)
 
         bb = self.get_global_bounding_box()
-        self.mohd.BoundingBoxCorner1 = bb[0]
-        self.mohd.BoundingBoxCorner2 = bb[1]
+        self.mohd.bounding_box_corner1 = bb[0]
+        self.mohd.bounding_box_corner2 = bb[1]
 
         # DBC foreign keys
-        self.mohd.ID = scene.wow_wmo_root.wmo_id
-        self.mosb.Skybox = scene.wow_wmo_root.skybox_path
+        self.mohd.id = scene.wow_wmo_root.wmo_id
+        self.mosb.skybox = scene.wow_wmo_root.skybox_path
 
-        self.mohd.AmbientColor = [int(scene.wow_wmo_root.ambient_color[2] * 255),
-                                  int(scene.wow_wmo_root.ambient_color[1] * 255),
-                                  int(scene.wow_wmo_root.ambient_color[0] * 255),
-                                  int(scene.wow_wmo_root.ambient_color[3] * 255)]
+        self.mohd.ambient_color = [int(scene.wow_wmo_root.ambient_color[2] * 255),
+                                   int(scene.wow_wmo_root.ambient_color[1] * 255),
+                                   int(scene.wow_wmo_root.ambient_color[0] * 255),
+                                   int(scene.wow_wmo_root.ambient_color[3] * 255)]
 
-        self.mohd.nMaterials = len(self.momt.Materials)
-        self.mohd.nGroups = len(self.mogi.Infos)
-        self.mohd.nPortals = len(self.mopt.Infos)
-        self.mohd.nModels = self.modn.StringTable.decode("ascii").count('.MDX')
-        self.mohd.nLights = len(self.molt.Lights)
-        self.mohd.n_doodads = len(self.modd.Definitions)
-        self.mohd.nSets = len(self.mods.Sets)
+        self.mohd.n_materials = len(self.momt.materials)
+        self.mohd.n_groups = len(self.mogi.infos)
+        self.mohd.n_portals = len(self.mopt.infos)
+        self.mohd.n_models = self.modn.string_table.decode("ascii").count('.MDX')
+        self.mohd.n_lights = len(self.molt.lights)
+        self.mohd.n_doodads = len(self.modd.definitions)
+        self.mohd.n_sets = len(self.mods.sets)
 
         flags = scene.wow_wmo_root.flags
         if "0" in flags:
-            self.mohd.Flags |= 0x01
+            self.mohd.flags |= 0x01
         if "2" in flags:
-            self.mohd.Flags |= 0x02
+            self.mohd.flags |= 0x02
         if "1" in flags:
-            self.mohd.Flags |= 0x08
+            self.mohd.flags |= 0x08
 
-        self.mohd.Flags |= 0x4
+        self.mohd.flags |= 0x4
 
         print("Done saving root header")
 

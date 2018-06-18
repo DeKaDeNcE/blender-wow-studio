@@ -5,7 +5,7 @@ import mathutils
 from math import floor, ceil, pi
 from .bsp_tree import *
 from ..pywowlib.file_formats.wmo_format_group import *
-from ..pywowlib.file_formats.wmo_format_root import MVER_chunk
+from ..pywowlib.file_formats.wmo_format_root import MVER
 
 
 class WMOGroupFile:
@@ -13,7 +13,7 @@ class WMOGroupFile:
 
         self.root = root
 
-        self.mver = MVER_chunk()
+        self.mver = MVER()
         self.mogp = MOGP()
         self.mopy = MOPY()
         self.movi = MOVI()
@@ -110,16 +110,16 @@ class WMOGroupFile:
         self.mogp.write(f)
 
     @staticmethod
-    def get_avg(list):
+    def get_avg(list_):
         """ Get single average normal vector from a split normal """
         normal = [0.0, 0.0, 0.0]
 
-        for n in list:
+        for n in list_:
             for i in range(0, 3):
                 normal[i] += n[i]
 
         for i in range(0, 3):
-            normal[i] /= len(list)
+            normal[i] /= len(list_)
 
         return normal
 
@@ -150,7 +150,8 @@ class WMOGroupFile:
         else:
             return 1 if counter_b == len(polygon.vertices) else 2
 
-    def get_material_viewport_image(self, material):
+    @staticmethod
+    def get_material_viewport_image(material):
         """ Get viewport image assigned to a material """
         for i in range(3):
             try:
@@ -211,35 +212,35 @@ class WMOGroupFile:
         mesh = bpy.data.meshes.new(name)
         obj = bpy.data.objects.new(name, mesh)
 
-        #create mesh from python data
+        # create mesh from python data
         mesh.from_pydata(vertices,[],faces)
         mesh.update(calc_edges=True)
         mesh.validate()
 
         # create uv map if liquid is lava
         if self.mogp.liquid_type in {3, 4, 7, 8, 11, 12}:
-            uvMap = {}
+            uv_map = {}
 
             for vertex in mesh.vertices:
-                uvMap[vertex.index] = (self.mliq.vertex_map[vertex.index].u,
-                                       self.mliq.vertex_map[vertex.index].v)
+                uv_map[vertex.index] = (self.mliq.vertex_map[vertex.index].u,
+                                        self.mliq.vertex_map[vertex.index].v)
 
-            uv1 = mesh.uv_textures.new("UVMap")
+            mesh.uv_textures.new("UVMap")
             uv_layer1 = mesh.uv_layers[0]
 
             for poly in mesh.polygons:
                 for loop_index in poly.loop_indices:
-                        uv_layer1.data[loop_index].uv = (uvMap.get(mesh.loops[loop_index].vertex_index)[0],
-                                                         - uvMap.get(mesh.loops[loop_index].vertex_index)[1])
+                        uv_layer1.data[loop_index].uv = (uv_map.get(mesh.loops[loop_index].vertex_index)[0],
+                                                         - uv_map.get(mesh.loops[loop_index].vertex_index)[1])
 
         # setting flags in a hacky way using vertex colors
         bit = 1
         while bit <= 0x80:
             vc_layer = mesh.vertex_colors.new("flag_" + hex(bit))
             for poly in mesh.polygons:
-                tileFlag = self.mliq.tile_flags[poly.index]
+                tile_flag = self.mliq.tile_flags[poly.index]
                 for loop in poly.loop_indices:
-                    if tileFlag & bit:
+                    if tile_flag & bit:
                         vc_layer.data[loop].color = (0, 0, 255)
             bit <<= 1
 
@@ -261,9 +262,7 @@ class WMOGroupFile:
         obj.wow_wmo_liquid.enabled = True
 
         # getting Liquid Type ID
-        real_liquid_type = 0
-
-        if self.root.mohd.Flags & 0x4:
+        if self.root.mohd.flags & 0x4:
             real_liquid_type = self.mogp.liquid_type
         else:
             real_liquid_type = self.from_wmo_liquid_type(self.mogp.liquid_type)
@@ -363,7 +362,7 @@ class WMOGroupFile:
                                                    self.mocv.vert_colors[mesh.loops[i].vertex_index][0] / 255)
 
                 mesh.vertices[mesh.loops[i].vertex_index].groups[lightmap.index].weight \
-                = self.mocv.vert_colors[mesh.loops[i].vertex_index][3] / 255
+                    = self.mocv.vert_colors[mesh.loops[i].vertex_index][3] / 255
 
         if self.mogp.flags & MOGPFlags.HasTwoMOCV:
             blendmap = nobj.vertex_groups.new("Blendmap")
@@ -432,13 +431,18 @@ class WMOGroupFile:
 
             if i < self.mogp.n_batches_a:
                 batch_map_a.add(self.movi.indices[self.moba.batches[i].start_triangle
-                                                  : self.moba.batches[i].start_triangle + self.moba.batches[i].n_triangles], 1.0, 'ADD')
+                                                  : self.moba.batches[i].start_triangle
+                                                  + self.moba.batches[i].n_triangles], 1.0, 'ADD')
 
             elif i < self.mogp.n_batches_a + self.mogp.n_batches_b:
                 batch_map_b.add(self.movi.indices[self.moba.batches[i].start_triangle
-                                                  : self.moba.batches[i].start_triangle + self.moba.batches[i].n_triangles], 1.0, 'ADD')
+                                                  : self.moba.batches[i].start_triangle
+                                                  + self.moba.batches[i].n_triangles], 1.0, 'ADD')
 
-            batch_material_map[(self.moba.batches[i].start_triangle // 3, (self.moba.batches[i].start_triangle + self.moba.batches[i].n_triangles) // 3)] = self.moba.batches[i].material_id
+            batch_material_map[
+                (self.moba.batches[i].start_triangle // 3,
+                (self.moba.batches[i].start_triangle + self.moba.batches[i].n_triangles) // 3)
+                ] = self.moba.batches[i].material_id
 
         # add ghost material
         for i in self.mopy.triangle_materials:
@@ -466,7 +470,7 @@ class WMOGroupFile:
                 area.spaces[0].show_textured_solid = True
                 area.spaces[0].viewport_shade = 'TEXTURED'
 
-        #DEBUG BSP
+        # DEBUG BSP
         """for iNode in range(len(self.mobn.Nodes)):
             bsp_node_indices = self.GetBSPNodeIndices(iNode, self.mobn.Nodes, self.mobr.Faces, self.movi.Indices)
             bsp_node_vg = nobj.vertex_groups.new("debug_bsp")
@@ -475,7 +479,7 @@ class WMOGroupFile:
             #    bsp_n1_GroupIndices.append(i)
 
             bsp_node_vg.add(bsp_node_indices, 1.0, 'ADD')"""
-        #DEBUG BSP
+        # DEBUG BSP
 
         # add collision vertex group
         collision_indices = self.get_collision_indices()
@@ -501,9 +505,8 @@ class WMOGroupFile:
 
         else:
             # getting Liquid Type ID
-            real_liquid_type = 0
 
-            if self.root.mohd.Flags & 0x4:
+            if self.root.mohd.flags & 0x4:
                 real_liquid_type = self.mogp.liquid_type
             else:
                 real_liquid_type = self.from_wmo_liquid_type(self.mogp.liquid_type)
@@ -829,7 +832,7 @@ class WMOGroupFile:
             print("\nScene has exceeded the maximum allowed number of WoW materials (255). Your scene now has {} materials. "
                   "So, {} extra ones.".format(len(self.root.momt.Materials), (len(self.root.momt.Materials) - 256)))
 
-        self.mver.Version = 17
+        self.mver.version = 17
 
         material_indices = {}
 
@@ -843,8 +846,6 @@ class WMOGroupFile:
 
         poly_batch_map = {}
 
-        vg_batch_a = None
-        vg_batch_b = None
         vg_collision = None
         vg_lightmap = None
         vg_blendmap = None
@@ -877,7 +878,8 @@ class WMOGroupFile:
 
         for poly in mesh.polygons:
             poly_batch_map.setdefault((material_indices.get(poly.material_index),
-                                       self.get_batch_type(poly, mesh, vg_batch_a.index, vg_batch_b.index)), []).append(poly.index)
+                                       self.get_batch_type(poly, mesh, vg_batch_a.index, vg_batch_b.index)), []
+                                      ).append(poly.index)
 
         vertex_size = len(mesh.vertices)
 
@@ -966,7 +968,7 @@ class WMOGroupFile:
                         if len(mesh.vertex_colors):
                             vertex_color = [0x7F, 0x7F, 0x7F, 0x00]
 
-                            for i in range(0, 3):
+                            for i in range(3):
                                 vertex_color[i] = round(mesh.vertex_colors.active.data[loop_index].color[3 - i - 1] * 255)
 
                             if vg_lightmap:

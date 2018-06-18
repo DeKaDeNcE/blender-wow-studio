@@ -6,119 +6,123 @@ from .wow_common_types import ChunkHeader
 # WMO ROOT
 ###########################
 
-# contain version of file
-class MVER_chunk:
+class MVER:
+    """ Version of the file. Actually meaningless. """
+
     def __init__(self, header=ChunkHeader(), version=0):
-        self.Header = header
-        self.Version = version
+        self.header = header
+        self.version = version
 
     def read(self, f):
         # read header
-        self.Header.read(f)
-        self.Version = unpack("I", f.read(4))[0]
+        self.header.read(f)
+        self.version = unpack("I", f.read(4))[0]
 
     def write(self, f):
-        self.Header.magic = 'REVM'
-        self.Header.size = 4
-        self.Header.write(f)
-        f.write(pack('I', self.Version))
+        self.header.magic = 'REVM'
+        self.header.size = 4
+        self.header.write(f)
+        f.write(pack('I', self.version))
 
-# WMO Root header
-class MOHD_chunk:
+
+class MOHD:
+    """ WMO Root header """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.nMaterials = 0
-        self.nGroups = 0
-        self.nPortals = 0
-        self.nLights = 0
-        self.nModels = 0
+        self.header = ChunkHeader()
+        self.n_materials = 0
+        self.n_groups = 0
+        self.n_portals = 0
+        self.n_lights = 0
+        self.n_models = 0
         self.n_doodads = 0
-        self.nSets = 0
-        self.AmbientColor = (0, 0, 0, 0)
-        self.ID = 0
-        self.BoundingBoxCorner1 = (0.0, 0.0, 0.0)
-        self.BoundingBoxCorner2 = (0.0, 0.0, 0.0)
-        self.Flags = 0
+        self.n_sets = 0
+        self.ambient_color = (0, 0, 0, 0)
+        self.id = 0
+        self.bounding_box_corner1 = (0.0, 0.0, 0.0)
+        self.bounding_box_corner2 = (0.0, 0.0, 0.0)
+        self.flags = 0
 
     def read(self, f):
         # read header
-        self.Header.read(f)
+        self.header.read(f)
 
-        self.nMaterials = unpack("I", f.read(4))[0]
-        self.nGroups = unpack("I", f.read(4))[0]
-        self.nPortals = unpack("I", f.read(4))[0]
-        self.nLights = unpack("I", f.read(4))[0]
-        self.nModels = unpack("I", f.read(4))[0]
+        self.n_materials = unpack("I", f.read(4))[0]
+        self.n_groups = unpack("I", f.read(4))[0]
+        self.n_portals = unpack("I", f.read(4))[0]
+        self.n_lights = unpack("I", f.read(4))[0]
+        self.n_models = unpack("I", f.read(4))[0]
         self.n_doodads = unpack("I", f.read(4))[0]
-        self.nSets = unpack("I", f.read(4))[0]
-        self.AmbientColor = unpack("BBBB", f.read(4))
-        self.ID = unpack("I", f.read(4))[0]
-        self.BoundingBoxCorner1 = unpack("fff", f.read(12))
-        self.BoundingBoxCorner2 = unpack("fff", f.read(12))
-        self.Flags = unpack("I", f.read(4))[0]
+        self.n_sets = unpack("I", f.read(4))[0]
+        self.ambient_color = unpack("BBBB", f.read(4))
+        self.id = unpack("I", f.read(4))[0]
+        self.bounding_box_corner1 = unpack("fff", f.read(12))
+        self.bounding_box_corner2 = unpack("fff", f.read(12))
+        self.flags = unpack("I", f.read(4))[0]
 
     def write(self, f):
-        self.Header.magic = 'DHOM'
-        self.Header.size = 64
+        self.header.magic = 'DHOM'
+        self.header.size = 64
 
-        self.Header.write(f)
-        f.write(pack('I', self.nMaterials))
-        f.write(pack('I', self.nGroups))
-        f.write(pack('I', self.nPortals))
-        f.write(pack('I', self.nLights))
-        f.write(pack('I', self.nModels))
+        self.header.write(f)
+        f.write(pack('I', self.n_materials))
+        f.write(pack('I', self.n_groups))
+        f.write(pack('I', self.n_portals))
+        f.write(pack('I', self.n_lights))
+        f.write(pack('I', self.n_models))
         f.write(pack('I', self.n_doodads))
-        f.write(pack('I', self.nSets))
-        f.write(pack('BBBB', *self.AmbientColor))
-        f.write(pack('I', self.ID))
-        f.write(pack('fff', *self.BoundingBoxCorner1))
-        f.write(pack('fff', *self.BoundingBoxCorner2))
-        f.write(pack('I', self.Flags))
+        f.write(pack('I', self.n_sets))
+        f.write(pack('BBBB', *self.ambient_color))
+        f.write(pack('I', self.id))
+        f.write(pack('fff', *self.bounding_box_corner1))
+        f.write(pack('fff', *self.bounding_box_corner2))
+        f.write(pack('I', self.flags))
 
 
-# Texture names
-class MOTX_chunk:
+class MOTX:
+    """ Texture names """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.StringTable = bytearray()
+        self.header = ChunkHeader()
+        self.string_table = bytearray()
 
     def read(self, f):
         # read header
-        self.Header.read(f)
-        self.StringTable = f.read(self.Header.size)
+        self.header.read(f)
+        self.string_table = f.read(self.header.size)
 
     def write(self, f):
-        self.Header.magic = 'XTOM'
-        self.Header.size = len(self.StringTable)
+        self.header.magic = 'XTOM'
+        self.header.size = len(self.string_table)
 
-        self.Header.write(f)
-        f.write(self.StringTable)
+        self.header.write(f)
+        f.write(self.string_table)
 
     def add_string(self, s):
-        padding = len(self.StringTable) % 4
+        padding = len(self.string_table) % 4
         if padding > 0:
             for iPad in range(4 - padding):
-                self.StringTable.append(0)
+                self.string_table.append(0)
 
-        ofs = len(self.StringTable)
-        self.StringTable.extend(s.encode('ascii'))
-        self.StringTable.append(0)
+        ofs = len(self.string_table)
+        self.string_table.extend(s.encode('ascii'))
+        self.string_table.append(0)
         return ofs
 
     def get_string(self, ofs):
-        if ofs >= len(self.StringTable):
+        if ofs >= len(self.string_table):
             return ''
         start = ofs
         i = ofs
-        while self.StringTable[i] != 0:
+        while self.string_table[i] != 0:
             i += 1
-        return self.StringTable[start:i].decode('ascii')
+        return self.string_table[start:i].decode('ascii')
 
     def get_all_strings(self):
         strings = []
         cur_str = ""
 
-        for byte in self.StringTable:
+        for byte in self.string_table:
             if byte:
                 cur_str += chr(byte)
             elif cur_str:
@@ -128,666 +132,690 @@ class MOTX_chunk:
         return strings
 
 
-class WMO_Material:
+class WMOMaterial:
+
     def __init__(self):
-        self.Flags = 0
-        self.Shader = 0
-        self.BlendMode = 0
-        self.Texture1Ofs = 0
-        self.EmissiveColor = (0, 0, 0, 0)
-        self.SidnEmissiveColor = (0, 0, 0, 0)
-        self.Texture2Ofs = 0
-        self.DiffColor = (0, 0, 0, 0)
-        self.TerrainType = 0
-        self.Texture3Ofs = 0
-        self.Color3 = (0, 0, 0, 0)
-        self.Tex3Flags = 0
-        self.RunTimeData = (0, 0, 0, 0)
+        self.flags = 0
+        self.shader = 0
+        self.blend_mode = 0
+        self.texture1_ofs = 0
+        self.emissive_color = (0, 0, 0, 0)
+        self.sidn_emissive_color = (0, 0, 0, 0)
+        self.texture2_ofs = 0
+        self.diff_color = (0, 0, 0, 0)
+        self.terrain_type = 0
+        self.texture3_ofs = 0
+        self.color3 = (0, 0, 0, 0)
+        self.tex3_flags = 0
+        self.runtime_data = (0, 0, 0, 0)
 
     def read(self, f):
-        self.Flags = unpack("I", f.read(4))[0]
-        self.Shader = unpack("I", f.read(4))[0]
-        self.BlendMode = unpack("I", f.read(4))[0]
-        self.Texture1Ofs = unpack("I", f.read(4))[0]
-        self.EmissiveColor = unpack("BBBB", f.read(4))
-        self.SidnEmissiveColor = unpack("BBBB", f.read(4))
-        self.Texture2Ofs = unpack("I", f.read(4))[0]
-        self.DiffColor = unpack("BBBB", f.read(4))
-        self.TerrainType = unpack("I", f.read(4))[0]
-        self.Texture3Ofs = unpack("I", f.read(4))[0]
-        self.Color3 = unpack("BBBB", f.read(4))
-        self.Tex3Flags = unpack("I", f.read(4))[0]
-        self.RunTimeData = unpack("IIII", f.read(16))[0]
+        self.flags = unpack("I", f.read(4))[0]
+        self.shader = unpack("I", f.read(4))[0]
+        self.blend_mode = unpack("I", f.read(4))[0]
+        self.texture1_ofs = unpack("I", f.read(4))[0]
+        self.emissive_color = unpack("BBBB", f.read(4))
+        self.sidn_emissive_color = unpack("BBBB", f.read(4))
+        self.texture2_ofs = unpack("I", f.read(4))[0]
+        self.diff_color = unpack("BBBB", f.read(4))
+        self.terrain_type = unpack("I", f.read(4))[0]
+        self.texture3_ofs = unpack("I", f.read(4))[0]
+        self.color3 = unpack("BBBB", f.read(4))
+        self.tex3_flags = unpack("I", f.read(4))[0]
+        self.runtime_data = unpack("IIII", f.read(16))[0]
 
     def write(self, f):
-        f.write(pack('I', self.Flags))
-        f.write(pack('I', self.Shader))
-        f.write(pack('I', self.BlendMode))
-        f.write(pack('I', self.Texture1Ofs))
-        f.write(pack('BBBB', *self.EmissiveColor))
-        f.write(pack('BBBB', *self.SidnEmissiveColor))
-        f.write(pack('I', self.Texture2Ofs))
-        f.write(pack('BBBB', *self.DiffColor))
-        f.write(pack('I', self.TerrainType))
-        f.write(pack('I', self.Texture3Ofs))
-        f.write(pack('BBBB', *self.Color3))
-        f.write(pack('I', self.Tex3Flags))
-        f.write(pack('IIII', *self.RunTimeData))
+        f.write(pack('I', self.flags))
+        f.write(pack('I', self.shader))
+        f.write(pack('I', self.blend_mode))
+        f.write(pack('I', self.texture1_ofs))
+        f.write(pack('BBBB', *self.emissive_color))
+        f.write(pack('BBBB', *self.sidn_emissive_color))
+        f.write(pack('I', self.texture2_ofs))
+        f.write(pack('BBBB', *self.diff_color))
+        f.write(pack('I', self.terrain_type))
+        f.write(pack('I', self.texture3_ofs))
+        f.write(pack('BBBB', *self.color3))
+        f.write(pack('I', self.tex3_flags))
+        f.write(pack('IIII', *self.runtime_data))
 
-# Materials
-class MOMT_chunk:
+
+class MOMT:
+    """ Materials """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.Materials = []
+        self.header = ChunkHeader()
+        self.materials = []
 
     def read(self, f):
         # read header
-        self.Header.read(f)
+        self.header.read(f)
 
-        self.Materials = []
-        for i in range(self.Header.size // 64):
-            mat = WMO_Material()
+        self.materials = []
+        for i in range(self.header.size // 64):
+            mat = WMOMaterial()
             mat.read(f)
-            self.Materials.append(mat)
+            self.materials.append(mat)
 
     def write(self, f):
-        self.Header.magic = 'TMOM'
-        self.Header.size = len(self.Materials) * 64
+        self.header.magic = 'TMOM'
+        self.header.size = len(self.materials) * 64
 
-        self.Header.write(f)
-        for mat in self.Materials:
+        self.header.write(f)
+        for mat in self.materials:
             mat.write(f)
 
-# group names
-class MOGN_chunk:
+
+class MOGN:
+    """ Group names """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.StringTable = bytearray(b'\x00\x00')
+        self.header = ChunkHeader()
+        self.string_table = bytearray(b'\x00\x00')
 
     def read(self, f):
         # read header
-        self.Header.read(f)
-        self.StringTable = f.read(self.Header.size)
+        self.header.read(f)
+        self.string_table = f.read(self.header.size)
 
     def write(self, f):
-        self.Header.magic = 'NGOM'
+        self.header.magic = 'NGOM'
 
         # padd 4 bytes after
-        padding = len(self.StringTable) % 4
-        if(padding > 0):
-            for iPad in range(4 - padding):
-                self.StringTable.append(0)
+        padding = len(self.string_table) % 4
+        if padding > 0:
+            for i_pad in range(4 - padding):
+                self.string_table.append(0)
 
-        self.Header.size = len(self.StringTable)
+        self.header.size = len(self.string_table)
 
-        self.Header.write(f)
-        f.write(self.StringTable)
+        self.header.write(f)
+        f.write(self.string_table)
 
     def add_string(self, s):
-        ofs = len(self.StringTable)
-        self.StringTable.extend(s.encode('ascii'))
-        self.StringTable.append(0)
+        ofs = len(self.string_table)
+        self.string_table.extend(s.encode('ascii'))
+        self.string_table.append(0)
         return ofs
 
     def get_string(self, ofs):
-        if ofs >= len(self.StringTable):
+        if ofs >= len(self.string_table):
             return ''
         start = ofs
         i = ofs
-        while self.StringTable[i] != 0:
+        while self.string_table[i] != 0:
             i += 1
-        return self.StringTable[start:i].decode('ascii')
+        return self.string_table[start:i].decode('ascii')
+
 
 class GroupInfo:
     def __init__(self):
-        self.Flags = 0
-        self.BoundingBoxCorner1 = (0, 0, 0)
-        self.BoundingBoxCorner2 = (0, 0, 0)
-        self.NameOfs = 0
+        self.flags = 0
+        self.bounding_box_corner1 = (0, 0, 0)
+        self.bounding_box_corner2 = (0, 0, 0)
+        self.name_ofs = 0
 
     def read(self, f):
-        self.Flags = unpack("I", f.read(4))[0]
-        self.BoundingBoxCorner1 = unpack("fff", f.read(12))
-        self.BoundingBoxCorner2 = unpack("fff", f.read(12))
-        self.NameOfs = unpack("I", f.read(4))[0]
+        self.flags = unpack("I", f.read(4))[0]
+        self.bounding_box_corner1 = unpack("fff", f.read(12))
+        self.bounding_box_corner2 = unpack("fff", f.read(12))
+        self.name_ofs = unpack("I", f.read(4))[0]
 
     def write(self, f):
-        f.write(pack('I', self.Flags))
-        f.write(pack('fff', *self.BoundingBoxCorner1))
-        f.write(pack('fff', *self.BoundingBoxCorner2))
-        f.write(pack('I', self.NameOfs))
+        f.write(pack('I', self.flags))
+        f.write(pack('fff', *self.bounding_box_corner1))
+        f.write(pack('fff', *self.bounding_box_corner2))
+        f.write(pack('I', self.name_ofs))
 
 
-# group informations
-class MOGI_chunk:
+class MOGI:
+    """ Group informations """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.Infos = []
+        self.header = ChunkHeader()
+        self.infos = []
 
     def read(self, f):
         # read header
-        self.Header.read(f)
+        self.header.read(f)
 
-        count = self.Header.size // 32
+        count = self.header.size // 32
 
-        self.Infos = []
+        self.infos = []
         for i in range(count):
             info = GroupInfo()
             info.read(f)
-            self.Infos.append(info)
+            self.infos.append(info)
 
     def write(self, f):
-        self.Header.magic = 'IGOM'
-        self.Header.size = len(self.Infos) * 32
+        self.header.magic = 'IGOM'
+        self.header.size = len(self.infos) * 32
 
-        self.Header.write(f)
-        for info in self.Infos:
+        self.header.write(f)
+        for info in self.infos:
             info.write(f)
 
-# skybox
-class MOSB_chunk:
+
+class MOSB:
+    """ Skybox """
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.Skybox = ''
+        self.header = ChunkHeader()
+        self.skybox = ''
 
     def read(self, f):
         # read header
-        self.Header.read(f)
-        self.Skybox = f.read(self.Header.size).decode('ascii')
+        self.header.read(f)
+        self.skybox = f.read(self.header.size).decode('ascii')
 
     def write(self, f):
-        self.Header.magic = 'BSOM'
+        self.header.magic = 'BSOM'
 
-        if not self.Skybox:
-            self.Skybox = '\x00\x00\x00'
+        if not self.skybox:
+            self.skybox = '\x00\x00\x00'
 
-        self.Header.size = len(self.Skybox) + 1
+        self.header.size = len(self.skybox) + 1
 
-        self.Header.write(f)
-        f.write(self.Skybox.encode('ascii') + b'\x00')
+        self.header.write(f)
+        f.write(self.skybox.encode('ascii') + b'\x00')
 
-# portal vertices
-class MOPV_chunk:
+
+class MOPV:
+    """ Portal vertices """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-
-        self.PortalVertices = []
-        #self.Portals = []
+        self.header = ChunkHeader()
+        self.portal_vertices = []
 
     def read(self, f):
         # read header
-        self.Header.read(f)
+        self.header.read(f)
 
-        count = self.Header.size // 12
-        self.PortalVertices = []
-        #self.Portals = []
+        count = self.header.size // 12
+        self.portal_vertices = []
 
         # 12 = sizeof(float) * 3
         for i in range(count):
-            #self.PortalVertices = []
-            #for j in range(4):
-            self.PortalVertices.append(unpack("fff", f.read(12)))
-                #print(self.mopt.Infos[i].nVertices)
-            #self.Portals.append(self.PortalVertices)
+            self.portal_vertices.append(unpack("fff", f.read(12)))
 
     def write(self, f):
-        self.Header.magic = 'VPOM'
-        self.Header.size = len(self.PortalVertices) * 12
+        self.header.magic = 'VPOM'
+        self.header.size = len(self.portal_vertices) * 12
 
-        self.Header.write(f)
-        for v in self.PortalVertices:
+        self.header.write(f)
+        for v in self.portal_vertices:
             f.write(pack('fff', *v))
+
 
 class PortalInfo:
     def __init__(self):
-        self.StartVertex = 0
-        self.nVertices = 0
-        self.Normal = (0, 0, 0)
-        self.Unknown = 0
+        self.start_vertex = 0
+        self.n_vertices = 0
+        self.normal = (0, 0, 0)
+        self.unknown = 0
 
     def read(self, f):
-        self.StartVertex = unpack("H", f.read(2))[0]
-        self.nVertices = unpack("H", f.read(2))[0]
-        self.Normal = unpack("fff", f.read(12))
-        self.Unknown = unpack("f", f.read(4))[0]
+        self.start_vertex = unpack("H", f.read(2))[0]
+        self.n_vertices = unpack("H", f.read(2))[0]
+        self.normal = unpack("fff", f.read(12))
+        self.unknown = unpack("f", f.read(4))[0]
 
     def write(self, f):
-        f.write(pack('H', self.StartVertex))
-        f.write(pack('H', self.nVertices))
-        f.write(pack('fff', *self.Normal))
-        f.write(pack('f', self.Unknown))
+        f.write(pack('H', self.start_vertex))
+        f.write(pack('H', self.n_vertices))
+        f.write(pack('fff', *self.normal))
+        f.write(pack('f', self.unknown))
 
 
 # portal infos
-class MOPT_chunk:
+class MOPT:
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.Infos = []
+        self.header = ChunkHeader()
+        self.infos = []
 
     def read(self, f):
         # read header
-        self.Header.read(f)
+        self.header.read(f)
 
-        self.Infos = []
+        self.infos = []
 
         # 20 = sizeof(PortalInfo)
-        for i in range(self.Header.size // 20):
+        for i in range(self.header.size // 20):
             info = PortalInfo()
             info.read(f)
-            self.Infos.append(info)
+            self.infos.append(info)
 
     def write(self, f):
-        self.Header.magic = 'TPOM'
-        self.Header.size = len(self.Infos) * 20
+        self.header.magic = 'TPOM'
+        self.header.size = len(self.infos) * 20
 
-        self.Header.write(f)
-        for info in self.Infos:
+        self.header.write(f)
+        for info in self.infos:
             info.write(f)
 
-class PortalRelationship:
+
+class PortalRelation:
     def __init__(self):
-        self.PortalIndex = 0
-        self.GroupIndex = 0
-        self.Side = 0
-        self.Padding = 0
+        self.portal_index = 0
+        self.group_index = 0
+        self.side = 0
+        self.padding = 0
 
     def read(self, f):
-        self.PortalIndex = unpack("H", f.read(2))[0]
-        self.GroupIndex = unpack("H", f.read(2))[0]
-        self.Side = unpack("h", f.read(2))[0]
-        self.Padding = unpack("H", f.read(2))[0]
+        self.portal_index = unpack("H", f.read(2))[0]
+        self.group_index = unpack("H", f.read(2))[0]
+        self.side = unpack("h", f.read(2))[0]
+        self.padding = unpack("H", f.read(2))[0]
 
     def write(self, f):
-        f.write(pack('H', self.PortalIndex))
-        f.write(pack('H', self.GroupIndex))
-        f.write(pack('h', self.Side))
-        f.write(pack('H', self.Padding))
+        f.write(pack('H', self.portal_index))
+        f.write(pack('H', self.group_index))
+        f.write(pack('h', self.side))
+        f.write(pack('H', self.padding))
 
-# portal link 2 groups
-class MOPR_chunk:
+
+class MOPR:
+    """ Portal relations """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.Relationships = []
+        self.header = ChunkHeader()
+        self.relationships = []
 
     def read(self, f):
         # read header
-        self.Header.read(f)
+        self.header.read(f)
 
-        self.Relationships = []
+        self.relationships = []
 
-        for i in range(self.Header.size // 8):
-            relationship = PortalRelationship()
+        for i in range(self.header.size // 8):
+            relationship = PortalRelation()
             relationship.read(f)
-            self.Relationships.append(relationship)
+            self.relationships.append(relationship)
 
     def write(self, f):
-        self.Header.magic = 'RPOM'
-        self.Header.size = len(self.Relationships) * 8
+        self.header.magic = 'RPOM'
+        self.header.size = len(self.relationships) * 8
 
-        self.Header.write(f)
+        self.header.write(f)
 
-        for rel in self.Relationships:
+        for rel in self.relationships:
             rel.write(f)
 
 
-# visible vertices
-class MOVV_chunk:
+class MOVV:
+    """ Visible vertices """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.VisibleVertices = []
+        self.header = ChunkHeader()
+        self.visible_vertices = []
 
     def read(self, f):
         # read header
-        self.Header.read(f)
+        self.header.read(f)
 
-        self.VisibleVertices = []
+        self.visible_vertices = []
 
-        for i in range(self.Header.size // 12):
-            self.VisibleVertices.append(unpack("fff", f.read(12)))
+        for i in range(self.header.size // 12):
+            self.visible_vertices.append(unpack("fff", f.read(12)))
 
     def write(self, f):
-        self.Header.magic = 'VVOM'
-        self.Header.size = len(self.VisibleVertices) * 12
+        self.header.magic = 'VVOM'
+        self.header.size = len(self.visible_vertices) * 12
 
-        self.Header.write(f)
+        self.header.write(f)
 
-        for v in self.VisibleVertices:
+        for v in self.visible_vertices:
             f.write(pack('fff', *v))
+
 
 class VisibleBatch:
     def __init__(self):
-        self.StartVertex = 0
-        self.nVertices = 0
+        self.start_vertex = 0
+        self.n_vertices = 0
 
     def read(self, f):
-        self.StartVertex = unpack("H", f.read(2))[0]
-        self.nVertices = unpack("H", f.read(2))[0]
+        self.start_vertex = unpack("H", f.read(2))[0]
+        self.n_vertices = unpack("H", f.read(2))[0]
 
     def write(self, f):
-        f.write(pack('H', self.StartVertex))
-        f.write(pack('H', self.nVertices))
+        f.write(pack('H', self.start_vertex))
+        f.write(pack('H', self.n_vertices))
 
-# visible batches
-class MOVB_chunk:
+
+class MOVB:
+    """ Visible batches """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.Batches = []
+        self.header = ChunkHeader()
+        self.batches = []
 
     def read(self, f):
         # read header
-        self.Header.read(f)
+        self.header.read(f)
 
-        count = self.Header.size // 4
+        count = self.header.size // 4
 
-        self.Batches = []
+        self.batches = []
 
         for i in range(count):
             batch = VisibleBatch()
             batch.read(f)
-            self.Batches.append(batch)
+            self.batches.append(batch)
 
     def write(self, f):
-        self.Header.magic = 'BVOM'
-        self.Header.size = len(self.Batches) * 4
+        self.header.magic = 'BVOM'
+        self.header.size = len(self.batches) * 4
 
-        self.Header.write(f)
-        for batch in self.Batches:
+        self.header.write(f)
+        for batch in self.batches:
             batch.write(f)
+
 
 class Light:
     def __init__(self):
-        self.LightType = 0
-        self.Type = 1
-        self.UseAttenuation = 1
-        self.Padding = 1
-        self.Color = (0, 0, 0, 0)
-        self.Position = (0, 0, 0)
-        self.Intensity = 0
-        self.AttenuationStart = 0
-        self.AttenuationEnd = 0
-        self.Unknown1 = 0
-        self.Unknown2 = 0
-        self.Unknown3 = 0
-        self.Unknown4 = 0
+        self.light_type = 0
+        self.type = 1
+        self.use_attenuation = 1
+        self.padding = 1
+        self.color = (0, 0, 0, 0)
+        self.position = (0, 0, 0)
+        self.intensity = 0
+        self.attenuation_start = 0
+        self.attenuation_end = 0
+        self.unknown1 = 0
+        self.unknown2 = 0
+        self.unknown3 = 0
+        self.unknown4 = 0
 
     def read(self, f):
-        self.LightType = unpack("B", f.read(1))[0]
-        self.Type = unpack("B", f.read(1))[0]
-        self.UseAttenuation = unpack("B", f.read(1))[0]
-        self.Padding = unpack("B", f.read(1))[0]
-        self.Color = unpack("BBBB", f.read(4))
-        self.Position = unpack("fff", f.read(12))
-        self.Intensity = unpack("f", f.read(4))[0]
-        self.AttenuationStart = unpack("f", f.read(4))[0]
-        self.AttenuationEnd = unpack("f", f.read(4))[0]
-        self.Unknown1 = unpack("f", f.read(4))[0]
-        self.Unknown2 = unpack("f", f.read(4))[0]
-        self.Unknown3 = unpack("f", f.read(4))[0]
-        self.Unknown4 = unpack("f", f.read(4))[0]
+        self.light_type = unpack("B", f.read(1))[0]
+        self.type = unpack("B", f.read(1))[0]
+        self.use_attenuation = unpack("B", f.read(1))[0]
+        self.padding = unpack("B", f.read(1))[0]
+        self.color = unpack("BBBB", f.read(4))
+        self.position = unpack("fff", f.read(12))
+        self.intensity = unpack("f", f.read(4))[0]
+        self.attenuation_start = unpack("f", f.read(4))[0]
+        self.attenuation_end = unpack("f", f.read(4))[0]
+        self.unknown1 = unpack("f", f.read(4))[0]
+        self.unknown2 = unpack("f", f.read(4))[0]
+        self.unknown3 = unpack("f", f.read(4))[0]
+        self.unknown4 = unpack("f", f.read(4))[0]
 
     def write(self, f):
-        f.write(pack('B', self.LightType))
-        f.write(pack('B', self.Type))
-        f.write(pack('B', self.UseAttenuation))
-        f.write(pack('B', self.Padding))
-        f.write(pack('BBBB', *self.Color))
-        f.write(pack('fff', *self.Position))
-        f.write(pack('f', self.Intensity))
-        f.write(pack('f', self.AttenuationStart))
-        f.write(pack('f', self.AttenuationEnd))
-        f.write(pack('f', self.Unknown1))
-        f.write(pack('f', self.Unknown2))
-        f.write(pack('f', self.Unknown3))
-        f.write(pack('f', self.Unknown4))
+        f.write(pack('B', self.light_type))
+        f.write(pack('B', self.type))
+        f.write(pack('B', self.use_attenuation))
+        f.write(pack('B', self.padding))
+        f.write(pack('BBBB', *self.color))
+        f.write(pack('fff', *self.position))
+        f.write(pack('f', self.intensity))
+        f.write(pack('f', self.attenuation_start))
+        f.write(pack('f', self.attenuation_end))
+        f.write(pack('f', self.unknown1))
+        f.write(pack('f', self.unknown2))
+        f.write(pack('f', self.unknown3))
+        f.write(pack('f', self.unknown4))
 
 
-# lights
-class MOLT_chunk:
+class MOLT:
+    """ Lights """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.Lights = []
+        self.header = ChunkHeader()
+        self.lights = []
 
     def read(self, f):
         # read header
-        self.Header.read(f)
+        self.header.read(f)
 
         # 48 = sizeof(Light)
-        count = self.Header.size // 48
+        count = self.header.size // 48
 
-        self.Lights = []
+        self.lights = []
         for i in range(count):
             light = Light()
             light.read(f)
-            self.Lights.append(light)
+            self.lights.append(light)
 
     def write(self, f):
-        self.Header.magic = 'TLOM'
-        self.Header.size = len(self.Lights) * 48
+        self.header.magic = 'TLOM'
+        self.header.size = len(self.lights) * 48
 
-        self.Header.write(f)
-        for light in self.Lights:
+        self.header.write(f)
+        for light in self.lights:
             light.write(f)
 
 
 class DoodadSet:
     def __init__(self):
-        self.Name = ''
+        self.name = ''
         self.start_doodad = 0
         self.n_doodads = 0
-        self.Padding = 0
+        self.padding = 0
 
     def read(self, f):
-        self.Name = f.read(20).decode("ascii")
+        self.name = f.read(20).decode("ascii")
         self.start_doodad = unpack("I", f.read(4))[0]
         self.n_doodads = unpack("I", f.read(4))[0]
-        self.Padding = unpack("I", f.read(4))[0]
+        self.padding = unpack("I", f.read(4))[0]
 
     def write(self, f):
-        f.write(self.Name.ljust(20, '\0').encode('ascii'))
+        f.write(self.name.ljust(20, '\0').encode('ascii'))
         f.write(pack('I', self.start_doodad))
         f.write(pack('I', self.n_doodads))
-        f.write(pack('I', self.Padding))
+        f.write(pack('I', self.padding))
 
-# doodad sets
-class MODS_chunk:
+
+class MODS:
+    """ Doodad sets """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.Sets = []
+        self.header = ChunkHeader()
+        self.sets = []
 
     def read(self, f):
         # read header
-        self.Header.read(f)
+        self.header.read(f)
 
-        count = self.Header.size // 32
+        count = self.header.size // 32
 
-        self.Sets = []
+        self.sets = []
 
         for i in range(count):
             set = DoodadSet()
             set.read(f)
-            self.Sets.append(set)
+            self.sets.append(set)
 
     def write(self, f):
-        self.Header.magic = 'SDOM'
-        self.Header.size = len(self.Sets) * 32
+        self.header.magic = 'SDOM'
+        self.header.size = len(self.sets) * 32
 
-        self.Header.write(f)
-        for set in self.Sets:
+        self.header.write(f)
+        for set in self.sets:
             set.write(f)
 
 
-# doodad names
-class MODN_chunk:
+class MODN:
+    """ Doodad names """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.StringTable = bytearray()
+        self.header = ChunkHeader()
+        self.string_table = bytearray()
 
     def read(self, f):
         # read header
-        self.Header.read(f)
-        self.StringTable = f.read(self.Header.size)
+        self.header.read(f)
+        self.string_table = f.read(self.header.size)
 
     def write(self, f):
-        self.Header.magic = 'NDOM'
-        self.Header.size = len(self.StringTable)
+        self.header.magic = 'NDOM'
+        self.header.size = len(self.string_table)
 
-        self.Header.write(f)
-        f.write(self.StringTable)
+        self.header.write(f)
+        f.write(self.string_table)
 
-    def AddString(self, s):
-        padding = len(self.StringTable) % 4
+    def add_string(self, s):
+        padding = len(self.string_table) % 4
         if padding > 0:
             for iPad in range(4 - padding):
-                self.StringTable.append(0)
+                self.string_table.append(0)
 
-        ofs = len(self.StringTable)
-        self.StringTable.extend(s.encode('ascii'))
-        self.StringTable.append(0)
+        ofs = len(self.string_table)
+        self.string_table.extend(s.encode('ascii'))
+        self.string_table.append(0)
         return ofs
 
     def get_string(self, ofs):
-        if ofs >= len(self.StringTable):
+        if ofs >= len(self.string_table):
             return ''
         start = ofs
         i = ofs
-        while self.StringTable[i] != 0:
+        while self.string_table[i] != 0:
             i += 1
-        return self.StringTable[start:i].decode('ascii')
+        return self.string_table[start:i].decode('ascii')
+
 
 class DoodadDefinition:
     def __init__(self):
-        self.NameOfs = 0
-        self.Flags = 0
-        self.Position = (0, 0, 0)
-        self.Rotation = [0, 0, 0, 0]
-        self.Scale = 0
-        self.Color = [0, 0, 0, 0]
+        self.name_ofs = 0
+        self.flags = 0
+        self.position = (0, 0, 0)
+        self.rotation = [0, 0, 0, 0]
+        self.scale = 0
+        self.color = [0, 0, 0, 0]
 
     def read(self, f):
-        weirdThing = unpack("I", f.read(4))[0]
-        self.NameOfs = weirdThing & 0xFFFFFF
-        self.Flags = (weirdThing >> 24) & 0xFF
-        self.Position = unpack("fff", f.read(12))
-        self.Rotation = unpack("ffff", f.read(16))
-        self.Scale = unpack("f", f.read(4))[0]
-        self.Color = unpack("BBBB", f.read(4))
+        weird_thing = unpack("I", f.read(4))[0]
+        self.name_ofs = weird_thing & 0xFFFFFF
+        self.flags = (weird_thing >> 24) & 0xFF
+        self.position = unpack("fff", f.read(12))
+        self.rotation = unpack("ffff", f.read(16))
+        self.scale = unpack("f", f.read(4))[0]
+        self.color = unpack("BBBB", f.read(4))
 
     def write(self, f):
-        weirdThing = ((self.Flags & 0xFF) << 24) | (self.NameOfs & 0xFFFFFF)
-        f.write(pack('I', weirdThing))
-        f.write(pack('fff', *self.Position))
-        f.write(pack('ffff', *self.Rotation))
-        f.write(pack('f', self.Scale))
-        f.write(pack('BBBB', *self.Color))
+        weird_thing = ((self.flags & 0xFF) << 24) | (self.name_ofs & 0xFFFFFF)
+        f.write(pack('I', weird_thing))
+        f.write(pack('fff', *self.position))
+        f.write(pack('ffff', *self.rotation))
+        f.write(pack('f', self.scale))
+        f.write(pack('BBBB', *self.color))
 
-# doodad definition
-class MODD_chunk:
+
+class MODD:
+    """ Doodad definition """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.Definitions = []
+        self.header = ChunkHeader()
+        self.definitions = []
 
     def read(self, f):
         # read header
-        self.Header.read(f)
+        self.header.read(f)
 
-        count = self.Header.size // 40
+        count = self.header.size // 40
 
-        self.Definitions = []
+        self.definitions = []
         for i in range(count):
             defi = DoodadDefinition()
             defi.read(f)
-            self.Definitions.append(defi)
+            self.definitions.append(defi)
 
     def write(self, f):
-        self.Header.magic = 'DDOM'
-        self.Header.size = len(self.Definitions) * 40
+        self.header.magic = 'DDOM'
+        self.header.size = len(self.definitions) * 40
 
-        self.Header.write(f)
-        for defi in self.Definitions:
+        self.header.write(f)
+        for defi in self.definitions:
             defi.write(f)
 
-# fog
+
 class Fog:
     def __init__(self):
-        self.Flags = 0
-        self.Position = (0, 0, 0)
-        self.SmallRadius = 0
-        self.BigRadius = 0
-        self.EndDist = 0
-        self.StartFactor = 0
-        self.Color1 = (0, 0, 0, 0)
-        self.EndDist2 = 0
-        self.StartFactor2 = 0
-        self.Color2 = (0, 0, 0, 0)
+        self.flags = 0
+        self.position = (0, 0, 0)
+        self.small_radius = 0
+        self.big_radius = 0
+        self.end_dist = 0
+        self.start_factor = 0
+        self.color1 = (0, 0, 0, 0)
+        self.end_dist2 = 0
+        self.start_factor2 = 0
+        self.color2 = (0, 0, 0, 0)
 
     def read(self, f):
-        self.Flags = unpack("I", f.read(4))[0]
-        self.Position = unpack("fff", f.read(12))
-        self.SmallRadius = unpack("f", f.read(4))[0]
-        self.BigRadius = unpack("f", f.read(4))[0]
-        self.EndDist = unpack("f", f.read(4))[0]
-        self.StartFactor = unpack("f", f.read(4))[0]
-        self.Color1 = unpack("BBBB", f.read(4))
-        self.EndDist2 = unpack("f", f.read(4))[0]
-        self.StartFactor2 = unpack("f", f.read(4))[0]
-        self.Color2 = unpack("BBBB", f.read(4))
+        self.flags = unpack("I", f.read(4))[0]
+        self.position = unpack("fff", f.read(12))
+        self.small_radius = unpack("f", f.read(4))[0]
+        self.big_radius = unpack("f", f.read(4))[0]
+        self.end_dist = unpack("f", f.read(4))[0]
+        self.start_factor = unpack("f", f.read(4))[0]
+        self.color1 = unpack("BBBB", f.read(4))
+        self.end_dist2 = unpack("f", f.read(4))[0]
+        self.start_factor2 = unpack("f", f.read(4))[0]
+        self.color2 = unpack("BBBB", f.read(4))
 
     def write(self, f):
-        f.write(pack('I', self.Flags))
-        f.write(pack('fff', *self.Position))
-        f.write(pack('f', self.SmallRadius))
-        f.write(pack('f', self.BigRadius))
-        f.write(pack('f', self.EndDist))
-        f.write(pack('f', self.StartFactor))
-        f.write(pack('BBBB', *self.Color1))
-        f.write(pack('f', self.EndDist2))
-        f.write(pack('f', self.StartFactor2))
-        f.write(pack('BBBB', *self.Color2))
+        f.write(pack('I', self.flags))
+        f.write(pack('fff', *self.position))
+        f.write(pack('f', self.small_radius))
+        f.write(pack('f', self.big_radius))
+        f.write(pack('f', self.end_dist))
+        f.write(pack('f', self.start_factor))
+        f.write(pack('BBBB', *self.color1))
+        f.write(pack('f', self.end_dist2))
+        f.write(pack('f', self.start_factor2))
+        f.write(pack('BBBB', *self.color2))
 
-class MFOG_chunk:
+
+class MFOG:
+    """ Fogs """
+
     def __init__(self):
-        self.Header = ChunkHeader()
-        self.Fogs = []
+        self.header = ChunkHeader()
+        self.fogs = []
 
     def read(self, f):
         # read header
-        self.Header.read(f)
+        self.header.read(f)
 
-        count = self.Header.size // 48
+        count = self.header.size // 48
 
-        self.Fogs = []
+        self.fogs = []
         for i in range(count):
             fog = Fog()
             fog.read(f)
-            self.Fogs.append(fog)
+            self.fogs.append(fog)
 
     def write(self, f):
-        self.Header.magic = 'GOFM'
-        self.Header.size = len(self.Fogs) * 48
+        self.header.magic = 'GOFM'
+        self.header.size = len(self.fogs) * 48
 
-        self.Header.write(f)
-        for fog in self.Fogs:
+        self.header.write(f)
+        for fog in self.fogs:
             fog.write(f)
 
-# Convex volume plane, used only for transport objects
-class MCVP_chunk:
+
+class MCVP:
+    """ Convex volume plane, used only for transport objects """
+
     def __init__(self):
-        self.Header = ChunkHeader()
+        self.header = ChunkHeader()
         self.convex_volume_planes = []
 
     def read(self, f):
-        self.Header.read(f)
+        self.header.read(f)
 
-        count = self.Header.size // 16
+        count = self.header.size // 16
 
         for i in range(0, count):
             self.convex_volume_planes.append(unpack('ffff', f.read(16)))
 
     def write(self, f):
-        self.Header.magic = 'PVCM'
-        self.Header.size = len(self.convex_volume_planes) * 16
+        self.header.magic = 'PVCM'
+        self.header.size = len(self.convex_volume_planes) * 16
 
-        self.Header.write(f)
+        self.header.write(f)
         for i in self.convex_volume_planes:
             f.write(pack('ffff', self.convex_volume_planes[i]))
 
