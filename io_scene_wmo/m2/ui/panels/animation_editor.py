@@ -1,6 +1,6 @@
 import bpy
 
-from ..ui.enums import get_anim_ids, ANIMATION_FLAGS
+from ..enums import get_anim_ids, ANIMATION_FLAGS
 
 
 ###############################

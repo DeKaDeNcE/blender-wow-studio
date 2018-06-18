@@ -1,7 +1,7 @@
 import bpy
 import os
 
-from ...utils import load_game_data
+from ....utils import load_game_data
 
 
 ###############################
