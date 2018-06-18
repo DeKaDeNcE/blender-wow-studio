@@ -1,5 +1,4 @@
 import os
-import sys
 import pkgutil
 import importlib
 
@@ -14,7 +13,7 @@ def setup_addon_modules(path, package_name, reload):
     Individual modules can define a __reload_order_index__ property which
     will be used to reload the modules in a specific order. The default is 0.
     """
-    def get_submodule_names(path = path[0], root = ""):
+    def get_submodule_names(path=path[0], root=""):
         module_names = []
         for importer, module_name, is_package in pkgutil.iter_modules([path]):
             if is_package:
@@ -32,7 +31,7 @@ def setup_addon_modules(path, package_name, reload):
         return modules
 
     def reload_modules(modules):
-        modules.sort(key = lambda module: getattr(module, "__reload_order_index__", 0))
+        modules.sort(key=lambda module: getattr(module, "__reload_order_index__", 0))
         for module in modules:
             importlib.reload(module)
 

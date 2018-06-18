@@ -466,7 +466,7 @@ def register_wow_m2_creature_editor_properties():
 
 
 def unregister_wow_m2_creature_editor_properties():
-    bpy.types.Scene.WowM2Creature = None
+    del bpy.types.Scene.WowM2Creature
 
 
 def register_creature_editor():

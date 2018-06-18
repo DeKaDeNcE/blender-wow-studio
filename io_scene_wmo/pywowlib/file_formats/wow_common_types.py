@@ -139,7 +139,7 @@ class M2Array(metaclass=Template):
 
             type_t = type(self.type)
 
-            if type_t is GenericType:
+            if type_t.__name__ == "GenericType":
                 self.values = [self.type.read(f) for _ in range(self.n_elements)]
             else:
                 self.values = [self.type().read(f) for _ in range(self.n_elements)]

@@ -65,16 +65,9 @@ def register_camera_animation_driver_utils():
     bpy.app.driver_namespace["calc_segment_offset"] = calc_segment_offset
 
 
-def unregister_camera_animation_driver_utils():
-    bpy.app.driver_namespace.remove(in_path_segment)
-    bpy.app.driver_namespace.remove(calc_segment_offset)
-
-
 def register_m2_driver_utils():
     register_camera_animation_driver_utils()
 
 
-def unregister_m2_driver_utils():
-    unregister_camera_animation_driver_utils()
 
 

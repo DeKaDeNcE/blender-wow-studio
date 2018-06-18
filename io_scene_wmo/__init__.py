@@ -29,6 +29,7 @@ bl_info = {
 }
 
 import os
+import traceback
 import bpy
 import bpy.utils.previews
 from bpy.props import StringProperty, BoolProperty
@@ -97,14 +98,17 @@ class WMOPreferences(bpy.types.AddonPreferences):
 
 def register():
 
-    bpy.utils.register_module(__name__)
+    try: bpy.utils.register_module(__name__)
+    except: traceback.print_exc()
 
     from .ui import register_ui
     register_ui()
 
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
+    try: bpy.utils.unregister_module(__name__)
+    except: traceback.print_exc()
+
     from .ui import unregister_ui
     unregister_ui()
 

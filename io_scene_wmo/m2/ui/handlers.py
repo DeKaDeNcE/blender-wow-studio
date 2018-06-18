@@ -1,6 +1,6 @@
 import bpy
 from bpy.app.handlers import persistent
-from .drivers import register_m2_driver_utils, unregister_m2_driver_utils
+from .drivers import register_m2_driver_utils
 
 
 @persistent
@@ -29,4 +29,3 @@ def register_m2_handlers():
 def unregister_m2_handlers():
     bpy.app.handlers.frame_change_pre.remove(live_update_materials)
     bpy.app.handlers.load_post.remove(load_handler)
-    unregister_m2_driver_utils()
