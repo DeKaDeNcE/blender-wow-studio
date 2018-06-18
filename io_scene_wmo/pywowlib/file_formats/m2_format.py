@@ -4,6 +4,8 @@ from .skin_format import M2SkinProfile
 from ..enums.m2_enums import M2KeyBones, M2GlobalFlags, M2AttachmentTypes, M2EventTokens
 
 
+__reload_order_index__ = 2
+
 @singleton
 class M2TrackCache:
     def __init__(self):

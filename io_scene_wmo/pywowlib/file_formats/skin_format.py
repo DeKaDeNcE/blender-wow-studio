@@ -1,5 +1,6 @@
 from .wow_common_types import *
 
+__reload_order_index__ = 2
 
 #############################################################
 ######                   M2 Skin                       ######

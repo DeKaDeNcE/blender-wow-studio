@@ -4,6 +4,8 @@ from itertools import chain
 from .file_formats.m2_format import *
 from .file_formats.skin_format import M2SkinProfile, M2SkinSubmesh, M2SkinTextureUnit
 
+__reload_order_index__ = 3
+
 
 class M2File:
     def __init__(self, version, filepath=None):

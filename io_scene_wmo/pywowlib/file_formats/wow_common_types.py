@@ -1,5 +1,7 @@
 from ..io_utils.types import *
 
+__reload_order_index__ = 1
+
 
 ###### M2 file versions ######
 VERSION = 264
@@ -139,7 +141,8 @@ class M2Array(metaclass=Template):
 
             type_t = type(self.type)
 
-            if type_t.__name__ == "GenericType":
+            #if type_t.__name__ == "GenericType":
+            if type_t is GenericType:
                 self.values = [self.type.read(f) for _ in range(self.n_elements)]
             else:
                 self.values = [self.type().read(f) for _ in range(self.n_elements)]

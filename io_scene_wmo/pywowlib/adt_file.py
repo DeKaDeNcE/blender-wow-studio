@@ -2,6 +2,8 @@ from .file_formats.adt_chunks import *
 from .file_formats.wow_common_types import ChunkHeader
 from io import BufferedReader
 
+__reload_order_index__ = 3
+
 
 class ADTFile:
     def __init__(self, file=None):

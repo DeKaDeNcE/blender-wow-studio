@@ -2,6 +2,7 @@ from struct import pack, unpack
 from functools import partial
 from collections import Iterable
 
+__reload_order_index__ = 0
 
 #############################################################
 ######                 Parsing helpers                 ######
@@ -95,7 +96,7 @@ class Array(metaclass=Template):
         self.values = [type_() for _ in range(length)]
 
     def read(self, f):
-        if type(self.type).__name__ == "GenericType":
+        if type(self.type) is GenericType:
             self.values = [self.type.read(f) for _ in range(self.length)]
         else:
             for val in self.values:
@@ -105,7 +106,7 @@ class Array(metaclass=Template):
 
     def write(self, f):
 
-        if type(self.type).__name__ == "GenericType":
+        if type(self.type) is GenericType:
             for val in self.values:
                 self.type.write(f, val)
         else:

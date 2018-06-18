@@ -2,6 +2,8 @@ from .wow_common_types import *
 from ..enums.adt_enums import *
 from .. import CLIENT_VERSION, WoWVersions
 
+__reload_order_index__ = 2
+
 TILE_SIZE = 5533.333333333
 MAP_SIZE_MIN = -17066.66656
 MAP_SIZE_MAX = 17066.66657
