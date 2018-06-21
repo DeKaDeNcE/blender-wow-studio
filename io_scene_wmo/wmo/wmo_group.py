@@ -1,5 +1,6 @@
-import bpy
 import os
+import bpy
+import bmesh
 import mathutils
 
 from math import floor, ceil, pi
@@ -133,22 +134,33 @@ class WMOGroupFile:
         return True
 
     @staticmethod
-    def get_batch_type(polygon, mesh, vg_index_a, vg_index_b):
-        """ Find which MOBA batch type a passed polygon belongs two """
-        counter_a = 0
-        counter_b = 0
+    def get_batch_type(b_face, vg_batch_map_index, vg_batch_map):
+        """ Find which MOBA batch type a passed bmesh face belongs two """
 
-        for i in polygon.vertices:
-            for group_info in mesh.vertices[i].groups:
-                if group_info.group == vg_index_a:
-                    counter_a += 1
-                elif group_info.group == vg_index_b:
-                    counter_b += 1
+        # assume batch C if no batch map provided
+        if vg_batch_map is None:
+            return 2
 
-        if counter_a == len(polygon.vertices):
+        count_a = 0
+        count_b = 0
+
+        for vertex in b_face.verts:
+            dvert = vertex[vg_batch_map]
+
+            if vg_batch_map_index in dvert:
+                weight = dvert[vg_batch_map_index]
+
+                if weight != 0:
+                    count_a += 1
+                else:
+                    count_b += 1
+
+        if count_a == 3:
             return 0
+        elif count_b == 3:
+            return 1
         else:
-            return 1 if counter_b == len(polygon.vertices) else 2
+            return 2
 
     @staticmethod
     def get_material_viewport_image(material):
@@ -160,6 +172,56 @@ class WMOGroupFile:
             except:
                 pass
         return None
+
+    @staticmethod
+    def get_linked_faces(b_face, face_batch_type, uv, uv2, batch_map, batch_map_index, stack=0):
+        # check if face was already processed
+        if b_face.tag:
+            return []
+
+        f_linked = [b_face]
+        mat_idx = b_face.material_index
+        b_face.tag = True
+
+        # Select edges that link two faces
+        for link_edge in b_face.edges:
+            # check if edge is shared with another face
+            if not len(link_edge.link_faces) == 2:
+                continue
+
+            # prevent recursion stack overflow
+            if stack > sys.getrecursionlimit() - 1:
+                break
+
+            for link_face in link_edge.link_faces:
+                # check if face was already processed and if it shares the same material
+                if not link_face.tag or link_face.material_index != mat_idx:
+                    continue
+
+                # check if face is located within same UV island.
+                linked_uvs = 0
+                for loop in b_face.loops:
+
+                    for l_loop in loop.vert.link_loops:
+                        if l_loop.face is link_face \
+                                and l_loop[uv].uv == loop[uv].uv \
+                                and (uv2 and l_loop[uv2].uv == loop[uv2].uv):
+                            linked_uvs += 1
+
+                if linked_uvs < 2:
+                    continue
+
+                # check if face is located within the same batch
+                batch_type = WMOGroupFile.get_batch_type(link_face, batch_map_index, batch_map)
+
+                if batch_type != face_batch_type:
+                    continue
+
+                # call this function recursively on this face if all checks are passed
+                f_linked.extend(WMOGroupFile.get_linked_faces(link_face, batch_type, uv, uv2, batch_map,
+                                                              batch_map_index, stack=stack + 1))
+
+        return f_linked
 
     def from_wmo_liquid_type(self, basic_liquid_type):
         """ Convert simplified WMO liquid type IDs to real LiquidType.dbc IDs """
@@ -350,19 +412,12 @@ class WMOGroupFile:
             nobj.wow_wmo_group.flags = flag_set
             vert_color_layer1 = mesh.vertex_colors.new("Col")
 
-            lightmap = nobj.vertex_groups.new("Lightmap")
-            nobj.wow_wmo_vertex_info.lightmap = lightmap.name
-            lightmap.add(self.movi.indices, 1.0, 'ADD')
-
             # loops and vertex_color are in the same order, so we use it to find vertex index
             for i in range(len(mesh.loops)):
 
                 vert_color_layer1.data[i].color = (self.mocv.vert_colors[mesh.loops[i].vertex_index][2] / 255,
                                                    self.mocv.vert_colors[mesh.loops[i].vertex_index][1] / 255,
                                                    self.mocv.vert_colors[mesh.loops[i].vertex_index][0] / 255)
-
-                mesh.vertices[mesh.loops[i].vertex_index].groups[lightmap.index].weight \
-                    = self.mocv.vert_colors[mesh.loops[i].vertex_index][3] / 255
 
         if self.mogp.flags & MOGPFlags.HasTwoMOCV:
             blendmap = nobj.vertex_groups.new("Blendmap")
@@ -394,15 +449,11 @@ class WMOGroupFile:
 
         # create batch vertex groups
 
-        batch_map_a = None
-        batch_map_b = None
+        batch_map = None
 
-        if self.mogp.n_batches_a != 0:
-            batch_map_a = nobj.vertex_groups.new("BatchMapA")
-            nobj.wow_wmo_vertex_info.batch_type_a = batch_map_a.name
-        if self.mogp.n_batches_b != 0:
-            batch_map_b = nobj.vertex_groups.new("BatchMapB")
-            nobj.wow_wmo_vertex_info.batch_type_b = batch_map_b.name
+        if self.mogp.n_batches_a != 0 or self.mogp.n_batches_b != 0:
+            batch_map = nobj.vertex_groups.new("BatchMap")
+            nobj.wow_wmo_vertex_info.batch_map = batch_map.name
 
         batch_material_map = {}
 
@@ -430,14 +481,18 @@ class WMOGroupFile:
                 material.wow_wmo_material.enabled = True
 
             if i < self.mogp.n_batches_a:
-                batch_map_a.add(self.movi.indices[self.moba.batches[i].start_triangle
-                                                  : self.moba.batches[i].start_triangle
-                                                  + self.moba.batches[i].n_triangles], 1.0, 'ADD')
+                batch = self.moba.batches[i]
+                indices = self.movi.indices[batch.start_triangle : batch.start_triangle + batch.n_triangles]
+                batch_map.add(indices, 0.0, 'ADD')
 
-            elif i < self.mogp.n_batches_a + self.mogp.n_batches_b:
-                batch_map_b.add(self.movi.indices[self.moba.batches[i].start_triangle
-                                                  : self.moba.batches[i].start_triangle
-                                                  + self.moba.batches[i].n_triangles], 1.0, 'ADD')
+                # add lightmap information for batch A
+                for index in indices:
+                    mesh.vertices[index].groups[batch_map.index].weight = self.mocv.vert_colors[index][3] / 255
+
+            elif i < self.mogp.n_batches_b:
+                batch = self.moba.batches[i]
+                indices = self.movi.indices[batch.start_triangle : batch.start_triangle + batch.n_triangles]
+                batch_map.add(indices, 0.0, 'ADD')
 
             batch_material_map[
                 (self.moba.batches[i].start_triangle // 3,
@@ -608,9 +663,9 @@ class WMOGroupFile:
         # check if this portal was already processed
         bound_relation_side = None
         bound_relation = None
-        for relation in self.root.mopr.Relationships:
-            if relation.PortalIndex == portal_obj.wow_wmo_portal.portal_id:
-                bound_relation_side = relation.Side
+        for relation in self.root.mopr.relations:
+            if relation.portal_index == portal_obj.wow_wmo_portal.portal_id:
+                bound_relation_side = relation.side
                 bound_relation = relation
 
         if bound_relation_side:
@@ -757,305 +812,197 @@ class WMOGroupFile:
         bpy.context.scene.objects.active = obj
         mesh = obj.data
 
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.reveal()
-        bpy.ops.mesh.select_all(action='DESELECT')
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        if len(obj.modifiers):
-            for modifier in obj.modifiers:
-                bpy.ops.object.modifier_apply(modifier=modifier.name)
-
-        bpy.ops.object.modifier_add(type='TRIANGULATE')
-        bpy.context.object.modifiers["Triangulate"].quad_method = 'BEAUTY'
-        bpy.ops.object.modifier_remove(modifier="Triangulate")
-
-        # triangulate mesh
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.quads_convert_to_tris()
-        bpy.ops.mesh.delete_loose()
-        bpy.ops.mesh.select_all(action='DESELECT')
-
-        # perform edge split.
-        bpy.ops.uv.select_all(action='SELECT')
-        bpy.ops.uv.seams_from_islands(mark_seams=False, mark_sharp=True)
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        bpy.ops.object.modifier_add(type='EDGE_SPLIT')
-        bpy.context.object.modifiers["EdgeSplit"].use_edge_angle = False
-        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="EdgeSplit")
-
-        # apply object transformation to geometry. Needs to be optional.
-        obj.select = True
-        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-        obj.select = False
-
-        # perform vertex group split to keep batches accurate.
-        bpy.ops.object.mode_set(mode='EDIT')
-        if obj.wow_wmo_vertex_info.batch_type_a != "":
-            bpy.ops.object.vertex_group_set_active(group=obj.wow_wmo_vertex_info.batch_type_a)
-            bpy.ops.object.vertex_group_select()
-            bpy.ops.mesh.split()
-            bpy.ops.mesh.select_all(action='DESELECT')
-
-        if obj.wow_wmo_vertex_info.batch_type_b != "":
-            bpy.ops.object.vertex_group_set_active(group=obj.wow_wmo_vertex_info.batch_type_b)
-            bpy.ops.object.vertex_group_select()
-            bpy.ops.mesh.split()
-            bpy.ops.mesh.select_all(action='DESELECT')
-
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        mesh.use_auto_smooth = True
-
         if mesh.has_custom_normals:
             mesh.calc_normals_split()
-        else:
-            bpy.ops.mesh.customdata_custom_splitnormals_add()
-            original_obj.data.calc_normals_split()
 
-            obj.select = True
-            bpy.context.scene.objects.active = original_obj
-            bpy.ops.object.data_transfer(data_type='CUSTOM_NORMAL')
-            obj.select = False
-            bpy.context.scene.objects.active = obj
-            mesh.calc_normals_split()
+        # create bmesh
+        bm = bmesh.new()
+        bm.from_object(obj, bpy.context.scene)
 
-        # doing safety checks
-        if len(mesh.vertices) > 65535:
-            print("\nObject <<{}>> contains more vertices ({}) than it is supported. "
-                  "\nMaximum amount of vertices you can use per one object is 65535.".format(obj.name, len(mesh.vertices)))
+        # triangulate bmesh
+        bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method=0, ngon_method=0)
 
-        if len(self.root.momt.Materials) > 256:
-            print("\nScene has exceeded the maximum allowed number of WoW materials (255). Your scene now has {} materials. "
-                  "So, {} extra ones.".format(len(self.root.momt.Materials), (len(self.root.momt.Materials) - 256)))
+        vertices = bm.verts
+        edges = bm.edges
+        faces = bm.faces
+
+        vertices.ensure_lookup_table()
+        edges.ensure_lookup_table()
+        faces.ensure_lookup_table()
+
+        # untag faces
+        for face in faces:
+            face.tag = False
+
+        deform = bm.verts.layers.deform.active
+        uv = bm.loops.layers.uv.active
+        uv2 = bm.loops.layers.uv.get(obj.wow_wmo_vertex_info.second_uv)
+
+        obj_blend_map = obj.vertex_groups.get(obj.wow_wmo_vertex_info.blendmap)
+        vg_blend_map_index = obj_blend_map.index if obj_blend_map else 0
+
+        obj_collision_vg = obj.vertex_groups.get(obj.wow_wmo_vertex_info.vertex_group)
+        vg_collision_index = obj_collision_vg.index if obj_collision_vg else 0
+
+        obj_batch_map = obj.vertex_groups.get(obj.wow_wmo_vertex_info.batch_map)
+        vg_batch_map_index = obj_batch_map.index if obj_batch_map else 0
+
+        vertex_colors = bm.loops.layers.color.active
+        use_vertex_color = '0' in obj.wow_wmo_group.flags \
+                               or (obj.wow_wmo_group.place_type == '8192' and '1' not in obj.wow_wmo_group.flags)
+
+        if obj_blend_map:
+            self.root.mohd.flags |= 0x2
+
+        faces_set = set(faces)
+        batches = {}
+
+        while faces_set:
+            face = next(iter(faces_set))
+            batch_type = WMOGroupFile.get_batch_type(face, vg_batch_map_index, deform)
+            linked_faces = WMOGroupFile.get_linked_faces(face, batch_type, uv, uv2, deform, vg_batch_map_index)
+            batches.setdefault((face.material_index, batch_type), []).append(linked_faces)
+            faces_set -= set(linked_faces)
+
+        batches = sorted(batches.items(), key=lambda x: (x[0][1], x[0][0]))
 
         self.mver.version = 17
 
-        material_indices = {}
+        start_triangle = 0
+        start_vertex = 0
+        next_v_index_local = 0
+        for batch_info, batch_groups in batches:
+            mat_index, batch_type = batch_info
 
-        if autofill_textures:
-            obj.select = True
-            bpy.ops.scene.wow_fill_textures()
-            obj.select = False
+            for batch_group in batch_groups:
+                n_faces = len(batch_group)
+                n_vertices = n_faces * 3
 
-        for i in range(len(mesh.materials)):
-            material_indices[i] = self.root.add_material(mesh.materials[i])
+                batch = Batch()
+                batch.start_triangle = start_triangle
+                batch.n_triangles = n_vertices
+                batch.start_vertex = start_vertex
+                batch.last_vertex = start_vertex + n_vertices * 3
+                batch.material_id = self.root.add_material(mesh.materials[mat_index])
+                batch.bounding_box = [32767, 32767, 32767, -32768, -32768, -32768]
 
-        poly_batch_map = {}
+                # do not write collision only batches as actual batches, because they are not
+                if batch.material_id != 0xFF:
+                    self.moba.batches.append(batch)
 
-        vg_collision = None
-        vg_lightmap = None
-        vg_blendmap = None
-        uv_second_uv = None
+                if batch_type == 0:
+                    self.mogp.n_batches_a += 1
+                elif batch_type == 1:
+                    self.mogp.n_batches_b += 1
+                elif batch_type == 2:
+                    self.mogp.n_batches_c += 1
 
-        if obj.wow_wmo_vertex_info.batch_type_a != "":
-            vg_batch_a = obj.vertex_groups.get(obj.wow_wmo_vertex_info.batch_type_a)
-        else:
-            vg_batch_a = obj.vertex_groups.new("BatchMapA")
+                # actually save geometry
+                vertex_map = {}
+                for i, face in enumerate(batch_group):
 
-        if obj.wow_wmo_vertex_info.batch_type_b != "":
-            vg_batch_b = obj.vertex_groups.get(obj.wow_wmo_vertex_info.batch_type_b)
-        else:
-            vg_batch_b = obj.vertex_groups.new("BatchMapB")
+                    tri_mat = TriangleMaterial()
+                    tri_mat.material_id = batch.material_id
 
-        if obj.wow_wmo_vertex_info.vertex_group != "":
-            vg_collision = obj.vertex_groups.get(obj.wow_wmo_vertex_info.vertex_group)
+                    tri_indices = [0, 0, 0]
 
-        if obj.wow_wmo_vertex_info.lightmap != "":
-            vg_lightmap = obj.vertex_groups.get(obj.wow_wmo_vertex_info.lightmap)
+                    collision_counter = 0
+                    for j, vertex in enumerate(face.verts):
+                        vert_info = vertex_map.get(vertex.index)
+                        dvert = vertex[deform]
 
-        if obj.wow_wmo_vertex_info.blendmap != "":
-            vg_blendmap = obj.vertex_groups.get(obj.wow_wmo_vertex_info.blendmap)
-            self.mogp.flags |= MOGPFlags.HasTwoMOCV
-            self.root.mohd.Flags |= 0x1
+                        if vert_info is None:
 
-        if obj.wow_wmo_vertex_info.second_uv != "":
-            uv_second_uv = obj.data.uv_textures.get(obj.wow_wmo_vertex_info.second_uv)
-            self.mogp.flags |= MOGPFlags.HasTwoMOTV
+                            # determine if vertex is collideable
+                            is_collideable = obj_collision_vg and (vg_collision_index in dvert)
 
-        for poly in mesh.polygons:
-            poly_batch_map.setdefault((material_indices.get(poly.material_index),
-                                       self.get_batch_type(poly, mesh, vg_batch_a.index, vg_batch_b.index)), []
-                                      ).append(poly.index)
-
-        vertex_size = len(mesh.vertices)
-
-        # count A and B batches amount
-        n_batches_a = 0
-        n_batches_b = 0
-        n_batches_c = 0
-
-        for batch_key, poly_batch in poly_batch_map.items():
-            if batch_key[0] != 0xFF:
-                if batch_key[1] == 0:
-                    n_batches_a += 1
-                elif batch_key[1] == 1:
-                    n_batches_b += 1
-                else:
-                    n_batches_c += 1
-
-        # resize chunk containers
-        self.moba.batches = (n_batches_a + n_batches_b + n_batches_c) * [Batch()]
-        self.movt.vertices = vertex_size * [(0, 0, 0)]
-        self.monr.normals = vertex_size * [(0, 0, 0)]
-        self.motv.tex_coords = vertex_size * [(0, 0)]
-        self.motv2.TexCoords = vertex_size * [(0, 0)]
-        self.mocv.vertColors = vertex_size * [(0x7F, 0x7F, 0x7F, 0x00)]
-        self.mocv2.vertColors = vertex_size * [(0x7F, 0x7F, 0x7F, 0x00)]
-
-        vertex_map = {}
-        normal_map = {}
-
-        new_index_last = 0
-
-        # write geometry data and batches
-        batch_counter_a = 0
-        batch_counter_b = 0
-        batch_counter_c = 0
-
-        for batch_key, poly_batch in poly_batch_map.items():
-
-            first_index = len(self.movi.indices)
-
-            sentry_indices = [0xFFFF, 0x00]
-
-            for poly in poly_batch:
-                collision_counter = 0
-
-                for vertex_index in mesh.polygons[poly].vertices:
-
-                    new_index_current = vertex_map.get(vertex_index)
-
-                    if new_index_current is None:
-                        vertex_map[vertex_index] = new_index_last
-                        new_index_current = new_index_last
-                        new_index_last += 1
-                        self.movt.vertices[new_index_current] = tuple(mesh.vertices[vertex_index].co)
-
-                    sentry_indices[0] = min(sentry_indices[0], new_index_current)
-                    sentry_indices[1] = max(sentry_indices[1], new_index_current)
-
-                    self.movi.indices.append(new_index_current)
-
-                    if vg_collision is not None:
-                        for group_info in mesh.vertices[vertex_index].groups:
-                            if group_info.group == vg_collision.index:
+                            if is_collideable:
                                 collision_counter += 1
 
-                tri_mat = TriangleMaterial()
-                tri_mat.material_id = batch_key[0]
-                tri_mat.flags = 0x8 if tri_mat.material_id == 0xFF else 0x20
-                tri_mat.flags |= 0x40 if collision_counter == len(mesh.polygons[poly].vertices) else 0x4 | 0x8
+                            vertex_map[vertex.index] = next_v_index_local, is_collideable
+                            v_index_local = next_v_index_local
+                            next_v_index_local += 1
 
-                for loop_index in mesh.polygons[poly].loop_indices:
+                            # handle basic geometry elements
+                            self.movt.vertices.append(vertex.co.to_tuple())
+                            self.monr.normals.append(vertex.normal.to_tuple())
+                            self.motv.tex_coords.append((face.loops[j][uv].uv[0],
+                                                         1.0 - face.loops[j][uv].uv[1]))
 
-                    new_index = vertex_map.get(mesh.loops[loop_index].vertex_index)
-                    vertex = mesh.vertices[mesh.loops[loop_index].vertex_index]
+                            # handle second UV map layer
+                            if uv2:
+                                self.motv2.tex_coords.append((face.loops[j][uv].uv[0],
+                                                             1.0 - face.loops[j][uv2].uv[1]))
 
-                    if len(mesh.uv_layers) > 0:
-                        self.motv.tex_coords[new_index] = (mesh.uv_layers.active.data[loop_index].uv[0],
-                                                           1.0 - mesh.uv_layers.active.data[loop_index].uv[1])
+                            # handler vertex color
+                            if use_vertex_color:
+                                if vertex_colors:
+                                    vertex_color = [0x7F, 0x7F, 0x7F, 0x00]
+                                    vcol = face.loops[j][vertex_colors]
 
-                    if uv_second_uv:
-                        self.motv2.TexCoords[new_index] = (mesh.uv_layers[uv_second_uv.name].data[loop_index].uv[0],
-                                                            1.0 - mesh.uv_layers[uv_second_uv.name].data[loop_index].uv[1])
+                                    for k in range(3):
+                                        vertex_color[k] = round(vcol[3 - k - 1] * 255)
 
-                    if '0' in obj.wow_wmo_group.flags \
-                    or (obj.wow_wmo_group.place_type == '8192' and '1' not in obj.wow_wmo_group.flags):
-                        if len(mesh.vertex_colors):
-                            vertex_color = [0x7F, 0x7F, 0x7F, 0x00]
+                                    # in batch A it is guaranteed that blendmap exists
+                                    if batch_type == 0:
+                                        attenuation = round(dvert[vg_batch_map_index] * 255)
 
-                            for i in range(3):
-                                vertex_color[i] = round(mesh.vertex_colors.active.data[loop_index].color[3 - i - 1] * 255)
+                                        if attenuation > 0:
+                                            tri_mat.flags |= 0x1  # TODO: actually check what this does
 
-                            if vg_lightmap:
-                                for vertex_group_element in vertex.groups:
-                                    if vertex_group_element.group == vg_lightmap.index:
-                                        weight = round(vertex_group_element.weight * 255)
-                                        vertex_color[3] = weight if weight > 0 else 0x00
-                                        if weight > 0:
-                                            tri_mat.flags |= 0x1
+                                    self.mocv.vert_colors.append(vertex_color)
+                                else:
+                                    # set correct default values for vertex
+                                    self.mocv.vert_colors.append([0x7F, 0x7F, 0x7F, 0x00]
+                                                                 if batch_type == 2 else [0x7F, 0x7F, 0x7F, 0xFF])
 
-                            self.mocv.vertColors[new_index] = vertex_color
+                            if obj_blend_map:
+                                if vg_blend_map_index in dvert:
+                                    blend_factor = round(dvert[vg_blend_map_index] * 255)
+                                else:
+                                    blend_factor = 1
+
+                                self.mocv2.vert_colors.append((0, 0, 0, blend_factor))
+
+                            self.movi.indices.append(v_index_local)
+                            # tri_indices[j] = v_index_local
+
+                            # calculate bounding box
+                            for k in range(2):
+                                for l in range(3):
+                                    idx = k * 3 + l
+                                    batch.bounding_box[idx] = min(batch.bounding_box[idx], floor(vertex.co[l])) \
+                                        if k == 0 else max(batch.bounding_box[idx], ceil(vertex.co[l]))
 
                         else:
-                            if batch_key == 2:
-                                self.mocv.vertColors[new_index] = [0x7F, 0x7F, 0x7F, 0x00]
-                            else:
-                                self.mocv.vertColors[new_index] = [0x7F, 0x7F, 0x7F, 0xFF]
+                            v_index_local, is_collideable = vert_info
 
-                    if vg_blendmap is not None:
-                        for vertex_group_element in vertex.groups:
-                            if vertex_group_element.group == vg_blendmap.index:
-                                try:
-                                    weight = round(vertex.groups[vg_blendmap.index].weight * 255)
-                                except IndexError:
-                                    weight = 1
-                                self.mocv2.vertColors[new_index] = (0,
-                                                                    0,
-                                                                    0,
-                                                                    weight if weight > 0 else 0x00)
+                            if is_collideable:
+                                collision_counter += 1
 
-                        self.root.mohd.Flags |= 0x2
+                            self.movi.indices.append(v_index_local)
+                            # tri_indices[j] = v_index_local
 
-                    normal_map.setdefault(new_index, []).append(tuple(mesh.loops[loop_index].normal))
+                    tri_mat.flags = 0x8 if tri_mat.material_id == 0xFF else 0x20
+                    tri_mat.flags |= 0x40 if collision_counter == 3 else 0x4 | 0x8
 
-                self.mopy.triangle_materials.append(tri_mat)
+                    self.mopy.triangle_materials.append(tri_mat)
+                    # self.movi.indices.append(tri_indices)
 
-            n_indices = len(self.movi.indices) - first_index
+                # increment start indices for the next batch
+                start_triangle = start_triangle + batch.n_triangles
+                start_vertex = batch.start_vertex + 1
 
-            bounding_box = [32767, 32767, 32767, -32768, -32768, -32768]
-
-            for poly in poly_batch:
-                for vertex_index in mesh.polygons[poly].vertices:
-                    new_index = vertex_map.get(vertex_index)
-                    self.monr.normals[new_index] = self.get_avg(normal_map.get(new_index))
-
-                    for i in range(0, 2):
-                        for j in range(0, 3):
-                            idx = i * 3 + j
-                            bounding_box[idx] = min(bounding_box[idx], floor(self.movt.vertices[new_index][j])) \
-                                               if i == 0 else max(bounding_box[idx], ceil(self.movt.vertices[new_index][j]))
-
-            # skip batch writing if processed polyBatch is collision
-            if batch_key[0] == 0xFF:
-                continue
-
-            # write current batch
-            batch = Batch()
-
-            batch.bounding_box = bounding_box
-
-            batch.start_triangle = first_index
-            batch.n_triangles = n_indices
-
-            batch.start_vertex = sentry_indices[0]
-            batch.last_vertex = sentry_indices[1]
-
-            batch.material_id = batch_key[0]
-
-            # sort and write batches
-            if batch_key[1] == 0:
-                self.moba.batches[batch_counter_a] = batch
-                batch_counter_a += 1
-            elif batch_key[1] == 1:
-                self.moba.batches[n_batches_a + batch_counter_b] = batch
-                batch_counter_b += 1
-            else:
-                self.moba.batches[n_batches_a + n_batches_b + batch_counter_c] = batch
-                batch_counter_c += 1
+        bm.free()
 
         # write header
         self.mogp.bounding_box_corner1 = [32767, 32767, 32767]
         self.mogp.bounding_box_corner2 = [-32768, -32768, -32768]
 
         for vtx in self.movt.vertices:
-            for i in range(0, 3):
-                self.mogp.bounding_box_corner1[i] = min(self.mogp.bounding_box_corner1[i], floor(vtx[i]))
-                self.mogp.bounding_box_corner2[i] = max(self.mogp.bounding_box_corner2[i], ceil(vtx[i]))
+            for j in range(0, 3):
+                self.mogp.bounding_box_corner1[j] = min(self.mogp.bounding_box_corner1[j], floor(vtx[j]))
+                self.mogp.bounding_box_corner2[j] = max(self.mogp.bounding_box_corner2[j], ceil(vtx[j]))
 
         self.mogp.flags |= MOGPFlags.HasCollision # /!\ MUST HAVE 0x1 FLAG ELSE THE GAME CRASH !
         if '0' in obj.wow_wmo_group.flags:
@@ -1091,14 +1038,7 @@ class WMOGroupFile:
             for lamp in lamps:
                 self.molr.LightRefs.append(lamp.id)
 
-        self.mogp.n_batches_a = n_batches_a
-        self.mogp.n_batches_b = n_batches_b
-        self.mogp.n_batches_c = n_batches_c
-        self.mogp.n_batches_d = 0
         self.mogp.group_id = int(obj.wow_wmo_group.group_dbc_id)
-        self.mogp.unknown1 = 0
-        self.mogp.unknown2 = 0
-
         group_info = self.root.add_group_info(self.mogp.flags,
                                               [self.mogp.bounding_box_corner1, self.mogp.bounding_box_corner2],
                                               original_obj.name,
@@ -1109,11 +1049,11 @@ class WMOGroupFile:
 
         if len(obj.wow_wmo_group.modr):
             for doodad in obj.wow_wmo_group.modr:
-                self.modr.DoodadRefs.append(doodad.value)
+                self.modr.doodad_refs.append(doodad.value)
             self.mogp.flags |= MOGPFlags.HasDoodads
         elif obj.wow_wmo_group.relations.doodads:
             for doodad in obj.wow_wmo_group.relations.doodads:
-                self.modr.DoodadRefs.append(doodad.id)
+                self.modr.doodad_refs.append(doodad.id)
             self.mogp.flags |= MOGPFlags.HasDoodads
         else:
             self.modr = None
@@ -1137,7 +1077,7 @@ class WMOGroupFile:
         if not self.mogp.flags & MOGPFlags.HasWater:
             self.mliq = None
             self.mogp.flags |= MOGPFlags.IsNotOcean # check if this is necessary
-            self.root.mohd.Flags |= 0x4
+            self.root.mohd.flags |= 0x4
             self.mogp.liquid_type = int(obj.wow_wmo_group.liquid_type)
 
         if not has_lights:
@@ -1146,10 +1086,10 @@ class WMOGroupFile:
             self.mogp.flags |= MOGPFlags.HasLight
 
         # write second MOTV and MOCV
-        if uv_second_uv is None:
+        if uv2 is None:
             self.motv2 = None
 
-        if vg_blendmap is None:
+        if obj_blend_map is None:
             self.mocv2 = None
 
         print("\nDone saving group: <<{}>>".format(obj.name[:-4]))

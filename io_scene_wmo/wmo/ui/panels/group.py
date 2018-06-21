@@ -66,7 +66,7 @@ class WowWMODoodadRel(bpy.types.PropertyGroup):
 class WowWMOGroupRelations(bpy.types.PropertyGroup):
     """Used for export internally"""
     portals = bpy.props.CollectionProperty(type=WowWMOPortalRel)
-    liqhts = bpy.props.CollectionProperty(type=WowWMOLightRel)
+    lights = bpy.props.CollectionProperty(type=WowWMOLightRel)
     liquid = bpy.props.StringProperty()
     doodads = bpy.props.CollectionProperty(type=WowWMODoodadRel)
 

@@ -418,27 +418,27 @@ class MOPR:
 
     def __init__(self):
         self.header = ChunkHeader()
-        self.relationships = []
+        self.relations = []
 
     def read(self, f):
         # read header
         self.header.read(f)
 
-        self.relationships = []
+        self.relations = []
 
         for i in range(self.header.size // 8):
-            relationship = PortalRelation()
-            relationship.read(f)
-            self.relationships.append(relationship)
+            relation = PortalRelation()
+            relation.read(f)
+            self.relations.append(relation)
 
     def write(self, f):
         self.header.magic = 'RPOM'
-        self.header.size = len(self.relationships) * 8
+        self.header.size = len(self.relations) * 8
 
         self.header.write(f)
 
-        for rel in self.relationships:
-            rel.write(f)
+        for relation in self.relations:
+            relation.write(f)
 
 
 class MOVV:

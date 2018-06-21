@@ -142,9 +142,9 @@ class WMOFile:
         """ Compare two WoW material properties """
 
         get_attributes = operator.attrgetter(
-            'Shader', 'TerrainType', 'BlendingMode',
-            'Texture1', 'EmissiveColor', 'Flags',
-            'Texture2', 'DiffColor')
+            'shader', 'terrain_type', 'blending_mode',
+            'texture1', 'emissive_color', 'flags',
+            'texture2', 'diff_color')
 
         mat1 = get_attributes(material.wow_wmo_material)
 
@@ -581,7 +581,7 @@ class WMOFile:
             obj.wow_wmo_portal.enabled = True
             first_relationship = True
 
-            for relation in self.mopr.relationships:
+            for relation in self.mopr.relations:
                 if relation.portal_index == index:
                     group_name = self.mogn.get_string(self.groups[relation.group_index].mogp.group_name_ofs)
                     if first_relationship:
@@ -642,11 +642,11 @@ class WMOFile:
 
     def get_global_bounding_box(self):
         """ Calculate bounding box of an entire scene """
-        corner1 = self.mogi.infos[0].BoundingBoxCorner1
-        corner2 = self.mogi.infos[0].BoundingBoxCorner2
+        corner1 = self.mogi.infos[0].bounding_box_corner1
+        corner2 = self.mogi.infos[0].bounding_box_corner2
 
         for gi in self.mogi.infos:
-            v = gi.BoundingBoxCorner1
+            v = gi.bounding_box_corner1
             if v[0] < corner1[0]:
                 corner1[0] = v[0]
             if v[1] < corner1[1]:
@@ -654,7 +654,7 @@ class WMOFile:
             if v[2] < corner1[2]:
                 corner1[2] = v[2]
 
-            v = gi.BoundingBoxCorner2
+            v = gi.bounding_box_corner2
             if v[0] > corner2[0]:
                 corner2[0] = v[0]
             if v[1] > corner2[1]:
@@ -836,7 +836,7 @@ class WMOFile:
             portal_relations = group_obj.wow_wmo_group.relations.portals
             group_index = group_obj.wow_wmo_group.group_id
             group = self.groups[group_index]
-            group.mogp.PortalStart = len(self.mopr.relationships)
+            group.mogp.PortalStart = len(self.mopr.relations)
 
             for relation in portal_relations:
                 portal_obj = bpy.context.scene.objects[relation.id]
@@ -884,9 +884,9 @@ class WMOFile:
                 relation.group_index = second.wow_wmo_group.group_id if first.name == group_obj.name else first.wow_wmo_group.group_id
                 relation.side = group.get_portal_direction(portal_obj, group_obj)
 
-                self.mopr.relationships.append(relation)
+                self.mopr.relations.append(relation)
 
-            group.mogp.PortalCount = len(self.mopr.relationships) - group.mogp.PortalStart
+            group.mogp.PortalCount = len(self.mopr.relations) - group.mogp.PortalStart
 
         print("\nDone saving portals. "
               "\nTotal saving time: ", time.strftime("%M minutes %S seconds", time.gmtime(time.time() - start_time)))

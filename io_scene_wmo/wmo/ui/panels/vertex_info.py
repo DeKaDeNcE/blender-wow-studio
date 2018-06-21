@@ -14,16 +14,8 @@ class WowVertexInfoPanel(bpy.types.Panel):
 
         self.layout.prop(context.object.wow_wmo_vertex_info, "node_size", slider=True)
 
-        self.layout.prop_search(context.object.wow_wmo_vertex_info, "batch_type_a", context.object,
-                                "vertex_groups", text="Batch type A vertex group"
-                                )
-
-        self.layout.prop_search(context.object.wow_wmo_vertex_info, "batch_type_b",
-                                context.object, "vertex_groups", text="Batch type B vertex group"
-                                )
-
-        self.layout.prop_search(context.object.wow_wmo_vertex_info, "lightmap",
-                                context.object, "vertex_groups", text="Lightmap"
+        self.layout.prop_search(context.object.wow_wmo_vertex_info, "batch_map", context.object,
+                                "vertex_groups", text="Batch map ertex group"
                                 )
 
         self.layout.prop_search(context.object.wow_wmo_vertex_info, "blendmap", context.object,
@@ -56,9 +48,7 @@ class WowVertexInfoPropertyGroup(bpy.types.PropertyGroup):
         soft_max=5000
         )
 
-    batch_type_a = bpy.props.StringProperty()
-    batch_type_b = bpy.props.StringProperty()
-    lightmap = bpy.props.StringProperty()
+    batch_map = bpy.props.StringProperty()
     blendmap = bpy.props.StringProperty()
     second_uv = bpy.props.StringProperty()
 
