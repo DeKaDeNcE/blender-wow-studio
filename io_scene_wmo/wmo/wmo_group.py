@@ -195,7 +195,7 @@ class WMOGroupFile:
 
             for link_face in link_edge.link_faces:
                 # check if face was already processed and if it shares the same material
-                if not link_face.tag or link_face.material_index != mat_idx:
+                if link_face.tag or link_face.material_index != mat_idx:
                     continue
 
                 # check if face is located within same UV island.
@@ -203,12 +203,13 @@ class WMOGroupFile:
                 for loop in b_face.loops:
 
                     for l_loop in loop.vert.link_loops:
-                        if l_loop.face is link_face \
-                                and l_loop[uv].uv == loop[uv].uv \
-                                and (uv2 and l_loop[uv2].uv == loop[uv2].uv):
-                            linked_uvs += 1
+                        if l_loop.face is link_face:
+                            if l_loop[uv].uv == loop[uv].uv:
+                                linked_uvs += 1
+                            if uv2 and l_loop[uv2].uv == loop[uv2].uv:
+                                linked_uvs += 1
 
-                if linked_uvs < 2:
+                if (not uv2 and linked_uvs < 2) or (uv2 and linked_uvs < 4):
                     continue
 
                 # check if face is located within the same batch
@@ -882,9 +883,13 @@ class WMOGroupFile:
                 batch.start_triangle = start_triangle
                 batch.n_triangles = n_vertices
                 batch.start_vertex = start_vertex
-                batch.last_vertex = start_vertex + n_vertices * 3
+                batch.last_vertex = (start_vertex + n_vertices * 3) - 1
                 batch.material_id = self.root.add_material(mesh.materials[mat_index])
                 batch.bounding_box = [32767, 32767, 32767, -32768, -32768, -32768]
+
+                # increment start indices for the next batch
+                start_triangle = start_triangle + batch.n_triangles
+                start_vertex = start_vertex + n_vertices * 3
 
                 # do not write collision only batches as actual batches, because they are not
                 if batch.material_id != 0xFF:
@@ -903,8 +908,6 @@ class WMOGroupFile:
 
                     tri_mat = TriangleMaterial()
                     tri_mat.material_id = batch.material_id
-
-                    tri_indices = [0, 0, 0]
 
                     collision_counter = 0
                     for j, vertex in enumerate(face.verts):
@@ -981,18 +984,13 @@ class WMOGroupFile:
                                 collision_counter += 1
 
                             self.movi.indices.append(v_index_local)
-                            # tri_indices[j] = v_index_local
 
                     tri_mat.flags = 0x8 if tri_mat.material_id == 0xFF else 0x20
                     tri_mat.flags |= 0x40 if collision_counter == 3 else 0x4 | 0x8
 
                     self.mopy.triangle_materials.append(tri_mat)
-                    # self.movi.indices.append(tri_indices)
 
-                # increment start indices for the next batch
-                start_triangle = start_triangle + batch.n_triangles
-                start_vertex = batch.start_vertex + 1
-
+        # free bmesh
         bm.free()
 
         # write header
