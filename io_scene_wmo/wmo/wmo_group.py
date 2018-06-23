@@ -487,8 +487,9 @@ class WMOGroupFile:
                 batch_map.add(indices, 0.0, 'ADD')
 
                 # add lightmap information for batch A
-                for index in indices:
-                    mesh.vertices[index].groups[batch_map.index].weight = self.mocv.vert_colors[index][3] / 255
+                if self.mocv.vert_colors:
+                    for index in indices:
+                        mesh.vertices[index].groups[batch_map.index].weight = self.mocv.vert_colors[index][3] / 255
 
             elif i < self.mogp.n_batches_b:
                 batch = self.moba.batches[i]
@@ -519,12 +520,6 @@ class WMOGroupFile:
             img = material_viewport_textures[material_indices[mat_id]]
             if img is not None:
                 uv1.data[i].image = img
-
-        # set textured solid in all 3D views and switch to textured mode
-        for area in bpy.context.screen.areas:
-            if area.type == 'VIEW_3D':
-                area.spaces[0].show_textured_solid = True
-                area.spaces[0].viewport_shade = 'TEXTURED'
 
         # DEBUG BSP
         """for iNode in range(len(self.mobn.Nodes)):
@@ -883,13 +878,13 @@ class WMOGroupFile:
                 batch.start_triangle = start_triangle
                 batch.n_triangles = n_vertices
                 batch.start_vertex = start_vertex
-                batch.last_vertex = (start_vertex + n_vertices * 3) - 1
+                batch.last_vertex = start_vertex + n_vertices - 1
                 batch.material_id = self.root.add_material(mesh.materials[mat_index])
                 batch.bounding_box = [32767, 32767, 32767, -32768, -32768, -32768]
 
                 # increment start indices for the next batch
                 start_triangle = start_triangle + batch.n_triangles
-                start_vertex = start_vertex + n_vertices * 3
+                start_vertex = batch.last_vertex + 1
 
                 # do not write collision only batches as actual batches, because they are not
                 if batch.material_id != 0xFF:
@@ -953,6 +948,8 @@ class WMOGroupFile:
                                         if attenuation > 0:
                                             tri_mat.flags |= 0x1  # TODO: actually check what this does
 
+                                        vertex_color[3] = attenuation
+
                                     self.mocv.vert_colors.append(vertex_color)
                                 else:
                                     # set correct default values for vertex
@@ -974,8 +971,8 @@ class WMOGroupFile:
                             for k in range(2):
                                 for l in range(3):
                                     idx = k * 3 + l
-                                    batch.bounding_box[idx] = min(batch.bounding_box[idx], floor(vertex.co[l])) \
-                                        if k == 0 else max(batch.bounding_box[idx], ceil(vertex.co[l]))
+                                    batch.bounding_box[idx] = min(batch.bounding_box[idx], int(floor(vertex.co[l]))) \
+                                        if k == 0 else max(batch.bounding_box[idx], int(ceil(vertex.co[l])))
 
                         else:
                             v_index_local, is_collideable = vert_info
