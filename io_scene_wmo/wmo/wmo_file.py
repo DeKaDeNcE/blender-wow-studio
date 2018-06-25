@@ -141,16 +141,20 @@ class WMOFile:
     def compare_materials(self, material):
         """ Compare two WoW material properties """
 
-        get_attributes = operator.attrgetter(
-            'shader', 'terrain_type', 'blending_mode',
-            'texture1', 'emissive_color', 'flags',
-            'texture2', 'diff_color')
-
-        mat1 = get_attributes(material.wow_wmo_material)
+        wow_mat1 = material.wow_wmo_material
 
         for material2, index in self.material_lookup.items():
 
-            if mat1 == get_attributes(material2.wow_wmo_material):
+            wow_mat2 = material2.wow_wmo_material
+
+            if wow_mat1.shader == wow_mat2.shader \
+            and wow_mat1.terrain_type == wow_mat2.terrain_type \
+            and wow_mat1.blending_mode == wow_mat2.blending_mode \
+            and wow_mat1.texture1 == wow_mat2.texture1 \
+            and wow_mat1.emissive_color == wow_mat2.emissive_color \
+            and wow_mat1.flags == wow_mat2.flags \
+            and wow_mat1.texture2 == wow_mat2.texture2 \
+            and wow_mat1.diff_color == wow_mat2.diff_color:
                 return index
 
         return None
@@ -171,40 +175,40 @@ class WMOFile:
             else:
                 self.material_lookup[mat] = len(self.momt.materials)
 
-                WowMat = WMOMaterial()
+                wow_mat = WMOMaterial()
 
-                WowMat.shader = int(mat.wow_wmo_material.shader)
-                WowMat.blend_mode = int(mat.wow_wmo_material.blending_mode)
-                WowMat.terrain_type = int(mat.wow_wmo_material.terrain_type)
+                wow_mat.shader = int(mat.wow_wmo_material.shader)
+                wow_mat.blend_mode = int(mat.wow_wmo_material.blending_mode)
+                wow_mat.terrain_type = int(mat.wow_wmo_material.terrain_type)
 
                 if mat.wow_wmo_material.texture1 in self.texture_lookup:
-                    WowMat.texture1_ofs = self.texture_lookup[mat.wow_wmo_material.texture1]
+                    wow_mat.texture1_ofs = self.texture_lookup[mat.wow_wmo_material.texture1]
                 else:
                     self.texture_lookup[mat.wow_wmo_material.texture1] = self.motx.add_string(mat.wow_wmo_material.texture1)
-                    WowMat.texture1_ofs = self.texture_lookup[mat.wow_wmo_material.texture1]
+                    wow_mat.texture1_ofs = self.texture_lookup[mat.wow_wmo_material.texture1]
 
-                WowMat.emissive_color = (int(mat.wow_wmo_material.emissive_color[0] * 255),
-                                         int(mat.wow_wmo_material.emissive_color[1] * 255),
-                                         int(mat.wow_wmo_material.emissive_color[2] * 255),
-                                         int(mat.wow_wmo_material.emissive_color[3] * 255))
+                wow_mat.emissive_color = (int(mat.wow_wmo_material.emissive_color[0] * 255),
+                                          int(mat.wow_wmo_material.emissive_color[1] * 255),
+                                          int(mat.wow_wmo_material.emissive_color[2] * 255),
+                                          int(mat.wow_wmo_material.emissive_color[3] * 255))
 
-                WowMat.TextureFlags1 = 0
+                wow_mat.TextureFlags1 = 0
 
                 if mat.wow_wmo_material.texture2 in self.texture_lookup:
-                    WowMat.texture2_ofs = self.texture_lookup[mat.wow_wmo_material.texture2]
+                    wow_mat.texture2_ofs = self.texture_lookup[mat.wow_wmo_material.texture2]
                 else:
                     self.texture_lookup[mat.wow_wmo_material.texture2] = self.motx.add_string(mat.wow_wmo_material.texture2)
-                    WowMat.texture2_ofs = self.texture_lookup[mat.wow_wmo_material.texture2]
+                    wow_mat.texture2_ofs = self.texture_lookup[mat.wow_wmo_material.texture2]
 
-                WowMat.diff_color = (int(mat.wow_wmo_material.diff_color[0] * 255),
-                                     int(mat.wow_wmo_material.diff_color[1] * 255),
-                                     int(mat.wow_wmo_material.diff_color[2] * 255),
-                                     int(mat.wow_wmo_material.diff_color[3] * 255))
+                wow_mat.diff_color = (int(mat.wow_wmo_material.diff_color[0] * 255),
+                                      int(mat.wow_wmo_material.diff_color[1] * 255),
+                                      int(mat.wow_wmo_material.diff_color[2] * 255),
+                                      int(mat.wow_wmo_material.diff_color[3] * 255))
 
                 for flag in mat.wow_wmo_material.flags:
-                    WowMat.flags |= int(flag)
+                    wow_mat.flags |= int(flag)
 
-                self.momt.materials.append(WowMat)
+                self.momt.materials.append(wow_mat)
 
                 return self.material_lookup[mat]
 
@@ -993,14 +997,14 @@ class BlenderSceneObjects:
         self.doodad_sets = []
 
     @staticmethod
-    def find_nearest_object(obj, objects):
+    def find_nearest_object(obj_, objects):
         """Get closest object to another object"""
 
         dist = sys.float_info.max
         result = None
         for obj in objects:
             obj_location_relative = obj.matrix_world.inverted() * obj.location
-            hit = obj.closest_point_on_mesh(obj_location_relative)
+            hit = obj_.closest_point_on_mesh(obj_location_relative)
             hit_dist = (obj.location - obj.matrix_world * hit[1]).length
             if hit_dist < dist:
                 dist = hit_dist
@@ -1106,5 +1110,4 @@ class BlenderSceneObjects:
             group.wow_wmo_group.relations.doodads.clear()
             group.wow_wmo_group.relations.lights.clear()
             group.wow_wmo_group.relations.portals.clear()
-            group.wow_wmo_group.relations.lights.clear()
             group.wow_wmo_group.relations.liquid = ""
