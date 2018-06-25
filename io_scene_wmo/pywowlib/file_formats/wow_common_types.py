@@ -291,3 +291,19 @@ class StringBlockChunk:
         return self
 
 
+class MVER:
+    """ Version of the file. Actually meaningless. """
+
+    def __init__(self, version=0, size=4):
+        self.header = ChunkHeader(magic='REVM')
+        self.header.size = size
+        self.version = version
+
+    def read(self, f):
+        self.version = unpack("I", f.read(4))[0]
+
+    def write(self, f):
+        self.header.write(f)
+        f.write(pack('I', self.version))
+
+

@@ -1,4 +1,5 @@
 import os
+import struct
 
 from .file_formats import wmo_format_root
 from .file_formats.wmo_format_root import *
@@ -51,20 +52,7 @@ class WMOFile:
                 self.groups.append(group)
 
     def write(self):
-
-        if self.filepath:
-            n_groups = self.read_chunks()
-            root_name = os.path.splitext(self.filepath)[0]
-
-            for i in range(n_groups):
-                group_path = root_name + "_" + str(i).zfill(3) + ".wmo"
-
-                if not os.path.isfile(group_path):
-                    raise FileNotFoundError("\nNot all referenced WMO groups are present in the directory.\a")
-
-                group = WMOGroupFile(self.version, self, filepath=group_path)
-                group.read()
-                self.groups.append(group)
+        pass
 
     def read_chunks(self):
         with open(self.filepath, 'rb') as f:
@@ -74,8 +62,12 @@ class WMOFile:
             while True:
                 try:
                     magic = f.read(4).decode('utf-8')
+                    print(magic)
                     size = uint32.read(f)
                 except EOFError:
+                    break
+
+                except struct.error:
                     break
 
                 except UnicodeDecodeError:
@@ -96,7 +88,9 @@ class WMOFile:
                     f.seek(size, f.tell())
                     continue
 
-                setattr(self, magic_reversed.lower(), chunk(magic=magic, size=size).read(f))
+                read_chunk = chunk(size=size)
+                read_chunk.read(f)
+                setattr(self, magic_reversed.lower(), read_chunk)
 
             # attempt automatically finding a root file if user tries to import the group
             if is_root:
@@ -169,8 +163,12 @@ class WMOGroupFile:
             while True:
                 try:
                     magic = f.read(4).decode('utf-8')
+                    print(magic)
                     size = uint32.read(f)
                 except EOFError:
+                    break
+
+                except struct.error:
                     break
 
                 except UnicodeDecodeError:
@@ -189,7 +187,9 @@ class WMOGroupFile:
                     f.seek(size, f.tell())
                     continue
 
-                setattr(self, magic_reversed, chunk(magic=magic, size=size).read(f))
+                read_chunk = chunk(size=size)
+                read_chunk.read(f)
+                setattr(self, magic_reversed.lower(), read_chunk)
 
     def write(self):
 

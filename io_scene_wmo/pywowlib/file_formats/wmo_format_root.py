@@ -1,35 +1,17 @@
 from struct import pack, unpack
-from .wow_common_types import ChunkHeader
+from .wow_common_types import ChunkHeader, MVER
 
 
 ###########################
 # WMO ROOT
 ###########################
 
-class MVER:
-    """ Version of the file. Actually meaningless. """
-
-    def __init__(self, header=ChunkHeader(), version=0):
-        self.header = header
-        self.version = version
-
-    def read(self, f):
-        # read header
-        self.header.read(f)
-        self.version = unpack("I", f.read(4))[0]
-
-    def write(self, f):
-        self.header.magic = 'REVM'
-        self.header.size = 4
-        self.header.write(f)
-        f.write(pack('I', self.version))
-
-
 class MOHD:
     """ WMO Root header """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=64):
+        self.header = ChunkHeader(magic='DHOM')
+        self.header.size = size
         self.n_materials = 0
         self.n_groups = 0
         self.n_portals = 0
@@ -44,9 +26,6 @@ class MOHD:
         self.flags = 0
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         self.n_materials = unpack("I", f.read(4))[0]
         self.n_groups = unpack("I", f.read(4))[0]
         self.n_portals = unpack("I", f.read(4))[0]
@@ -61,9 +40,6 @@ class MOHD:
         self.flags = unpack("I", f.read(4))[0]
 
     def write(self, f):
-        self.header.magic = 'DHOM'
-        self.header.size = 64
-
         self.header.write(f)
         f.write(pack('I', self.n_materials))
         f.write(pack('I', self.n_groups))
@@ -82,20 +58,18 @@ class MOHD:
 class MOTX:
     """ Texture names """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='XTOM')
+        self.header.size = size
         self.string_table = bytearray()
 
     def read(self, f):
-        # read header
-        self.header.read(f)
         self.string_table = f.read(self.header.size)
 
     def write(self, f):
-        self.header.magic = 'XTOM'
         self.header.size = len(self.string_table)
-
         self.header.write(f)
+
         f.write(self.string_table)
 
     def add_string(self, s):
@@ -183,14 +157,12 @@ class WMOMaterial:
 class MOMT:
     """ Materials """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='TMOM')
+        self.header.size = size
         self.materials = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         self.materials = []
         for i in range(self.header.size // 64):
             mat = WMOMaterial()
@@ -198,10 +170,9 @@ class MOMT:
             self.materials.append(mat)
 
     def write(self, f):
-        self.header.magic = 'TMOM'
         self.header.size = len(self.materials) * 64
-
         self.header.write(f)
+
         for mat in self.materials:
             mat.write(f)
 
@@ -209,17 +180,15 @@ class MOMT:
 class MOGN:
     """ Group names """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='NGOM')
+        self.header.size = size
         self.string_table = bytearray(b'\x00\x00')
 
     def read(self, f):
-        # read header
-        self.header.read(f)
         self.string_table = f.read(self.header.size)
 
     def write(self, f):
-        self.header.magic = 'NGOM'
 
         # padd 4 bytes after
         padding = len(self.string_table) % 4
@@ -228,8 +197,8 @@ class MOGN:
                 self.string_table.append(0)
 
         self.header.size = len(self.string_table)
-
         self.header.write(f)
+
         f.write(self.string_table)
 
     def add_string(self, s):
@@ -271,14 +240,12 @@ class GroupInfo:
 class MOGI:
     """ Group informations """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='IGOM')
+        self.header.size = size
         self.infos = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         count = self.header.size // 32
 
         self.infos = []
@@ -288,48 +255,43 @@ class MOGI:
             self.infos.append(info)
 
     def write(self, f):
-        self.header.magic = 'IGOM'
         self.header.size = len(self.infos) * 32
-
         self.header.write(f)
+
         for info in self.infos:
             info.write(f)
 
 
 class MOSB:
     """ Skybox """
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='BSOM')
+        self.header.size = size
         self.skybox = ''
 
     def read(self, f):
-        # read header
-        self.header.read(f)
         self.skybox = f.read(self.header.size).decode('ascii')
 
     def write(self, f):
-        self.header.magic = 'BSOM'
 
         if not self.skybox:
             self.skybox = '\x00\x00\x00'
 
         self.header.size = len(self.skybox) + 1
-
         self.header.write(f)
+
         f.write(self.skybox.encode('ascii') + b'\x00')
 
 
 class MOPV:
     """ Portal vertices """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='VPOM')
+        self.header.size = size
         self.portal_vertices = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         count = self.header.size // 12
         self.portal_vertices = []
 
@@ -338,10 +300,9 @@ class MOPV:
             self.portal_vertices.append(unpack("fff", f.read(12)))
 
     def write(self, f):
-        self.header.magic = 'VPOM'
         self.header.size = len(self.portal_vertices) * 12
-
         self.header.write(f)
+
         for v in self.portal_vertices:
             f.write(pack('fff', *v))
 
@@ -368,14 +329,12 @@ class PortalInfo:
 
 # portal infos
 class MOPT:
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='REVM')
+        self.header.size = size
         self.infos = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         self.infos = []
 
         # 20 = sizeof(PortalInfo)
@@ -385,10 +344,9 @@ class MOPT:
             self.infos.append(info)
 
     def write(self, f):
-        self.header.magic = 'TPOM'
         self.header.size = len(self.infos) * 20
-
         self.header.write(f)
+
         for info in self.infos:
             info.write(f)
 
@@ -416,14 +374,12 @@ class PortalRelation:
 class MOPR:
     """ Portal relations """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='RPOM')
+        self.header.size = size
         self.relations = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         self.relations = []
 
         for i in range(self.header.size // 8):
@@ -432,9 +388,7 @@ class MOPR:
             self.relations.append(relation)
 
     def write(self, f):
-        self.header.magic = 'RPOM'
         self.header.size = len(self.relations) * 8
-
         self.header.write(f)
 
         for relation in self.relations:
@@ -444,23 +398,19 @@ class MOPR:
 class MOVV:
     """ Visible vertices """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='VVOM')
+        self.header.size = size
         self.visible_vertices = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         self.visible_vertices = []
 
         for i in range(self.header.size // 12):
             self.visible_vertices.append(unpack("fff", f.read(12)))
 
     def write(self, f):
-        self.header.magic = 'VVOM'
         self.header.size = len(self.visible_vertices) * 12
-
         self.header.write(f)
 
         for v in self.visible_vertices:
@@ -484,14 +434,12 @@ class VisibleBatch:
 class MOVB:
     """ Visible batches """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='BVOM')
+        self.header.size = size
         self.batches = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         count = self.header.size // 4
 
         self.batches = []
@@ -502,10 +450,9 @@ class MOVB:
             self.batches.append(batch)
 
     def write(self, f):
-        self.header.magic = 'BVOM'
         self.header.size = len(self.batches) * 4
-
         self.header.write(f)
+
         for batch in self.batches:
             batch.write(f)
 
@@ -560,14 +507,12 @@ class Light:
 class MOLT:
     """ Lights """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='TLOM')
+        self.header.size = size
         self.lights = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         # 48 = sizeof(Light)
         count = self.header.size // 48
 
@@ -578,10 +523,9 @@ class MOLT:
             self.lights.append(light)
 
     def write(self, f):
-        self.header.magic = 'TLOM'
         self.header.size = len(self.lights) * 48
-
         self.header.write(f)
+
         for light in self.lights:
             light.write(f)
 
@@ -609,14 +553,12 @@ class DoodadSet:
 class MODS:
     """ Doodad sets """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='SDOM')
+        self.header.size = size
         self.sets = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         count = self.header.size // 32
 
         self.sets = []
@@ -627,7 +569,6 @@ class MODS:
             self.sets.append(set)
 
     def write(self, f):
-        self.header.magic = 'SDOM'
         self.header.size = len(self.sets) * 32
 
         self.header.write(f)
@@ -638,17 +579,15 @@ class MODS:
 class MODN:
     """ Doodad names """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='NDOM')
+        self.header.size = size
         self.string_table = bytearray()
 
     def read(self, f):
-        # read header
-        self.header.read(f)
         self.string_table = f.read(self.header.size)
 
     def write(self, f):
-        self.header.magic = 'NDOM'
         self.header.size = len(self.string_table)
 
         self.header.write(f)
@@ -705,14 +644,12 @@ class DoodadDefinition:
 class MODD:
     """ Doodad definition """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='DDOM')
+        self.header.size = size
         self.definitions = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         count = self.header.size // 40
 
         self.definitions = []
@@ -722,10 +659,9 @@ class MODD:
             self.definitions.append(defi)
 
     def write(self, f):
-        self.header.magic = 'DDOM'
         self.header.size = len(self.definitions) * 40
-
         self.header.write(f)
+
         for defi in self.definitions:
             defi.write(f)
 
@@ -771,14 +707,12 @@ class Fog:
 class MFOG:
     """ Fogs """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='GOFM')
+        self.header.size = size
         self.fogs = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         count = self.header.size // 48
 
         self.fogs = []
@@ -788,10 +722,9 @@ class MFOG:
             self.fogs.append(fog)
 
     def write(self, f):
-        self.header.magic = 'GOFM'
         self.header.size = len(self.fogs) * 48
-
         self.header.write(f)
+
         for fog in self.fogs:
             fog.write(f)
 
@@ -799,23 +732,21 @@ class MFOG:
 class MCVP:
     """ Convex volume plane, used only for transport objects """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='PVCM')
+        self.header.size = size
         self.convex_volume_planes = []
 
     def read(self, f):
-        self.header.read(f)
-
         count = self.header.size // 16
 
         for i in range(0, count):
             self.convex_volume_planes.append(unpack('ffff', f.read(16)))
 
     def write(self, f):
-        self.header.magic = 'PVCM'
         self.header.size = len(self.convex_volume_planes) * 16
-
         self.header.write(f)
+
         for i in self.convex_volume_planes:
             f.write(pack('ffff', self.convex_volume_planes[i]))
 

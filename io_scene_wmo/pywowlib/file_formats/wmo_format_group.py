@@ -1,5 +1,5 @@
 from struct import pack, unpack
-from .wow_common_types import ChunkHeader
+from .wow_common_types import ChunkHeader, MVER
 
 
 ###########################
@@ -25,8 +25,9 @@ class MOGPFlags:
 
 # contain WMO group header
 class MOGP:
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='PGOM')
+        self.header.size = size
         self.group_name_ofs = 0
         self.desc_group_name_ofs = 0
         self.flags = 0
@@ -45,9 +46,6 @@ class MOGP:
         self.unknown2 = 0
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         self.group_name_ofs = unpack("I", f.read(4))[0]
         self.desc_group_name_ofs = unpack("I", f.read(4))[0]
         self.flags = unpack("I", f.read(4))[0]
@@ -65,10 +63,10 @@ class MOGP:
         self.unknown1 = unpack("I", f.read(4))[0]
         self.unknown2 = unpack("I", f.read(4))[0]
 
-    def write(self, f):
-        self.header.magic = 'PGOM'
 
+    def write(self, f):
         self.header.write(f)
+
         f.write(pack('I', self.group_name_ofs))
         f.write(pack('I', self.desc_group_name_ofs))
         f.write(pack('I', self.flags))
@@ -106,14 +104,12 @@ class TriangleMaterial:
 class MOPY:
     """ Contains list of triangle materials. One for each triangle """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='YPOM')
+        self.header.size = size
         self.triangle_materials = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         count = self.header.size // 2
 
         self.triangle_materials = []
@@ -124,10 +120,9 @@ class MOPY:
             self.triangle_materials.append(tri)
 
     def write(self, f):
-        self.header.magic = 'YPOM'
         self.header.size = len(self.triangle_materials) * 2
-
         self.header.write(f)
+
         for tri in self.triangle_materials:
             tri.write(f)
 
@@ -135,14 +130,12 @@ class MOPY:
 class MOVI:
     """ Triangle Indices """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='IVOM')
+        self.header.size = size
         self.indices = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         # 2 = sizeof(unsigned short)
         count = self.header.size // 2
 
@@ -152,10 +145,9 @@ class MOVI:
             self.indices.append(unpack("H", f.read(2))[0])
 
     def write(self, f):
-        self.header.magic = 'IVOM'
         self.header.size = len(self.indices) * 2
-
         self.header.write(f)
+
         for i in self.indices:
             f.write(pack('H', i))
 
@@ -163,13 +155,12 @@ class MOVI:
 class MOVT:
     """ Vertices """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='TVOM')
+        self.header.size = size
         self.vertices = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
 
         # 4 * 3 = sizeof(float) * 3
         count = self.header.size // (4 * 3)
@@ -180,10 +171,9 @@ class MOVT:
             self.vertices.append(unpack("fff", f.read(12)))
 
     def write(self, f):
-        self.header.magic = 'TVOM'
         self.header.size = len(self.vertices) * 12
-
         self.header.write(f)
+
         for v in self.vertices:
             f.write(pack('fff', *v))
 
@@ -191,14 +181,12 @@ class MOVT:
 class MONR:
     """ Normals """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='RNOM')
+        self.header.size = size
         self.normals = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         # 4 * 3 = sizeof(float) * 3
         count = self.header.size // (4 * 3)
 
@@ -208,10 +196,9 @@ class MONR:
             self.normals.append(unpack("fff", f.read(12)))
 
     def write(self, f):
-        self.header.magic = 'RNOM'
         self.header.size = len(self.normals) * 12
-
         self.header.write(f)
+
         for n in self.normals:
             f.write(pack('fff', *n))
 
@@ -219,14 +206,12 @@ class MONR:
 class MOTV:
     """ Texture coordinates """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='VTOM')
+        self.header.size = size
         self.tex_coords = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         # 4 * 2 = sizeof(float) * 2
         count = self.header.size // (4 * 2)
 
@@ -236,10 +221,9 @@ class MOTV:
             self.tex_coords.append(unpack("ff", f.read(8)))
 
     def write(self, f):
-        self.header.magic = 'VTOM'
         self.header.size = len(self.tex_coords) * 8
-
         self.header.write(f)
+
         for tc in self.tex_coords:
             f.write(pack('ff', *tc))
 
@@ -276,14 +260,12 @@ class Batch:
 class MOBA:
     """ Batches """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='ABOM')
+        self.header.size = size
         self.batches = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         count = self.header.size // 24
 
         self.batches = []
@@ -294,10 +276,9 @@ class MOBA:
             self.batches.append(batch)
 
     def write(self, f):
-        self.header.magic = 'ABOM'
         self.header.size = len(self.batches) * 24
-
         self.header.write(f)
+
         for b in self.batches:
             b.write(f)
 
@@ -305,14 +286,12 @@ class MOBA:
 class MOLR:
     """ Lights """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='RLOM')
+        self.header.size = size
         self.light_refs = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         # 2 = sizeof(short)
         count = self.header.size // 2
 
@@ -322,7 +301,6 @@ class MOLR:
             self.light_refs.append(unpack("h", f.read(2))[0])
 
     def write(self, f):
-        self.header.magic = 'RLOM'
         self.header.size = len(self.light_refs) * 2
 
         self.header.write(f)
@@ -333,14 +311,12 @@ class MOLR:
 class MODR:
     """ Doodads """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='RDOM')
+        self.header.size = size
         self.doodad_refs = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         # 2 = sizeof(short)
         count = self.header.size // 2
 
@@ -350,10 +326,9 @@ class MODR:
             self.doodad_refs.append(unpack("h", f.read(2))[0])
 
     def write(self, f):
-        self.header.magic = 'RDOM'
         self.header.size = len(self.doodad_refs) * 2
-
         self.header.write(f)
+
         for dr in self.doodad_refs:
             f.write(pack('h', dr))
 
@@ -391,14 +366,12 @@ class BSPNode:
 class MOBN:
     """ Collision geometry """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='NBOM')
+        self.header.size = size
         self.nodes = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         count = self.header.size // 0x10
 
         self.nodes = []
@@ -409,7 +382,6 @@ class MOBN:
             self.nodes.append(node)
 
     def write(self, f):
-        self.header.magic = 'NBOM'
         self.header.size = len(self.nodes) * 0x10
 
         self.header.write(f)
@@ -418,14 +390,12 @@ class MOBN:
 
 
 class MOBR:
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='RBOM')
+        self.header.size = size
         self.faces = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         count = self.header.size // 2
 
         self.faces = []
@@ -434,10 +404,9 @@ class MOBR:
             self.faces.append(unpack("H", f.read(2))[0])
 
     def write(self, f):
-        self.header.magic = 'RBOM'
         self.header.size = len(self.faces) * 2
-
         self.header.write(f)
+
         for face in self.faces:
             f.write(pack('H', face))
 
@@ -445,14 +414,12 @@ class MOBR:
 class MOCV:
     """ Vertex colors """
 
-    def __init__(self):
-        self.header = ChunkHeader()
+    def __init__(self, size=0):
+        self.header = ChunkHeader(magic='VCOM')
+        self.header.size = size
         self.vert_colors = []
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         # 4 = sizeof(unsigned char) * 4
         count = self.header.size // 4
 
@@ -462,10 +429,9 @@ class MOCV:
             self.vert_colors.append(unpack("BBBB", f.read(4)))
 
     def write(self, f):
-        self.header.magic = 'VCOM'
         self.header.size = len(self.vert_colors) * 4
-
         self.header.write(f)
+
         for vc in self.vert_colors:
             f.write(pack('BBBB', *vc))
 
@@ -524,8 +490,9 @@ class MagmaVertex(LiquidVertex):
 class MLIQ:
     """ Liquid """
 
-    def __init__(self, mat=True):
-        self.header = ChunkHeader()
+    def __init__(self, mat=True, size=0):
+        self.header = ChunkHeader(magic='QILM')
+        self.header.size = size
         self.x_verts = 0
         self.y_verts = 0
         self.x_tiles = 0
@@ -537,9 +504,6 @@ class MLIQ:
         self.liquid_material = mat
 
     def read(self, f):
-        # read header
-        self.header.read(f)
-
         self.x_verts = unpack("I", f.read(4))[0]
         self.y_verts = unpack("I", f.read(4))[0]
         self.x_tiles = unpack("I", f.read(4))[0]
@@ -564,9 +528,7 @@ class MLIQ:
             self.tile_flags.append(unpack("B", f.read(1))[0])
 
     def write(self, f):
-        self.header.magic = 'QILM'
         self.header.size = 30 + self.x_verts * self.y_verts * 8 + self.x_tiles * self.y_tiles
-
         self.header.write(f)
 
         f.write(pack('I', self.x_verts))
