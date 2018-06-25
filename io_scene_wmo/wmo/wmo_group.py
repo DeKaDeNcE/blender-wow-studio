@@ -991,15 +991,15 @@ class WMOGroupFile:
         bm.free()
 
         # write header
-        self.mogp.bounding_box_corner1 = [32767, 32767, 32767]
-        self.mogp.bounding_box_corner2 = [-32768, -32768, -32768]
+        self.mogp.bounding_box_corner1 = [32767.0, 32767.0, 32767.0]
+        self.mogp.bounding_box_corner2 = [-32768.0, -32768.0, -32768.0]
 
         for vtx in self.movt.vertices:
             for j in range(0, 3):
-                self.mogp.bounding_box_corner1[j] = min(self.mogp.bounding_box_corner1[j], floor(vtx[j]))
-                self.mogp.bounding_box_corner2[j] = max(self.mogp.bounding_box_corner2[j], ceil(vtx[j]))
+                self.mogp.bounding_box_corner1[j] = min(self.mogp.bounding_box_corner1[j], vtx[j])
+                self.mogp.bounding_box_corner2[j] = max(self.mogp.bounding_box_corner2[j], vtx[j])
 
-        self.mogp.flags |= MOGPFlags.HasCollision # /!\ MUST HAVE 0x1 FLAG ELSE THE GAME CRASH !
+        self.mogp.flags |= MOGPFlags.HasCollision  # /!\ MUST HAVE 0x1 FLAG ELSE THE GAME CRASH !
         if '0' in obj.wow_wmo_group.flags:
             self.mogp.flags |= MOGPFlags.HasVertexColor
         if '4' in obj.wow_wmo_group.flags:
