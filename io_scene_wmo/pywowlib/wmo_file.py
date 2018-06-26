@@ -51,9 +51,6 @@ class WMOFile:
                 group.read()
                 self.groups.append(group)
 
-    def write(self):
-        pass
-
     def read_chunks(self):
         with open(self.filepath, 'rb') as f:
 
@@ -103,7 +100,7 @@ class WMOFile:
                 else:
                     raise FileNotFoundError('\nError: Unable to find WMO root file or it is corrupted.')
 
-    def write_chunks(self):
+    def write(self):
         # write root chunks
         with open(self.filepath, 'wb') as f:
 

@@ -63,7 +63,6 @@ class MOGP:
         self.unknown1 = unpack("I", f.read(4))[0]
         self.unknown2 = unpack("I", f.read(4))[0]
 
-
     def write(self, f):
         self.header.write(f)
 
