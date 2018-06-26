@@ -139,6 +139,15 @@ def get_objs_boundbox_world(objects):
     return tuple(corner1), tuple(corner2)
 
 
+def simplify_numbers(num):
+    num = float('{:.3g}'.format(num))
+    magnitude = 0
+    while abs(num) >= 1000:
+        magnitude += 1
+        num /= 1000.0
+    return '{}{}'.format('{:f}'.format(num).rstrip('0').rstrip('.'), ['', 'K', 'M', 'B', 'T'][magnitude])
+
+
 def wrap_text(width, text):
 
     lines = []

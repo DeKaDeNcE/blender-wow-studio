@@ -11,7 +11,7 @@ from .ui.panels.camera import update_follow_path_constraints
 
 
 class BlenderM2Scene:
-    """ BlenderM2Scene class is used for assembling a Blender scene from an M2 file or saving the scene back to it."""
+    """ This class is used for assembling a Blender scene from an M2 file or saving the scene back to it."""
 
     def __init__(self, m2, prefs):
         self.m2 = m2

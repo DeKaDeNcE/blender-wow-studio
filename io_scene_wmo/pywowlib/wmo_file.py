@@ -13,6 +13,7 @@ class WMOFile:
     def __init__(self, version, filepath=None):
         self.version = version
         self.filepath = filepath
+        self.display_name = os.path.basename(os.path.splitext(filepath)[0])
         self.groups = []
 
         # initialize chunks
