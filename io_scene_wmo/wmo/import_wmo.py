@@ -1,28 +1,45 @@
 import bpy
-from progress_report import ProgressReport, ProgressReportSubstep
-
-from .wmo_file import WMOFile
+import time
+from .wmo_scene import BlenderWMOScene
+from ..pywowlib.wmo_file import WMOFile
+from ..pywowlib import CLIENT_VERSION
 
 from ..ui import get_addon_prefs
-from ..utils import load_game_data
+from ..utils import load_game_data, ProgressReport
 
 
-def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_objects):
+def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, import_lights, import_fogs, group_objects):
     """ Read and import WoW WMO object to Blender scene"""
+
+    start_time = time.time()
 
     print("\nImporting WMO")
 
-    with ProgressReport() as progress:
+    addon_prefs = get_addon_prefs()
+    game_data = load_game_data()
+
+    wmo = WMOFile(CLIENT_VERSION, filepath=filepath)
+    wmo.read()
+    wmo_scene = BlenderWMOScene(wmo=wmo, prefs=addon_prefs)
+
+    # extract textures to cache folder
+    game_data.extract_textures_as_png(addon_prefs.cache_dir_path, wmo.motx.get_all_strings())
+
+    # load all WMO components
+    wmo_scene.load_materials()
+    wmo_scene.load_lights()
+    wmo_scene.load_properties()
+    wmo_scene.load_fogs()
 
 
 
-
+    '''
     wmo = WMOFile(filepath)
     wmo.read()
 
     print("\n\n### Importing WMO components ###")
 
-    if load_textures or import_doodads:
+    if load_textures:
         game_data = load_game_data()
 
         if load_textures:
@@ -68,3 +85,5 @@ def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_o
           time.strftime("%M minutes %S seconds.\a", time.gmtime(time.time() - start_time)))
 
     return parent
+    
+    '''

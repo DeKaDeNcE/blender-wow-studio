@@ -61,15 +61,15 @@ class WMOImport(bpy.types.Operator):
         options={'HIDDEN'}
         )
 
-    load_textures = BoolProperty(
-        name="Fetch textures",
-        description="Automatically fetch textures from game data",
+    import_lights = BoolProperty(
+        name="Import lights",
+        description="Import WMO lights to scene",
         default=True,
         )
 
-    import_doodads = BoolProperty(
-        name="Import doodad sets",
-        description="Import WMO doodad set to scene",
+    import_fogs = BoolProperty(
+        name="Import fogs",
+        description="Import WMO fogs to scene",
         default=True,
         )
 
@@ -80,7 +80,8 @@ class WMOImport(bpy.types.Operator):
         )
 
     def execute(self, context):
-        import_wmo_to_blender_scene(self.filepath, self.load_textures, self.import_doodads, self.group_objects)
+        import_wmo_to_blender_scene(self.filepath, self.import_doodads, self.import_lights,
+                                    self.import_fogs, self.group_objects)
         context.scene.wow_scene.type = 'WMO'
         return {'FINISHED'}
 
