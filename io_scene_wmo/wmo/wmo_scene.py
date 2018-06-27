@@ -3,6 +3,7 @@ import os
 
 from ..pywowlib.wmo_file import WMOFile
 from ..ui import get_addon_prefs
+from ..utils import find_nearest_object
 
 
 class BlenderWMOScene:
@@ -13,6 +14,95 @@ class BlenderWMOScene:
         self.settings = prefs
         self.material_lookup = {}
         self.groups = []
+
+        self.bl_groups = []
+        self.bl_portals = []
+        self.bl_fogs = []
+        self.bl_lights = []
+        self.bl_liquids = []
+        self.bl_doodad_sets = []
+
+    def build_references(self, export_selected):
+        """ Build WMO references in Blender scene """
+
+        empties = []
+        scene_objects = bpy.context.scene.objects if not export_selected else bpy.context.selected_objects
+
+        for obj in filter(lambda o: not obj.wow_wmo_doodad.enabled and not o.hide, scene_objects):
+
+            if obj.type == 'MESH':
+
+                if obj.wow_wmo_group.enabled:
+                    self.groups.append(obj)
+                    obj.wow_wmo_group.group_id = len(self.groups) - 1
+
+                elif obj.wow_wmo_portal.enabled:
+                    self.bl_portals.append(obj)
+                    obj.wow_wmo_portal.portal_id = len(self.bl_portals) - 1
+
+                    group_objects = (obj.wow_wmo_portal.first, obj.wow_wmo_portal.second)
+
+                    for group_obj in group_objects:
+                        if group_obj and group_obj.name in bpy.context.scene.objects:
+                            rel = group_obj.wow_wmo_group.relations.portals.add()
+                            rel.id = obj.name
+                        else:
+                            raise KeyError("Portal <<{}>> points to a non-existing object.".format(obj.name))
+
+                elif obj.wow_wmo_fog.enabled:
+                    self.bl_fogs.append(obj)
+                    obj.wow_wmo_fog.fog_id = len(self.bl_fogs) - 1
+
+                elif obj.wow_wmo_liquid.enabled:
+                    self.bl_liquids.append(obj)
+                    group = obj.wow_wmo_liquid.wmo_group
+
+                    if group:
+                        group.wow_wmo_group.relations.liquid = obj.name
+                    else:
+                        print("\nWARNING: liquid <<{}>> points to a non-existing object.".format(
+                            obj.wow_wmo_liquid.wmo_group))
+                        continue
+
+            elif obj.type == 'LAMP' and obj.data.wow_wmo_light.enabled:
+                self.bl_lights.append(obj)
+
+            elif obj.type == 'EMPTY':
+                empties.append(obj)
+
+        # sorting doodads into sets
+        doodad_counter = 0
+        for empty in empties:
+
+            doodad_set = (empty.name, [])
+
+            for doodad in empty.children:
+                if doodad.wow_wmo_doodad.enabled:
+                    group = find_nearest_object(doodad, self.groups)
+
+                    if group:
+                        rel = group.wow_wmo_group.relations.doodads.add()
+                        rel.id = doodad_counter
+                        doodad_counter += 1
+
+                        doodad_set[1].append(doodad)
+
+            if doodad_set[1]:
+                self.bl_doodad_sets.append(doodad_set)
+
+        # setting light references
+        for index, light in enumerate(self.bl_lights):
+            group = find_nearest_object(light, self.groups)
+            if group:
+                rel = group.wow_wmo_group.relations.lights.add()
+                rel.id = index
+
+    def clear_references(self):
+        for group in self.groups:
+            group.wow_wmo_group.relations.doodads.clear()
+            group.wow_wmo_group.relations.lights.clear()
+            group.wow_wmo_group.relations.portals.clear()
+            group.wow_wmo_group.relations.liquid = ""
 
     def load_materials(self, texture_dir=None):
         """ Load materials from WoW WMO root file """
@@ -405,5 +495,7 @@ class BlenderWMOScene:
                 corner2[2] = v[2]
 
         return corner1, corner2
+
+
 
 

@@ -1,8 +1,26 @@
 import bpy
 import os
+import sys
 
+from time import time, strftime, gmtime
 from mathutils import Vector
 from .pywowlib.archives.wow_filesystem import WoWFileData
+
+
+def find_nearest_object(obj_, objects):
+    """Get closest object to another object"""
+
+    dist = sys.float_info.max
+    result = None
+    for obj in objects:
+        obj_location_relative = obj.matrix_world.inverted() * obj.location
+        hit = obj_.closest_point_on_mesh(obj_location_relative)
+        hit_dist = (obj.location - obj.matrix_world * hit[1]).length
+        if hit_dist < dist:
+            dist = hit_dist
+            result = obj
+
+    return result
 
 
 def parse_bitfield(bitfield, last_flag=0x1000):
@@ -174,6 +192,51 @@ def wrap_text(width, text):
     return lines
 
 
+class ProgressReport:
+    def __init__(self, iterable, msg, done_msg):
+        self.iterable = iterable
+        self.step = 0
+        self.msg = msg
+        self.done_msg = done_msg
+        self.cur_msg = ''
+        self.cur_time = 0
+
+    def __enter__(self):
+        sys.stdout.write(self.msg)
+        sys.stdout.flush()
+
+        self.cur_time = time()
+
+        return self
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.step == len(self.iterable):
+            self.update_progress()
+            raise StopIteration
+
+        ret = self.iterable[self.step]
+        self.step += 1
+
+        if self.step:
+            self.update_progress()
+
+        return ret
+
+    def update_progress(self):
+        old_len = len(self.cur_msg)
+        self.cur_msg = "\r{}: step {} of {}".format(self.msg, self.step, len(self.iterable))
+        sys.stdout.write("{}{}".format(self.cur_msg, ' ' * (old_len - len(self.cur_msg))))
+        sys.stdout.flush()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        old_len = len(self.cur_msg)
+        e_time = strftime("%M min. %S sec.", gmtime(time() - self.cur_time))
+        msg = "\r{}: {} in {}\n".format(self.msg, self.done_msg, e_time)
+        sys.stdout.write("{}{}".format(msg, ' ' * (old_len - len(msg))))
+        sys.stdout.flush()
 
 
 

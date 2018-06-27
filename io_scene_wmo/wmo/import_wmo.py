@@ -1,6 +1,5 @@
 import bpy
-import os
-import time
+from progress_report import ProgressReport, ProgressReportSubstep
 
 from .wmo_file import WMOFile
 
@@ -11,7 +10,12 @@ from ..utils import load_game_data
 def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, group_objects):
     """ Read and import WoW WMO object to Blender scene"""
 
-    start_time = time.time()
+    print("\nImporting WMO")
+
+    with ProgressReport() as progress:
+
+
+
 
     wmo = WMOFile(filepath)
     wmo.read()
