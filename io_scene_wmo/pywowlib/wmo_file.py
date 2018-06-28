@@ -60,7 +60,6 @@ class WMOFile:
             while True:
                 try:
                     magic = f.read(4).decode('utf-8')
-                    print(magic)
                     size = uint32.read(f)
                 except EOFError:
                     break
@@ -83,7 +82,7 @@ class WMOFile:
                 # skipping unknown chunks
                 if chunk is None:
                     print("\nEncountered unknown chunk \"{}\"".format(magic_reversed))
-                    f.seek(size, f.tell())
+                    f.seek(size, 1)
                     continue
 
                 read_chunk = chunk(size=size)
@@ -181,7 +180,7 @@ class WMOGroupFile:
                 # skipping unknown chunks
                 if chunk is None:
                     print("\nEncountered unknown chunk \"{}\"".format(magic_reversed_upper))
-                    f.seek(size, f.tell())
+                    f.seek(size, 1)
                     continue
 
                 read_chunk = chunk(size=size)
