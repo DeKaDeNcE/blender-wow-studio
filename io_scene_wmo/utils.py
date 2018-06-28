@@ -1,8 +1,8 @@
 import bpy
 import os
 import sys
+import time
 
-from time import time, strftime, gmtime
 from mathutils import Vector
 from .pywowlib.archives.wow_filesystem import WoWFileData
 
@@ -193,21 +193,13 @@ def wrap_text(width, text):
 
 
 class ProgressReport:
-    def __init__(self, iterable, msg, done_msg):
+    def __init__(self, iterable, msg):
         self.iterable = iterable
+        self.n_steps = len(iterable)
         self.step = 0
         self.msg = msg
-        self.done_msg = done_msg
         self.cur_msg = ''
-        self.cur_time = 0
-
-    def __enter__(self):
-        sys.stdout.write(self.msg)
-        sys.stdout.flush()
-
-        self.cur_time = time()
-
-        return self
+        self.start_time = time.time()
 
     def __iter__(self):
         return self
@@ -215,27 +207,34 @@ class ProgressReport:
     def __next__(self):
         if self.step == len(self.iterable):
             self.update_progress()
+            self.exit()
             raise StopIteration
+
+        if not self.step:
+            self.start_time = time.time()
 
         ret = self.iterable[self.step]
         self.step += 1
-
-        if self.step:
-            self.update_progress()
+        self.update_progress()
 
         return ret
 
     def update_progress(self):
         old_len = len(self.cur_msg)
-        self.cur_msg = "\r{}: step {} of {}".format(self.msg, self.step, len(self.iterable))
+        percent = int(self.step / self.n_steps * 100) if self.n_steps else 100
+        progress = percent / 100.0
+        length = 40
+        block = int(round(length * progress))
+        self.cur_msg = "\r{}: [{}] {}% <{} / {}>".format(self.msg, "#"*block + "-"*(length-block),
+                                                         percent, self.step, self.n_steps)
         sys.stdout.write("{}{}".format(self.cur_msg, ' ' * (old_len - len(self.cur_msg))))
         sys.stdout.flush()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def exit(self):
         old_len = len(self.cur_msg)
-        e_time = strftime("%M min. %S sec.", gmtime(time() - self.cur_time))
-        msg = "\r{}: {} in {}\n".format(self.msg, self.done_msg, e_time)
-        sys.stdout.write("{}{}".format(msg, ' ' * (old_len - len(msg))))
+        e_time = time.strftime("%M min. %S sec.", time.gmtime(time.time() - self.start_time))
+        msg = "{0}: done in {1} <{2} / {2}>".format(self.msg, e_time, self.n_steps)
+        sys.stdout.write("\r{}{}\n".format(msg, ' ' * abs(old_len - len(msg))))
         sys.stdout.flush()
 
 

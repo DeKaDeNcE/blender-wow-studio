@@ -129,212 +129,204 @@ class BlenderWMOScene:
 
         self.material_lookup[0xFF] = mat
 
-        with ProgressReport(list(enumerate(self.wmo.momt.materials)),
-                            msg='Importing materials', done_msg='done') as p_report:
+        for index, wmo_material in ProgressReport(list(enumerate(self.wmo.momt.materials)), msg='Importing materials'):
+            texture1 = self.wmo.motx.get_string(wmo_material.texture1_ofs)
+            material_name = os.path.basename(texture1)[:-4] + '.png'
 
-            for index, wmo_material in p_report:
-                texture1 = self.wmo.motx.get_string(wmo_material.texture1_ofs)
-                material_name = os.path.basename(texture1)[:-4] + '.png'
+            mat = bpy.data.materials.new(material_name)
+            self.material_lookup[index] = mat
 
-                mat = bpy.data.materials.new(material_name)
-                self.material_lookup[index] = mat
+            mat.wow_wmo_material.enabled = True
+            mat.wow_wmo_material.shader = str(wmo_material.shader)
+            mat.wow_wmo_material.blending_mode = str(wmo_material.blend_mode)
+            mat.wow_wmo_material.texture1 = texture1
+            mat.wow_wmo_material.emissive_color = [x / 255 for x in wmo_material.emissive_color[0:4]]
+            mat.wow_wmo_material.texture2 = self.wmo.motx.get_string(wmo_material.texture2_ofs)
+            mat.wow_wmo_material.diff_color = [x / 255 for x in wmo_material.diff_color[0:4]]
+            mat.wow_wmo_material.terrain_type = str(wmo_material.terrain_type)
 
-                mat.wow_wmo_material.enabled = True
-                mat.wow_wmo_material.shader = str(wmo_material.shader)
-                mat.wow_wmo_material.blending_mode = str(wmo_material.blend_mode)
-                mat.wow_wmo_material.texture1 = texture1
-                mat.wow_wmo_material.emissive_color = [x / 255 for x in wmo_material.emissive_color[0:4]]
-                mat.wow_wmo_material.texture2 = self.wmo.motx.get_string(wmo_material.texture2_ofs)
-                mat.wow_wmo_material.diff_color = [x / 255 for x in wmo_material.diff_color[0:4]]
-                mat.wow_wmo_material.terrain_type = str(wmo_material.terrain_type)
+            mat_flags = set()
+            bit = 1
+            while bit <= 0x80:
+                if wmo_material.flags & bit:
+                    mat_flags.add(str(bit))
+                bit <<= 1
+            mat.wow_wmo_material.flags = mat_flags
 
-                mat_flags = set()
-                bit = 1
-                while bit <= 0x80:
-                    if wmo_material.flags & bit:
-                        mat_flags.add(str(bit))
-                    bit <<= 1
-                mat.wow_wmo_material.flags = mat_flags
+            # set texture slot and load texture
 
-                # set texture slot and load texture
+            if mat.wow_wmo_material.texture1:
+                tex1_slot = mat.texture_slots.create(2)
+                tex1_slot.uv_layer = "UVMap"
+                tex1_slot.texture_coords = 'UV'
 
-                if mat.wow_wmo_material.texture1:
-                    tex1_slot = mat.texture_slots.create(2)
-                    tex1_slot.uv_layer = "UVMap"
-                    tex1_slot.texture_coords = 'UV'
+                tex1_name = material_name + "_Tex_01"
+                tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
+                tex1_slot.texture = tex1
 
-                    tex1_name = material_name + "_Tex_01"
-                    tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
-                    tex1_slot.texture = tex1
+                try:
+                    tex1_img_filename = os.path.splitext(mat.wow_wmo_material.texture1)[0] + '.png'
 
-                    try:
-                        tex1_img_filename = os.path.splitext(mat.wow_wmo_material.texture1)[0] + '.png'
+                    if os.name != 'nt':
+                        tex1_img_filename = tex1_img_filename.replace('\\', '/')
 
-                        if os.name != 'nt':
-                            tex1_img_filename = tex1_img_filename.replace('\\', '/')
+                    img1_loaded = False
 
-                        img1_loaded = False
+                    # check if image already loaded
+                    for i_img in range(len(images)):
+                        if image_names[i_img] == tex1_img_filename:
+                            tex1.image = images[i_img]
+                            img1_loaded = True
+                            break
 
-                        # check if image already loaded
-                        for i_img in range(len(images)):
-                            if image_names[i_img] == tex1_img_filename:
-                                tex1.image = images[i_img]
-                                img1_loaded = True
-                                break
+                    # if image is not loaded, do it
+                    if not img1_loaded:
+                        tex1_img = bpy.data.images.load(os.path.join(texture_dir, tex1_img_filename))
+                        tex1.image = tex1_img
+                        images.append(tex1_img)
+                        image_names.append(tex1_img_filename)
+                        mat.active_texture = tex1_img
 
-                        # if image is not loaded, do it
-                        if not img1_loaded:
-                            tex1_img = bpy.data.images.load(os.path.join(texture_dir, tex1_img_filename))
-                            tex1.image = tex1_img
-                            images.append(tex1_img)
-                            image_names.append(tex1_img_filename)
-                            mat.active_texture = tex1_img
+                except:
+                    pass
 
-                    except:
-                        pass
+            # set texture slot and load texture
+            if mat.wow_wmo_material.texture2:
+                tex2_slot = mat.texture_slots.create(1)
+                tex2_slot.uv_layer = "UVMap"
+                tex2_slot.texture_coords = 'UV'
 
-                # set texture slot and load texture
-                if mat.wow_wmo_material.texture2:
-                    tex2_slot = mat.texture_slots.create(1)
-                    tex2_slot.uv_layer = "UVMap"
-                    tex2_slot.texture_coords = 'UV'
+                tex2_name = material_name + "_Tex_02"
+                tex2 = bpy.data.textures.new(tex2_name, 'IMAGE')
+                tex2_slot.texture = tex2
 
-                    tex2_name = material_name + "_Tex_02"
-                    tex2 = bpy.data.textures.new(tex2_name, 'IMAGE')
-                    tex2_slot.texture = tex2
+                try:
+                    tex2_img_filename = os.path.splitext(mat.wow_wmo_material.texture2)[0] + '.png'
 
-                    try:
-                        tex2_img_filename = os.path.splitext(mat.wow_wmo_material.texture2)[0] + '.png'
+                    if os.name != 'nt':
+                        tex2_img_filename = tex2_img_filename.replace('\\', '/')
 
-                        if os.name != 'nt':
-                            tex2_img_filename = tex2_img_filename.replace('\\', '/')
+                    img2_loaded = False
 
-                        img2_loaded = False
+                    # check if image already loaded
+                    for i_img in range(len(images)):
+                        if image_names[i_img] == tex2_img_filename:
+                            tex2.image = images[i_img]
+                            img2_loaded = True
+                            break
 
-                        # check if image already loaded
-                        for i_img in range(len(images)):
-                            if image_names[i_img] == tex2_img_filename:
-                                tex2.image = images[i_img]
-                                img2_loaded = True
-                                break
-
-                        # if image is not loaded, do it
-                        if not img2_loaded:
-                            tex2_img = bpy.data.images.load(os.path.join(texture_dir, tex2_img_filename))
-                            tex2.image = tex2_img
-                            images.append(tex2_img)
-                            image_names.append(tex2_img_filename)
-                    except:
-                        pass
+                    # if image is not loaded, do it
+                    if not img2_loaded:
+                        tex2_img = bpy.data.images.load(os.path.join(texture_dir, tex2_img_filename))
+                        tex2.image = tex2_img
+                        images.append(tex2_img)
+                        image_names.append(tex2_img_filename)
+                except:
+                    pass
 
     def load_lights(self):
         """ Load WoW WMO MOLT lights """
 
-        with ProgressReport(list(enumerate(self.wmo.molt.lights)),
-                            msg='Importing lights', done_msg='done') as p_report:
+        for i, wmo_light in ProgressReport(list(enumerate(self.wmo.molt.lights)), msg='Importing lights'):
 
-            for i, wmo_light in p_report:
+            bl_light_types = ['POINT', 'SPOT', 'SUN', 'POINT']
 
-                bl_light_types = ['POINT', 'SPOT', 'SUN', 'POINT']
+            try:
+                l_type = bl_light_types[wmo_light.light_type]
+            except IndexError:
+                raise Exception("Light type unknown : {} (light nbr : {})".format(str(wmo_light.LightType), str(i)))
 
-                try:
-                    l_type = bl_light_types[wmo_light.light_type]
-                except IndexError:
-                    raise Exception("Light type unknown : {} (light nbr : {})".format(str(wmo_light.LightType), str(i)))
+            light_name = "{}_Light_{}".format(self.wmo.display_name, str(i).zfill(2))
+            light = bpy.data.lamps.new(light_name, l_type)
+            light.color = (wmo_light.color[2] / 255, wmo_light.color[1] / 255, wmo_light.color[0] / 255)
+            light.energy = wmo_light.intensity
 
-                light_name = "{}_Light_{}".format(self.wmo.display_name, str(i).zfill(2))
-                light = bpy.data.lamps.new(light_name, l_type)
-                light.color = (wmo_light.color[2] / 255, wmo_light.color[1] / 255, wmo_light.color[0] / 255)
-                light.energy = wmo_light.intensity
+            if wmo_light.light_type in {0, 1}:
+                light.falloff_type = 'INVERSE_LINEAR'
+                light.distance = wmo_light.unknown4 / 2
+                light.use_sphere = True
 
-                if wmo_light.light_type in {0, 1}:
-                    light.falloff_type = 'INVERSE_LINEAR'
-                    light.distance = wmo_light.unknown4 / 2
-                    light.use_sphere = True
+            light.wow_wmo_light.enabled = True
+            light.wow_wmo_light.light_type = str(wmo_light.light_type)
+            light.wow_wmo_light.type = bool(wmo_light.type)
+            light.wow_wmo_light.use_attenuation = bool(wmo_light.use_attenuation)
+            light.wow_wmo_light.padding = bool(wmo_light.padding)
+            light.wow_wmo_light.type = bool(wmo_light.type)
+            light.wow_wmo_light.color = light.color
+            light.wow_wmo_light.color_alpha = wmo_light.color[3] / 255
+            light.wow_wmo_light.intensity = wmo_light.intensity
+            light.wow_wmo_light.attenuation_start = wmo_light.attenuation_start
+            light.wow_wmo_light.attenuation_end = wmo_light.attenuation_end
 
-                light.wow_wmo_light.enabled = True
-                light.wow_wmo_light.light_type = str(wmo_light.light_type)
-                light.wow_wmo_light.type = bool(wmo_light.type)
-                light.wow_wmo_light.use_attenuation = bool(wmo_light.use_attenuation)
-                light.wow_wmo_light.padding = bool(wmo_light.padding)
-                light.wow_wmo_light.type = bool(wmo_light.type)
-                light.wow_wmo_light.color = light.color
-                light.wow_wmo_light.color_alpha = wmo_light.color[3] / 255
-                light.wow_wmo_light.intensity = wmo_light.intensity
-                light.wow_wmo_light.attenuation_start = wmo_light.attenuation_start
-                light.wow_wmo_light.attenuation_end = wmo_light.attenuation_end
+            obj = bpy.data.objects.new(light_name, light)
+            obj.location = self.wmo.molt.lights[i].position
 
-                obj = bpy.data.objects.new(light_name, light)
-                obj.location = self.wmo.molt.lights[i].position
+            bpy.context.scene.objects.link(obj)
 
-                bpy.context.scene.objects.link(obj)
-
-                self.bl_lights.append(light)
+            self.bl_lights.append(light)
 
     def load_fogs(self):
         """ Load fogs from WMO Root File"""
 
-        with ProgressReport(list(enumerate(self.wmo.mfog.fogs)),
-                            msg='Importing fogs', done_msg='done') as p_report:
-            for i, wmo_fog in p_report:
-                bpy.ops.mesh.primitive_uv_sphere_add()
-                fog = bpy.context.scene.objects.active
+        for i, wmo_fog in ProgressReport(list(enumerate(self.wmo.mfog.fogs)), msg='Importing fogs'):
+            bpy.ops.mesh.primitive_uv_sphere_add()
+            fog = bpy.context.scene.objects.active
 
-                if not wmo_fog.big_radius:
-                    fog.hide = False
+            if not wmo_fog.big_radius:
+                fog.hide = False
 
-                fog.name = "{}_Fog_{}".format(self.wmo.display_name, str(i).zfill(2))
+            fog.name = "{}_Fog_{}".format(self.wmo.display_name, str(i).zfill(2))
 
-                # applying real object transformation
-                fog.location = wmo_fog.position
-                bpy.ops.transform.resize(value=(wmo_fog.big_radius, wmo_fog.big_radius, wmo_fog.big_radius))  # 0.5 is the default sphere radius
+            # applying real object transformation
+            fog.location = wmo_fog.position
+            bpy.ops.transform.resize(value=(wmo_fog.big_radius, wmo_fog.big_radius, wmo_fog.big_radius))  # 0.5 is the default sphere radius
 
-                bpy.ops.object.shade_smooth()
-                fog.draw_type = 'SOLID'
-                fog.show_transparent = True
-                fog.show_name = True
-                fog.color = (wmo_fog.color1[2] / 255, wmo_fog.color1[1] / 255, wmo_fog.color1[0] / 255, 0.0)
+            bpy.ops.object.shade_smooth()
+            fog.draw_type = 'SOLID'
+            fog.show_transparent = True
+            fog.show_name = True
+            fog.color = (wmo_fog.color1[2] / 255, wmo_fog.color1[1] / 255, wmo_fog.color1[0] / 255, 0.0)
 
-                mesh = fog.data
+            mesh = fog.data
 
-                material = bpy.data.materials.new(name=fog.name)
+            material = bpy.data.materials.new(name=fog.name)
 
-                if mesh.materials:
-                    mesh.materials[0] = material
-                else:
-                    mesh.materials.append(material)
+            if mesh.materials:
+                mesh.materials[0] = material
+            else:
+                mesh.materials.append(material)
 
-                bpy.ops.object.mode_set(mode='EDIT')
-                bpy.ops.mesh.select_all(action='SELECT')
-                bpy.ops.object.material_slot_assign()
-                bpy.ops.mesh.select_all(action='DESELECT')
-                bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.object.material_slot_assign()
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.mode_set(mode='OBJECT')
 
-                mesh.materials[0].use_object_color = True
-                mesh.materials[0].use_transparency = True
-                mesh.materials[0].alpha = 0.35
+            mesh.materials[0].use_object_color = True
+            mesh.materials[0].use_transparency = True
+            mesh.materials[0].alpha = 0.35
 
-                # applying object properties
+            # applying object properties
 
-                fog.wow_wmo_fog.enabled = True
-                if wmo_fog.flags & 0x01:
-                    fog.wow_wmo_fog.ignore_radius = True
-                if wmo_fog.flags & 0x10:
-                    fog.wow_wmo_fog.unknown = True
+            fog.wow_wmo_fog.enabled = True
+            if wmo_fog.flags & 0x01:
+                fog.wow_wmo_fog.ignore_radius = True
+            if wmo_fog.flags & 0x10:
+                fog.wow_wmo_fog.unknown = True
 
-                if wmo_fog.small_radius != 0:
-                    fog.wow_wmo_fog.inner_radius = int(wmo_fog.small_radius / wmo_fog.big_radius * 100)
-                else:
-                    fog.wow_wmo_fog.inner_radius = 0
+            if wmo_fog.small_radius != 0:
+                fog.wow_wmo_fog.inner_radius = int(wmo_fog.small_radius / wmo_fog.big_radius * 100)
+            else:
+                fog.wow_wmo_fog.inner_radius = 0
 
-                fog.wow_wmo_fog.end_dist = wmo_fog.end_dist
-                fog.wow_wmo_fog.start_factor = wmo_fog.start_factor
-                fog.wow_wmo_fog.color1 = (wmo_fog.color1[2] / 255, wmo_fog.color1[1] / 255, wmo_fog.color1[0] / 255)
-                fog.wow_wmo_fog.end_dist2 = wmo_fog.end_dist
-                fog.wow_wmo_fog.start_factor2 = wmo_fog.start_factor2
-                fog.wow_wmo_fog.color2 = (wmo_fog.color2[2] / 255, wmo_fog.color2[1] / 255, wmo_fog.color2[0] / 255)
+            fog.wow_wmo_fog.end_dist = wmo_fog.end_dist
+            fog.wow_wmo_fog.start_factor = wmo_fog.start_factor
+            fog.wow_wmo_fog.color1 = (wmo_fog.color1[2] / 255, wmo_fog.color1[1] / 255, wmo_fog.color1[0] / 255)
+            fog.wow_wmo_fog.end_dist2 = wmo_fog.end_dist
+            fog.wow_wmo_fog.start_factor2 = wmo_fog.start_factor2
+            fog.wow_wmo_fog.color2 = (wmo_fog.color2[2] / 255, wmo_fog.color2[1] / 255, wmo_fog.color2[0] / 255)
 
-                self.bl_fogs.append(fog)
+            self.bl_fogs.append(fog)
 
     def load_doodads(self, assets_dir=None):
         scene = bpy.context.scene
@@ -407,46 +399,45 @@ class BlenderWMOScene:
     def load_portals(self):
         """ Load WoW WMO portal planes """
 
-        with ProgressReport(list(enumerate(self.wmo.mopt.infos)), msg='Imorting portals', done_msg='done') as p_report:
-            vert_count = 0
-            for index, portal in p_report:
-                portal_name = "{}_Portal_{}".format(self.wmo.display_name, str(index).zfill(3))
+        vert_count = 0
+        for index, portal in ProgressReport(list(enumerate(self.wmo.mopt.infos)), msg='Imorting portals'):
+            portal_name = "{}_Portal_{}".format(self.wmo.display_name, str(index).zfill(3))
 
-                verts = []
-                face = []
-                faces = []
+            verts = []
+            face = []
+            faces = []
 
-                for j in range(portal.n_vertices):
-                    if len(face) < 4:
-                        verts.append(self.wmo.mopv.portal_vertices[vert_count])
-                        face.append(j)
-                    vert_count += 1
+            for j in range(portal.n_vertices):
+                if len(face) < 4:
+                    verts.append(self.wmo.mopv.portal_vertices[vert_count])
+                    face.append(j)
+                vert_count += 1
 
-                faces.append(face)
+            faces.append(face)
 
-                mesh = bpy.data.meshes.new(portal_name)
+            mesh = bpy.data.meshes.new(portal_name)
 
-                obj = bpy.data.objects.new(portal_name, mesh)
+            obj = bpy.data.objects.new(portal_name, mesh)
 
-                obj.wow_wmo_portal.enabled = True
-                first_relationship = True
+            obj.wow_wmo_portal.enabled = True
+            first_relationship = True
 
-                for relation in self.wmo.mopr.relations:
-                    if relation.portal_index == index:
-                        group_name = self.wmo.mogn.get_string(
-                            self.bl_groups[relation.group_index].wmo_group.mogp.group_name_ofs)
+            for relation in self.wmo.mopr.relations:
+                if relation.portal_index == index:
+                    group_name = self.wmo.mogn.get_string(
+                        self.bl_groups[relation.group_index].wmo_group.mogp.group_name_ofs)
 
-                        if first_relationship:
-                            obj.wow_wmo_portal.first = bpy.context.scene.objects[group_name]
-                            first_relationship = False
-                        else:
-                            obj.wow_wmo_portal.second = bpy.context.scene.objects[group_name]
-                            break
+                    if first_relationship:
+                        obj.wow_wmo_portal.first = bpy.context.scene.objects[group_name]
+                        first_relationship = False
+                    else:
+                        obj.wow_wmo_portal.second = bpy.context.scene.objects[group_name]
+                        break
 
-                mesh.from_pydata(verts, [], faces)
-                bpy.context.scene.objects.link(obj)
+            mesh.from_pydata(verts, [], faces)
+            bpy.context.scene.objects.link(obj)
 
-                self.bl_portals.append(obj)
+            self.bl_portals.append(obj)
 
     def load_properties(self):
         """ Load global WoW WMO properties """
@@ -470,14 +461,12 @@ class BlenderWMOScene:
 
     def load_groups(self):
 
-        with ProgressReport(self.wmo.groups, msg='Importing groups', done_msg='done') as p_report:
+        for group in ProgressReport(self.wmo.groups, msg='Importing groups'):
+            bl_group = BlenderWMOSceneGroup(self, group)
+            self.bl_groups.append(bl_group)
 
-            for group in p_report:
-                bl_group = BlenderWMOSceneGroup(self, group)
-                self.bl_groups.append(bl_group)
-
-                if not bl_group.name == 'antiportal':
-                    bl_group.load_object()
+            if not bl_group.name == 'antiportal':
+                bl_group.load_object()
 
     @staticmethod
     def get_object_bounding_box(obj):
