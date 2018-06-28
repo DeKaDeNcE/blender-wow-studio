@@ -1,8 +1,9 @@
 import bpy
 import os
 
-from ..pywowlib.wmo_file import WMOFile
+from .wmo_scene_group import BlenderWMOSceneGroup
 from ..ui import get_addon_prefs
+from .import_doodad import m2_to_blender_mesh
 from ..utils import find_nearest_object, ProgressReport
 
 
@@ -13,7 +14,6 @@ class BlenderWMOScene:
         self.wmo = wmo
         self.settings = prefs
         self.material_lookup = {}
-        self.groups = []
 
         self.bl_groups = []
         self.bl_portals = []
@@ -269,6 +269,8 @@ class BlenderWMOScene:
 
                 bpy.context.scene.objects.link(obj)
 
+                self.bl_lights.append(light)
+
     def load_fogs(self):
         """ Load fogs from WMO Root File"""
 
@@ -332,6 +334,8 @@ class BlenderWMOScene:
                 fog.wow_wmo_fog.start_factor2 = wmo_fog.start_factor2
                 fog.wow_wmo_fog.color2 = (wmo_fog.color2[2] / 255, wmo_fog.color2[1] / 255, wmo_fog.color2[0] / 255)
 
+                self.bl_fogs.append(fog)
+
     def load_doodads(self, assets_dir=None):
         scene = bpy.context.scene
 
@@ -341,6 +345,7 @@ class BlenderWMOScene:
 
             anchor = bpy.data.objects.new(doodad_set.name, None)
             anchor.empty_draw_type = 'SPHERE'
+            bpy.context.scene.objects.link(anchor)
             anchor.name = doodad_set.name
             anchor.hide = True
             anchor.hide_select = True
@@ -356,7 +361,7 @@ class BlenderWMOScene:
 
                 if not obj:
                     try:
-                        obj = m2.m2_to_blender_mesh(assets_dir, doodad_path, game_data) # TODO: get back here
+                        obj = m2_to_blender_mesh(assets_dir, doodad_path)
                     except Exception as e:
                         bpy.ops.mesh.primitive_cube_add()
                         obj = bpy.context.scene.objects.active
@@ -402,41 +407,46 @@ class BlenderWMOScene:
     def load_portals(self):
         """ Load WoW WMO portal planes """
 
-        vert_count = 0
-        for index, portal in enumerate(self.wmo.mopt.infos):
-            portal_name = self.wmo.display_name + "_Portal_" + str(index).zfill(3)
+        with ProgressReport(list(enumerate(self.wmo.mopt.infos)), msg='Imorting portals', done_msg='done') as p_report:
+            vert_count = 0
+            for index, portal in p_report:
+                portal_name = "{}_Portal_{}".format(self.wmo.display_name, str(index).zfill(3))
 
-            verts = []
-            face = []
-            faces = []
+                verts = []
+                face = []
+                faces = []
 
-            for j in range(portal.n_vertices):
-                if len(face) < 4:
-                    verts.append(self.wmo.mopv.portal_vertices[vert_count])
-                    face.append(j)
-                vert_count += 1
+                for j in range(portal.n_vertices):
+                    if len(face) < 4:
+                        verts.append(self.wmo.mopv.portal_vertices[vert_count])
+                        face.append(j)
+                    vert_count += 1
 
-            faces.append(face)
+                faces.append(face)
 
-            mesh = bpy.data.meshes.new(portal_name)
+                mesh = bpy.data.meshes.new(portal_name)
 
-            obj = bpy.data.objects.new(portal_name, mesh)
+                obj = bpy.data.objects.new(portal_name, mesh)
 
-            obj.wow_wmo_portal.enabled = True
-            first_relationship = True
+                obj.wow_wmo_portal.enabled = True
+                first_relationship = True
 
-            for relation in self.wmo.mopr.relations:
-                if relation.portal_index == index:
-                    group_name = self.wmo.mogn.get_string(self.groups[relation.group_index].mogp.group_name_ofs)
-                    if first_relationship:
-                        obj.wow_wmo_portal.first = bpy.context.scene.objects[group_name]
-                        first_relationship = False
-                    else:
-                        obj.wow_wmo_portal.second = bpy.context.scene.objects[group_name]
-                        break
+                for relation in self.wmo.mopr.relations:
+                    if relation.portal_index == index:
+                        group_name = self.wmo.mogn.get_string(
+                            self.bl_groups[relation.group_index].wmo_group.mogp.group_name_ofs)
 
-            mesh.from_pydata(verts, [], faces)
-            bpy.context.scene.objects.link(obj)
+                        if first_relationship:
+                            obj.wow_wmo_portal.first = bpy.context.scene.objects[group_name]
+                            first_relationship = False
+                        else:
+                            obj.wow_wmo_portal.second = bpy.context.scene.objects[group_name]
+                            break
+
+                mesh.from_pydata(verts, [], faces)
+                bpy.context.scene.objects.link(obj)
+
+                self.bl_portals.append(obj)
 
     def load_properties(self):
         """ Load global WoW WMO properties """
@@ -457,6 +467,17 @@ class BlenderWMOScene:
         properties.flags = flags
         properties.skybox_path = self.wmo.mosb.skybox
         properties.wmo_id = self.wmo.mohd.id
+
+    def load_groups(self):
+
+        with ProgressReport(self.wmo.groups, msg='Importing groups', done_msg='done') as p_report:
+
+            for group in p_report:
+                bl_group = BlenderWMOSceneGroup(self, group)
+                self.bl_groups.append(bl_group)
+
+                if not bl_group.name == 'antiportal':
+                    bl_group.load_object()
 
     @staticmethod
     def get_object_bounding_box(obj):

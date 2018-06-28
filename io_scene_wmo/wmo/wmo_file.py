@@ -1,12 +1,10 @@
 import bpy
-import operator
 import time
 
 from math import sqrt
 from mathutils import Vector
 
 from .wmo_group import *
-from ..m2 import import_doodad as m2
 from ..pywowlib.file_formats.wmo_format_root import *
 from ..pywowlib.file_formats.wmo_format_group import *
 

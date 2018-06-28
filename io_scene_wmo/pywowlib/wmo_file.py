@@ -161,7 +161,6 @@ class WMOGroupFile:
             while True:
                 try:
                     magic = f.read(4).decode('utf-8')
-                    print(magic)
                     size = uint32.read(f)
                 except EOFError:
                     break

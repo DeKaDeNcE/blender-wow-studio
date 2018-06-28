@@ -33,24 +33,23 @@ def skip(f, n_bytes):
     f.seek(f.tell() + n_bytes)
 
 
-def m2_to_blender_mesh(dir, filepath, filedata):
+def m2_to_blender_mesh(asset_dir, filepath):
     """Import World of Warcraft M2 model to scene."""
 
+    game_data = load_game_data()
     active_obj = bpy.context.scene.objects.active
     is_select = bpy.context.scene.objects.active.select if active_obj else False
-
-    print("\nImporting model: <<{}>>".format(filepath))
 
     m2_path = os.path.splitext(filepath)[0] + ".m2"
     skin_path = os.path.splitext(filepath)[0] + "00.skin"
 
     try:
-        m2_file = io.BytesIO(filedata.read_file(m2_path))
+        m2_file = io.BytesIO(game_data.read_file(m2_path))
     except KeyError:
         raise FileNotFoundError("\nModel <<{}>> not found in WoW file system.".format(filepath))
 
     try:
-        skin_file = io.BytesIO(filedata.read_file(skin_path))
+        skin_file = io.BytesIO(game_data.read_file(skin_path))
     except KeyError:
         raise FileNotFoundError("\nSkin file for model <<{}>> not found in WoW file system.".format(filepath))
 
@@ -176,7 +175,7 @@ def m2_to_blender_mesh(dir, filepath, filedata):
         uv_layer1.data[i].uv = (uv[0], 1 - uv[1])
 
     # unpack and convert textures
-    filedata.extract_textures_as_png(dir, texture_paths)
+    game_data.extract_textures_as_png(asset_dir, texture_paths)
 
     # set textures
     for submesh in submeshes:
@@ -189,7 +188,7 @@ def m2_to_blender_mesh(dir, filepath, filedata):
         img = None
 
         try:
-            img = bpy.data.images.load(os.path.join(dir, tex_path), check_existing=True)
+            img = bpy.data.images.load(os.path.join(asset_dir, tex_path), check_existing=True)
         except RuntimeError:
             traceback.print_exc()
             print("\nFailed to load texture: <<{}>>. File is missing or corrupted.".format(tex_path))

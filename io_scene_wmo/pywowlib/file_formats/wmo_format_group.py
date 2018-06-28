@@ -437,59 +437,51 @@ class MOCV:
 
 class LiquidVertex:
     def __init__(self):
+        self.is_water = True
         self.height = 0
 
-    def read(self, f):
-        self.height = unpack("f", f.read(4))
-
-    def write(self, f):
-        f.write(pack('f', self.height))
-
-
-class WaterVertex(LiquidVertex):
-    def __init__(self):
-        super().__init__()
+        # water
         self.flow1 = 0
         self.flow2 = 0
         self.flow1_pct = 0
         self.filler = 0
 
-    def read(self, f):
-        self.flow1 = unpack("B", f.read(1))[0]
-        self.flow2 = unpack("B", f.read(1))[0]
-        self.flow1_pct = unpack("B", f.read(1))[0]
-        self.filler = unpack("B", f.read(1))[0]
-        super().read(f)
-
-    def write(self, f):
-        f.write(pack('B', self.flow1))
-        f.write(pack('B', self.flow2))
-        f.write(pack('B', self.flow1_pct))
-        f.write(pack('B', self.filler))
-        super().write(f)
-
-
-class MagmaVertex(LiquidVertex):
-    def __init__(self):
-        super().__init__()
+        # magma
         self.u = 0
         self.v = 0
 
     def read(self, f):
+        pos = f.tell()
+
+        self.flow1 = unpack("B", f.read(1))[0]
+        self.flow2 = unpack("B", f.read(1))[0]
+        self.flow1_pct = unpack("B", f.read(1))[0]
+        self.filler = unpack("B", f.read(1))[0]
+
+        f.seek(pos)
+
         self.u = unpack("h", f.read(2))[0]
         self.v = unpack("h", f.read(2))[0]
-        super().read(f)
+
+        self.height = unpack("f", f.read(4))
 
     def write(self, f):
-        f.write(pack('h', self.u))
-        f.write(pack('h', self.v))
-        super().write(f)
+        if self.is_water:
+            f.write(pack('B', self.flow1))
+            f.write(pack('B', self.flow2))
+            f.write(pack('B', self.flow1_pct))
+            f.write(pack('B', self.filler))
+        else:
+            f.write(pack('h', self.u))
+            f.write(pack('h', self.v))
+
+        f.write(pack('f', self.height))
 
 
 class MLIQ:
     """ Liquid """
 
-    def __init__(self, mat=True, size=0):
+    def __init__(self, size=0):
         self.header = ChunkHeader(magic='QILM')
         self.header.size = size
         self.x_verts = 0
@@ -500,7 +492,7 @@ class MLIQ:
         self.material_id = 0
         self.vertex_map = []
         self.tile_flags = []
-        self.liquid_material = mat
+        self.is_water = True
 
     def read(self, f):
         self.x_verts = unpack("I", f.read(4))[0]
@@ -513,7 +505,7 @@ class MLIQ:
         self.vertex_map = []
 
         for i in range(self.x_verts * self.y_verts):
-            vtx = WaterVertex() if self.liquid_material else MagmaVertex()
+            vtx = LiquidVertex()
             vtx.read(f)
             self.vertex_map.append(vtx)
 
@@ -538,6 +530,8 @@ class MLIQ:
         f.write(pack('H', self.material_id))
 
         for vtx in self.vertex_map:
+            vtx.is_water = self.is_water
             vtx.write(f)
+
         for tile_flag in self.tile_flags:
             f.write(pack('B', tile_flag))

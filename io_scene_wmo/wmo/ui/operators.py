@@ -9,7 +9,7 @@ import struct
 
 from .enums import *
 from .panels.toolbar import switch_doodad_set, update_wow_visibility, get_doodad_sets
-from ...m2 import import_doodad as m2
+from ..import_doodad import m2_to_blender_mesh
 from ...ui import get_addon_prefs
 from ...utils import load_game_data
 
@@ -205,7 +205,7 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
 
                 else:
                     try:
-                        obj = m2.m2_to_blender_mesh(addon_prefs.cache_dir_path, doodad_path, game_data)
+                        obj = m2_to_blender_mesh(addon_prefs.cache_dir_path, doodad_path)
                     except:
                         bpy.ops.mesh.primitive_cube_add()
                         obj = bpy.context.scene.objects.active
