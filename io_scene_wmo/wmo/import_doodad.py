@@ -33,12 +33,17 @@ def skip(f, n_bytes):
     f.seek(f.tell() + n_bytes)
 
 
-def m2_to_blender_mesh(asset_dir, filepath):
+def import_doodad(asset_dir, filepath, scene):
     """Import World of Warcraft M2 model to scene."""
 
+    m2_name = os.path.splitext(os.path.basename(filepath))[0]
+
+    obj = scene.objects.get(m2_name)
+
+    if obj:
+        return obj
+
     game_data = load_game_data()
-    active_obj = bpy.context.scene.objects.active
-    is_select = bpy.context.scene.objects.active.select if active_obj else False
 
     m2_path = os.path.splitext(filepath)[0] + ".m2"
     skin_path = os.path.splitext(filepath)[0] + "00.skin"
@@ -52,8 +57,6 @@ def m2_to_blender_mesh(asset_dir, filepath):
         skin_file = io.BytesIO(game_data.read_file(skin_path))
     except KeyError:
         raise FileNotFoundError("\nSkin file for model <<{}>> not found in WoW file system.".format(filepath))
-
-    m2_name = os.path.splitext(os.path.basename(filepath))[0]
 
     ###### M2 file parsing ######
 
@@ -198,19 +201,20 @@ def m2_to_blender_mesh(asset_dir, filepath):
                 uv1.data[i].image = img
 
     # create object
-    scn = bpy.context.scene
-
-    for o in scn.objects:
+    for o in scene.objects:
         o.select = False
 
     nobj = bpy.data.objects.new(m2_name, mesh)
-    scn.objects.link(nobj)
+    scene.objects.link(nobj)
 
-    if active_obj:
-        bpy.context.scene.objects.active = active_obj
-        active_obj.select = is_select
+    nobj.wow_wmo_doodad.enabled = True
+    nobj.wow_wmo_doodad.path = filepath
 
-    return nobj
+    # TODO: 2.8
+    group = bpy.data.groups.new(name=m2_name)
+    group.objects.link(nobj)
+
+    return group
 
 
 def wmv_get_last_m2():
@@ -248,32 +252,27 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
             Make sure to use compatible WMV version or open an .m2 there.""")
             return {'CANCELLED'}
 
-        if dir:
-            try:
-                obj = m2_to_blender_mesh(addon_preferences.cache_dir_path, m2_path, game_data)
-            except:
-                bpy.ops.mesh.primitive_cube_add()
-                obj = bpy.context.scene.objects.active
-                traceback.print_exc()
-                self.report({'WARNING'}, "Failed to import model. Placeholder is imported instead.")
-            else:
-                self.report({'INFO'}, "Imported model: {}".format(m2_path))
-
-            if bpy.context.scene.objects.active and bpy.context.scene.objects.active.select:
-                obj.location = bpy.context.scene.objects.active.location
-            else:
-                obj.location = bpy.context.scene.cursor_location
-
-            obj.wow_wmo_doodad.enabled = True
-            obj.wow_wmo_doodad.path = m2_path
-
-            bpy.ops.object.select_all(action='DESELECT')
-            bpy.context.scene.objects.active = obj
-            obj.select = True
-
+        proto_scene = (bpy.data.scenes.get('$WMODoodadPrototypes') or bpy.data.scenes.new(name='$WMODoodadPrototypes'))
+        try:
+            obj = import_doodad(addon_preferences.cache_dir_path, m2_path, proto_scene)
+        except:
+            bpy.ops.mesh.primitive_cube_add()
+            obj = bpy.context.scene.objects.active
+            traceback.print_exc()
+            self.report({'WARNING'}, "Failed to import model. Placeholder is imported instead.")
         else:
-            self.report({'ERROR'}, "Failed to import model. "
-                                   "Save your blendfile first.")
-            return {'CANCELLED'}
+            self.report({'INFO'}, "Imported model: {}".format(m2_path))
+
+        if bpy.context.scene.objects.active and bpy.context.scene.objects.active.select:
+            obj.location = bpy.context.scene.objects.active.location
+        else:
+            obj.location = bpy.context.scene.cursor_location
+
+        obj.wow_wmo_doodad.enabled = True
+        obj.wow_wmo_doodad.path = m2_path
+
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.context.scene.objects.active = obj
+        obj.select = True
 
         return {'FINISHED'}

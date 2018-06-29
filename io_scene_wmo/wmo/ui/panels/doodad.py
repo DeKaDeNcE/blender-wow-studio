@@ -23,7 +23,9 @@ class WoWDoodadPanel(bpy.types.Panel):
                 and context.scene.wow_scene.type == 'WMO'
                 and context.object is not None
                 and context.object.wow_wmo_doodad.enabled
-                and isinstance(context.object.data, bpy.types.Mesh))
+                and (context.object.type == 'MESH'
+                     or context.object.type == 'EMPTY')
+        )
 
 
 class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):

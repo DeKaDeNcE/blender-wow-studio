@@ -9,7 +9,7 @@ import struct
 
 from .enums import *
 from .panels.toolbar import switch_doodad_set, update_wow_visibility, get_doodad_sets
-from ..import_doodad import m2_to_blender_mesh
+from ..import_doodad import import_doodad
 from ...ui import get_addon_prefs
 from ...utils import load_game_data
 
@@ -204,8 +204,10 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
                     bpy.context.scene.objects.link(obj)
 
                 else:
+                    proto_scene = (bpy.data.scenes.get('$WMODoodadPrototypes') or bpy.data.scenes.new(
+                        name='$WMODoodadPrototypes'))
                     try:
-                        obj = m2_to_blender_mesh(addon_prefs.cache_dir_path, doodad_path)
+                        obj = import_doodad(addon_prefs.cache_dir_path, doodad_path, proto_scene)
                     except:
                         bpy.ops.mesh.primitive_cube_add()
                         obj = bpy.context.scene.objects.active

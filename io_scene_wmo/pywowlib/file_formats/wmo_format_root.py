@@ -613,6 +613,19 @@ class MODN:
             i += 1
         return self.string_table[start:i].decode('ascii')
 
+    def get_all_strings(self):
+        strings = []
+        cur_str = ""
+
+        for byte in self.string_table:
+            if byte:
+                cur_str += chr(byte)
+            elif cur_str:
+                strings.append(cur_str)
+                cur_str = ""
+
+        return strings
+
 
 class DoodadDefinition:
     def __init__(self):

@@ -1,9 +1,10 @@
 import bpy
+import traceback
 import os
 
 from .wmo_scene_group import BlenderWMOSceneGroup
 from ..ui import get_addon_prefs
-from .import_doodad import m2_to_blender_mesh
+from .import_doodad import import_doodad
 from ..utils import find_nearest_object, ProgressReport
 
 
@@ -329,9 +330,25 @@ class BlenderWMOScene:
             self.bl_fogs.append(fog)
 
     def load_doodads(self, assets_dir=None):
-        scene = bpy.context.scene
 
-        obj_map = {}
+        doodad_prototypes = {}
+
+        proto_scene = (bpy.data.scenes.get('$WMODoodadPrototypes') or bpy.data.scenes.new(name='$WMODoodadPrototypes'))
+        for doodad_name in ProgressReport(self.wmo.modn.get_all_strings(), msg='Importing doodad prototypes'):
+            doodad_path = os.path.splitext(doodad_name)[0] + ".m2"
+            try:
+                group = import_doodad(assets_dir, doodad_path, proto_scene)
+            except:
+                group = import_doodad(assets_dir, 'Spells\\Errorcube.m2', proto_scene)
+                group.objects[0].wow_wmo_doodad.path = doodad_path
+                traceback.print_exc()
+                print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
+
+            doodad_prototypes[doodad_path] = group.name
+
+        scene = bpy.context.scene
+        bpy.context.screen.scene = proto_scene
+        bpy.context.screen.scene = scene
 
         progress = ProgressReport(self.wmo.modd.definitions, msg='Importing doodads')
         for doodad_set in self.wmo.mods.sets:
@@ -350,27 +367,22 @@ class BlenderWMOScene:
                 doodad = self.wmo.modd.definitions[i]
                 doodad_path = os.path.splitext(self.wmo.modn.get_string(doodad.name_ofs))[0] + ".m2"
 
-                obj = obj_map.get(doodad_path)
+                group_name = doodad_prototypes.get(doodad_path)
+                group = bpy.data.groups.get(group_name)
 
-                if not obj:
-                    try:
-                        obj = m2_to_blender_mesh(assets_dir, doodad_path)
-                    except Exception as e:
-                        bpy.ops.mesh.primitive_cube_add()
-                        obj = bpy.context.scene.objects.active
-                        obj.name = 'ERR_' + os.path.splitext(os.path.basename(doodad_path))[0]
-                        print("\n{}\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(e,
-                                                                                                              doodad_path))
+                if not group:
+                    raise FileNotFoundError('\nWMO is referencing non-existing doodad.')
 
-                    obj.wow_wmo_doodad.enabled = True
-                    obj.wow_wmo_doodad.path = doodad_path
+                p_obj = group.objects[0]
+                nobj = bpy.data.objects.new(p_obj.name, None)
+                bpy.context.scene.objects.link(nobj)
 
-                    obj_map[doodad_path] = obj
-                    nobj = obj
-                else:
-                    nobj = obj.copy()
-                    scene.objects.link(nobj)
+                nobj.dupli_type = 'GROUP'
+                nobj.dupli_group = group
+                nobj.empty_draw_size = 0.01
 
+                nobj.wow_wmo_doodad.enabled = True
+                nobj.wow_wmo_doodad.path = doodad_path
                 nobj.wow_wmo_doodad.color = (doodad.color[2] / 255,
                                              doodad.color[1] / 255,
                                              doodad.color[0] / 255,
