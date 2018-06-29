@@ -205,13 +205,12 @@ class ProgressReport:
         return self
 
     def __next__(self):
-        if self.step == len(self.iterable):
-            self.update_progress()
-            self.exit()
-            raise StopIteration
-
         if not self.step:
             self.start_time = time.time()
+
+        if self.step == len(self.iterable):
+            self.progress_end()
+            raise StopIteration
 
         ret = self.iterable[self.step]
         self.step += 1
@@ -230,12 +229,17 @@ class ProgressReport:
         sys.stdout.write("{}{}".format(self.cur_msg, ' ' * (old_len - len(self.cur_msg))))
         sys.stdout.flush()
 
-    def exit(self):
+    def progress_end(self):
+        self.update_progress()
         old_len = len(self.cur_msg)
         e_time = time.strftime("%M min. %S sec.", time.gmtime(time.time() - self.start_time))
         msg = "{0}: done in {1} <{2} / {2}>".format(self.msg, e_time, self.n_steps)
         sys.stdout.write("\r{}{}\n".format(msg, ' ' * abs(old_len - len(msg))))
         sys.stdout.flush()
+
+    def progress_step(self):
+        """ Manually step through progress. Should be used when ProgressReport is not used as an iterator"""
+        return next(self)
 
 
 

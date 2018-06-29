@@ -333,6 +333,7 @@ class BlenderWMOScene:
 
         obj_map = {}
 
+        progress = ProgressReport(self.wmo.modd.definitions, msg='Importing doodads')
         for doodad_set in self.wmo.mods.sets:
 
             anchor = bpy.data.objects.new(doodad_set.name, None)
@@ -396,11 +397,15 @@ class BlenderWMOScene:
                 nobj.parent = anchor
                 nobj.hide = True
 
+                progress.progress_step()
+
+        progress.progress_end()
+
     def load_portals(self):
         """ Load WoW WMO portal planes """
 
         vert_count = 0
-        for index, portal in ProgressReport(list(enumerate(self.wmo.mopt.infos)), msg='Imorting portals'):
+        for index, portal in ProgressReport(list(enumerate(self.wmo.mopt.infos)), msg='Importing portals'):
             portal_name = "{}_Portal_{}".format(self.wmo.display_name, str(index).zfill(3))
 
             verts = []
