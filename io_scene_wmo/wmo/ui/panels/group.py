@@ -30,6 +30,7 @@ class WowWMOGroupPanel(bpy.types.Panel):
         col.separator()
         col.prop(context.object.wow_wmo_group, "group_dbc_id")
         col.prop(context.object.wow_wmo_group, "liquid_type")
+        col.prop(context.object.wow_wmo_group, "collision_mesh")
 
         self.layout.enabled = context.object.wow_wmo_group.enabled
 
@@ -83,6 +84,11 @@ def fog_validator(self, context):
 
     if self.fog4 and (not self.fog4.wow_wmo_fog.enabled or self.fog4.name not in bpy.context.scene.objects):
         self.fog4 = None
+
+
+def collision_validator(self, context):
+    if self.collision_mesh.type != 'MESH':
+        self.collision_mesh = None
 
 
 class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
@@ -147,6 +153,14 @@ class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
         name="Fog #4",
         poll=lambda self, obj: obj.wow_wmo_fog.enabled and obj.name in bpy.context.scene.objects,
         update=fog_validator
+    )
+
+    collision_mesh = bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name='Collision',
+        description='Invisible collision geometry of this group',
+        poll=lambda self, obj: obj.type == 'MESH',
+        update=collision_validator
     )
 
     modr = bpy.props.CollectionProperty(type=WowWMOMODRStore)

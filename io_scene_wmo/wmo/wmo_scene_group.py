@@ -1,4 +1,5 @@
 import bpy
+import bmesh
 from ..pywowlib.file_formats.wmo_format_group import MOGPFlags
 from .bsp_tree import *
 
@@ -275,6 +276,13 @@ class BlenderWMOSceneGroup:
         normals = group.monr.normals
         tex_coords = group.motv.tex_coords
         faces = [group.movi.indices[i:i + 3] for i in range(0, len(group.movi.indices), 3)]
+        actual_faces = [(i, face) for i, face in enumerate(faces)
+                        if not group.mopy.triangle_materials[i].material_id == 0xFF]
+
+        collision_faces = [(i, face) for i, face in enumerate(faces)
+                           if group.mopy.triangle_materials[i].material_id == 0xFF]
+
+        has_collision = len(faces) != len(actual_faces)
 
         # create mesh
         mesh = bpy.data.meshes.new(self.name)
@@ -356,10 +364,20 @@ class BlenderWMOSceneGroup:
         batch_material_map = {}
 
         # add materials
-        for i in range(len(group.moba.batches)):
+        for i, batch in enumerate(group.moba.batches):
 
-            material = mesh.materials.get(self.wmo_scene.material_lookup[group.moba.batches[i].material_id].name)
+            indices = group.movi.indices[batch.start_triangle: batch.start_triangle + batch.n_triangles]
+            material = self.wmo_scene.material_lookup[group.moba.batches[i].material_id]
 
+            if material.name not in mesh.materials:
+                mesh.materials.append(material)
+
+                mat_id = len(mesh.materials)
+                material_indices[group.moba.batches[i].material_id] = mat_id
+                image = self.get_material_viewport_image(material)
+                material_viewport_textures[mat_id] = image
+
+            '''
             if not material:
                 mat_id = len(mesh.materials)
                 material_indices[group.moba.batches[i].material_id] = mat_id
@@ -371,10 +389,10 @@ class BlenderWMOSceneGroup:
                 mesh.materials.append(self.wmo_scene.material_lookup[group.moba.batches[i].material_id])
 
                 material.wow_wmo_material.enabled = True
+                
+            '''
 
             if i < group.mogp.n_batches_a:
-                batch = group.moba.batches[i]
-                indices = group.movi.indices[batch.start_triangle: batch.start_triangle + batch.n_triangles]
                 batch_map.add(indices, 0.0, 'ADD')
 
                 # add lightmap information for batch A
@@ -383,14 +401,10 @@ class BlenderWMOSceneGroup:
                         mesh.vertices[index].groups[batch_map.index].weight = group.mocv.vert_colors[index][3] / 255
 
             elif i < group.mogp.n_batches_b:
-                batch = group.moba.batches[i]
-                indices = group.movi.indices[batch.start_triangle: batch.start_triangle + batch.n_triangles]
                 batch_map.add(indices, 0.0, 'ADD')
 
-            batch_material_map[
-                (group.moba.batches[i].start_triangle // 3,
-                 (group.moba.batches[i].start_triangle + group.moba.batches[i].n_triangles) // 3)
-            ] = group.moba.batches[i].material_id
+            batch_material_map[(batch.start_triangle // 3,
+                                (batch.start_triangle + group.moba.batches[i].n_triangles) // 3)] = batch.material_id
 
         # add ghost material
         for i in group.mopy.triangle_materials:
@@ -436,7 +450,6 @@ class BlenderWMOSceneGroup:
         nobj.wow_wmo_group.description = self.wmo_scene.wmo.mogn.get_string(group.mogp.desc_group_name_ofs)
         nobj.wow_wmo_group.group_dbc_id = int(group.mogp.group_id)
 
-        objects = bpy.context.scene.objects
         nobj.wow_wmo_group.fog1 = self.wmo_scene.bl_fogs[group.mogp.fog_indices[0]]
         nobj.wow_wmo_group.fog2 = self.wmo_scene.bl_fogs[group.mogp.fog_indices[1]]
         nobj.wow_wmo_group.fog3 = self.wmo_scene.bl_fogs[group.mogp.fog_indices[2]]
@@ -477,13 +490,30 @@ class BlenderWMOSceneGroup:
 
         nobj.wow_wmo_group.flags = flag_set
 
-        mesh.validate(clean_customdata=False)
-        mesh.update()
+        # remove collision faces from mesh
+        if has_collision:
+            bm = bmesh.new()
+            bm.from_mesh(mesh)
+            bm_col = bm.copy()
 
-        nobj.select = True
+            bm_col.faces.ensure_lookup_table()
+            bmesh.ops.delete(bm_col, geom=[bm_col.faces[i] for i, face in actual_faces], context=5)
 
-        if scn.objects.active is None or scn.objects.active.mode == 'OBJECT':
-            scn.objects.active = nobj
+            bm.faces.ensure_lookup_table()
+            bmesh.ops.delete(bm, geom=[bm.faces[i] for i, face in collision_faces], context=5)
+            bm.to_mesh(mesh)
+            mesh.update()
+
+            col_name = "{}_Collision".format(self.name)
+            col_mesh = bpy.data.meshes.new(col_name)
+            col_obj = bpy.data.objects.new(col_name, col_mesh)
+            bm_col.to_mesh(col_mesh)
+            col_mesh.update()
+
+            scn.objects.link(col_obj)
+
+            nobj.wow_wmo_group.collision_mesh = col_obj
+
 
     def get_portal_direction(self, portal_obj, group_obj):
         """ Get the direction of MOPR portal relation given a portal object and a target group """
