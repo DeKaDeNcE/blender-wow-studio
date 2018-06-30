@@ -330,8 +330,10 @@ class BlenderWMOSceneGroup:
             nobj.wow_wmo_vertex_info.blendmap = blendmap.name
             blendmap.add(group.movi.indices, 1.0, 'ADD')
 
+            mocv_layer = group.mocv2 if group.mogp.flags & MOGPFlags.HasVertexColor else group.mocv
+
             for vertex in mesh.vertices:
-                vertex.groups[blendmap.index].weight = group.mocv2.vert_colors[vertex.index][3] / 255
+                vertex.groups[blendmap.index].weight = mocv_layer.vert_colors[vertex.index][3] / 255
 
         # set uv
         uv1 = mesh.uv_textures.new("UVMap")
