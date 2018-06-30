@@ -157,6 +157,9 @@ class WMOGroupFile:
     def read(self):
         with open(self.filepath, 'rb') as f:
 
+            is_mocv_processed = False
+            is_motv_processed = False
+
             while True:
                 try:
                     magic = f.read(4).decode('utf-8')
@@ -185,7 +188,22 @@ class WMOGroupFile:
 
                 read_chunk = chunk(size=size)
                 read_chunk.read(f)
-                setattr(self, magic_reversed.lower(), read_chunk)
+
+                # handle duplicate chunk reading
+                field_name = magic_reversed.lower()
+                if isinstance(read_chunk, MOTV):
+                    if is_motv_processed:
+                        field_name += '2'
+                    else:
+                        is_motv_processed = True
+
+                if isinstance(read_chunk, MOCV):
+                    if is_mocv_processed:
+                        field_name += '2'
+                    else:
+                        is_mocv_processed = True
+
+                setattr(self, field_name, read_chunk)
 
     def write(self):
 

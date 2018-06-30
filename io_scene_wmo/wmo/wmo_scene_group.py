@@ -370,27 +370,14 @@ class BlenderWMOSceneGroup:
             material = self.wmo_scene.material_lookup[group.moba.batches[i].material_id]
 
             if material.name not in mesh.materials:
-                mesh.materials.append(material)
 
                 mat_id = len(mesh.materials)
-                material_indices[group.moba.batches[i].material_id] = mat_id
-                image = self.get_material_viewport_image(material)
-                material_viewport_textures[mat_id] = image
-
-            '''
-            if not material:
-                mat_id = len(mesh.materials)
-                material_indices[group.moba.batches[i].material_id] = mat_id
+                material_indices[batch.material_id] = mat_id
                 material = self.wmo_scene.material_lookup[group.moba.batches[i].material_id]
 
                 image = self.get_material_viewport_image(material)
                 material_viewport_textures[mat_id] = image
-
-                mesh.materials.append(self.wmo_scene.material_lookup[group.moba.batches[i].material_id])
-
-                material.wow_wmo_material.enabled = True
-                
-            '''
+                mesh.materials.append(material)
 
             if i < group.mogp.n_batches_a:
                 batch_map.add(indices, 0.0, 'ADD')

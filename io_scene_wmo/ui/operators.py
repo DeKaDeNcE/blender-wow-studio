@@ -67,6 +67,12 @@ class WMOImport(bpy.types.Operator):
         default=True,
         )
 
+    import_doodads = BoolProperty(
+        name="Import doodads",
+        description='Import WMO doodads to scene',
+        default=True
+    )
+
     import_fogs = BoolProperty(
         name="Import fogs",
         description="Import WMO fogs to scene",
@@ -78,6 +84,7 @@ class WMOImport(bpy.types.Operator):
         description="Group all objects of this WMO on import",
         default=False,
         )
+
 
     def execute(self, context):
         import_wmo_to_blender_scene(self.filepath, self.import_doodads, self.import_lights,

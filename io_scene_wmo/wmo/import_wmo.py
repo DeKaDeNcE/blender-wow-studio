@@ -8,7 +8,7 @@ from ..ui import get_addon_prefs
 from ..utils import load_game_data, ProgressReport
 
 
-def import_wmo_to_blender_scene(filepath, load_textures, import_doodads, import_lights, import_fogs, group_objects):
+def import_wmo_to_blender_scene(filepath, import_doodads, import_lights, import_fogs, group_objects):
     """ Read and import WoW WMO object to Blender scene"""
 
     start_time = time.time()
