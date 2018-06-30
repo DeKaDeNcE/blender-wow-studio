@@ -20,6 +20,19 @@ def update_wow_visibility(self, context):
                     obj.hide = '0' not in values
                 else:
                     obj.hide = '1' not in values
+
+                if obj.wow_wmo_group.collision_mesh:
+                    col = obj.wow_wmo_group.collision_mesh
+
+                    if 'wow_hide' not in col:
+                        col['wow_hide'] = col.hide
+
+                    if col['wow_hide'] != col.hide:
+                        continue
+
+                    col.hide = '6' not in values
+                    col['wow_hide'] = col.hide
+
             elif obj.wow_wmo_portal.enabled:
                 obj.hide = '2' not in values
             elif obj.wow_wmo_fog.enabled:
@@ -96,17 +109,18 @@ class WMOToolsPanelObjectModeDisplay(bpy.types.Panel):
         col_row = col.row()
         col_row.column(align=True).prop(context.scene, "wow_visibility")
         col_col = col_row.column(align=True)
-        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'Outdoor'
-        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'Indoor'
-        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'wow_wmo_portal'
-        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'wow_wmo_fog'
-        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'wow_wmo_liquid'
-        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'wow_wmo_light'
+        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').entity = 'Outdoor'
+        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').entity = 'Indoor'
+        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').entity = 'wow_wmo_portal'
+        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').entity = 'wow_wmo_fog'
+        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').entity = 'wow_wmo_liquid'
+        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').entity = 'wow_wmo_light'
+        col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').entity = 'Collision'
 
         if not bpy.context.scene.wow_wmo_root.mods_sets:
             box2_row2 = col.row()
             box2_row2.prop(context.scene, "wow_doodad_visibility", expand=False)
-            box2_row2.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').Entity = 'wow_wmo_doodad'
+            box2_row2.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').entity = 'wow_wmo_doodad'
 
     @classmethod
     def poll(cls, context):
@@ -305,9 +319,10 @@ def register():
             ('2', "Portals", "Display portals", ui_icons['WOW_STUDIO_CONVERT_PORTAL'], 0x4),
             ('3', "Fogs", "Display fogs", ui_icons['WOW_STUDIO_FOG'], 0x8),
             ('4', "Liquids", "Display liquids", 'MOD_WAVE', 0x10),
-            ('5', "Lights", "Display lights", 'OUTLINER_OB_LAMP', 0x20)],
+            ('5', "Lights", "Display lights", 'OUTLINER_OB_LAMP', 0x20),
+            ('6', "Collision", "Display collision", 'STYLUS_PRESSURE', 0x40)],
         options={'ENUM_FLAG'},
-        default={'0', '1', '2', '3', '4', '5'},
+        default={'0', '1', '2', '3', '4', '5', '6'},
         update=update_wow_visibility
     )
 
