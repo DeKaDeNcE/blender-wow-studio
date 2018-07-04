@@ -295,17 +295,12 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
 
         flt_flags = [self.bitflag_filter_item
                      if any(filter_name in filter_set for filter_set in (str(i), item.name.lower()))
-                     else 0 for i, item in enumerate(col, 1)
-                     ]
+                     else 0 for i, item in enumerate(col, 1)]
 
+        lambda_key = lambda x: x[1].name.split()[1] + x[1].name.split()[2]
         if self.use_filter_sort_alpha:
-            flt_neworder = [x[1] for x in sorted(
-                zip(
-                    [x[0] for x in sorted(enumerate(col),
-                                          key=lambda x: x[1].name.split()[1] + x[1].name.split()[2])], range(len(col))
-                )
-            )
-            ]
+            flt_neworder = [x[1] for x in sorted(zip([x[0] for x in sorted(enumerate(col), key=lambda_key)],
+                                                     range(len(col))))]
         else:
             flt_neworder = []
 
