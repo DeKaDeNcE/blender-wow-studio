@@ -503,6 +503,7 @@ class BlenderWMOSceneGroup:
 
             nobj.wow_wmo_group.collision_mesh = col_obj
 
+
     def get_portal_direction(self, portal_obj, group_obj):
         """ Get the direction of MOPR portal relation given a portal object and a target group """
 

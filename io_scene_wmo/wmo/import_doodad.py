@@ -2,7 +2,6 @@ import bpy
 import os
 import io
 import traceback
-import hashlib
 from struct import unpack
 
 from ..ui import get_addon_prefs
@@ -34,10 +33,15 @@ def skip(f, n_bytes):
     f.seek(f.tell() + n_bytes)
 
 
-def import_doodad(asset_dir, filepath):
+def import_doodad(asset_dir, filepath, scene):
     """Import World of Warcraft M2 model to scene."""
 
     m2_name = os.path.splitext(os.path.basename(filepath))[0]
+
+    obj = scene.objects.get(m2_name)
+
+    if obj:
+        return obj
 
     game_data = load_game_data()
 
@@ -196,19 +200,21 @@ def import_doodad(asset_dir, filepath):
             for i in range(submesh.start_triangle // 3, (submesh.start_triangle + submesh.n_triangles) // 3):
                 uv1.data[i].image = img
 
-    nobj = bpy.data.objects.new(m2_name, mesh)
-    nobj.name = str(hashlib.md5(filepath.encode('utf-8')).hexdigest())
+    # create object
+    for o in scene.objects:
+        o.select = False
 
-    '''
-    mat = bpy.data.materials.new(name=nobj.name)
-    mat.use_object_color = True
-    nobj.data.materials.append(mat)
-    '''
+    nobj = bpy.data.objects.new(m2_name, mesh)
+    scene.objects.link(nobj)
 
     nobj.wow_wmo_doodad.enabled = True
     nobj.wow_wmo_doodad.path = filepath
 
-    return nobj
+    # TODO: 2.8
+    group = bpy.data.groups.new(name=m2_name)
+    group.objects.link(nobj)
+
+    return group
 
 
 def wmv_get_last_m2():
@@ -248,38 +254,25 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
 
         proto_scene = (bpy.data.scenes.get('$WMODoodadPrototypes') or bpy.data.scenes.new(name='$WMODoodadPrototypes'))
         try:
-            group = import_doodad(addon_preferences.cache_dir_path, m2_path, proto_scene)
+            obj = import_doodad(addon_preferences.cache_dir_path, m2_path, proto_scene)
         except:
-            group = import_doodad(addon_preferences.cache_dir_path, 'Spells\\Errorcube.m2', proto_scene)
+            bpy.ops.mesh.primitive_cube_add()
+            obj = bpy.context.scene.objects.active
             traceback.print_exc()
             self.report({'WARNING'}, "Failed to import model. Placeholder is imported instead.")
         else:
             self.report({'INFO'}, "Imported model: {}".format(m2_path))
 
-        p_obj = group.objects[0]
-        nobj = bpy.data.objects.new(p_obj.name, None)
-        bpy.context.scene.objects.link(nobj)
-
-        nobj.dupli_type = 'GROUP'
-        nobj.dupli_group = group
-        nobj.empty_draw_size = 0.01
-
-        nobj.wow_wmo_doodad.enabled = True
-        nobj.wow_wmo_doodad.path = m2_path
-
         if bpy.context.scene.objects.active and bpy.context.scene.objects.active.select:
-            nobj.location = bpy.context.scene.objects.active.location
+            obj.location = bpy.context.scene.objects.active.location
         else:
-            nobj.location = bpy.context.scene.cursor_location
+            obj.location = bpy.context.scene.cursor_location
+
+        obj.wow_wmo_doodad.enabled = True
+        obj.wow_wmo_doodad.path = m2_path
 
         bpy.ops.object.select_all(action='DESELECT')
-        bpy.context.scene.objects.active = nobj
-        nobj.select = True
-
-        scene = bpy.context.scene
-        bpy.context.screen.scene = proto_scene
-        bpy.context.screen.scene = scene
+        bpy.context.scene.objects.active = obj
+        obj.select = True
 
         return {'FINISHED'}
-
-
