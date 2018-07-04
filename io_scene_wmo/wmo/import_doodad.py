@@ -2,6 +2,7 @@ import bpy
 import os
 import io
 import traceback
+import hashlib
 from struct import unpack
 
 from ..ui import get_addon_prefs
@@ -36,12 +37,7 @@ def skip(f, n_bytes):
 def import_doodad(asset_dir, filepath, scene):
     """Import World of Warcraft M2 model to scene."""
 
-    m2_name = os.path.splitext(os.path.basename(filepath))[0]
-
-    obj = scene.objects.get(m2_name)
-
-    if obj:
-        return obj
+    m2_name = str(hashlib.md5(filepath.encode('utf-8')).hexdigest())
 
     game_data = load_game_data()
 
@@ -200,21 +196,12 @@ def import_doodad(asset_dir, filepath, scene):
             for i in range(submesh.start_triangle // 3, (submesh.start_triangle + submesh.n_triangles) // 3):
                 uv1.data[i].image = img
 
-    # create object
-    for o in scene.objects:
-        o.select = False
-
     nobj = bpy.data.objects.new(m2_name, mesh)
-    scene.objects.link(nobj)
-
+    nobj.use_fake_user = True
     nobj.wow_wmo_doodad.enabled = True
     nobj.wow_wmo_doodad.path = filepath
 
-    # TODO: 2.8
-    group = bpy.data.groups.new(name=m2_name)
-    group.objects.link(nobj)
-
-    return group
+    return nobj
 
 
 def wmv_get_last_m2():

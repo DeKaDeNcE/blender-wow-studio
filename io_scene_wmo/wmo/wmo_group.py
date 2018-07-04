@@ -1,4 +1,5 @@
 import os
+import hashlib
 import bpy
 import bmesh
 import mathutils

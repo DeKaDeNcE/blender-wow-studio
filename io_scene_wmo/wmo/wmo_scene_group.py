@@ -480,6 +480,7 @@ class BlenderWMOSceneGroup:
         nobj.wow_wmo_group.flags = flag_set
 
         # remove collision faces from mesh
+        return
         if has_collision:
             bm = bmesh.new()
             bm.from_mesh(mesh)
@@ -502,6 +503,9 @@ class BlenderWMOSceneGroup:
             scn.objects.link(col_obj)
 
             nobj.wow_wmo_group.collision_mesh = col_obj
+
+            bm.free()
+            bm_col.free()
 
 
     def get_portal_direction(self, portal_obj, group_obj):
