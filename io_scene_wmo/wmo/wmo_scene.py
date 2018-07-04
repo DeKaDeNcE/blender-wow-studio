@@ -1,6 +1,7 @@
 import bpy
 import traceback
 import os
+import hashlib
 
 from .wmo_scene_group import BlenderWMOSceneGroup
 from ..ui import get_addon_prefs
@@ -331,24 +332,49 @@ class BlenderWMOScene:
 
     def load_doodads(self, assets_dir=None):
 
-        doodad_prototypes = {}
+        cache_path = self.settings.cache_dir_path
 
-        proto_scene = (bpy.data.scenes.get('$WMODoodadPrototypes') or bpy.data.scenes.new(name='$WMODoodadPrototypes'))
         for doodad_name in ProgressReport(self.wmo.modn.get_all_strings(), msg='Importing doodad prototypes'):
-            doodad_path = os.path.splitext(doodad_name)[0] + ".m2"
-            try:
-                group = import_doodad(assets_dir, doodad_path, proto_scene)
-            except:
-                group = import_doodad(assets_dir, 'Spells\\Errorcube.m2', proto_scene)
-                group.objects[0].wow_wmo_doodad.path = doodad_path
-                traceback.print_exc()
-                print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
 
-            doodad_prototypes[doodad_path] = group.name
+            doodad_path_noext = os.path.splitext(doodad_name)[0]
+            doodad_path = doodad_path_noext + ".m2"
+            library_path = os.path.join(cache_path, doodad_path_noext + '.blend')
+
+            path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
+
+            obj = bpy.data.objects.get(path_hash)
+
+            if not obj:
+
+                if not os.path.exists(library_path):
+                    library_dir = os.path.split(library_path)[0]
+                    if not os.path.exists(library_dir):
+                        os.makedirs(library_dir)
+
+                    try:
+                        p_obj = import_doodad(assets_dir, doodad_path)
+                    except:
+                        p_obj = import_doodad(assets_dir, 'Spells\\Errorcube.m2')
+                        p_obj.wow_wmo_doodad.path = doodad_path
+                        p_obj.name = path_hash
+                        traceback.print_exc()
+                        print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
+
+                    bpy.data.libraries.write(library_path, {p_obj}, fake_user=True)
+                    bpy.data.objects.remove(p_obj)
+
+                with bpy.data.libraries.load(library_path, link=True) as (data_from, data_to):
+                    data_to.objects = [ob_name for ob_name in data_from.objects if ob_name == path_hash]
+
+                obj = data_to.objects[0]
+                obj.use_fake_user = True
+
+                assert obj is not None
+
+            elif obj.library is None:
+                raise Exception('\nNon-library doodad data-block collision ({})'.format(path_hash))
 
         scene = bpy.context.scene
-        bpy.context.screen.scene = proto_scene
-        bpy.context.screen.scene = scene
 
         progress = ProgressReport(self.wmo.modd.definitions, msg='Importing doodads')
         for doodad_set in self.wmo.mods.sets:
@@ -364,22 +390,20 @@ class BlenderWMOScene:
             anchor.lock_scale = (True, True, True)
 
             for i in range(doodad_set.start_doodad, doodad_set.start_doodad + doodad_set.n_doodads):
+
                 doodad = self.wmo.modd.definitions[i]
-                doodad_path = os.path.splitext(self.wmo.modn.get_string(doodad.name_ofs))[0] + ".m2"
+                doodad_path_noext = os.path.splitext(self.wmo.modn.get_string(doodad.name_ofs))[0]
+                doodad_path = doodad_path_noext + ".m2"
+                doodad_basename = os.path.basename(doodad_path_noext)
+                path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
 
-                group_name = doodad_prototypes.get(doodad_path)
-                group = bpy.data.groups.get(group_name)
+                proto_obj = bpy.data.objects.get(path_hash)
 
-                if not group:
+                if not proto_obj:
                     raise FileNotFoundError('\nWMO is referencing non-existing doodad.')
 
-                p_obj = group.objects[0]
-                nobj = bpy.data.objects.new(p_obj.name, None)
-                bpy.context.scene.objects.link(nobj)
-
-                nobj.dupli_type = 'GROUP'
-                nobj.dupli_group = group
-                nobj.empty_draw_size = 0.01
+                nobj = bpy.data.objects.new(doodad_basename, proto_obj.data)
+                scene.objects.link(nobj)
 
                 nobj.wow_wmo_doodad.enabled = True
                 nobj.wow_wmo_doodad.path = doodad_path
@@ -387,6 +411,8 @@ class BlenderWMOScene:
                                              doodad.color[1] / 255,
                                              doodad.color[0] / 255,
                                              doodad.color[3] / 255)
+
+                nobj.color = nobj.wow_wmo_doodad.color # TODO: temporary
 
                 flags = []
                 bit = 1
