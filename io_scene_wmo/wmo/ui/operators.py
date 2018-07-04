@@ -1500,7 +1500,7 @@ class WOW_WMO_SELECT_ENTITY(bpy.types.Operator):
     bl_description = 'Select all WMO entities of given type'
     bl_options = {'REGISTER', 'INTERNAL'}
 
-    entity = bpy.props.EnumProperty(
+    Entity = bpy.props.EnumProperty(
         name="Entity",
         description="Select WMO component entity objects",
         items=[
@@ -1510,8 +1510,7 @@ class WOW_WMO_SELECT_ENTITY(bpy.types.Operator):
             ("wow_wmo_liquid", "Liquids", ""),
             ("wow_wmo_fog", "Fogs", ""),
             ("wow_wmo_light", "Lights", ""),
-            ("wow_wmo_doodad", "Doodads", ""),
-            ("Collision", "Collision", "")
+            ("wow_wmo_doodad", "Doodads", "")
         ]
     )
 
@@ -1523,20 +1522,16 @@ class WOW_WMO_SELECT_ENTITY(bpy.types.Operator):
 
             if obj.type == 'MESH':
                 if obj.wow_wmo_group.enabled:
-                    if self.entity == "Outdoor" and obj.wow_wmo_group.place_type == '8':
+                    if self.Entity == "Outdoor" and obj.wow_wmo_group.place_type == '8':
                         obj.select = True
-                    elif self.entity == "Indoor" and obj.wow_wmo_group.place_type == '8192':
+                    elif self.Entity == "Indoor" and obj.wow_wmo_group.place_type == '8192':
                         obj.select = True
-
-                    if obj.wow_wmo_group.collision_mesh:
-                        obj.wow_wmo_group.collision_mesh.select = True
-
-                elif self.entity not in ("wow_wmo_light", "Outdoor", "Indoor", "Collision"):
-                    if getattr(obj, self.entity).enabled:
+                elif self.Entity not in ("wow_wmo_light", "Outdoor", "Indoor"):
+                    if getattr(obj, self.Entity).Enabled:
                         obj.select = True
 
-            elif obj.type == 'LAMP' and self.entity == "wow_wmo_light":
-                obj.select = True
+            elif obj.type == 'LAMP':
+               if self.Entity == "wow_wmo_light":
+                   obj.select = True
 
         return {'FINISHED'}
-
