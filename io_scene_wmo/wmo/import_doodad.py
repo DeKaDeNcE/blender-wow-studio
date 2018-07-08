@@ -34,7 +34,7 @@ def skip(f, n_bytes):
     f.seek(f.tell() + n_bytes)
 
 
-def import_doodad(asset_dir, filepath, scene):
+def import_doodad(asset_dir, filepath):
     """Import World of Warcraft M2 model to scene."""
 
     m2_name = str(hashlib.md5(filepath.encode('utf-8')).hexdigest())

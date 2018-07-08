@@ -242,4 +242,59 @@ class ProgressReport:
         return next(self)
 
 
+class BiDirectionalDict:
+    __slots__ = ('forward', 'reversed')
+
+    def __init__(self):
+        self.forward = {}
+        self.reversed = {}
+
+    @staticmethod
+    def _parse_subscription_args(item):
+        if isinstance(item, int):
+            index, is_reversed = item, False
+
+        elif isinstance(item, tuple):
+            if len(item) != 2:
+                raise IndexError('\nBiDirectionalDict expects either an int key or a tuple of (index, is_reversed)')
+
+            index, is_reversed = item
+
+        else:
+            raise TypeError('\nBiDirectionalDict expects either an int key or a tuple of (index, is_reversed)')
+
+        return index, is_reversed
+
+    def __getitem__(self, key):
+        index, is_reversed = self._parse_subscription_args(key)
+        _dict = self.forward if not is_reversed else self.reversed
+        return _dict[index]
+
+    def __setitem__(self, key, value):
+        index, is_reversed = self._parse_subscription_args(key)
+        left, right = (self.reversed, self.forward) if is_reversed else (self.forward, self.reversed)
+
+        if value in right:
+            del right[value]
+
+        left[index] = value
+        right[value] = index
+
+    def get(self, key, is_reversed=False, default=None):
+        _dict = self.forward if not is_reversed else self.reversed
+        return _dict.get(key, default)
+
+    def setdefault(self, key, is_reversed=False, default=None):
+        result = self.get(key, is_reversed)
+
+        if result is None:
+            self[key, is_reversed] = default
+            return default
+
+        return result
+
+
+
+
+
 

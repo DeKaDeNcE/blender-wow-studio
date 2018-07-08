@@ -276,29 +276,25 @@ class BlenderWMOSceneGroup:
         normals = group.monr.normals
         tex_coords = group.motv.tex_coords
         faces = [group.movi.indices[i:i + 3] for i in range(0, len(group.movi.indices), 3)]
-        actual_faces = [(i, face) for i, face in enumerate(faces)
-                        if not group.mopy.triangle_materials[i].material_id == 0xFF]
-
-        collision_faces = [(i, face) for i, face in enumerate(faces)
-                           if group.mopy.triangle_materials[i].material_id == 0xFF]
-
-        has_collision = len(faces) != len(actual_faces)
 
         # create mesh
         mesh = bpy.data.meshes.new(self.name)
         mesh.from_pydata(vertices, [], faces)
+        mesh.update(calc_edges=True)
+        mesh.validate()
 
         # create object
         scn = bpy.context.scene
 
-        for o in scn.objects:
-            o.select = False
-
         nobj = bpy.data.objects.new(self.name, mesh)
         scn.objects.link(nobj)
 
-        for poly in mesh.polygons:
+        collision_face_ids = []
+        for i, poly in enumerate(mesh.polygons):
             poly.use_smooth = True
+
+            if group.mopy.triangle_materials[i].material_id == 0xFF:
+                collision_face_ids.append(i)
 
         # set normals
         for i in range(len(normals)):
@@ -480,32 +476,47 @@ class BlenderWMOSceneGroup:
         nobj.wow_wmo_group.flags = flag_set
 
         # remove collision faces from mesh
-        return
-        if has_collision:
+        if collision_face_ids:
+
+            bm_col = bmesh.new()
+
             bm = bmesh.new()
             bm.from_mesh(mesh)
-            bm_col = bm.copy()
-
-            bm_col.faces.ensure_lookup_table()
-            bmesh.ops.delete(bm_col, geom=[bm_col.faces[i] for i, face in actual_faces], context=5)
 
             bm.faces.ensure_lookup_table()
-            bmesh.ops.delete(bm, geom=[bm.faces[i] for i, face in collision_faces], context=5)
+            bm.verts.ensure_lookup_table()
+            bm.edges.ensure_lookup_table()
+            bm_collision_faces = [bm.faces[i] for i in collision_face_ids]
+
+            # create collision mesh
+            vert_map = {}
+            for face in bm_collision_faces:
+                face_verts = [None, None, None]
+                for j, vert in enumerate(face.verts):
+
+                    n_vert = vert_map.get(vert.index)
+                    if not n_vert:
+                        n_vert = bm_col.verts.new(vert.co)
+                        vert_map[vert.index] = n_vert
+
+                    face_verts[j] = n_vert
+
+                bm_col.faces.new(face_verts)
+
+            c_mesh = bpy.data.meshes.new(self.name + '_Collision')
+            bm_col.to_mesh(c_mesh)
+            bm_col.free()
+
+            # remove collision faces from original mesh
+            bmesh.ops.delete(bm, geom=bm_collision_faces, context=5)
             bm.to_mesh(mesh)
             mesh.update()
-
-            col_name = "{}_Collision".format(self.name)
-            col_mesh = bpy.data.meshes.new(col_name)
-            col_obj = bpy.data.objects.new(col_name, col_mesh)
-            bm_col.to_mesh(col_mesh)
-            col_mesh.update()
-
-            scn.objects.link(col_obj)
-
-            nobj.wow_wmo_group.collision_mesh = col_obj
-
+            bpy.context.scene.update()
             bm.free()
-            bm_col.free()
+
+            c_obj = bpy.data.objects.new(c_mesh.name, c_mesh)
+            scn.objects.link(c_obj)
+            nobj.wow_wmo_group.collision_mesh = c_obj
 
 
     def get_portal_direction(self, portal_obj, group_obj):
