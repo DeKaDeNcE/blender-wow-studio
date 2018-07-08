@@ -130,7 +130,7 @@ class BlenderWMOSceneGroup:
 
         if basic_liquid_type < 20:
             if basic_liquid_type == 0:
-                real_liquid_type = 14 if self.mogp.flags & 0x80000 else 13
+                real_liquid_type = 14 if self.wmo_group.mogp.flags & 0x80000 else 13
             elif basic_liquid_type == 1:
                 real_liquid_type = 14
             elif basic_liquid_type == 2:
@@ -511,7 +511,7 @@ class BlenderWMOSceneGroup:
             bmesh.ops.delete(bm, geom=bm_collision_faces, context=5)
             bm.to_mesh(mesh)
             mesh.update()
-            bpy.context.scene.update()
+            scn.update()
             bm.free()
 
             c_obj = bpy.data.objects.new(c_mesh.name, c_mesh)

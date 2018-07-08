@@ -398,82 +398,6 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
 ## Doodad operators
 ###############################
 
-def LoadDoodadsFromPreserved(dir, game_data):
-    """ Load doodad sets to scene from preserved doodadset data"""
-
-    def get_string(ofs):
-        for string in bpy.context.scene.wow_wmo_root.modn_string_table:
-            if string.Ofs == ofs:
-                return string.String
-
-    scene = bpy.context.scene
-    obj_map = {}
-
-    for doodad_set in scene.wow_wmo_root.mods_sets:
-
-        bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
-        anchor = bpy.context.scene.objects.active
-        anchor.name = doodad_set.name
-        anchor.hide = True
-        anchor.hide_select = True
-
-        for i in range(doodad_set.start_doodad, doodad_set.start_doodad + doodad_set.n_doodads):
-            doodad = scene.wow_wmo_root.modd_definitions[i]
-            doodad_path = os.path.splitext(get_string(doodad.NameOfs))[0] + ".m2"
-
-            nobj = None
-            obj = obj_map.get(doodad_path)
-
-            if not obj:
-                try:
-                    obj = m2.m2_to_blender_mesh(dir, doodad_path, game_data)
-                except:
-                    bpy.ops.mesh.primitive_cube_add()
-                    obj = bpy.context.scene.objects.active
-                    obj.name = 'ERR_' + os.path.splitext(os.path.basename(doodad_path))[0]
-                    traceback.print_exc()
-                    print("#nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
-
-                obj.wow_wmo_doodad.enabled = True
-                obj.wow_wmo_doodad.path = doodad_path
-
-                obj_map[doodad_path] = obj
-                nobj = obj
-            else:
-                nobj = obj.copy()
-
-                nobj.wow_wmo_doodad.color = (doodad.Color[0] / 255,
-                                             doodad.Color[1] / 255,
-                                             doodad.Color[2] / 255,
-                                             doodad.ColorAlpha / 255)
-
-                flags = []
-                bit = 1
-                while bit <= 0x8:
-                    if doodad.Flags & bit:
-                        flags.append(str(bit))
-                    bit <<= 1
-
-                nobj.wow_wmo_doodad.flags = set(flags)
-
-                scene.objects.link(nobj)
-
-            # place the object correctly on the scene
-            nobj.location = doodad.Position
-            nobj.scale = (doodad.Scale, doodad.Scale, doodad.Scale)
-
-            nobj.rotation_mode = 'QUATERNION'
-            nobj.rotation_quaternion = (doodad.Tilt,
-                                        doodad.Rotation[0],
-                                        doodad.Rotation[1],
-                                        doodad.Rotation[2])
-            nobj.parent = anchor
-            nobj.hide = True
-            nobj.lock_location = (True, True, True)
-            nobj.lock_rotation = (True, True, True)
-            nobj.lock_scale = (True, True, True)
-
-
 class DOODADS_BAKE_COLOR(bpy.types.Operator):
     bl_idname = "scene.wow_doodads_bake_color"
     bl_label = "Bake doodads color"
@@ -486,13 +410,14 @@ class DOODADS_BAKE_COLOR(bpy.types.Operator):
 
     tree_map = {}
 
-    def find_nearest_object(object, objects):
+    @staticmethod
+    def find_nearest_object(obj_, objects):
         """Get closest object to another object"""
 
         dist = 32767
         result = None
         for obj in objects:
-            obj_location_relative = obj.matrix_world.inverted() * object.location
+            obj_location_relative = obj.matrix_world.inverted() * obj_.location
             hit = obj.closest_point_on_mesh(obj_location_relative)
             hit_dist = (obj_location_relative - hit[1]).length
             if hit_dist < dist:
@@ -501,6 +426,7 @@ class DOODADS_BAKE_COLOR(bpy.types.Operator):
 
         return result
 
+    @staticmethod
     def get_object_radius(obj):
         corner_min = [32767, 32767, 32767]
         corner_max = [0, 0, 0]
@@ -521,7 +447,7 @@ class DOODADS_BAKE_COLOR(bpy.types.Operator):
         if not mesh.vertex_colors:
             return 0.5, 0.5, 0.5, 1.0
 
-        radius = DOODADS_BAKE_COLOR.get_object_radius(obj)
+        radius = self.get_object_radius(obj)
         colors = []
 
         kd_tree = self.tree_map.get(group.name)
@@ -563,7 +489,7 @@ class DOODADS_BAKE_COLOR(bpy.types.Operator):
         window_manager.progress_begin(0, 100)
         for index, obj in enumerate(bpy.context.selected_objects):
             if obj.wow_wmo_doodad.enabled:
-                obj.wow_wmo_doodad.color = self.gen_doodad_color(obj, DOODADS_BAKE_COLOR.find_nearest_object(obj, groups))
+                obj.color = self.gen_doodad_color(obj, self.find_nearest_object(obj, groups))
                 print("\nBaking color to doodad instance <<{}>>".format(obj.name))
                 doodad_counter += 1
                 window_manager.progress_update(int(index / len_objects * 100))
@@ -578,59 +504,6 @@ class DOODADS_BAKE_COLOR(bpy.types.Operator):
 
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
-
-
-class DOODAD_SET_CLEAR_PRESERVED(bpy.types.Operator):
-    bl_idname = 'scene.wow_clear_preserved_doodad_sets'
-    bl_label = 'Clear preserved doodad sets'
-    bl_description = 'Clear preserved doodad set data or optionally load real doodad sets'
-    bl_options = {'REGISTER', 'INTERNAL'}
-
-    Action = bpy.props.EnumProperty(
-        items=[
-            ('0', "Load doodad sets", "Load doodad sets from game data", 'LOAD_FACTORY', 0),
-            ('1', "Clear preserved sets", "Clear preserved doodad set data to unlock editing", 'CANCEL', 1)],
-        default='0'
-    )
-
-    @classmethod
-    def poll(cls, context):
-        return True
-
-    def draw(self, context):
-        col = self.layout
-        col.prop(self, "Action", expand=True)
-
-    def execute(self, context):
-        if self.Action == '0':
-            game_data = load_game_data()
-
-            addon_prefs = get_addon_prefs()
-
-            try:
-                LoadDoodadsFromPreserved(addon_prefs.cache_dir_path, game_data)
-            except:
-                traceback.print_exc()
-                self.report({'ERROR'}, "An error occured while importing doodads.")
-                return {'CANCELLED'}
-
-            bpy.context.scene.wow_wmo_root.mods_sets.clear()
-            bpy.context.scene.wow_wmo_root.modn_string_table.clear()
-            bpy.context.scene.wow_wmo_root.modd_definitions.clear()
-
-            update_wow_visibility(bpy.context.scene, None)
-            self.report({'INFO'}, "Successfully imported doodad sets")
-            return {'FINISHED'}
-
-        else:
-            bpy.context.scene.wow_wmo_root.mods_sets.clear()
-            bpy.context.scene.wow_wmo_root.modn_string_table.clear()
-            bpy.context.scene.wow_wmo_root.modd_definitions.clear()
-            self.report({'INFO'}, "Successfully cleared preserved doodad sets. Editing is now available")
-            return {'FINISHED'}
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self)
 
 
 class DOODAD_SET_ADD(bpy.types.Operator):

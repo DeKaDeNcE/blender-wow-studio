@@ -10,7 +10,7 @@ class WoWDoodadPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         layout.prop(context.object.wow_wmo_doodad, "path")
-        layout.prop(context.object.wow_wmo_doodad, "color")
+        layout.prop(context.object, "color")
 
         col = layout.column()
         col.label("Flags:")
@@ -23,6 +23,7 @@ class WoWDoodadPanel(bpy.types.Panel):
                 and context.scene.wow_scene.type == 'WMO'
                 and context.object is not None
                 and context.object.wow_wmo_doodad.enabled
+                and context.object.data.library is not None
                 and (context.object.type == 'MESH'
                      or context.object.type == 'EMPTY')
         )

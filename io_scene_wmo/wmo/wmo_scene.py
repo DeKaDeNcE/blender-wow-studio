@@ -332,7 +332,6 @@ class BlenderWMOScene:
 
     def load_doodads(self, assets_dir=None):
 
-        doodad_prototypes = {}
         cache_path = self.settings.cache_dir_path
 
         for doodad_name in ProgressReport(self.wmo.modn.get_all_strings(), msg='Importing doodad prototypes'):
@@ -406,10 +405,10 @@ class BlenderWMOScene:
 
                 nobj.wow_wmo_doodad.enabled = True
                 nobj.wow_wmo_doodad.path = doodad_path
-                nobj.wow_wmo_doodad.color = (doodad.color[2] / 255,
-                                             doodad.color[1] / 255,
-                                             doodad.color[0] / 255,
-                                             doodad.color[3] / 255)
+                nobj.color = (doodad.color[2] / 255,
+                              doodad.color[1] / 255,
+                              doodad.color[0] / 255,
+                              doodad.color[3] / 255)
 
                 flags = []
                 bit = 1

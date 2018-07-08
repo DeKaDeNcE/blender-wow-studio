@@ -177,7 +177,7 @@ def import_doodad(asset_dir, filepath):
     game_data.extract_textures_as_png(asset_dir, texture_paths)
 
     # set textures
-    for submesh in submeshes:
+    for i, submesh in enumerate(submeshes):
         tex_path = os.path.splitext(texture_paths[texture_lookup_table[submesh.texture_id]])[0] + '.png'
 
         # add support for unix filesystems
@@ -192,9 +192,21 @@ def import_doodad(asset_dir, filepath):
             traceback.print_exc()
             print("\nFailed to load texture: <<{}>>. File is missing or corrupted.".format(tex_path))
 
+        # set material for rendering
+        mat = bpy.data.materials.new("{}_{}".format(m2_name, i))
+        mesh.materials.append(mat)
+        mat.use_object_color = True
+        mat.use_shadeless = True
+
+        texture = bpy.data.textures.new(mat.name, type='IMAGE')
+        texture.image = img
+        tex_slot = mat.texture_slots.add()
+        tex_slot.texture = texture
+
         if img:
-            for i in range(submesh.start_triangle // 3, (submesh.start_triangle + submesh.n_triangles) // 3):
-                uv1.data[i].image = img
+            for j in range(submesh.start_triangle // 3, (submesh.start_triangle + submesh.n_triangles) // 3):
+                uv1.data[j].image = img
+                mesh.polygons[j].material_index = i
 
     nobj = bpy.data.objects.new(m2_name, mesh)
     nobj.use_fake_user = True
