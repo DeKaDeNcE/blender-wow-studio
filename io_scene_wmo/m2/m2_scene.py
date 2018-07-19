@@ -232,7 +232,7 @@ class BlenderM2Scene:
             tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
             tex1.wow_m2_texture.flags = parse_bitfield(texture.flags, 0x2)
             tex1.wow_m2_texture.texture_type = str(texture.type)
-            tex1.wow_m2_texture.Path = texture.filename.value
+            tex1.wow_m2_texture.path = texture.filename.value
 
             tex1_slot.texture = tex1
 
