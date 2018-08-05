@@ -280,8 +280,6 @@ class BlenderWMOSceneGroup:
         # create mesh
         mesh = bpy.data.meshes.new(self.name)
         mesh.from_pydata(vertices, [], faces)
-        mesh.update(calc_edges=True)
-        mesh.validate()
 
         # create object
         scn = bpy.context.scene
@@ -367,15 +365,27 @@ class BlenderWMOSceneGroup:
             indices = group.movi.indices[batch.start_triangle: batch.start_triangle + batch.n_triangles]
             material = self.wmo_scene.material_lookup[group.moba.batches[i].material_id]
 
-            if material.name not in mesh.materials:
+            mat_index_local = material_indices.get(batch.material_id)
+
+            if mat_index_local is None:
 
                 mat_id = len(mesh.materials)
                 material_indices[batch.material_id] = mat_id
-                material = self.wmo_scene.material_lookup[group.moba.batches[i].material_id]
 
                 image = self.get_material_viewport_image(material)
                 material_viewport_textures[mat_id] = image
                 mesh.materials.append(material)
+                mat_index_local = mat_id
+
+            for poly in mesh.polygons[batch.start_triangle // 3: (batch.start_triangle + batch.n_triangles) // 3]:
+
+                poly.material_index = mat_index_local
+
+                # set texture displayed in viewport
+                img = material_viewport_textures[mat_index_local]
+                if img is not None:
+                    uv1.data[poly.index].image = img
+
 
             if i < group.mogp.n_batches_a:
                 batch_map.add(indices, 0.0, 'ADD')
@@ -400,6 +410,7 @@ class BlenderWMOSceneGroup:
                 material_indices[0xFF] = mat_ghost__id
                 break
 
+        '''
         # set faces material
         for i in range(len(mesh.polygons)):
             mat_id = group.mopy.triangle_materials[i].material_id
@@ -410,6 +421,8 @@ class BlenderWMOSceneGroup:
             img = material_viewport_textures[material_indices[mat_id]]
             if img is not None:
                 uv1.data[i].image = img
+                
+        '''
 
         # DEBUG BSP
         """for iNode in range(len(group.mobn.Nodes)):
