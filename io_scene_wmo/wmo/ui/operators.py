@@ -18,6 +18,45 @@ from ...utils import load_game_data
 ## WMO operators
 ###############################
 
+class WoWWMO_ReloadTexturesFromCache(bpy.types.Operator):
+    bl_idname = "scene.wow_wmo_reload_textures_from_cache"
+    bl_label = "Reload WMO textures"
+    bl_description = "Reload textures from WoW cache."
+    bl_options = {'UNDO', 'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.wow_scene.type == 'WMO'
+
+    def execute(self, context):
+
+        game_data = load_game_data()
+        addon_prefs = get_addon_prefs()
+        texture_dir = addon_prefs.cache_dir_path
+
+        for material in bpy.data.materials:
+            if not material.wow_wmo_material.enabled:
+                continue
+
+            for tex_slot in material.texture_slots:
+
+                if tex_slot and tex_slot.texture and tex_slot.texture.type == 'IMAGE':
+                    game_data.extract_textures_as_png(texture_dir, [material.wow_wmo_material.texture1])
+
+                    image = bpy.data.images.load(
+                        os.path.join(texture_dir, os.path.splitext(material.wow_wmo_material.texture1)[0] + '.png'),
+                        check_existing=True)
+                    tex_slot.texture.image = image
+                    tex_slot.texture.image.gl_load()
+                    tex_slot.texture.image.update()
+
+        for area in bpy.context.screen.areas:
+            if area.type == 'VIEW_3D':
+                area.tag_redraw()
+
+        return {'FINISHED'}
+
+
 class WoWWMOFixMaterailDuplicates_OP(bpy.types.Operator):
     bl_idname = "scene.wow_fix_material_duplicates"
     bl_label = "Fix material duplicates"

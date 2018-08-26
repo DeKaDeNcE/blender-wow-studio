@@ -86,7 +86,7 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
     diff_color = bpy.props.FloatVectorProperty(
         name="Diffuse Color",
         subtype='COLOR',
-        default=(1,1,1,1),
+        default=(1, 1, 1, 1),
         size=4,
         min=0.0,
         max=1.0

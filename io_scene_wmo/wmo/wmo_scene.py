@@ -7,6 +7,7 @@ from .wmo_scene_group import BlenderWMOSceneGroup
 from ..ui import get_addon_prefs
 from .import_doodad import import_doodad
 from ..utils import find_nearest_object, ProgressReport
+from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies
 
 
 class BlenderWMOScene:
@@ -131,6 +132,8 @@ class BlenderWMOScene:
 
         self.material_lookup[0xFF] = mat
 
+        load_wmo_shader_dependencies(reload_shader=True)
+
         for index, wmo_material in ProgressReport(list(enumerate(self.wmo.momt.materials)), msg='Importing materials'):
             texture1 = self.wmo.motx.get_string(wmo_material.texture1_ofs)
             material_name = os.path.basename(texture1)[:-4] + '.png'
@@ -225,6 +228,8 @@ class BlenderWMOScene:
                         image_names.append(tex2_img_filename)
                 except:
                     pass
+
+            update_wmo_mat_node_tree(mat)
 
     def load_lights(self):
         """ Load WoW WMO MOLT lights """
@@ -481,10 +486,10 @@ class BlenderWMOScene:
     def load_properties(self):
         """ Load global WoW WMO properties """
         properties = bpy.context.scene.wow_wmo_root
-        properties.ambient_color = [float(self.wmo.mohd.ambient_color[2] / 255),
-                                    float(self.wmo.mohd.ambient_color[1] / 255),
-                                    float(self.wmo.mohd.ambient_color[0]) / 255,
-                                    float(self.wmo.mohd.ambient_color[3]) / 255]
+        properties.ambient_color = [self.wmo.mohd.ambient_color[2] / 255,
+                                    self.wmo.mohd.ambient_color[1] / 255,
+                                    self.wmo.mohd.ambient_color[0] / 255,
+                                    self.wmo.mohd.ambient_color[3] / 255]
 
         flags = set()
         if self.wmo.mohd.flags & 0x1:

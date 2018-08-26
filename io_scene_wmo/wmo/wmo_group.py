@@ -70,7 +70,7 @@ class WMOGroupFile:
 
     def write(self, f):
         """ Write a saved WoW WMO group to a file """
-        print("\nWriting file: <<" +  os.path.basename(f.name) + ">>")
+        print("\nWriting file: <<" + os.path.basename(f.name) + ">>")
 
         self.mver.write(f)
 
