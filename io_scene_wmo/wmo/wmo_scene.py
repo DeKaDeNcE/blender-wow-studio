@@ -489,10 +489,10 @@ class BlenderWMOScene:
     def load_properties(self):
         """ Load global WoW WMO properties """
         properties = bpy.context.scene.wow_wmo_root
-        properties.ambient_color = [self.wmo.mohd.ambient_color[2] / 255,
-                                    self.wmo.mohd.ambient_color[1] / 255,
-                                    self.wmo.mohd.ambient_color[0] / 255,
-                                    self.wmo.mohd.ambient_color[3] / 255]
+        properties.ambient_color = [pow(self.wmo.mohd.ambient_color[2] / 255, 1 / 2.2),
+                                    pow(self.wmo.mohd.ambient_color[1] / 255, 1 / 2.2),
+                                    pow(self.wmo.mohd.ambient_color[0] / 255, 1 / 2.2),
+                                    pow(self.wmo.mohd.ambient_color[3] / 255, 1 / 2.2)]
 
         flags = set()
         if self.wmo.mohd.flags & 0x1:
