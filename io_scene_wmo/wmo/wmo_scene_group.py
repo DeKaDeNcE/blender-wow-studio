@@ -433,9 +433,9 @@ class BlenderWMOSceneGroup:
 
             if blendmap is not None:
                 mocv_layer = group.mocv2 if group.mogp.flags & MOGPFlags.HasVertexColor else group.mocv
-                mesh.vertex_colors['Blendmap'].data[i].color = (mocv_layer[loop.vertex_index][3] / 255,
-                                                                mocv_layer[loop.vertex_index][3] / 255,
-                                                                mocv_layer[loop.vertex_index][3] / 255)
+                mesh.vertex_colors['Blendmap'].data[i].color = (mocv_layer.vert_colors[loop.vertex_index][3] / 255,
+                                                                mocv_layer.vert_colors[loop.vertex_index][3] / 255,
+                                                                mocv_layer.vert_colors[loop.vertex_index][3] / 255)
 
             if uv_layer2 is not None:
                 uv = group.motv2.tex_coords[loop.vertex_index]
