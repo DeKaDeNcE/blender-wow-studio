@@ -350,7 +350,7 @@ class BlenderWMOSceneGroup:
 
         uv_layer2 = None
         if group.mogp.flags & MOGPFlags.HasTwoMOTV:
-            uv2 = mesh.uv_textures.new("UVMap_Layer2")
+            uv2 = mesh.uv_textures.new("UVMap.001")
             nobj.wow_wmo_vertex_info.second_uv = uv2.name
             uv_layer2 = mesh.uv_layers[1]
 
@@ -364,11 +364,11 @@ class BlenderWMOSceneGroup:
         batch_map_b = None
 
         if group.mogp.n_batches_a != 0:
-            batch_map_a = mesh.vertex_colors.new("BatchmapA")
+            batch_map_a = mesh.vertex_colors.new("BatchmapTrans")
             pass_index |= BlenderWMOObjectRenderFlags.HasBatchA
 
         if group.mogp.n_batches_b != 0:
-            batch_map_b = mesh.vertex_colors.new("BatchmapB")
+            batch_map_b = mesh.vertex_colors.new("BatchmapInt")
             pass_index |= BlenderWMOObjectRenderFlags.HasBatchB
 
         # nobj.wow_wmo_vertex_info.batch_map = batch_map.name
@@ -442,10 +442,10 @@ class BlenderWMOSceneGroup:
                 uv_layer2.data[i].uv = (uv[0], 1 - uv[1])
 
             if batch_map_a:
-                mesh.vertex_colors['BatchmapA'].data[i].color = (1, 1, 1) if loop.vertex_index in batch_a_range else (0, 0, 0)
+                mesh.vertex_colors['BatchmapTrans'].data[i].color = (1, 1, 1) if loop.vertex_index in batch_a_range else (0, 0, 0)
 
             if batch_map_b:
-                mesh.vertex_colors['BatchmapB'].data[i].color = (1, 1, 1) if loop.vertex_index in batch_b_range else (0, 0, 0)
+                mesh.vertex_colors['BatchmapInt'].data[i].color = (1, 1, 1) if loop.vertex_index in batch_b_range else (0, 0, 0)
 
         '''
         # set faces material
