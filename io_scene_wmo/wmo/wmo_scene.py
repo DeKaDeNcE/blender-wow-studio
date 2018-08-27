@@ -178,8 +178,8 @@ class BlenderWMOScene:
             mat.wow_wmo_material.enabled = True
             mat.wow_wmo_material.shader = str(wmo_material.shader)
             mat.wow_wmo_material.blending_mode = str(wmo_material.blend_mode)
-            mat.wow_wmo_material.emissive_color = [pow(x / 255, 1 / 2.2) for x in wmo_material.emissive_color]
-            mat.wow_wmo_material.diff_color = [pow(x / 255, 1 / 2.2) for x in wmo_material.diff_color]
+            mat.wow_wmo_material.emissive_color = [pow(x / 255, 2.2) for x in wmo_material.emissive_color]
+            mat.wow_wmo_material.diff_color = [pow(x / 255, 2.2) for x in wmo_material.diff_color]
             mat.wow_wmo_material.terrain_type = str(wmo_material.terrain_type)
 
             mat_flags = set()
@@ -489,10 +489,10 @@ class BlenderWMOScene:
     def load_properties(self):
         """ Load global WoW WMO properties """
         properties = bpy.context.scene.wow_wmo_root
-        properties.ambient_color = [pow(self.wmo.mohd.ambient_color[2] / 255, 1 / 2.2),
-                                    pow(self.wmo.mohd.ambient_color[1] / 255, 1 / 2.2),
-                                    pow(self.wmo.mohd.ambient_color[0] / 255, 1 / 2.2),
-                                    pow(self.wmo.mohd.ambient_color[3] / 255, 1 / 2.2)]
+        properties.ambient_color = [pow(self.wmo.mohd.ambient_color[2] / 255, 2.2),
+                                    pow(self.wmo.mohd.ambient_color[1] / 255, 2.2),
+                                    pow(self.wmo.mohd.ambient_color[0] / 255, 2.2),
+                                    pow(self.wmo.mohd.ambient_color[3] / 255, 2.2)]
 
         flags = set()
         if self.wmo.mohd.flags & 0x1:
