@@ -91,6 +91,27 @@ def collision_validator(self, context):
         self.collision_mesh = None
 
 
+def update_place_type(self, context):
+    if self.place_type == '8':
+        context.object.pass_index |= 0x1 # BlenderWMOObjectRenderFlags.IsOutdoor
+        context.object.pass_index &= ~0x2 # BlenderWMOObjectRenderFlags.IsIndoor
+    else:
+        context.object.pass_index &= ~0x1
+        context.object.pass_index |= 0x2
+
+
+def update_flags(self, context):
+    if '0' in self.flags:
+        context.object.pass_index |= 0x20  # BlenderWMOObjectRenderFlags.HasVertexColor
+    else:
+        context.object.pass_index &= ~0x20
+
+    if '1' in self.flags:
+        context.object.pass_index |= 0x4  # BlenderWMOObjectRenderFlags.NoLocalLight
+    else:
+        context.object.pass_index &= ~0x4
+
+
 class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
 
     description = bpy.props.StringProperty(name="Description")
@@ -102,13 +123,15 @@ class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
 
     flags = bpy.props.EnumProperty(
         items=group_flag_enum,
-        options={'ENUM_FLAG'}
+        options={'ENUM_FLAG'},
+        update=update_flags
         )
 
     place_type = bpy.props.EnumProperty(
         items=place_type_enum,
         name="Place Type",
-        description="Group is indoor or outdoor"
+        description="Group is indoor or outdoor",
+        update=update_place_type
         )
 
     group_id = bpy.props.IntProperty(

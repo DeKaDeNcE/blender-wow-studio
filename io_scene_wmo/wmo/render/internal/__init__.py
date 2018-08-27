@@ -104,7 +104,7 @@ def update_wmo_mat_node_tree_internal(bl_mat):
     apply_sidn_scalar = tree.nodes.new('ShaderNodeMixRGB')
     apply_sidn_scalar.location = -620, 1200
     apply_sidn_scalar.blend_type = 'MULTIPLY'
-    apply_sidn_scalar.inputs[1].default_value = (0, 0, 0, 1)
+    apply_sidn_scalar.inputs[0].default_value = 1
 
     mat_flags = tree.nodes.new('ShaderNodeGroup')
     mat_flags.location = -620.0, 1000

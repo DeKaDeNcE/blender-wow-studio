@@ -38,6 +38,54 @@ class WowMaterialPanel(bpy.types.Panel):
         )
 
 
+def update_flags(self, context):
+    if hasattr(context, 'material'):
+        if '1' in self.flags:
+            context.material.pass_index |= 0x1  # BlenderWMOMaterialRenderFlags.Unlit
+        else:
+            context.material.pass_index &= ~0x1
+
+        if '16' in self.flags:
+            context.material.pass_index |= 0x2  # BlenderWMOMaterialRenderFlags.SIDN
+        else:
+            context.material.pass_index &= ~0x2
+
+
+def update_shader(self, context):
+    if hasattr(context, 'material'):
+        if int(self.shader) in (3, 5, 6, 7, 8, 9, 11, 12, 13, 15):
+            context.material.pass_index |= 0x4  # BlenderWMOMaterialRenderFlags.IsTwoLayered
+        else:
+            context.material.pass_index &= ~0x4
+
+
+def update_diff_texture_1(self, context):
+    if not hasattr(context, 'material') \
+            or not context.material.use_nodes \
+            or ('DiffuseTexture1' not in context.material.node_tree.nodes):
+        return
+
+    context.material.node_tree.nodes['DiffuseTexture1'].texture = self.diff_texture_1
+
+
+def update_diff_texture_2(self, context):
+    if not hasattr(context, 'material') \
+            or not context.material.use_nodes \
+            or ('DiffuseTexture2' not in context.material.node_tree.nodes):
+        return
+
+    context.material.node_tree.nodes['DiffuseTexture2'].texture = self.diff_texture_2
+
+
+def update_emissive_color(self, context):
+    if not hasattr(context, 'material') \
+            or not context.material.use_nodes \
+            or ('EmissiveColor' not in context.material.node_tree.nodes):
+        return
+
+    context.material.node_tree.nodes['EmissiveColor'].outputs[0].default_value = self.emissive_color
+
+
 class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
 
     enabled = bpy.props.BoolProperty(
@@ -49,13 +97,15 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
         name="Material flags",
         description="WoW material flags",
         items=material_flag_enum,
-        options={"ENUM_FLAG"}
+        options={"ENUM_FLAG"},
+        update=update_flags
         )
 
     shader = bpy.props.EnumProperty(
         items=shader_enum,
         name="Shader",
-        description="WoW shader assigned to this material"
+        description="WoW shader assigned to this material",
+        update=update_shader
         )
 
     blending_mode = bpy.props.EnumProperty(
@@ -70,7 +120,8 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
         default=(1,1,1,1),
         size=4,
         min=0.0,
-        max=1.0
+        max=1.0,
+        update=update_emissive_color
         )
 
     diff_color = bpy.props.FloatVectorProperty(
@@ -90,12 +141,14 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
 
     diff_texture_1 = bpy.props.PointerProperty(
         type=bpy.types.Texture,
-        name='Texture 1'
+        name='Texture 1',
+        update=update_diff_texture_1
     )
 
     diff_texture_2 = bpy.props.PointerProperty(
         type=bpy.types.Texture,
-        name='Texture 2'
+        name='Texture 2',
+        update=update_diff_texture_2
     )
 
 
