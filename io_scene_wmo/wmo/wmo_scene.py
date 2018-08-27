@@ -10,6 +10,12 @@ from ..utils import find_nearest_object, ProgressReport
 from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies
 
 
+class BlenderWMOMaterialRenderFlags:
+    Unlit = 0x1
+    SIDN = 0x2
+    IsTwoLayered = 0x4
+
+
 class BlenderWMOScene:
     """ This class is used for assembling a Blender scene from a WNO file or saving the scene back to it."""
 
@@ -211,6 +217,20 @@ class BlenderWMOScene:
                     pass
 
             update_wmo_mat_node_tree(mat)
+
+            # set render flags
+            pass_index = 0
+
+            if wmo_material.flags & 0x1:
+                pass_index |= BlenderWMOMaterialRenderFlags.Unlit
+
+            if wmo_material.flags & 0x10:
+                pass_index |= BlenderWMOMaterialRenderFlags.SIDN
+
+            if wmo_material.shader in (3, 5, 6, 7, 8, 9, 11, 12, 13, 15):
+                pass_index |= BlenderWMOMaterialRenderFlags.IsTwoLayered
+
+            mat.pass_index = pass_index
 
     def load_lights(self):
         """ Load WoW WMO MOLT lights """
