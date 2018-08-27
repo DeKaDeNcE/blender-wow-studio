@@ -10,7 +10,8 @@ panels_list = [
     'portal',
     'root',
     'toolbar',
-    'vertex_info'
+    'vertex_info',
+    'texture'
 ]
 
 

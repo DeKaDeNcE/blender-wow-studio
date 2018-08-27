@@ -110,15 +110,40 @@ class BlenderWMOScene:
     def load_materials(self, texture_dir=None):
         """ Load materials from WoW WMO root file """
 
+        def _load_texture(textures, filename, texture_dir):
+
+            new_filename = os.path.splitext(filename)[0] + '.png'
+
+            if os.name != 'nt':
+                new_filename = new_filename.replace('\\', '/')
+
+            tex1_name = os.path.basename(new_filename)
+
+            texture = None
+
+            # check if texture is already loaded
+            for tex_name, tex in textures.items():
+                if tex_name == filename:
+                    texture = tex
+                    break
+
+            # if image is not loaded, do it
+            if not texture:
+                texture = bpy.data.textures.new(tex1_name, 'IMAGE')
+                texture.wow_wmo_texture.path = filename
+                tex1_img = bpy.data.images.load(os.path.join(texture_dir, new_filename))
+                texture.image = tex1_img
+
+                textures[filename] = texture
+
+            return texture
+
         addon_prefs = get_addon_prefs()
 
         if texture_dir is None:
             texture_dir = addon_prefs.cache_dir_path
 
         self.material_lookup = {}
-
-        images = []
-        image_names = []
 
         # Add ghost material
         mat = bpy.data.materials.get("WowMaterial_ghost")
@@ -134,8 +159,11 @@ class BlenderWMOScene:
 
         load_wmo_shader_dependencies(reload_shader=True)
 
+        textures = {}
+
         for index, wmo_material in ProgressReport(list(enumerate(self.wmo.momt.materials)), msg='Importing materials'):
             texture1 = self.wmo.motx.get_string(wmo_material.texture1_ofs)
+            texture2 = self.wmo.motx.get_string(wmo_material.texture2_ofs)
             material_name = os.path.basename(texture1)[:-4] + '.png'
 
             mat = bpy.data.materials.new(material_name)
@@ -144,10 +172,8 @@ class BlenderWMOScene:
             mat.wow_wmo_material.enabled = True
             mat.wow_wmo_material.shader = str(wmo_material.shader)
             mat.wow_wmo_material.blending_mode = str(wmo_material.blend_mode)
-            mat.wow_wmo_material.texture1 = texture1
-            mat.wow_wmo_material.emissive_color = [x / 255 for x in wmo_material.emissive_color[0:4]]
-            mat.wow_wmo_material.texture2 = self.wmo.motx.get_string(wmo_material.texture2_ofs)
-            mat.wow_wmo_material.diff_color = [x / 255 for x in wmo_material.diff_color[0:4]]
+            mat.wow_wmo_material.emissive_color = [pow(x / 255, 1 / 2.2) for x in wmo_material.emissive_color]
+            mat.wow_wmo_material.diff_color = [pow(x / 255, 1 / 2.2) for x in wmo_material.diff_color]
             mat.wow_wmo_material.terrain_type = str(wmo_material.terrain_type)
 
             mat_flags = set()
@@ -158,74 +184,29 @@ class BlenderWMOScene:
                 bit <<= 1
             mat.wow_wmo_material.flags = mat_flags
 
-            # set texture slot and load texture
+            # create texture slots and load textures
 
-            if mat.wow_wmo_material.texture1:
-                tex1_slot = mat.texture_slots.create(2)
-                tex1_slot.uv_layer = "UVMap"
-                tex1_slot.texture_coords = 'UV'
-
-                tex1_name = material_name + "_Tex_01"
-                tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
-                tex1_slot.texture = tex1
+            if texture1:
+                tex_slot = mat.texture_slots.create(0)
+                tex_slot.uv_layer = "UVMap"
+                tex_slot.texture_coords = 'UV'
 
                 try:
-                    tex1_img_filename = os.path.splitext(mat.wow_wmo_material.texture1)[0] + '.png'
-
-                    if os.name != 'nt':
-                        tex1_img_filename = tex1_img_filename.replace('\\', '/')
-
-                    img1_loaded = False
-
-                    # check if image already loaded
-                    for i_img in range(len(images)):
-                        if image_names[i_img] == tex1_img_filename:
-                            tex1.image = images[i_img]
-                            img1_loaded = True
-                            break
-
-                    # if image is not loaded, do it
-                    if not img1_loaded:
-                        tex1_img = bpy.data.images.load(os.path.join(texture_dir, tex1_img_filename))
-                        tex1.image = tex1_img
-                        images.append(tex1_img)
-                        image_names.append(tex1_img_filename)
-                        mat.active_texture = tex1_img
-
+                    tex = _load_texture(textures, texture1, texture_dir)
+                    tex_slot.texture = tex
+                    mat.wow_wmo_material.diff_texture_1 = tex
                 except:
                     pass
 
-            # set texture slot and load texture
-            if mat.wow_wmo_material.texture2:
-                tex2_slot = mat.texture_slots.create(1)
-                tex2_slot.uv_layer = "UVMap"
-                tex2_slot.texture_coords = 'UV'
-
-                tex2_name = material_name + "_Tex_02"
-                tex2 = bpy.data.textures.new(tex2_name, 'IMAGE')
-                tex2_slot.texture = tex2
+            if texture2:
+                tex_slot = mat.texture_slots.create(0)
+                tex_slot.uv_layer = "UVMap"
+                tex_slot.texture_coords = 'UV'
 
                 try:
-                    tex2_img_filename = os.path.splitext(mat.wow_wmo_material.texture2)[0] + '.png'
-
-                    if os.name != 'nt':
-                        tex2_img_filename = tex2_img_filename.replace('\\', '/')
-
-                    img2_loaded = False
-
-                    # check if image already loaded
-                    for i_img in range(len(images)):
-                        if image_names[i_img] == tex2_img_filename:
-                            tex2.image = images[i_img]
-                            img2_loaded = True
-                            break
-
-                    # if image is not loaded, do it
-                    if not img2_loaded:
-                        tex2_img = bpy.data.images.load(os.path.join(texture_dir, tex2_img_filename))
-                        tex2.image = tex2_img
-                        images.append(tex2_img)
-                        image_names.append(tex2_img_filename)
+                    tex = _load_texture(textures, texture2, texture_dir)
+                    tex_slot.texture = tex
+                    mat.wow_wmo_material.diff_texture_2 = tex
                 except:
                     pass
 

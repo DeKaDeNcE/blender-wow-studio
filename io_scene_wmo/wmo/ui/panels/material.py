@@ -19,8 +19,8 @@ class WowMaterialPanel(bpy.types.Panel):
         col.prop(context.material.wow_wmo_material, "blending_mode")
 
         col.separator()
-        col.prop(context.material.wow_wmo_material, "texture1")
-        col.prop(context.material.wow_wmo_material, "texture2")
+        col.prop(context.material.wow_wmo_material, "diff_texture_1")
+        col.prop(context.material.wow_wmo_material, "diff_texture_2")
 
         col.separator()
         col.label("Flags:")
@@ -64,11 +64,6 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
         description="WoW material blending mode"
         )
 
-    texture1 = bpy.props.StringProperty(
-        name="Texture 1",
-        description="Diffuse texture"
-        )
-
     emissive_color = bpy.props.FloatVectorProperty(
         name="Emissive Color",
         subtype='COLOR',
@@ -76,11 +71,6 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
         size=4,
         min=0.0,
         max=1.0
-        )
-
-    texture2 = bpy.props.StringProperty(
-        name="Texture 2",
-        description="Environment texture"
         )
 
     diff_color = bpy.props.FloatVectorProperty(
@@ -97,6 +87,16 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
         name="Terrain Type",
         description="Terrain type assigned to this material. Used for producing correct footstep sounds."
         )
+
+    diff_texture_1 = bpy.props.PointerProperty(
+        type=bpy.types.Texture,
+        name='Texture 1'
+    )
+
+    diff_texture_2 = bpy.props.PointerProperty(
+        type=bpy.types.Texture,
+        name='Texture 2'
+    )
 
 
 def register():

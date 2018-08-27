@@ -61,20 +61,24 @@ def update_wmo_mat_node_tree_internal(bl_mat):
     g_info_main = tree.nodes.new('ShaderNodeGeometry')
     g_info_main.label = 'GeometryInfoMain'
     g_info_main.location = -1979.28, 1202.12
+    g_info_main.uv_layer = 'UVMap'
+    g_info_main.color_layer = 'Col'
 
     g_info_second_layer = tree.nodes.new('ShaderNodeGeometry')
     g_info_second_layer.label = 'GeometryInfoSecondLayer'
     g_info_second_layer.location = -1979.28, 834.877
-    g_info_second_layer.uv_layer = 'UVMap_Layer2'  # TODO: set from property
-    g_info_second_layer.color_layer = 'Blendmap'   # TODO: set from property
+    g_info_second_layer.uv_layer = 'UVMap.001'
+    g_info_second_layer.color_layer = 'Blendmap'
 
     diffuse_tex1 = tree.nodes.new('ShaderNodeTexture')
     diffuse_tex1.label = 'DiffuseTexture1'
+    diffuse_tex1.name = diffuse_tex1.label
     diffuse_tex1.location = -1696.0, 1202.12
     diffuse_tex1.texture = tex_1
 
     diffuse_tex2 = tree.nodes.new('ShaderNodeTexture')
     diffuse_tex2.label = 'DiffuseTexture2'
+    diffuse_tex2.name = diffuse_tex2.label
     diffuse_tex2.location = -1696.0, 834.877
 
     if tex_2:
@@ -83,7 +87,7 @@ def update_wmo_mat_node_tree_internal(bl_mat):
     lightmap = tree.nodes.new('ShaderNodeGeometry')
     lightmap.label = 'Lightmap'
     lightmap.location = -1698.83, 486.141
-    lightmap.color_layer = 'Lightmap'  # TODO: set from property
+    lightmap.color_layer = 'Lightmap'
 
     mix_textures = tree.nodes.new('ShaderNodeGroup')
     mix_textures.label = 'MixTextures'
@@ -97,6 +101,7 @@ def update_wmo_mat_node_tree_internal(bl_mat):
 
     emissive_color = tree.nodes.new('ShaderNodeRGB')
     emissive_color.label = 'EmissiveColor'
+    emissive_color.name = emissive_color.label
     emissive_color.location = -1097, 1202
 
     properties = tree.nodes.new('ShaderNodeGroup')
@@ -121,7 +126,6 @@ def update_wmo_mat_node_tree_internal(bl_mat):
     use_sidn_mix.inputs[1].default_value = (0, 0, 0, 1)
 
     material_node = tree.nodes.new('ShaderNodeMaterial')
-    material_node.label = 'EmissiveColor'
     material_node.location = -1100.9, 984.342
     material_node.material = bl_mat
 
@@ -130,20 +134,15 @@ def update_wmo_mat_node_tree_internal(bl_mat):
     mix_lightmap.blend_type = 'MIX'
     mix_lightmap.inputs[1].default_value = (0, 0, 0, 1)
 
-    lightmap = tree.nodes.new('ShaderNodeGeometry')
-    lightmap.label = 'Lightmap'
-    lightmap.location = -1698.83, 486.141
-    lightmap.color_layer = 'Lightmap'  # TODO: set from property
-
     batchmap_a = tree.nodes.new('ShaderNodeGeometry')
-    batchmap_a.label = 'BatchmapA'
+    batchmap_a.label = 'BatchmapTrans'
     batchmap_a.location = -826.845, 485
-    batchmap_a.color_layer = 'BatchmapA'  # TODO: set from property
+    batchmap_a.color_layer = 'BatchmapTrans'
 
     batchmap_b = tree.nodes.new('ShaderNodeGeometry')
-    batchmap_b.label = 'BatchmapA'
+    batchmap_b.label = 'BatchmapInt'
     batchmap_b.location = -580.904, 485
-    batchmap_b.color_layer = 'BatchmapB'  # TODO: set from property
+    batchmap_b.color_layer = 'BatchmapInt'
 
     apply_vertex_color = tree.nodes.new('ShaderNodeGroup')
     apply_vertex_color.label = 'ApplyVertexColor'
@@ -189,6 +188,8 @@ def update_wmo_mat_node_tree_internal(bl_mat):
     links.new(batchmap_b.outputs[6], apply_vertex_color.inputs[4])
 
     links.new(apply_vertex_color.outputs[0], output.inputs[0])
+
+    # sync additional properties for the newly created tree
 
 
 
