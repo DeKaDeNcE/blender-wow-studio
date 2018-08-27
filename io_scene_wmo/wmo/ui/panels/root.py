@@ -22,6 +22,12 @@ class WoWRootPanel(bpy.types.Panel):
         col.prop(context.scene.wow_wmo_root, "skybox_path")
         col.prop(context.scene.wow_wmo_root, "wmo_id")
 
+        col.separator()
+        col.label('Render settings', icon='RESTRICT_RENDER_OFF')
+        col.prop(context.scene.wow_wmo_root, "ext_ambient_color")
+        col.prop(context.scene.wow_wmo_root, "ext_dir_color")
+        col.prop(context.scene.wow_wmo_root, "sidn_scalar")
+
     @classmethod
     def poll(cls, context):
         return context.scene is not None and context.scene.wow_scene.type == 'WMO'
@@ -50,6 +56,52 @@ class MODD_Definition(bpy.types.PropertyGroup):
     color_alpha = bpy.props.FloatProperty()
 
 
+def update_flags(self, context):
+
+    if 'Properties' not in bpy.data.node_groups:
+        return
+
+    properties = bpy.data.node_groups['Properties']
+    properties.nodes['IsRenderPathUnified'].outputs[0].default_value = int('2' in self.flags)
+    properties.nodes['DoNotFixColorVertexAlpha'].outputs[0].default_value = int('1' in self.flags)
+
+
+def update_ambient_color(self, context):
+
+    if 'Properties' not in bpy.data.node_groups:
+        return
+
+    properties = bpy.data.node_groups['Properties']
+    properties.nodes['IntAmbientColor'].outputs[0].default_value = self.ambient_color
+
+
+def update_ext_ambient_color(self, context):
+
+    if 'Properties' not in bpy.data.node_groups:
+        return
+
+    properties = bpy.data.node_groups['Properties']
+    properties.nodes['extLightAmbientColor'].outputs[0].default_value = self.ext_ambient_color
+
+
+def update_ext_dir_color(self, context):
+
+    if 'Properties' not in bpy.data.node_groups:
+        return
+
+    properties = bpy.data.node_groups['Properties']
+    properties.nodes['extLightDirColor'].outputs[0].default_value = self.ext_dir_color
+
+
+def update_sidn_scalar(self, context):
+
+    if 'Properties' not in bpy.data.node_groups:
+        return
+
+    properties = bpy.data.node_groups['Properties']
+    properties.nodes['SIDNScalar'].outputs[0].default_value = self.sidn_scalar
+
+
 class WowRootPropertyGroup(bpy.types.PropertyGroup):
 
     mods_sets = bpy.props.CollectionProperty(type=MODS_Set)
@@ -60,7 +112,8 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
         name="Root flags",
         description="WoW WMO root flags",
         items=root_flags_enum,
-        options={"ENUM_FLAG"}
+        options={"ENUM_FLAG"},
+        update=update_flags
         )
 
     ambient_color = bpy.props.FloatVectorProperty(
@@ -69,7 +122,8 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
         default=(1, 1, 1, 1),
         size=4,
         min=0.0,
-        max=1.0
+        max=1.0,
+        update=update_ambient_color
         )
 
     skybox_path = bpy.props.StringProperty(
@@ -83,6 +137,35 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
         description="Used in WMOAreaTable (optional)",
         default=0,
         )
+
+    # render controls
+    ext_ambient_color = bpy.props.FloatVectorProperty(
+        name="Ext. Ambient Color",
+        subtype='COLOR',
+        default=(0.138, 0.223, 0.323, 1),
+        size=4,
+        min=0.0,
+        max=1.0,
+        update=update_ext_ambient_color
+        )
+
+    ext_dir_color = bpy.props.FloatVectorProperty(
+        name="Ext. Dir Color",
+        subtype='COLOR',
+        default=(0.991, 0.246, 0, 1),
+        size=4,
+        min=0.0,
+        max=1.0,
+        update=update_ext_dir_color
+    )
+
+    sidn_scalar = bpy.props.FloatProperty(
+        name='SIDN intensity',
+        description='Controls intensity of night glow in materials',
+        min=0.0,
+        max=1.0,
+        update=update_sidn_scalar
+    )
 
 
 def register():

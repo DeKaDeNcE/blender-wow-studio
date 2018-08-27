@@ -201,6 +201,7 @@ class BlenderWMOScene:
                     tex = _load_texture(textures, texture1, texture_dir)
                     tex_slot.texture = tex
                     mat.wow_wmo_material.diff_texture_1 = tex
+                    mat.use_textures[0] = False
                 except:
                     pass
 
@@ -213,6 +214,7 @@ class BlenderWMOScene:
                     tex = _load_texture(textures, texture2, texture_dir)
                     tex_slot.texture = tex
                     mat.wow_wmo_material.diff_texture_2 = tex
+                    mat.use_textures[1] = False
                 except:
                     pass
 
