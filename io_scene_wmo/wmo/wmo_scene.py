@@ -413,10 +413,10 @@ class BlenderWMOScene:
 
                 nobj.wow_wmo_doodad.enabled = True
                 nobj.wow_wmo_doodad.path = doodad_path
-                nobj.color = (doodad.color[2] / 255,
-                              doodad.color[1] / 255,
-                              doodad.color[0] / 255,
-                              doodad.color[3] / 255)
+                nobj.color = (pow(doodad.color[2] / 255, 2.2),
+                              pow(doodad.color[1] / 255, 2.2),
+                              pow(doodad.color[0] / 255, 2.2),
+                              pow(doodad.color[3] / 255, 2.2))
 
                 flags = []
                 bit = 1
