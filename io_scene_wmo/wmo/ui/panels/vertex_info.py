@@ -13,18 +13,8 @@ class WowVertexInfoPanel(bpy.types.Panel):
                                 )
 
         self.layout.prop(context.object.wow_wmo_vertex_info, "node_size", slider=True)
-
-        self.layout.prop_search(context.object.wow_wmo_vertex_info, "batch_map", context.object,
-                                "vertex_groups", text="Batch map ertex group"
-                                )
-
-        self.layout.prop_search(context.object.wow_wmo_vertex_info, "blendmap", context.object,
-                                "vertex_groups", text="Blendmap"
-                                )
-
-        self.layout.prop_search(context.object.wow_wmo_vertex_info, "second_uv", context.object.data,
-                                "uv_textures", text="Second UV"
-                                )
+        self.layout.prop(context.object.wow_wmo_vertex_info, "has_batch_int")
+        self.layout.prop(context.object.wow_wmo_vertex_info, "has_batch_trans")
 
     @classmethod
     def poll(cls, context):
@@ -35,6 +25,20 @@ class WowVertexInfoPanel(bpy.types.Panel):
                 and isinstance(context.object.data,bpy.types.Mesh)
                 and context.object.wow_wmo_group.enabled
                 )
+
+
+def update_has_batch_int(self, context):
+    if self.has_batch_int:
+        context.object.pass_index |= 0x8
+    else:
+        context.object.pass_index &= ~0x8
+
+
+def update_has_batch_trans(self, context):
+    if self.has_batch_trans:
+        context.object.pass_index |= 0x10
+    else:
+        context.object.pass_index &= ~0x10
 
 
 class WowVertexInfoPropertyGroup(bpy.types.PropertyGroup):
@@ -48,9 +52,17 @@ class WowVertexInfoPropertyGroup(bpy.types.PropertyGroup):
         soft_max=5000
         )
 
-    batch_map = bpy.props.StringProperty()
-    blendmap = bpy.props.StringProperty()
-    second_uv = bpy.props.StringProperty()
+    has_batch_int = bpy.props.BoolProperty(
+        name='Use Interior Batches',
+        default=False,
+        update=update_has_batch_int
+    )
+
+    has_batch_trans = bpy.props.BoolProperty(
+        name='Use Trans Batches',
+        default=False,
+        update=update_has_batch_trans
+    )
 
 
 def register():

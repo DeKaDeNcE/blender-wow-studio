@@ -443,10 +443,13 @@ class BlenderWMOSceneGroup:
 
             if batch_map_a:
                 mesh.vertex_colors['BatchmapTrans'].data[i].color = (1, 1, 1) if loop.vertex_index in batch_a_range else (0, 0, 0)
+                pass_index |= 0x10
+                nobj.wow_wmo_vertex_info.has_batch_trans = True
 
             if batch_map_b:
                 mesh.vertex_colors['BatchmapInt'].data[i].color = (1, 1, 1) if loop.vertex_index in batch_b_range else (0, 0, 0)
-
+                pass_index |= 0x8
+                nobj.wow_wmo_vertex_info.has_batch_int = True
         '''
         # set faces material
         for i in range(len(mesh.polygons)):
