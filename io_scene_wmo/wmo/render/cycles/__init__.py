@@ -142,6 +142,9 @@ def update_wmo_mat_node_tree_cycles(bl_mat):
     apply_vertex_color.location = -120, 800
     apply_vertex_color.node_tree = ng_apply_vertex_color
 
+    diffuse_bsdf = tree.nodes.new('ShaderNodeBsdfDiffuse')
+    diffuse_bsdf.location = 114.688, 805.143
+
     output = tree.nodes.new('ShaderNodeOutputMaterial')
     output.location = 220, 800
 
@@ -177,4 +180,6 @@ def update_wmo_mat_node_tree_cycles(bl_mat):
     links.new(batchmap_a.outputs[0], apply_vertex_color.inputs[5])
     links.new(batchmap_b.outputs[0], apply_vertex_color.inputs[4])
 
-    links.new(apply_vertex_color.outputs[0], output.inputs[0])
+    links.new(apply_vertex_color.outputs[0], diffuse_bsdf.inputs[0])
+
+    links.new(diffuse_bsdf.outputs[0], output.inputs[0])
