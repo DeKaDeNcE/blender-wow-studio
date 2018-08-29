@@ -178,8 +178,6 @@ def update_wmo_mat_node_tree_internal(bl_mat):
 
     links.new(apply_vertex_color.outputs[0], output.inputs[0])
 
-    # sync additional properties for the newly created tree
-
 
 
 
