@@ -1,22 +1,4 @@
 import bpy
-import os
-from pathlib import Path
-
-
-def load_dependencies_cycles(reload_shader=False):
-
-    if reload_shader:
-        if 'ApplyVertexColor' in bpy.data.node_groups:
-            bpy.data.node_groups.remove(bpy.data.node_groups['ApplyVertexColor'])
-
-        if 'MixTextures' in bpy.data.node_groups:
-            bpy.data.node_groups.remove(bpy.data.node_groups['MixTextures'])
-
-    lib_path = os.path.join(str(Path(__file__).parent), 'wotlk_default.blend')
-
-    with bpy.data.libraries.load(lib_path) as (data_from, data_to):
-        data_to.node_groups = [node_group for node_group in data_from.node_groups
-                               if node_group in ('ApplyVertexColor', 'MixTextures')]
 
 
 def update_wmo_mat_node_tree_cycles(bl_mat):
@@ -32,7 +14,7 @@ def update_wmo_mat_node_tree_cycles(bl_mat):
         tree.nodes.remove(n)
 
     # get textures
-    img_1 = bl_mat.wow_wmo_material.diff_texture_1.image
+    img_1 = bl_mat.wow_wmo_material.diff_texture_1.image if bl_mat.wow_wmo_material.diff_texture_1 else None
     img_2 = bl_mat.wow_wmo_material.diff_texture_2.image if bl_mat.wow_wmo_material.diff_texture_2 else None
 
     # do not proceed without textures
@@ -41,11 +23,11 @@ def update_wmo_mat_node_tree_cycles(bl_mat):
 
     # create nodes
 
-    ng_apply_vertex_color = bpy.data.node_groups['ApplyVertexColor']
-    ng_object_flags = bpy.data.node_groups['ObjectFlags']
-    ng_mix_textures = bpy.data.node_groups['MixTextures']
-    ng_properties = bpy.data.node_groups['Properties']
-    ng_mat_flags = bpy.data.node_groups['MaterialFlags']
+    ng_apply_vertex_color = bpy.data.node_groups['MO_ApplyVertexColor']
+    ng_object_flags = bpy.data.node_groups['MO_ObjectFlags']
+    ng_mix_textures = bpy.data.node_groups['MO_MixTextures']
+    ng_properties = bpy.data.node_groups['MO_Properties']
+    ng_mat_flags = bpy.data.node_groups['MO_MaterialFlags']
 
     g_info_main = tree.nodes.new('ShaderNodeUVMap')
     g_info_main.label = 'GeometryInfoMain'
@@ -66,7 +48,9 @@ def update_wmo_mat_node_tree_cycles(bl_mat):
     diffuse_tex1.label = 'DiffuseTexture1'
     diffuse_tex1.name = diffuse_tex1.label
     diffuse_tex1.location = -1696.0, 1202.12
-    diffuse_tex1.image = img_1
+
+    if img_1:
+        diffuse_tex1.image = img_1
 
     diffuse_tex2 = tree.nodes.new('ShaderNodeTexImage')
     diffuse_tex2.label = 'DiffuseTexture2'

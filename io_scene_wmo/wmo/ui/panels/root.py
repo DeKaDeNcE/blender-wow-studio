@@ -61,7 +61,7 @@ def update_flags(self, context):
     if 'Properties' not in bpy.data.node_groups:
         return
 
-    properties = bpy.data.node_groups['Properties']
+    properties = bpy.data.node_groups['MO_Properties']
     properties.nodes['IsRenderPathUnified'].outputs[0].default_value = int('2' in self.flags)
     properties.nodes['DoNotFixColorVertexAlpha'].outputs[0].default_value = int('1' in self.flags)
 
@@ -71,7 +71,7 @@ def update_ambient_color(self, context):
     if 'Properties' not in bpy.data.node_groups:
         return
 
-    properties = bpy.data.node_groups['Properties']
+    properties = bpy.data.node_groups['MO_Properties']
     properties.nodes['IntAmbientColor'].outputs[0].default_value = self.ambient_color
 
 
@@ -80,7 +80,7 @@ def update_ext_ambient_color(self, context):
     if 'Properties' not in bpy.data.node_groups:
         return
 
-    properties = bpy.data.node_groups['Properties']
+    properties = bpy.data.node_groups['MO_Properties']
     properties.nodes['extLightAmbientColor'].outputs[0].default_value = self.ext_ambient_color
 
 
@@ -89,7 +89,7 @@ def update_ext_dir_color(self, context):
     if 'Properties' not in bpy.data.node_groups:
         return
 
-    properties = bpy.data.node_groups['Properties']
+    properties = bpy.data.node_groups['MO_Properties']
     properties.nodes['extLightDirColor'].outputs[0].default_value = self.ext_dir_color
 
 
@@ -98,7 +98,7 @@ def update_sidn_scalar(self, context):
     if 'Properties' not in bpy.data.node_groups:
         return
 
-    properties = bpy.data.node_groups['Properties']
+    properties = bpy.data.node_groups['MO_Properties']
     properties.nodes['SIDNScalar'].outputs[0].default_value = self.sidn_scalar
 
 

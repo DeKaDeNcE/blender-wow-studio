@@ -183,6 +183,7 @@ class WMOToolsPanelObjectModeActions(bpy.types.Panel):
 
         col.label(text="Global:")
         col.operator("scene.wow_fix_material_duplicates", text='Fix material duplicates', icon='ASSET_MANAGER')
+        col.operator("scene.wow_wmo_generate_materials", text='Generate materials', icon='MATERIAL')
 
         if bpy.context.selected_objects:
             box = col.box()

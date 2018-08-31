@@ -12,11 +12,30 @@ from .panels.toolbar import switch_doodad_set, update_wow_visibility, get_doodad
 from ..import_doodad import import_doodad
 from ...ui import get_addon_prefs
 from ...utils import load_game_data
+from ..render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
 
 
 ###############################
 ## WMO operators
 ###############################
+
+class WoWWMO_GenerateMaterials(bpy.types.Operator):
+    bl_idname = "scene.wow_wmo_generate_materials"
+    bl_label = "Generate WMO textures"
+    bl_description = "Generate WMO materials."
+    bl_options = {'UNDO', 'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.wow_scene.type == 'WMO'
+
+    def execute(self, context):
+        load_wmo_shader_dependencies(True)
+        for mat in bpy.data.materials:
+            update_wmo_mat_node_tree(mat)
+
+        return {'FINISHED'}
+
 
 class WoWWMO_ReloadTexturesFromCache(bpy.types.Operator):
     bl_idname = "scene.wow_wmo_reload_textures_from_cache"

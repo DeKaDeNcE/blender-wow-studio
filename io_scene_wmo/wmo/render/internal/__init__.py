@@ -1,22 +1,4 @@
 import bpy
-import os
-from pathlib import Path
-
-
-def load_dependencies_internal(reload_shader=False):
-
-    if reload_shader:
-        if 'ApplyVertexColor' in bpy.data.node_groups:
-            bpy.data.node_groups.remove(bpy.data.node_groups['ApplyVertexColor'])
-
-        if 'MixTextures' in bpy.data.node_groups:
-            bpy.data.node_groups.remove(bpy.data.node_groups['MixTextures'])
-
-    lib_path = os.path.join(str(Path(__file__).parent), 'wotlk_default.blend')
-
-    with bpy.data.libraries.load(lib_path) as (data_from, data_to):
-        data_to.node_groups = [node_group for node_group in data_from.node_groups
-                               if node_group in ('ApplyVertexColor', 'MixTextures')]
 
 
 def update_wmo_mat_node_tree_internal(bl_mat):
@@ -41,11 +23,11 @@ def update_wmo_mat_node_tree_internal(bl_mat):
 
     # create nodes
 
-    ng_apply_vertex_color = bpy.data.node_groups['ApplyVertexColor']
-    ng_object_flags = bpy.data.node_groups['ObjectFlags']
-    ng_mix_textures = bpy.data.node_groups['MixTextures']
-    ng_properties = bpy.data.node_groups['Properties']
-    ng_mat_flags = bpy.data.node_groups['MaterialFlags']
+    ng_apply_vertex_color = bpy.data.node_groups['MO_ApplyVertexColor']
+    ng_object_flags = bpy.data.node_groups['MO_ObjectFlags']
+    ng_mix_textures = bpy.data.node_groups['MO_MixTextures']
+    ng_properties = bpy.data.node_groups['MO_Properties']
+    ng_mat_flags = bpy.data.node_groups['MO_MaterialFlags']
 
     g_info_main = tree.nodes.new('ShaderNodeGeometry')
     g_info_main.label = 'GeometryInfoMain'
