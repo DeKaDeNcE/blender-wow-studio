@@ -76,13 +76,9 @@ class BlenderWMOSceneGroup:
     @staticmethod
     def get_material_viewport_image(material):
         """ Get viewport image assigned to a material """
-        for i in range(3):
-            try:
-                img = material.texture_slots[3 - i].texture.image
-                return img
-            except:
-                pass
-        return None
+
+        if material.wow_wmo_material.diff_texture_1:
+            return material.wow_wmo_material.diff_texture_1.image
 
     @staticmethod
     def get_linked_faces(b_face, face_batch_type, uv, uv2, batch_map, batch_map_index, stack=0):
