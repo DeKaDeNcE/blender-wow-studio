@@ -28,6 +28,10 @@ class WoWRootPanel(bpy.types.Panel):
         col.prop(context.scene.wow_wmo_root, "ext_dir_color")
         col.prop(context.scene.wow_wmo_root, "sidn_scalar")
 
+        if context.scene.render.engine == 'CYCLES':
+            col.label('Sun Direciton:')
+            col.prop(context.scene.wow_wmo_root, "sun_direction", text='')
+
     @classmethod
     def poll(cls, context):
         return context.scene is not None and context.scene.wow_scene.type == 'WMO'
@@ -58,7 +62,7 @@ class MODD_Definition(bpy.types.PropertyGroup):
 
 def update_flags(self, context):
 
-    if 'Properties' not in bpy.data.node_groups:
+    if 'MO_Properties' not in bpy.data.node_groups:
         return
 
     properties = bpy.data.node_groups['MO_Properties']
@@ -68,7 +72,7 @@ def update_flags(self, context):
 
 def update_ambient_color(self, context):
 
-    if 'Properties' not in bpy.data.node_groups:
+    if 'MO_Properties' not in bpy.data.node_groups:
         return
 
     properties = bpy.data.node_groups['MO_Properties']
@@ -77,7 +81,7 @@ def update_ambient_color(self, context):
 
 def update_ext_ambient_color(self, context):
 
-    if 'Properties' not in bpy.data.node_groups:
+    if 'MO_Properties' not in bpy.data.node_groups:
         return
 
     properties = bpy.data.node_groups['MO_Properties']
@@ -86,7 +90,7 @@ def update_ext_ambient_color(self, context):
 
 def update_ext_dir_color(self, context):
 
-    if 'Properties' not in bpy.data.node_groups:
+    if 'MO_Properties' not in bpy.data.node_groups:
         return
 
     properties = bpy.data.node_groups['MO_Properties']
@@ -95,11 +99,20 @@ def update_ext_dir_color(self, context):
 
 def update_sidn_scalar(self, context):
 
-    if 'Properties' not in bpy.data.node_groups:
+    if 'MO_Properties' not in bpy.data.node_groups:
         return
 
     properties = bpy.data.node_groups['MO_Properties']
     properties.nodes['SIDNScalar'].outputs[0].default_value = self.sidn_scalar
+
+
+def update_sun_direction(self, context):
+
+    if 'MO_Properties' not in bpy.data.node_groups:
+        return
+
+    properties = bpy.data.node_groups['MO_Properties']
+    properties.nodes['SunDirection'].inputs[1].default_value = self.sun_direction
 
 
 class WowRootPropertyGroup(bpy.types.PropertyGroup):
@@ -165,6 +178,15 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
         min=0.0,
         max=1.0,
         update=update_sidn_scalar
+    )
+
+    sun_direction = bpy.props.FloatVectorProperty(
+        name='Sun Direction',
+        description='Defines the direction of the sun',
+        default=(0.2, 0.7, 0.6),
+        size=3,
+        subtype='DIRECTION',
+        update=update_sun_direction
     )
 
 
