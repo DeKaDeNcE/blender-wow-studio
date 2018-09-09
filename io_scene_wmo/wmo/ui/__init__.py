@@ -11,7 +11,8 @@ panels_list = [
     'root',
     'toolbar',
     'vertex_info',
-    'texture'
+    'texture',
+    'root_components'
 ]
 
 
