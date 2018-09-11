@@ -1,4 +1,10 @@
 import bpy
+from collections import namedtuple
+from ....utils import draw_spoiler
+from .material import WowMaterialPropertyGroup, WowMaterialPanel
+from .group import WowWMOGroupPanel
+from .portal import WowPortalPlanePanel
+from .fog import WowFogPanel
 
 
 class RootComponents_TemplateList(bpy.types.UIList):
@@ -72,6 +78,22 @@ class RootComponents_GroupsPanel(bpy.types.Panel):
         layout = self.layout
         draw_list(context, layout, 'cur_group', 'groups')
 
+        root_comps = context.scene.wow_wmo_root_components
+        groups = root_comps.groups
+        cur_group = root_comps.cur_group
+
+        ctx_override = namedtuple('ctx_override', ('object', 'scene', 'layout'))
+
+        if len(groups) > cur_group:
+            obj = groups[cur_group].pointer
+            if obj:
+                spoiler = draw_spoiler(layout, root_comps, 'is_group_props_expanded',
+                                       'Properties', icon='SCRIPTWIN')
+                if spoiler:
+                    ctx = ctx_override(obj, context.scene, spoiler)
+                    WowWMOGroupPanel.draw(ctx, ctx)
+                    spoiler.enabled = True
+
     @classmethod
     def poll(cls, context):
         return (context.scene is not None
@@ -88,6 +110,22 @@ class RootComponents_FogsPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         draw_list(context, layout, 'cur_fog', 'fogs')
+
+        root_comps = context.scene.wow_wmo_root_components
+        fogs = root_comps.fogs
+        cur_fog = root_comps.cur_fog
+
+        ctx_override = namedtuple('ctx_override', ('object', 'scene', 'layout'))
+
+        if len(fogs) > cur_fog:
+            obj = fogs[cur_fog].pointer
+            if obj:
+                spoiler = draw_spoiler(layout, root_comps, 'is_fog_props_expanded',
+                                       'Properties', icon='SCRIPTWIN')
+                if spoiler:
+                    ctx = ctx_override(obj, context.scene, spoiler)
+                    WowFogPanel.draw(ctx, ctx)
+                    spoiler.enabled = True
 
     @classmethod
     def poll(cls, context):
@@ -106,6 +144,22 @@ class RootComponents_PortalsPanel(bpy.types.Panel):
         layout = self.layout
         draw_list(context, layout, 'cur_portal', 'portals')
 
+        root_comps = context.scene.wow_wmo_root_components
+        portals = root_comps.portals
+        cur_portal = root_comps.cur_portal
+
+        ctx_override = namedtuple('ctx_override', ('object', 'scene', 'layout'))
+
+        if len(portals) > cur_portal:
+            obj = portals[cur_portal].pointer
+            if obj:
+                spoiler = draw_spoiler(layout, root_comps, 'is_portal_props_expanded',
+                                       'Properties', icon='SCRIPTWIN')
+                if spoiler:
+                    ctx = ctx_override(obj, context.scene, spoiler)
+                    WowPortalPlanePanel.draw(ctx, ctx)
+                    spoiler.enabled = True
+
     @classmethod
     def poll(cls, context):
         return (context.scene is not None
@@ -122,6 +176,22 @@ class RootComponents_MaterialssPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         draw_list(context, layout, 'cur_material', 'materials')
+
+        root_comps = context.scene.wow_wmo_root_components
+        materials = root_comps.materials
+        cur_material = root_comps.cur_material
+
+        ctx_override = namedtuple('ctx_override', ('material', 'scene', 'layout'))
+
+        if len(materials) > cur_material:
+            mat = materials[cur_material]
+            if mat:
+                spoiler = draw_spoiler(layout, root_comps, 'is_material_props_expanded',
+                                       'Properties', icon='SCRIPTWIN')
+                if spoiler:
+                    ctx = ctx_override(mat, context.scene, spoiler)
+                    WowMaterialPanel.draw(ctx, ctx)
+                    spoiler.enabled = True
 
     @classmethod
     def poll(cls, context):
@@ -152,21 +222,26 @@ class ObjectPointerPropertyGroup(bpy.types.PropertyGroup):
 class MaterialPointerPropertyGroup(bpy.types.PropertyGroup):
 
     pointer = bpy.props.PointerProperty(type=bpy.types.Material)
+    wow_wmo_material = bpy.props.PointerProperty(type=WowMaterialPropertyGroup)
 
 
 class WoWWMO_RootComponents(bpy.types.PropertyGroup):
 
     groups = bpy.props.CollectionProperty(type=ObjectPointerPropertyGroup)
     cur_group = bpy.props.IntProperty()
+    is_group_props_expanded = bpy.props.BoolProperty()
 
     fogs = bpy.props.CollectionProperty(type=ObjectPointerPropertyGroup)
     cur_fog = bpy.props.IntProperty()
+    is_fog_props_expanded = bpy.props.BoolProperty()
 
     portals = bpy.props.CollectionProperty(type=ObjectPointerPropertyGroup)
     cur_portal = bpy.props.IntProperty()
+    is_portal_props_expanded = bpy.props.BoolProperty()
 
     materials = bpy.props.CollectionProperty(type=MaterialPointerPropertyGroup)
     cur_material = bpy.props.IntProperty()
+    is_material_props_expanded = bpy.props.BoolProperty()
 
 
 def register():

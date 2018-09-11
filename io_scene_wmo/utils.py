@@ -192,6 +192,35 @@ def wrap_text(width, text):
     return lines
 
 
+def draw_spoiler(layout, data, toggle_prop_name, name="", data1=None, layout_enabled=None, icon=None, align=True):
+    """ Draw a spoiler-like layout in Blender UI """
+
+    is_expanded = getattr(data, toggle_prop_name)
+
+    body = layout.box()
+
+    header = body.box()
+    header_row = header.row(align=True)
+    header_row.prop(data, toggle_prop_name, emboss=False, text='', icon='TRIA_DOWN' if is_expanded else 'TRIA_RIGHT')
+
+    if data1 and layout_enabled:
+        if icon:
+            header_row.label('', icon=icon)
+        header_row.prop(data1, layout_enabled, text=name)
+    else:
+        header_row.label('       ' + name if align else name, icon=icon)
+
+    if is_expanded:
+
+        content = body.column()
+
+        if data1 and layout_enabled:
+            content.enabled = getattr(data1, layout_enabled)
+
+        return content
+
+
+
 class ProgressReport:
     def __init__(self, iterable, msg):
         self.iterable = iterable
