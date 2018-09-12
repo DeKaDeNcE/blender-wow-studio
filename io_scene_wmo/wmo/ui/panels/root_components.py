@@ -1,6 +1,7 @@
 import bpy
 from collections import namedtuple
 from ....utils import draw_spoiler
+from .... import ui_icons
 from .material import WowMaterialPropertyGroup, WowMaterialPanel
 from .group import WowWMOGroupPanel
 from .portal import WowPortalPlanePanel
@@ -13,8 +14,22 @@ class RootComponents_TemplateList(bpy.types.UIList):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
 
             row = layout.row()
-            row.label("#{} {}".format(index, item.pointer.name if item.pointer else 'Empty slot'))
-            row.prop(item, "pointer", text=item.name)
+
+            if not hasattr(item, 'pointer'):
+                row.label("#{}".format(index), icon='MATERIAL_DATA')
+                row.prop(item, 'name', emboss=True)
+            else:
+
+                icon = None
+                if item.pointer and isinstance(item.pointer, bpy.types.Object):
+                    if item.pointer.wow_wmo_group.enabled:
+                        icon = ui_icons['WOW_STUDIO_WMO']
+                    elif item.pointer.wow_wmo_fog.enabled:
+                        icon = ui_icons['WOW_STUDIO_FOG']
+                    elif item.pointer.wow_wmo_portal.enabled:
+                        icon = ui_icons['WOW_STUDIO_CONVERT_PORTAL']
+
+                    row.label("#{} {}".format(index, item.pointer.name), icon_value=icon)
 
         elif self.layout_type in {'GRID'}:
             pass
@@ -43,7 +58,7 @@ class RootComponents_TemplateList(bpy.types.UIList):
         return flt_flags, flt_neworder
 
 
-class RootComponents_ComponentAdd(bpy.types.Operator):
+class RootComponents_ComponentChange(bpy.types.Operator):
     bl_idname = 'scene.wow_wmo_root_components_change'
     bl_label = 'Add'
     bl_options = {'REGISTER', 'INTERNAL'}
@@ -60,7 +75,12 @@ class RootComponents_ComponentAdd(bpy.types.Operator):
 
         elif self.action == 'REMOVE':
             col = getattr(context.scene.wow_wmo_root_components, self.col_name)
-            col.remove(getattr(context.scene.wow_wmo_root_components, self.cur_idx_name))
+            cur_idx = getattr(context.scene.wow_wmo_root_components, self.cur_idx_name)
+
+            if (cur_idx - 1) == len(col):
+                context.scene.wow_wmo_root_components.is_update_critical = True
+
+            col.remove(cur_idx)
         else:
             self.report({'ERROR'}, 'Unsupported token')
             return {'CANCELLED'}
@@ -221,11 +241,13 @@ class ObjectPointerPropertyGroup(bpy.types.PropertyGroup):
 
 class MaterialPointerPropertyGroup(bpy.types.PropertyGroup):
 
-    pointer = bpy.props.PointerProperty(type=bpy.types.Material)
+    name = bpy.props.StringProperty()
     wow_wmo_material = bpy.props.PointerProperty(type=WowMaterialPropertyGroup)
 
 
 class WoWWMO_RootComponents(bpy.types.PropertyGroup):
+
+    is_update_critical = bpy.props.BoolProperty(default=False)
 
     groups = bpy.props.CollectionProperty(type=ObjectPointerPropertyGroup)
     cur_group = bpy.props.IntProperty()

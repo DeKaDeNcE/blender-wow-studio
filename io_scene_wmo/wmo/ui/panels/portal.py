@@ -48,11 +48,31 @@ def portal_validator(self, context):
         self.first = None
 
 
+def update_wmo_portal_enabled(self, context):
+    if self.enabled:
+
+        # check if is already added for safety
+        for link in context.scene.wow_wmo_root_components.portals:
+            if link.pointer == context.object:
+                return
+
+        slot = context.scene.wow_wmo_root_components.portals.add()
+        slot.pointer = context.object
+
+    else:
+
+        for i, link in enumerate(context.scene.wow_wmo_root_components.portals):
+            if link.pointer == context.object:
+                context.scene.wow_wmo_root_components.is_update_critical = True
+                context.scene.wow_wmo_root_components.portals.remove(i)
+
+
 class WowPortalPlanePropertyGroup(bpy.types.PropertyGroup):
 
     enabled = bpy.props.BoolProperty(
         name="",
-        description="Enable wow WMO group properties"
+        description="Enable wow WMO group properties",
+        update=update_wmo_portal_enabled
         )
 
     first = bpy.props.PointerProperty(
