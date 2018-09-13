@@ -15,21 +15,20 @@ class RootComponents_TemplateList(bpy.types.UIList):
 
             row = layout.row()
 
-            if not hasattr(item, 'pointer'):
-                row.label("#{}".format(index), icon='MATERIAL_DATA')
-                row.prop(item, 'name', emboss=True)
+            icon = None
+
+            if isinstance(item.pointer, bpy.types.Object):
+                if item.pointer.wow_wmo_group.enabled:
+                    icon = ui_icons['WOW_STUDIO_WMO']
+                elif item.pointer.wow_wmo_fog.enabled:
+                    icon = ui_icons['WOW_STUDIO_FOG']
+                elif item.pointer.wow_wmo_portal.enabled:
+                    icon = ui_icons['WOW_STUDIO_CONVERT_PORTAL']
+
+                row.label("#{} {}".format(index, item.pointer.name), icon_value=icon)
+
             else:
-
-                icon = None
-                if item.pointer and isinstance(item.pointer, bpy.types.Object):
-                    if item.pointer.wow_wmo_group.enabled:
-                        icon = ui_icons['WOW_STUDIO_WMO']
-                    elif item.pointer.wow_wmo_fog.enabled:
-                        icon = ui_icons['WOW_STUDIO_FOG']
-                    elif item.pointer.wow_wmo_portal.enabled:
-                        icon = ui_icons['WOW_STUDIO_CONVERT_PORTAL']
-
-                    row.label("#{} {}".format(index, item.pointer.name), icon_value=icon)
+                row.label("#{} {}".format(index, item.pointer.name), icon='MATERIAL_DATA')
 
         elif self.layout_type in {'GRID'}:
             pass
@@ -69,18 +68,62 @@ class RootComponents_ComponentChange(bpy.types.Operator):
 
     def execute(self, context):
         if self.action == 'ADD':
-            col = getattr(context.scene.wow_wmo_root_components, self.col_name)
-            col.add()
-            setattr(context.scene.wow_wmo_root_components, self.cur_idx_name, len(col) - 1)
+            if self.col_name == 'groups':
+
+                obj = bpy.context.scene.objects.active
+
+                if not obj:
+                    self.report({'ERROR'}, "No object selected")
+                    return {'CANCELLED'}
+
+                if obj.type != 'MESH':
+                    self.report({'ERROR'}, "Object must be a mesh")
+                    return {'CANCELLED'}
+
+                if obj.wow_wmo_portal.enabled or obj.wow_wmo_fog.enabled:
+                    self.report({'ERROR'}, "Object cannot be a portal or a fog")
+                    return {'CANCELLED'}
+
+                if obj.wow_wmo_group.enabled:
+                    self.report({'ERROR'}, "Object is already a group")
+                    return {'CANCELLED'}
+
+                obj.wow_wmo_group.enabled = True
+                bpy.context.scene.wow_wmo_root_components.groups[-1].pointer = obj
+
+            elif self.col_name == 'portals':
+                self.report({'ERROR'}, "Not implemented yet")
+                return {'CANCELLED'}
+
+            elif self.col_name == 'fogs':
+                bpy.ops.scene.wow_add_fog()
+                bpy.context.scene.wow_wmo_root_components.fogs[-1].pointer = bpy.context.scene.objects.active
+
+            elif self.col_name == 'materials':
+                new_mat = bpy.data.materials.new(name='Material')
+                new_mat.wow_wmo_material.enabled = True
+                bpy.context.scene.wow_wmo_root_components.materials[-1].pointer = new_mat
 
         elif self.action == 'REMOVE':
+
             col = getattr(context.scene.wow_wmo_root_components, self.col_name)
             cur_idx = getattr(context.scene.wow_wmo_root_components, self.cur_idx_name)
+            item = col[cur_idx].pointer
 
-            if (cur_idx - 1) == len(col):
-                context.scene.wow_wmo_root_components.is_update_critical = True
+            if self.col_name == 'groups':
+                item.wow_wmo_group.enabled = False
+
+            elif self.col_name == 'portals':
+                item.wow_wmo_portal.enabled = False
+
+            elif self.col_name == 'fogs':
+                item.wow_wmo_fog.enabled = False
+
+            elif self.col_name == 'materials':
+                item.wow_wmo_material.enabled = False
 
             col.remove(cur_idx)
+
         else:
             self.report({'ERROR'}, 'Unsupported token')
             return {'CANCELLED'}
@@ -187,7 +230,7 @@ class RootComponents_PortalsPanel(bpy.types.Panel):
         )
 
 
-class RootComponents_MaterialssPanel(bpy.types.Panel):
+class RootComponents_MaterialsPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -204,7 +247,7 @@ class RootComponents_MaterialssPanel(bpy.types.Panel):
         ctx_override = namedtuple('ctx_override', ('material', 'scene', 'layout'))
 
         if len(materials) > cur_material:
-            mat = materials[cur_material]
+            mat = materials[cur_material].pointer
             if mat:
                 spoiler = draw_spoiler(layout, root_comps, 'is_material_props_expanded',
                                        'Properties', icon='SCRIPTWIN')
@@ -241,8 +284,7 @@ class ObjectPointerPropertyGroup(bpy.types.PropertyGroup):
 
 class MaterialPointerPropertyGroup(bpy.types.PropertyGroup):
 
-    name = bpy.props.StringProperty()
-    wow_wmo_material = bpy.props.PointerProperty(type=WowMaterialPropertyGroup)
+    pointer = bpy.props.PointerProperty(type=bpy.types.Material)
 
 
 class WoWWMO_RootComponents(bpy.types.PropertyGroup):

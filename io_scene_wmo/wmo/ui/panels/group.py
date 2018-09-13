@@ -125,9 +125,13 @@ def update_wmo_group_enabled(self, context):
 
     else:
 
+        n_groups = len(context.scene.wow_wmo_root_components.groups)
         for i, link in enumerate(context.scene.wow_wmo_root_components.groups):
             if link.pointer == context.object:
-                context.scene.wow_wmo_root_components.is_update_critical = True
+
+                if (i + 1) == n_groups:
+                    context.scene.wow_wmo_root_components.is_update_critical = True
+
                 context.scene.wow_wmo_root_components.groups.remove(i)
 
 

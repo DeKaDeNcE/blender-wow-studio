@@ -86,12 +86,31 @@ def update_emissive_color(self, context):
     context.material.node_tree.nodes['EmissiveColor'].outputs[0].default_value = self.emissive_color
 
 
+def update_wmo_material_enabled(self, context):
+    if self.enabled:
+
+        # check if is already added for safety
+        for link in context.scene.wow_wmo_root_components.materials:
+            if link.pointer == context.material:
+                return
+
+        slot = context.scene.wow_wmo_root_components.materials.add()
+        slot.pointer = context.material
+
+    else:
+
+        for i, link in enumerate(context.scene.wow_wmo_root_components.materials):
+            if link.pointer == context.material:
+                context.scene.wow_wmo_root_components.is_update_critical = True
+                context.scene.wow_wmo_root_components.materials.remove(i)
+
+
 class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
 
     enabled = bpy.props.BoolProperty(
         name="",
-        description="Enable WoW material properties"
-        )
+        description="Enable WoW material properties",
+        update=update_wmo_material_enabled)
 
     flags = bpy.props.EnumProperty(
         name="Material flags",
