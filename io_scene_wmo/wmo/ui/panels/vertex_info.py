@@ -43,7 +43,7 @@ def update_has_batch_trans(self, context):
 
 
 def update_has_blend_map(self, context):
-    if self.has_batch_trans:
+    if self.has_blend_map:
         context.object.pass_index |= 0x40
     else:
         context.object.pass_index &= ~0x40
