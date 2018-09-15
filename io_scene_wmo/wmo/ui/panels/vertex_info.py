@@ -15,6 +15,7 @@ class WowVertexInfoPanel(bpy.types.Panel):
         self.layout.prop(context.object.wow_wmo_vertex_info, "node_size", slider=True)
         self.layout.prop(context.object.wow_wmo_vertex_info, "has_batch_int")
         self.layout.prop(context.object.wow_wmo_vertex_info, "has_batch_trans")
+        self.layout.prop(context.object.wow_wmo_vertex_info, "has_blend_map")
 
     @classmethod
     def poll(cls, context):
@@ -41,6 +42,13 @@ def update_has_batch_trans(self, context):
         context.object.pass_index &= ~0x10
 
 
+def update_has_blend_map(self, context):
+    if self.has_batch_trans:
+        context.object.pass_index |= 0x40
+    else:
+        context.object.pass_index &= ~0x40
+
+
 class WowVertexInfoPropertyGroup(bpy.types.PropertyGroup):
 
     vertex_group = bpy.props.StringProperty()
@@ -62,6 +70,12 @@ class WowVertexInfoPropertyGroup(bpy.types.PropertyGroup):
         name='Use Trans Batches',
         default=False,
         update=update_has_batch_trans
+    )
+
+    has_blend_map = bpy.props.BoolProperty(
+        name='Has Blend Map',
+        default=False,
+        update=update_has_blend_map
     )
 
 

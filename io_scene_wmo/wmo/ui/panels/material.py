@@ -65,7 +65,10 @@ def update_diff_texture_1(self, context):
             or ('DiffuseTexture1' not in context.material.node_tree.nodes):
         return
 
-    context.material.node_tree.nodes['DiffuseTexture1'].texture = self.diff_texture_1
+    if bpy.context.scene.render.engine == 'BLENDER_RENDER':
+        context.material.node_tree.nodes['DiffuseTexture1'].texture = self.diff_texture_1
+    elif bpy.context.scene.render.engine == 'CYCLES' and self.diff_texture_1:
+        context.material.node_tree.nodes['DiffuseTexture1'].image = self.diff_texture_1.image
 
 
 def update_diff_texture_2(self, context):
@@ -74,7 +77,10 @@ def update_diff_texture_2(self, context):
             or ('DiffuseTexture2' not in context.material.node_tree.nodes):
         return
 
-    context.material.node_tree.nodes['DiffuseTexture2'].texture = self.diff_texture_2
+    if bpy.context.scene.render.engine == 'BLENDER_RENDER':
+        context.material.node_tree.nodes['DiffuseTexture1'].texture = self.diff_texture_2
+    elif bpy.context.scene.render.engine == 'CYCLES' and self.diff_texture_2:
+        context.material.node_tree.nodes['DiffuseTexture1'].image = self.diff_texture_2.image
 
 
 def update_emissive_color(self, context):
