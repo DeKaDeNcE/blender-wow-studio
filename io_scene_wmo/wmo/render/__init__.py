@@ -55,7 +55,13 @@ def update_wmo_mat_node_tree(bl_mat):
 
     elif render_engine == 'CYCLES':
         update_wmo_mat_node_tree_cycles(bl_mat)
+        bpy.context.scene.wow_wmo_root.sun_direction = bpy.context.scene.wow_wmo_root.sun_direction
 
     else:
         print('\nWARNING: Failed generating node tree: material \"{}\" may not display correctly.'
               '\nIncompatible render engine \"{}"\"'.format(bl_mat.name, render_engine))
+
+    # sync scene lighting properties
+    bpy.context.scene.wow_wmo_root.ext_ambient_color = bpy.context.scene.wow_wmo_root.ext_ambient_color
+    bpy.context.scene.wow_wmo_root.ext_dir_color = bpy.context.scene.wow_wmo_root.ext_dir_color
+    bpy.context.scene.wow_wmo_root.sidn_scalar = bpy.context.scene.wow_wmo_root.sidn_scalar
