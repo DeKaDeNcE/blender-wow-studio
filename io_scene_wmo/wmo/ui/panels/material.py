@@ -94,20 +94,19 @@ def update_emissive_color(self, context):
 
 
 def update_wmo_material_enabled(self, context):
-    if not context.material:
+    if not hasattr(context, 'material') or not context.material:
         return
 
     if self.enabled:
-        load_wmo_shader_dependencies(True)
         update_wmo_mat_node_tree(context.material)
 
     elif context.materials.use_nodes:
-        tree = context.materials.node_tree
+        tree = context.material.node_tree
 
         for n in tree.nodes:
             tree.nodes.remove(n)
 
-        context.materials.use_nodes = False
+        context.material.use_nodes = False
 
 
 class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
