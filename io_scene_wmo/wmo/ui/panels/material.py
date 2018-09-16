@@ -1,5 +1,6 @@
 import bpy
 from ..enums import *
+from ...render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
 
 
 class WowMaterialPanel(bpy.types.Panel):
@@ -93,22 +94,20 @@ def update_emissive_color(self, context):
 
 
 def update_wmo_material_enabled(self, context):
+    if not context.material:
+        return
+
     if self.enabled:
+        load_wmo_shader_dependencies(True)
+        update_wmo_mat_node_tree(context.material)
 
-        # check if is already added for safety
-        for link in context.scene.wow_wmo_root_components.materials:
-            if link.pointer == context.material:
-                return
+    elif context.materials.use_nodes:
+        tree = context.materials.node_tree
 
-        slot = context.scene.wow_wmo_root_components.materials.add()
-        slot.pointer = context.material
+        for n in tree.nodes:
+            tree.nodes.remove(n)
 
-    else:
-
-        for i, link in enumerate(context.scene.wow_wmo_root_components.materials):
-            if link.pointer == context.material:
-                context.scene.wow_wmo_root_components.is_update_critical = True
-                context.scene.wow_wmo_root_components.materials.remove(i)
+        context.materials.use_nodes = False
 
 
 class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
