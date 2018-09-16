@@ -17,10 +17,6 @@ def update_wmo_mat_node_tree_internal(bl_mat):
     tex_1 = bl_mat.wow_wmo_material.diff_texture_1
     tex_2 = bl_mat.wow_wmo_material.diff_texture_2
 
-    # do not proceed without textures
-    if not tex_1 and not tex_2:
-        return
-
     # create nodes
 
     ng_apply_vertex_color = bpy.data.node_groups['MO_ApplyVertexColor']

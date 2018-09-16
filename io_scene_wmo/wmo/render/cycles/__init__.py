@@ -17,10 +17,6 @@ def update_wmo_mat_node_tree_cycles(bl_mat):
     img_1 = bl_mat.wow_wmo_material.diff_texture_1.image if bl_mat.wow_wmo_material.diff_texture_1 else None
     img_2 = bl_mat.wow_wmo_material.diff_texture_2.image if bl_mat.wow_wmo_material.diff_texture_2 else None
 
-    # do not proceed without textures
-    if not img_1 and not img_2:
-        return
-
     # create nodes
 
     ng_apply_vertex_color = bpy.data.node_groups['MO_ApplyVertexColor']
