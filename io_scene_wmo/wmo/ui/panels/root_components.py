@@ -14,6 +14,7 @@ class RootComponents_TemplateList(bpy.types.UIList):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
 
             row = layout.row()
+            sub_col = row.column()
 
             icon = None
 
@@ -25,10 +26,14 @@ class RootComponents_TemplateList(bpy.types.UIList):
                 elif item.pointer.wow_wmo_portal.enabled:
                     icon = ui_icons['WOW_STUDIO_CONVERT_PORTAL']
 
-                row.label("#{} {}".format(index, item.pointer.name), icon_value=icon)
+            if icon:
+                sub_col.label("#{} ".format(index), icon_value=icon)
 
             else:
-                row.label("#{} {}".format(index, item.pointer.name), icon='MATERIAL_DATA')
+                sub_col.label("#{} ".format(index), icon='MATERIAL_DATA')
+
+            sub_col.scale_x = 0.5
+            row.prop(item, 'pointer', emboss=True, text='')
 
         elif self.layout_type in {'GRID'}:
             pass
@@ -72,24 +77,25 @@ class RootComponents_ComponentChange(bpy.types.Operator):
 
                 obj = bpy.context.scene.objects.active
 
-                if not obj:
-                    self.report({'ERROR'}, "No object selected")
-                    return {'CANCELLED'}
+                if obj and obj.select:
 
-                if obj.type != 'MESH':
-                    self.report({'ERROR'}, "Object must be a mesh")
-                    return {'CANCELLED'}
+                    if obj.type != 'MESH':
+                        self.report({'ERROR'}, "Object must be a mesh")
+                        return {'CANCELLED'}
 
-                if obj.wow_wmo_portal.enabled or obj.wow_wmo_fog.enabled:
-                    self.report({'ERROR'}, "Object cannot be a portal or a fog")
-                    return {'CANCELLED'}
+                    if obj.wow_wmo_portal.enabled or obj.wow_wmo_fog.enabled:
+                        self.report({'ERROR'}, "Object cannot be a portal or a fog")
+                        return {'CANCELLED'}
 
-                if obj.wow_wmo_group.enabled:
-                    self.report({'ERROR'}, "Object is already a group")
-                    return {'CANCELLED'}
+                    if obj.wow_wmo_group.enabled:
+                        self.report({'ERROR'}, "Object is already a group")
+                        return {'CANCELLED'}
 
-                obj.wow_wmo_group.enabled = True
-                bpy.context.scene.wow_wmo_root_components.groups[-1].pointer = obj
+                    slot = bpy.context.scene.wow_wmo_root_components.groups.add()
+                    slot.pointer = obj
+
+                else:
+                    bpy.context.scene.wow_wmo_root_components.groups.add()
 
             elif self.col_name == 'portals':
                 self.report({'ERROR'}, "Not implemented yet")
@@ -277,9 +283,88 @@ def draw_list(context, col, cur_idx_name, col_name):
     op.action, op.col_name, op.cur_idx_name = 'REMOVE', col_name, cur_idx_name
 
 
-class ObjectPointerPropertyGroup(bpy.types.PropertyGroup):
+obj_props = ['wow_wmo_portal',
+             'wow_wmo_fog',
+             'wow_wmo_group',
+             'wow_wmo_liquid'
+            ]
 
-    pointer = bpy.props.PointerProperty(type=bpy.types.Object)
+
+def is_obj_unused(obj):
+    for prop in obj_props:
+        if getattr(obj, prop).enabled:
+            return False
+
+    return True
+
+
+def update_object_pointer(self, context, prop):
+    if not hasattr(context, 'object') or not context.object:
+        return
+
+    if self.pointer:
+
+        # check if object is another type
+        obj = context.object
+        if is_obj_unused(obj):
+            self.pointer = None
+            return
+
+        getattr(self.pointer, prop).enabled = True
+        self.pointer_old = self.pointer
+
+    elif self.pointer_old:
+        # handle deletion
+        getattr(self.pointer_old, prop).enabled = False
+        self.pointer_old = None
+
+
+class GroupPointerPropertyGroup(bpy.types.PropertyGroup):
+
+    pointer = bpy.props.PointerProperty(
+        name='Object',
+        type=bpy.types.Object,
+        poll=lambda self, obj: is_obj_unused(obj) and obj.type == 'MESH',
+        update=lambda self, ctx: update_object_pointer(self, ctx, 'wow_wmo_group')
+    )
+
+    pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
+
+
+class FogPointerPropertyGroup(bpy.types.PropertyGroup):
+
+    pointer = bpy.props.PointerProperty(
+        name='Object',
+        type=bpy.types.Object,
+        poll=lambda self, obj: is_obj_unused(obj) and obj.type == 'MESH',
+        update=lambda self, ctx: update_object_pointer(self, ctx, 'wow_wmo_fog')
+    )
+
+    pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
+
+
+class LightPointerPropertyGroup(bpy.types.PropertyGroup):
+
+    pointer = bpy.props.PointerProperty(
+        name='Object',
+        type=bpy.types.Object,
+        poll=lambda self, obj: is_obj_unused(obj) and obj.type == 'MESH',
+        update=lambda self, ctx: update_object_pointer(self, ctx, 'wow_wmo_light')
+    )
+
+    pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
+
+
+class PortalPointerPropertyGroup(bpy.types.PropertyGroup):
+
+    pointer = bpy.props.PointerProperty(
+        name='Object',
+        type=bpy.types.Object,
+        poll=lambda self, obj: is_obj_unused(obj) and obj.type == 'MESH',
+        update=lambda self, ctx: update_object_pointer(self, ctx, 'wow_wmo_portal')
+    )
+
+    pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
 
 
 class MaterialPointerPropertyGroup(bpy.types.PropertyGroup):
@@ -291,15 +376,15 @@ class WoWWMO_RootComponents(bpy.types.PropertyGroup):
 
     is_update_critical = bpy.props.BoolProperty(default=False)
 
-    groups = bpy.props.CollectionProperty(type=ObjectPointerPropertyGroup)
+    groups = bpy.props.CollectionProperty(type=GroupPointerPropertyGroup)
     cur_group = bpy.props.IntProperty()
     is_group_props_expanded = bpy.props.BoolProperty()
 
-    fogs = bpy.props.CollectionProperty(type=ObjectPointerPropertyGroup)
+    fogs = bpy.props.CollectionProperty(type=FogPointerPropertyGroup)
     cur_fog = bpy.props.IntProperty()
     is_fog_props_expanded = bpy.props.BoolProperty()
 
-    portals = bpy.props.CollectionProperty(type=ObjectPointerPropertyGroup)
+    portals = bpy.props.CollectionProperty(type=PortalPointerPropertyGroup)
     cur_portal = bpy.props.IntProperty()
     is_portal_props_expanded = bpy.props.BoolProperty()
 

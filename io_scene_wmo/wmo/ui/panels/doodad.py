@@ -31,6 +31,8 @@ class WoWDoodadPanel(bpy.types.Panel):
 
 class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
 
+    enabled = bpy.props.BoolProperty()
+
     path = bpy.props.StringProperty()
 
     color = bpy.props.FloatVectorProperty(
@@ -50,11 +52,6 @@ class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
                ("4", "Unknown", ""),
                ("8", "Unknown", "")],
         options={"ENUM_FLAG"}
-    )
-
-    enabled = bpy.props.BoolProperty(
-        name="",
-        description="Enable WoW WMO doodad properties"
     )
 
 

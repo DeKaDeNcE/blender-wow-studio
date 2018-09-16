@@ -8,18 +8,13 @@ class WowLightPanel(bpy.types.Panel):
     bl_context = "data"
     bl_label = "WMO Light"
 
-    def draw_header(self, context):
-        self.layout.prop(context.object.data.wow_wmo_light, "enabled")
-
     def draw(self, context):
-        layout = self.layout
         self.layout.prop(context.object.data.wow_wmo_light, "light_type")
         self.layout.prop(context.object.data.wow_wmo_light, "use_attenuation")
         self.layout.prop(context.object.data.wow_wmo_light, "color")
         self.layout.prop(context.object.data.wow_wmo_light, "intensity")
         self.layout.prop(context.object.data.wow_wmo_light, "attenuation_start")
         self.layout.prop(context.object.data.wow_wmo_light, "attenuation_end")
-        layout.enabled = context.object.data.wow_wmo_light.enabled
 
     @classmethod
     def poll(cls, context):
@@ -27,16 +22,14 @@ class WowLightPanel(bpy.types.Panel):
                 and context.scene.wow_scene.type == 'WMO'
                 and context.object is not None
                 and context.object.data is not None
-                and isinstance(context.object.data, bpy.types.Lamp)
+                and context.object.type == 'LAMP'
+                and context.object.wow_wmo_light.enabled
                 )
 
 
 class WowLightPropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty(
-        name="",
-        description="Enable wow light properties"
-        )
+    enabled = bpy.props.BoolProperty()
 
     light_type = bpy.props.EnumProperty(
         items=light_type_enum,

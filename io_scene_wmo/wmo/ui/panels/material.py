@@ -1,6 +1,6 @@
 import bpy
 from ..enums import *
-from ...render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
+from ...render import update_wmo_mat_node_tree
 
 
 class WowMaterialPanel(bpy.types.Panel):
@@ -8,9 +8,6 @@ class WowMaterialPanel(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "material"
     bl_label = "WMO Material"
-
-    def draw_header(self, context):
-        self.layout.prop(context.material.wow_wmo_material, "enabled")
 
     def draw(self, context):
         layout = self.layout
@@ -36,6 +33,7 @@ class WowMaterialPanel(bpy.types.Panel):
         return (context.scene is not None
                 and context.scene.wow_scene.type == 'WMO'
                 and context.material is not None
+                and context.material.wow_wmo_material.enabled
         )
 
 
@@ -111,10 +109,7 @@ def update_wmo_material_enabled(self, context):
 
 class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty(
-        name="",
-        description="Enable WoW material properties",
-        update=update_wmo_material_enabled)
+    enabled = bpy.props.BoolProperty()
 
     flags = bpy.props.EnumProperty(
         name="Material flags",

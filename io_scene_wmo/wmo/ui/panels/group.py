@@ -8,9 +8,6 @@ class WowWMOGroupPanel(bpy.types.Panel):
     bl_context = "object"
     bl_label = "WMO Group"
 
-    def draw_header(self, context):
-        self.layout.prop(context.object.wow_wmo_group, "enabled")
-
     def draw(self, context):
         col = self.layout.column()
         col.prop(context.object.wow_wmo_group, "description")
@@ -40,11 +37,8 @@ class WowWMOGroupPanel(bpy.types.Panel):
                 and context.scene.wow_scene.type == 'WMO'
                 and context.object is not None
                 and context.object.data is not None
-                and isinstance(context.object.data,bpy.types.Mesh)
-                and not context.object.wow_wmo_portal.enabled
-                and not context.object.wow_wmo_liquid.enabled
-                and not context.object.wow_wmo_fog.enabled
-                and not context.object.wow_wmo_doodad.enabled
+                and context.object.type == 'MESH'
+                and context.object.wow_wmo_group.enabled
                 )
 
 
@@ -112,37 +106,13 @@ def update_flags(self, context):
         context.object.pass_index &= ~0x4
 
 
-def update_wmo_group_enabled(self, context):
-    if self.enabled:
-
-        # check if is already added for safety
-        for link in context.scene.wow_wmo_root_components.groups:
-            if link.pointer == context.object:
-                return
-
-        slot = context.scene.wow_wmo_root_components.groups.add()
-        slot.pointer = context.object
-
-    else:
-
-        n_groups = len(context.scene.wow_wmo_root_components.groups)
-        for i, link in enumerate(context.scene.wow_wmo_root_components.groups):
-            if link.pointer == context.object:
-
-                if (i + 1) == n_groups:
-                    context.scene.wow_wmo_root_components.is_update_critical = True
-
-                context.scene.wow_wmo_root_components.groups.remove(i)
-
-
 class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
 
     description = bpy.props.StringProperty(name="Description")
 
     enabled = bpy.props.BoolProperty(
         name="",
-        description="Enable wow WMO group properties",
-        update=update_wmo_group_enabled
+        description="Enable wow WMO group properties"
         )
 
     flags = bpy.props.EnumProperty(

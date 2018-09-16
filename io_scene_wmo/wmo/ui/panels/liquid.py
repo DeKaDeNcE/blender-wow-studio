@@ -10,7 +10,6 @@ class WowLiquidPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.enabled = context.object.wow_wmo_liquid.enabled
         layout.prop(context.object.wow_wmo_liquid, "liquid_type")
         layout.prop(context.object.wow_wmo_liquid, "color")
         layout.prop(context.object.wow_wmo_liquid, "wmo_group")
@@ -21,7 +20,7 @@ class WowLiquidPanel(bpy.types.Panel):
                 and context.scene.wow_scene.type == 'WMO'
                 and context.object is not None
                 and context.object.data is not None
-                and isinstance(context.object.data,bpy.types.Mesh)
+                and context.object.type == 'MESH'
                 and context.object.wow_wmo_liquid.enabled
                 )
 
@@ -44,11 +43,7 @@ def liquid_poll(self, obj):
 
 class WowLiquidPropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty(
-        name="",
-        description="Enable wow liquid properties",
-        default=False
-        )
+    enabled = bpy.props.BoolProperty()
 
     color = bpy.props.FloatVectorProperty(
         name="Color",

@@ -8,9 +8,6 @@ class WowPortalPlanePanel(bpy.types.Panel):
     bl_context = "object"
     bl_label = "WMO Portal"
 
-    def draw_header(self, context):
-        self.layout.prop(context.object.wow_wmo_portal, "enabled")
-
     def draw(self, context):
         layout = self.layout
 
@@ -32,11 +29,8 @@ class WowPortalPlanePanel(bpy.types.Panel):
                 and context.scene.wow_scene.type == 'WMO'
                 and context.object is not None
                 and context.object.data is not None
-                and isinstance(context.object.data,bpy.types.Mesh)
-                and not context.object.wow_wmo_group.enabled
-                and not context.object.wow_wmo_liquid.enabled
-                and not context.object.wow_wmo_fog.enabled
-                and not context.object.wow_wmo_doodad.enabled
+                and context.object.type == 'MESH'
+                and context.object.wow_wmo_portal.enabled
                 )
 
 
@@ -48,32 +42,9 @@ def portal_validator(self, context):
         self.first = None
 
 
-def update_wmo_portal_enabled(self, context):
-    if self.enabled:
-
-        # check if is already added for safety
-        for link in context.scene.wow_wmo_root_components.portals:
-            if link.pointer == context.object:
-                return
-
-        slot = context.scene.wow_wmo_root_components.portals.add()
-        slot.pointer = context.object
-
-    else:
-
-        for i, link in enumerate(context.scene.wow_wmo_root_components.portals):
-            if link.pointer == context.object:
-                context.scene.wow_wmo_root_components.is_update_critical = True
-                context.scene.wow_wmo_root_components.portals.remove(i)
-
-
 class WowPortalPlanePropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty(
-        name="",
-        description="Enable wow WMO group properties",
-        update=update_wmo_portal_enabled
-        )
+    enabled = bpy.props.BoolProperty()
 
     first = bpy.props.PointerProperty(
         type=bpy.types.Object,

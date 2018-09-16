@@ -27,7 +27,7 @@ class WowFogPanel(bpy.types.Panel):
                 and context.scene.wow_scene.type == 'WMO'
                 and context.object is not None
                 and context.object.data is not None
-                and isinstance(context.object.data,bpy.types.Mesh)
+                and context.object.type == 'MESH'
                 and context.object.wow_wmo_fog.enabled
                 )
 
@@ -36,32 +36,9 @@ def update_fog_color(self, context):
     bpy.context.scene.objects.active.color = (self.color1[0], self.color1[1], self.color1[2], 0.5)
 
 
-def update_wmo_fog_enabled(self, context):
-    if self.enabled:
-
-        # check if is already added for safety
-        for link in context.scene.wow_wmo_root_components.fogs:
-            if link.pointer == context.object:
-                return
-
-        slot = context.scene.wow_wmo_root_components.fogs.add()
-        slot.pointer = context.object
-
-    else:
-
-        for i, link in enumerate(context.scene.wow_wmo_root_components.fogs):
-            if link.pointer == context.object:
-                context.scene.wow_wmo_root_components.is_update_critical = True
-                context.scene.wow_wmo_root_components.fogs.remove(i)
-
-
 class WowFogPropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty(
-        name="",
-        description="Enable WoW WMO fog properties",
-        update=update_wmo_fog_enabled
-    )
+    enabled = bpy.props.BoolProperty()
 
     fog_id = bpy.props.IntProperty(
         name="WMO Group ID",
