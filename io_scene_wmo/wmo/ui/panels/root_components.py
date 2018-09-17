@@ -9,6 +9,9 @@ from .fog import WowFogPanel
 
 
 class RootComponents_TemplateList(bpy.types.UIList):
+
+    icon = 'OBJECT_DATA'
+
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
 
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
@@ -16,21 +19,11 @@ class RootComponents_TemplateList(bpy.types.UIList):
             row = layout.row()
             sub_col = row.column()
 
-            icon = None
+            if isinstance(self.icon, int):
+                sub_col.label("#{} ".format(index), icon_value=self.icon)
 
-            if isinstance(item.pointer, bpy.types.Object):
-                if item.pointer.wow_wmo_group.enabled:
-                    icon = ui_icons['WOW_STUDIO_WMO']
-                elif item.pointer.wow_wmo_fog.enabled:
-                    icon = ui_icons['WOW_STUDIO_FOG']
-                elif item.pointer.wow_wmo_portal.enabled:
-                    icon = ui_icons['WOW_STUDIO_CONVERT_PORTAL']
-
-            if icon:
-                sub_col.label("#{} ".format(index), icon_value=icon)
-
-            else:
-                sub_col.label("#{} ".format(index), icon='MATERIAL_DATA')
+            elif isinstance(self.icon, str):
+                sub_col.label("#{} ".format(index), icon=self.icon)
 
             sub_col.scale_x = 0.5
             row.prop(item, 'pointer', emboss=True, text='')
@@ -60,6 +53,26 @@ class RootComponents_TemplateList(bpy.types.UIList):
             flt_neworder = []
 
         return flt_flags, flt_neworder
+
+
+class RootComponents_GroupsList(RootComponents_TemplateList):
+
+    icon = ui_icons['WOW_STUDIO_WMO']
+
+
+class RootComponents_FogsList(RootComponents_TemplateList):
+
+    icon = ui_icons['WOW_STUDIO_FOG']
+
+
+class RootComponents_PortalsList(RootComponents_TemplateList):
+
+    icon = ui_icons['WOW_STUDIO_CONVERT_PORTAL']
+
+
+class RootComponents_MaterialsList(RootComponents_TemplateList):
+
+    icon = 'MATERIAL_DATA'
 
 
 class RootComponents_ComponentChange(bpy.types.Operator):
@@ -268,11 +281,18 @@ class RootComponents_MaterialsPanel(bpy.types.Panel):
                 and context.scene.wow_scene.type == 'WMO'
         )
 
+_ui_lists = {
+    'groups': 'RootComponents_GroupsList',
+    'fogs': 'RootComponents_FogsList',
+    'portals': 'RootComponents_PortalsList',
+    'materials': 'RootComponents_MaterialsList'
+}
 
 def draw_list(context, col, cur_idx_name, col_name):
+
     row = col.row()
     sub_col1 = row.column()
-    sub_col1.template_list('RootComponents_TemplateList', "",
+    sub_col1.template_list(_ui_lists[col_name], "",
                            context.scene.wow_wmo_root_components,
                            col_name, context.scene.wow_wmo_root_components, cur_idx_name)
     sub_col_parent = row.column()
@@ -297,26 +317,34 @@ def is_obj_unused(obj):
 
     return True
 
+def poll_object(self, obj):
+    is_unused = is_obj_unused(obj)
+
+    return is_unused and obj.type == 'MESH'
+
 
 def update_object_pointer(self, context, prop):
-    if not hasattr(context, 'object') or not context.object:
-        return
 
     if self.pointer:
 
         # check if object is another type
-        obj = context.object
-        if is_obj_unused(obj):
+        if not is_obj_unused(self.pointer):
             self.pointer = None
             return
 
         getattr(self.pointer, prop).enabled = True
         self.pointer_old = self.pointer
+        self.name = self.pointer.name
 
     elif self.pointer_old:
         # handle deletion
         getattr(self.pointer_old, prop).enabled = False
         self.pointer_old = None
+        self.name = ""
+
+
+def update_group_pointer(self, context):
+    update_object_pointer(self, context, 'wow_wmo_group')
 
 
 class GroupPointerPropertyGroup(bpy.types.PropertyGroup):
@@ -324,11 +352,13 @@ class GroupPointerPropertyGroup(bpy.types.PropertyGroup):
     pointer = bpy.props.PointerProperty(
         name='Object',
         type=bpy.types.Object,
-        poll=lambda self, obj: is_obj_unused(obj) and obj.type == 'MESH',
-        update=lambda self, ctx: update_object_pointer(self, ctx, 'wow_wmo_group')
+        poll=poll_object,
+        update=update_group_pointer
     )
 
     pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
+
+    name = bpy.props.StringProperty()
 
 
 class FogPointerPropertyGroup(bpy.types.PropertyGroup):
@@ -342,6 +372,8 @@ class FogPointerPropertyGroup(bpy.types.PropertyGroup):
 
     pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
 
+    name = bpy.props.StringProperty()
+
 
 class LightPointerPropertyGroup(bpy.types.PropertyGroup):
 
@@ -353,6 +385,8 @@ class LightPointerPropertyGroup(bpy.types.PropertyGroup):
     )
 
     pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
+
+    name = bpy.props.StringProperty()
 
 
 class PortalPointerPropertyGroup(bpy.types.PropertyGroup):
@@ -366,10 +400,14 @@ class PortalPointerPropertyGroup(bpy.types.PropertyGroup):
 
     pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
 
+    name = bpy.props.StringProperty()
+
 
 class MaterialPointerPropertyGroup(bpy.types.PropertyGroup):
 
     pointer = bpy.props.PointerProperty(type=bpy.types.Material)
+
+    name = bpy.props.StringProperty()
 
 
 class WoWWMO_RootComponents(bpy.types.PropertyGroup):
