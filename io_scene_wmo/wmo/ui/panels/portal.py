@@ -8,6 +8,15 @@ class WowPortalPlanePanel(bpy.types.Panel):
     bl_context = "object"
     bl_label = "WMO Portal"
 
+    def draw_header(self, context):
+        row = self.layout.row()
+        row.alignment = 'RIGHT'
+        op = row.operator('scene.wow_wmo_destroy_wow_property', text='', icon='X', emboss=False)
+        op.prop_group = 'wow_wmo_portal'
+
+        if bpy.context.scene.wow_wmo_root_components.portals.find(context.object.name) < 0:
+            row.label('', icon='ERROR')
+
     def draw(self, context):
         layout = self.layout
 

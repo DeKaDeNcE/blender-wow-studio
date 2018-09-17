@@ -8,6 +8,16 @@ class WowWMOGroupPanel(bpy.types.Panel):
     bl_context = "object"
     bl_label = "WMO Group"
 
+    def draw_header(self, context):
+        row = self.layout.row()
+        row.alignment = 'RIGHT'
+        op = row.operator('scene.wow_wmo_destroy_wow_property', text='', icon='X', emboss=False)
+        op.prop_group = 'wow_wmo_group'
+
+        if bpy.context.scene.wow_wmo_root_components.groups.find(context.object.name) < 0:
+            row.label('', icon='ERROR')
+            row.alert = True
+
     def draw(self, context):
         col = self.layout.column()
         col.prop(context.object.wow_wmo_group, "description")

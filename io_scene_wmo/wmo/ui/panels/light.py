@@ -8,6 +8,15 @@ class WowLightPanel(bpy.types.Panel):
     bl_context = "data"
     bl_label = "WMO Light"
 
+    def draw_header(self, context):
+        row = self.layout.row()
+        row.alignment = 'RIGHT'
+        op = row.operator('scene.wow_wmo_destroy_wow_property', text='', icon='X', emboss=False)
+        op.prop_group = 'wow_wmo_light'
+
+        if bpy.context.scene.wow_wmo_root_components.lights.find(context.object.name) < 0:
+            row.label('', icon='ERROR')
+
     def draw(self, context):
         self.layout.prop(context.object.wow_wmo_light, "light_type")
         self.layout.prop(context.object.wow_wmo_light, "use_attenuation")
