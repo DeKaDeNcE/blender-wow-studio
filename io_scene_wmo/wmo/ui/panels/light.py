@@ -9,12 +9,12 @@ class WowLightPanel(bpy.types.Panel):
     bl_label = "WMO Light"
 
     def draw(self, context):
-        self.layout.prop(context.object.data.wow_wmo_light, "light_type")
-        self.layout.prop(context.object.data.wow_wmo_light, "use_attenuation")
-        self.layout.prop(context.object.data.wow_wmo_light, "color")
-        self.layout.prop(context.object.data.wow_wmo_light, "intensity")
-        self.layout.prop(context.object.data.wow_wmo_light, "attenuation_start")
-        self.layout.prop(context.object.data.wow_wmo_light, "attenuation_end")
+        self.layout.prop(context.object.wow_wmo_light, "light_type")
+        self.layout.prop(context.object.wow_wmo_light, "use_attenuation")
+        self.layout.prop(context.object.wow_wmo_light, "color")
+        self.layout.prop(context.object.wow_wmo_light, "intensity")
+        self.layout.prop(context.object.wow_wmo_light, "attenuation_start")
+        self.layout.prop(context.object.wow_wmo_light, "attenuation_end")
 
     @classmethod
     def poll(cls, context):
@@ -85,10 +85,10 @@ class WowLightPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Lamp.wow_wmo_light = bpy.props.PointerProperty(type=WowLightPropertyGroup)
+    bpy.types.Object.wow_wmo_light = bpy.props.PointerProperty(type=WowLightPropertyGroup)
 
 
 def unregister():
-    del bpy.types.Lamp.wow_wmo_light
+    del bpy.types.Object.wow_wmo_light
 
 

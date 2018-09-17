@@ -247,7 +247,11 @@ class BlenderWMOScene:
                 raise Exception("Light type unknown : {} (light nbr : {})".format(str(wmo_light.LightType), str(i)))
 
             light_name = "{}_Light_{}".format(self.wmo.display_name, str(i).zfill(2))
+
             light = bpy.data.lamps.new(light_name, l_type)
+            obj = bpy.data.objects.new(light_name, light)
+            obj.location = self.wmo.molt.lights[i].position
+
             light.color = (wmo_light.color[2] / 255, wmo_light.color[1] / 255, wmo_light.color[0] / 255)
             light.energy = wmo_light.intensity
 
@@ -256,20 +260,17 @@ class BlenderWMOScene:
                 light.distance = wmo_light.unknown4 / 2
                 light.use_sphere = True
 
-            light.wow_wmo_light.enabled = True
-            light.wow_wmo_light.light_type = str(wmo_light.light_type)
-            light.wow_wmo_light.type = bool(wmo_light.type)
-            light.wow_wmo_light.use_attenuation = bool(wmo_light.use_attenuation)
-            light.wow_wmo_light.padding = bool(wmo_light.padding)
-            light.wow_wmo_light.type = bool(wmo_light.type)
-            light.wow_wmo_light.color = light.color
-            light.wow_wmo_light.color_alpha = wmo_light.color[3] / 255
-            light.wow_wmo_light.intensity = wmo_light.intensity
-            light.wow_wmo_light.attenuation_start = wmo_light.attenuation_start
-            light.wow_wmo_light.attenuation_end = wmo_light.attenuation_end
-
-            obj = bpy.data.objects.new(light_name, light)
-            obj.location = self.wmo.molt.lights[i].position
+            obj.wow_wmo_light.enabled = True
+            obj.wow_wmo_light.light_type = str(wmo_light.light_type)
+            obj.wow_wmo_light.type = bool(wmo_light.type)
+            obj.wow_wmo_light.use_attenuation = bool(wmo_light.use_attenuation)
+            obj.wow_wmo_light.padding = bool(wmo_light.padding)
+            obj.wow_wmo_light.type = bool(wmo_light.type)
+            obj.wow_wmo_light.color = light.color
+            obj.wow_wmo_light.color_alpha = wmo_light.color[3] / 255
+            obj.wow_wmo_light.intensity = wmo_light.intensity
+            obj.wow_wmo_light.attenuation_start = wmo_light.attenuation_start
+            obj.wow_wmo_light.attenuation_end = wmo_light.attenuation_end
 
             bpy.context.scene.objects.link(obj)
 
