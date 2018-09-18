@@ -122,8 +122,21 @@ class RootComponents_ComponentChange(bpy.types.Operator):
                         return {'CANCELLED'}
 
                     if obj.wow_wmo_group.enabled:
-                        self.report({'ERROR'}, "Object is already a group")
-                        return {'CANCELLED'}
+                        win = bpy.context.window
+                        scr = win.screen
+                        areas3d = [area for area in scr.areas if area.type == 'VIEW_3D']
+                        region = [region for region in areas3d[0].regions if region.type == 'WINDOW']
+
+                        override = {'window': win,
+                                    'screen': scr,
+                                    'area': areas3d[0],
+                                    'region': region[0],
+                                    'scene': bpy.context.scene,
+                                    'object': obj
+                                    }
+
+                        bpy.ops.scene.wow_wmo_destroy_wow_property(override, prop_group='wow_wmo_group')
+                        self.report({'INFO'}, "Group was overriden")
 
                     slot = bpy.context.scene.wow_wmo_root_components.groups.add()
                     slot.pointer = obj
@@ -391,6 +404,8 @@ class GroupPointerPropertyGroup(bpy.types.PropertyGroup):
     pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
 
     name = bpy.props.StringProperty()
+
+    is_updated = bpy.props.BoolProperty()
 
 
 class FogPointerPropertyGroup(bpy.types.PropertyGroup):

@@ -49,6 +49,7 @@ class WoWWMO_DestroyProperty(bpy.types.Operator):
 
         if idx >= 0:
             col.remove(idx)
+            bpy.context.scene.wow_wmo_root_components.is_update_critical = True
 
         return {'FINISHED'}
 
