@@ -96,10 +96,19 @@ _obj_props = ['wow_wmo_portal',
               ]
 
 
+def is_obj_unused(obj):
+    for prop in _obj_props:
+        if getattr(obj, prop).enabled:
+            return False
+
+    return True
+
+
 class RootComponents_ComponentChange(bpy.types.Operator):
     bl_idname = 'scene.wow_wmo_root_components_change'
-    bl_label = 'Add'
-    bl_options = {'REGISTER', 'INTERNAL'}
+    bl_label = 'Add / Remove'
+    bl_description = 'Add / Remove'
+    bl_options = {'REGISTER', 'INTERNAL', 'UNDO'}
 
     col_name = bpy.props.StringProperty()
     cur_idx_name = bpy.props.StringProperty()
@@ -109,7 +118,7 @@ class RootComponents_ComponentChange(bpy.types.Operator):
         items=[('EMPTY', 'Empty', ''),
                ('NEW', 'New', '')],
         default='EMPTY'
-    ) 
+    )
 
     def draw(self, context):
         layout = self.layout
@@ -136,26 +145,28 @@ class RootComponents_ComponentChange(bpy.types.Operator):
                         self.report({'ERROR'}, "Object must be a mesh")
                         return {'CANCELLED'}
 
-                    if obj.wow_wmo_portal.enabled or obj.wow_wmo_fog.enabled:
-                        self.report({'ERROR'}, "Object cannot be a portal or a fog")
-                        return {'CANCELLED'}
+                    if not is_obj_unused(obj):
 
-                    if obj.wow_wmo_group.enabled:
-                        win = bpy.context.window
-                        scr = win.screen
-                        areas3d = [area for area in scr.areas if area.type == 'VIEW_3D']
-                        region = [region for region in areas3d[0].regions if region.type == 'WINDOW']
+                        if not obj.wow_wmo_group.enabled:
+                            self.report({'ERROR'}, "Object is already used")
+                            return {'CANCELLED'}
 
-                        override = {'window': win,
-                                    'screen': scr,
-                                    'area': areas3d[0],
-                                    'region': region[0],
-                                    'scene': bpy.context.scene,
-                                    'object': obj
-                                    }
+                        else:
+                            win = bpy.context.window
+                            scr = win.screen
+                            areas3d = [area for area in scr.areas if area.type == 'VIEW_3D']
+                            region = [region for region in areas3d[0].regions if region.type == 'WINDOW']
 
-                        bpy.ops.scene.wow_wmo_destroy_wow_property(override, prop_group='wow_wmo_group')
-                        self.report({'INFO'}, "Group was overriden")
+                            override = {'window': win,
+                                        'screen': scr,
+                                        'area': areas3d[0],
+                                        'region': region[0],
+                                        'scene': bpy.context.scene,
+                                        'object': obj
+                                        }
+
+                            bpy.ops.scene.wow_wmo_destroy_wow_property(override, prop_group='wow_wmo_group')
+                            self.report({'INFO'}, "Group was overriden")
 
                     slot = bpy.context.scene.wow_wmo_root_components.groups.add()
                     slot.pointer = obj
@@ -163,8 +174,8 @@ class RootComponents_ComponentChange(bpy.types.Operator):
                 else:
                     bpy.context.scene.wow_wmo_root_components.groups.add()
 
-            elif self.col_name == 'portals':
-                bpy.context.scene.wow_wmo_root_components.portals.add()
+            elif self.col_name in ('portals', 'lights'):
+                getattr(bpy.context.scene.wow_wmo_root_components, self.col_name).add()
 
             elif self.col_name == 'fogs':
                 bpy.ops.scene.wow_add_fog()
@@ -181,6 +192,10 @@ class RootComponents_ComponentChange(bpy.types.Operator):
 
             col = getattr(context.scene.wow_wmo_root_components, self.col_name)
             cur_idx = getattr(context.scene.wow_wmo_root_components, self.cur_idx_name)
+
+            if not len(col):
+                return {'FINISHED'}
+
             item = col[cur_idx].pointer
 
             if item:
@@ -388,14 +403,6 @@ def draw_list(context, col, cur_idx_name, col_name):
     row1.operator_context = 'EXEC_DEFAULT'
     op = row1.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMOUT')
     op.action, op.col_name, op.cur_idx_name = 'REMOVE', col_name, cur_idx_name
-
-
-def is_obj_unused(obj):
-    for prop in _obj_props:
-        if getattr(obj, prop).enabled:
-            return False
-
-    return True
 
 
 def update_object_pointer(self, context, prop, obj_type):
