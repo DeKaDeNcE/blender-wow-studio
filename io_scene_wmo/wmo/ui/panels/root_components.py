@@ -2,7 +2,7 @@ import bpy
 from collections import namedtuple
 from ....utils import draw_spoiler
 from .... import ui_icons
-from .material import WowMaterialPropertyGroup, WowMaterialPanel
+from .material import WowMaterialPanel
 from .group import WowWMOGroupPanel
 from .portal import WowPortalPlanePanel
 from .fog import WowFogPanel
@@ -199,7 +199,7 @@ class RootComponents_ComponentChange(bpy.types.Operator):
             col = getattr(context.scene.wow_wmo_root_components, self.col_name)
             cur_idx = getattr(context.scene.wow_wmo_root_components, self.cur_idx_name)
 
-            if not len(col):
+            if len(col) <= cur_idx:
                 return {'FINISHED'}
 
             item = col[cur_idx].pointer
@@ -539,6 +539,18 @@ class MaterialPointerPropertyGroup(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty()
 
 
+def update_doodad_pointer(self, context):
+    if self.pointer:
+        self.name = self.pointer.name
+
+
+class DoodadPointerPropertyGroup(bpy.types.PropertyGroup):
+
+    pointer = bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
+
+    name = bpy.props.StringProperty()
+
+
 def update_current_object(self, context, col_name, cur_item_name):
 
     col = getattr(self, col_name)
@@ -575,6 +587,8 @@ class WoWWMO_RootComponents(bpy.types.PropertyGroup):
     lights = bpy.props.CollectionProperty(type=LightPointerPropertyGroup)
     cur_light = bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'lights', 'cur_light'))
     is_light_props_expanded = bpy.props.BoolProperty()
+
+    doodads = bpy.props.CollectionProperty(type=DoodadPointerPropertyGroup)
 
     materials = bpy.props.CollectionProperty(type=MaterialPointerPropertyGroup)
     cur_material = bpy.props.IntProperty()

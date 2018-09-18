@@ -346,13 +346,17 @@ class BlenderWMOScene:
         for doodad_name in ProgressReport(self.wmo.modn.get_all_strings(), msg='Importing doodad prototypes'):
             doodad_path_noext = os.path.splitext(doodad_name)[0]
             doodad_path = doodad_path_noext + ".m2"
-            library_path = os.path.join(cache_path, doodad_path_noext + '.blend')
+            doodad_path_blend = doodad_path_noext + '.blend'
+
+            path_local = doodad_path_blend.replace('\\', '/') if os.name != 'nt' else doodad_path_blend
+            library_path = os.path.join(cache_path, path_local)
 
             path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
 
-            obj = bpy.data.objects.get(path_hash)
+            doodad_col = bpy.context.scene.wow_wmo_root_components.doodads
+            obj_idx = doodad_col.find(path_hash)
 
-            if not obj:
+            if obj_idx < 0:
 
                 if not os.path.exists(library_path):
                     library_dir = os.path.split(library_path)[0]
@@ -377,9 +381,12 @@ class BlenderWMOScene:
 
                 obj = data_to.objects[0]
 
+                slot = doodad_col.add()
+                slot.pointer = obj
+
                 assert obj is not None
 
-            elif obj.library is None:
+            elif doodad_col[obj_idx].pointer.library is None:
                 raise Exception('\nNon-library doodad data-block collision ({})'.format(path_hash))
 
         scene = bpy.context.scene
