@@ -150,12 +150,10 @@ class RootComponents_ComponentChange(bpy.types.Operator):
 
             elif self.col_name == 'fogs':
                 bpy.ops.scene.wow_add_fog()
-                bpy.context.scene.wow_wmo_root_components.fogs[-1].pointer = bpy.context.scene.objects.active
 
             elif self.col_name == 'materials':
-                new_mat = bpy.data.materials.new(name='Material')
-                new_mat.wow_wmo_material.enabled = True
-                bpy.context.scene.wow_wmo_root_components.materials[-1].pointer = new_mat
+
+                slot = bpy.context.scene.wow_wmo_root_components.materials.add()
 
         elif self.action == 'REMOVE':
 
@@ -376,6 +374,11 @@ def update_object_pointer(self, context, prop, obj_type):
 
     if self.pointer:
 
+        # handle replacing pointer value
+        if self.pointer_old:
+            getattr(self.pointer_old, prop).enabled = False
+            self.pointer_old = None
+
         # check if object is another type
         if not is_obj_unused(self.pointer) or self.pointer.type != obj_type:
             self.pointer = None
@@ -388,6 +391,31 @@ def update_object_pointer(self, context, prop, obj_type):
     elif self.pointer_old:
         # handle deletion
         getattr(self.pointer_old, prop).enabled = False
+        self.pointer_old = None
+        self.name = ""
+
+
+def update_material_pointer(self, context):
+
+    if self.pointer:
+
+        # handle replacing pointer value
+        if self.pointer_old:
+            self.pointer_old.wow_wmo_material.enabled = False
+            self.pointer_old = None
+
+        # check if material is used
+        if self.pointer.wow_wmo_material.enabled:
+            self.pointer = None
+            return
+
+        self.pointer.wow_wmo_material.enabled = True
+        self.pointer_old = self.pointer
+        self.name = self.pointer.name
+
+    elif self.pointer_old:
+        # handle deletion
+        self.pointer_old.wow_wmo_material.enabled = False
         self.pointer_old = None
         self.name = ""
 
@@ -452,7 +480,14 @@ class PortalPointerPropertyGroup(bpy.types.PropertyGroup):
 
 class MaterialPointerPropertyGroup(bpy.types.PropertyGroup):
 
-    pointer = bpy.props.PointerProperty(type=bpy.types.Material)
+    pointer = bpy.props.PointerProperty(
+        name='WMO Material',
+        type=bpy.types.Material,
+        poll=lambda self, mat: not mat.wow_wmo_material.enabled,
+        update=update_material_pointer
+    )
+
+    pointer_old = bpy.props.PointerProperty(type=bpy.types.Material)
 
     name = bpy.props.StringProperty()
 

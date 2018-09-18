@@ -1079,7 +1079,7 @@ class OBJECT_OP_Add_Fog(bpy.types.Operator):
 
         bpy.ops.mesh.primitive_uv_sphere_add()
         fog = bpy.context.scene.objects.active
-        fog.name += "_Fog"
+        fog.name = 'Fog'
 
         # applying real object transformation
         bpy.ops.object.shade_smooth()
@@ -1106,7 +1106,8 @@ class OBJECT_OP_Add_Fog(bpy.types.Operator):
         mesh.materials[0].use_transparency = True
         mesh.materials[0].alpha = 0.35
 
-        fog.wow_wmo_fog.enabled = True
+        slot = bpy.context.scene.wow_wmo_root_components.fogs.add()
+        slot.pointer = fog
 
         fog.hide = False if "3" in bpy.context.scene.wow_visibility else True
 
