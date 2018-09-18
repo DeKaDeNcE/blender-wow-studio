@@ -164,8 +164,7 @@ class RootComponents_ComponentChange(bpy.types.Operator):
                     bpy.context.scene.wow_wmo_root_components.groups.add()
 
             elif self.col_name == 'portals':
-                self.report({'ERROR'}, "Not implemented yet")
-                return {'CANCELLED'}
+                bpy.context.scene.wow_wmo_root_components.portals.add()
 
             elif self.col_name == 'fogs':
                 bpy.ops.scene.wow_add_fog()
