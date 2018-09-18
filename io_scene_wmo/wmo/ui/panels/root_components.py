@@ -109,7 +109,7 @@ class RootComponents_ComponentChange(bpy.types.Operator):
         items=[('EMPTY', 'Empty', ''),
                ('NEW', 'New', '')],
         default='EMPTY'
-    )
+    ) 
 
     def draw(self, context):
         layout = self.layout
