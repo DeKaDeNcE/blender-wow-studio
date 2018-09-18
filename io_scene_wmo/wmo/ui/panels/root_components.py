@@ -104,6 +104,25 @@ class RootComponents_ComponentChange(bpy.types.Operator):
     col_name = bpy.props.StringProperty()
     cur_idx_name = bpy.props.StringProperty()
     action = bpy.props.StringProperty(default='ADD')
+    material_action = bpy.props.EnumProperty(
+        name='Create new material slot',
+        items=[('EMPTY', 'Empty', ''),
+               ('NEW', 'New', '')],
+        default='EMPTY'
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        if self.action == 'ADD' and self.col_name == 'materials':
+
+            row = layout.row()
+            row.prop(self, 'material_action', expand=True)
+
+    def invoke(self, context, event):
+        if self.action == 'ADD':
+            if self.col_name == 'materials':
+                wm = context.window_manager
+                return wm.invoke_props_dialog(self)
 
     def execute(self, context):
         if self.action == 'ADD':
@@ -155,23 +174,28 @@ class RootComponents_ComponentChange(bpy.types.Operator):
 
                 slot = bpy.context.scene.wow_wmo_root_components.materials.add()
 
+                if self.material_action == 'NEW':
+                    new_mat = bpy.data.materials.new('Material')
+                    slot.pointer = new_mat
+
         elif self.action == 'REMOVE':
 
             col = getattr(context.scene.wow_wmo_root_components, self.col_name)
             cur_idx = getattr(context.scene.wow_wmo_root_components, self.cur_idx_name)
             item = col[cur_idx].pointer
 
-            if self.col_name == 'groups':
-                item.wow_wmo_group.enabled = False
+            if item:
+                if self.col_name == 'groups':
+                    item.wow_wmo_group.enabled = False
 
-            elif self.col_name == 'portals':
-                item.wow_wmo_portal.enabled = False
+                elif self.col_name == 'portals':
+                    item.wow_wmo_portal.enabled = False
 
-            elif self.col_name == 'fogs':
-                item.wow_wmo_fog.enabled = False
+                elif self.col_name == 'fogs':
+                    item.wow_wmo_fog.enabled = False
 
-            elif self.col_name == 'materials':
-                item.wow_wmo_material.enabled = False
+                elif self.col_name == 'materials':
+                    item.wow_wmo_material.enabled = False
 
             col.remove(cur_idx)
 
@@ -356,9 +380,14 @@ def draw_list(context, col, cur_idx_name, col_name):
                            col_name, context.scene.wow_wmo_root_components, cur_idx_name)
     sub_col_parent = row.column()
     sub_col2 = sub_col_parent.column(align=True)
-    op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMIN')
+
+    row1 = sub_col2.row()
+    row1.operator_context = 'INVOKE_DEFAULT' if col_name == 'materials' else 'EXEC_DEFAULT'
+    op = row1.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMIN')
     op.action, op.col_name, op.cur_idx_name = 'ADD', col_name, cur_idx_name
-    op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMOUT')
+    row1 = sub_col2.row()
+    row1.operator_context = 'EXEC_DEFAULT'
+    op = row1.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMOUT')
     op.action, op.col_name, op.cur_idx_name = 'REMOVE', col_name, cur_idx_name
 
 
