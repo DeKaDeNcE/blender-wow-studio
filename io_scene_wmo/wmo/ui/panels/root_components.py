@@ -17,17 +17,23 @@ class RootComponents_TemplateList(bpy.types.UIList):
 
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
 
-            row = layout.row()
+            row = layout.row(align=True)
             sub_col = row.column()
+            sub_col.scale_x = 0.5
+
+            s_row = sub_col.row(align=True)
 
             if isinstance(self.icon, int):
-                sub_col.label("#{} ".format(index), icon_value=self.icon)
+                s_row.label("#{} ".format(index), icon_value=self.icon)
 
             elif isinstance(self.icon, str):
-                sub_col.label("#{} ".format(index), icon=self.icon)
+                s_row.label("#{} ".format(index), icon=self.icon)
 
-            sub_col.scale_x = 0.5
-            row.prop(item, 'pointer', emboss=True, text='')
+            s_row.prop(item, 'pointer', emboss=True, text='')
+
+            if not active_data.is_update_critical and active_propname == 'cur_group':
+                s_row.prop(item, 'export', emboss=False, text='',
+                           icon='CHECKBOX_HLT' if item.export else 'CHECKBOX_DEHLT')
 
         elif self.layout_type in {'GRID'}:
             pass
@@ -212,6 +218,7 @@ class RootComponents_ComponentChange(bpy.types.Operator):
                     item.wow_wmo_material.enabled = False
 
             col.remove(cur_idx)
+            context.scene.wow_wmo_root_components.is_update_critical = True
 
         else:
             self.report({'ERROR'}, 'Unsupported token')
@@ -245,6 +252,8 @@ class RootComponents_GroupsPanel(bpy.types.Panel):
                     ctx = ctx_override(obj, context.scene, spoiler)
                     WowWMOGroupPanel.draw(ctx, ctx)
                     spoiler.enabled = True
+
+        layout.prop(root_comps, 'is_update_critical')  # temporary
 
     @classmethod
     def poll(cls, context):
@@ -468,7 +477,10 @@ class GroupPointerPropertyGroup(bpy.types.PropertyGroup):
 
     name = bpy.props.StringProperty()
 
-    is_updated = bpy.props.BoolProperty()
+    export = bpy.props.BoolProperty(
+        name='Export group',
+        description='Mark this group for export'
+    )
 
 
 class FogPointerPropertyGroup(bpy.types.PropertyGroup):
@@ -527,24 +539,41 @@ class MaterialPointerPropertyGroup(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty()
 
 
+def update_current_object(self, context, col_name, cur_item_name):
+
+    col = getattr(self, col_name)
+    cur_idx = getattr(self, cur_item_name)
+
+    if len(col) < cur_idx:
+        return
+
+    slot = col[cur_idx]
+
+    bpy.ops.object.select_all(action='DESELECT')
+
+    if slot.pointer and not slot.pointer.hide:
+        bpy.context.scene.objects.active = slot.pointer
+        slot.pointer.select = True
+
+
 class WoWWMO_RootComponents(bpy.types.PropertyGroup):
 
     is_update_critical = bpy.props.BoolProperty(default=False)
 
     groups = bpy.props.CollectionProperty(type=GroupPointerPropertyGroup)
-    cur_group = bpy.props.IntProperty()
+    cur_group = bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'groups', 'cur_group'))
     is_group_props_expanded = bpy.props.BoolProperty()
 
     fogs = bpy.props.CollectionProperty(type=FogPointerPropertyGroup)
-    cur_fog = bpy.props.IntProperty()
+    cur_fog = bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'fogs', 'cur_fog'))
     is_fog_props_expanded = bpy.props.BoolProperty()
 
     portals = bpy.props.CollectionProperty(type=PortalPointerPropertyGroup)
-    cur_portal = bpy.props.IntProperty()
+    cur_portal = bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'portals', 'cur_portal'))
     is_portal_props_expanded = bpy.props.BoolProperty()
 
     lights = bpy.props.CollectionProperty(type=LightPointerPropertyGroup)
-    cur_light = bpy.props.IntProperty()
+    cur_light = bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'lights', 'cur_light'))
     is_light_props_expanded = bpy.props.BoolProperty()
 
     materials = bpy.props.CollectionProperty(type=MaterialPointerPropertyGroup)

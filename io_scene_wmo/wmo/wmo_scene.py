@@ -362,6 +362,7 @@ class BlenderWMOScene:
                     try:
                         p_obj = import_doodad(assets_dir, doodad_path)
                     except:
+
                         p_obj = import_doodad(assets_dir, 'Spells\\Errorcube.m2')
                         p_obj.wow_wmo_doodad.path = doodad_path
                         p_obj.name = path_hash
