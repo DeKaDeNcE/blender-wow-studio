@@ -119,25 +119,11 @@ class RootComponents_ComponentChange(bpy.types.Operator):
     col_name = bpy.props.StringProperty()
     cur_idx_name = bpy.props.StringProperty()
     action = bpy.props.StringProperty(default='ADD')
-    material_action = bpy.props.EnumProperty(
-        name='Create new material slot',
+    add_action = bpy.props.EnumProperty(
         items=[('EMPTY', 'Empty', ''),
                ('NEW', 'New', '')],
         default='EMPTY'
     )
-
-    def draw(self, context):
-        layout = self.layout
-        if self.action == 'ADD' and self.col_name == 'materials':
-
-            row = layout.row()
-            row.prop(self, 'material_action', expand=True)
-
-    def invoke(self, context, event):
-        if self.action == 'ADD':
-            if self.col_name == 'materials':
-                wm = context.window_manager
-                return wm.invoke_props_dialog(self)
 
     def execute(self, context):
         if self.action == 'ADD':
@@ -180,8 +166,17 @@ class RootComponents_ComponentChange(bpy.types.Operator):
                 else:
                     bpy.context.scene.wow_wmo_root_components.groups.add()
 
-            elif self.col_name in ('portals', 'lights'):
-                getattr(bpy.context.scene.wow_wmo_root_components, self.col_name).add()
+            elif self.col_name in 'portals':
+                bpy.context.scene.wow_wmo_root_components.portals.add()
+
+            elif self.col_name == 'lights':
+                slot = bpy.context.scene.wow_wmo_root_components.lights.add()
+
+                if self.add_action == 'NEW':
+                    light = bpy.data.objects.new(name='Lamp', object_data=bpy.data.lamps.new('Lamp', type='POINT'))
+                    bpy.context.scene.objects.link(light)
+                    light.location = bpy.context.scene.cursor_location
+                    slot.pointer = light
 
             elif self.col_name == 'fogs':
                 bpy.ops.scene.wow_add_fog()
@@ -190,7 +185,7 @@ class RootComponents_ComponentChange(bpy.types.Operator):
 
                 slot = bpy.context.scene.wow_wmo_root_components.materials.add()
 
-                if self.material_action == 'NEW':
+                if self.add_action == 'NEW':
                     new_mat = bpy.data.materials.new('Material')
                     slot.pointer = new_mat
 
@@ -404,13 +399,14 @@ def draw_list(context, col, cur_idx_name, col_name):
     sub_col_parent = row.column()
     sub_col2 = sub_col_parent.column(align=True)
 
-    row1 = sub_col2.row()
-    row1.operator_context = 'INVOKE_DEFAULT' if col_name == 'materials' else 'EXEC_DEFAULT'
-    op = row1.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMIN')
-    op.action, op.col_name, op.cur_idx_name = 'ADD', col_name, cur_idx_name
-    row1 = sub_col2.row()
-    row1.operator_context = 'EXEC_DEFAULT'
-    op = row1.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMOUT')
+    if col_name in ('materials', 'lights'):
+        op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='GO_LEFT')
+        op.action, op.add_action, op.col_name, op.cur_idx_name = 'ADD', 'NEW', col_name, cur_idx_name
+
+    op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMIN')
+    op.action, op.add_action, op.col_name, op.cur_idx_name = 'ADD', 'EMPTY', col_name, cur_idx_name
+
+    op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMOUT')
     op.action, op.col_name, op.cur_idx_name = 'REMOVE', col_name, cur_idx_name
 
 

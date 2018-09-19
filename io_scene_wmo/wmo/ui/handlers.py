@@ -10,6 +10,18 @@ _obj_props = [('wow_wmo_group', 'groups'),
              ]
 
 
+def _remove_col_items(scene, col_name):
+    col = getattr(scene.wow_wmo_root_components, col_name)
+    for i, obj in enumerate(col):
+        if obj.pointer and obj.pointer.name not in scene.objects:
+            col.remove(i)
+            break
+    else:
+        return
+
+    _remove_col_items(scene, col_name)
+
+
 @persistent
 def sync_wmo_root_components_collections(scene):
     n_objs = len(scene.objects)
@@ -18,23 +30,16 @@ def sync_wmo_root_components_collections(scene):
         return
 
     if n_objs < bpy.n_scene_objects:
-        for i, obj in enumerate(scene.wow_wmo_root_components.groups):
-            if obj.pointer and obj.pointer.name not in scene.objects:
-                scene.wow_wmo_root_components.groups.remove(i)
+        bpy.n_scene_objects = n_objs
 
-        for i, obj in enumerate(scene.wow_wmo_root_components.portals):
-            if obj.pointer and obj.pointer.name not in scene.objects:
-                scene.wow_wmo_root_components.portals.remove(i)
-
-        for i, obj in enumerate(scene.wow_wmo_root_components.fogs):
-            if obj.pointer and obj.pointer.name not in scene.objects:
-                scene.wow_wmo_root_components.fogs.remove(i)
-
-        for i, obj in enumerate(scene.wow_wmo_root_components.lights):
-            if obj.pointer and obj.pointer.name not in scene.objects:
-                scene.wow_wmo_root_components.lights.remove(i)
+        _remove_col_items(scene, 'groups')
+        _remove_col_items(scene, 'portals')
+        _remove_col_items(scene, 'fogs')
+        _remove_col_items(scene, 'lights')
 
     else:
+        bpy.n_scene_objects = n_objs
+
         for i, obj in enumerate(scene.objects):
             for prop, col_name in _obj_props:
                 col = getattr(scene.wow_wmo_root_components, col_name)
@@ -43,8 +48,6 @@ def sync_wmo_root_components_collections(scene):
                     prop_group.enabled = False
                     slot = col.add()
                     slot.pointer = obj
-
-    bpy.n_scene_objects = n_objs
 
 
 def register_wmo_handlers():
