@@ -9,10 +9,10 @@ panels_list = [
     'material',
     'portal',
     'root',
-    'toolbar',
-    'vertex_info',
+    'root_components',
     'texture',
-    'root_components'
+    'toolbar',
+    'vertex_info'
 ]
 
 

@@ -31,8 +31,38 @@ class BlenderWMOScene:
         self.bl_liquids = []
         self.bl_doodad_sets = []
 
-    def build_references(self, export_selected):
+    def build_references(self, export_selected, export_method):
         """ Build WMO references in Blender scene """
+
+        root_comps = bpy.context.scene.wow_wmo_root_components
+
+        # process groups
+        for i, slot in enumerate(root_comps.groups):
+
+            if export_method == 'PARTIAL':
+                if not slot.pointer.export:
+                    continue
+
+            elif (export_selected and not slot.pointer.select) or slot.pointer.hide:
+                continue
+
+            slot.pointer.wow_wmo_group.group_id = i
+            self.bl_groups.append((i, slot.pointer))
+
+        # process portals
+        for i, slot in enumerate(root_comps.portals):
+            self.bl_portals.append((i, slot.pointer))
+            slot.pointer.wow_wmo_portal.portal_id = i
+
+        # process fogs
+        for i, slot in enumerate(root_comps.fogs):
+            self.bl_fogs.append((i, slot.pointer))
+            slot.pointer.wow_wmo_fog.fog_id = i
+
+        # process lights
+        self.bl_lights = [slot.pointer for slot in root_comps.lights]
+
+
 
         empties = []
         scene_objects = bpy.context.scene.objects if not export_selected else bpy.context.selected_objects

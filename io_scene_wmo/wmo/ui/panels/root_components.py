@@ -9,6 +9,10 @@ from .fog import WowFogPanel
 from .light import WowLightPanel
 
 
+######################
+###### UI Lists ######
+######################
+
 class RootComponents_TemplateList(bpy.types.UIList):
 
     icon = 'OBJECT_DATA'
@@ -62,6 +66,25 @@ class RootComponents_TemplateList(bpy.types.UIList):
         return flt_flags, flt_neworder
 
 
+class RootComponents_DoodadSetsList(RootComponents_TemplateList):
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+
+            row = layout.row(align=True)
+            sub_col = row.column()
+            sub_col.scale_x = 0.5
+
+            s_row = sub_col.row(align=True)
+
+            s_row.label("#{}".format(index), icon='WORLD' if item.pointer.name == '$SetDefaultGlobal' else 'GROUP')
+            s_row.prop(item.pointer, 'name', emboss=False)
+
+        elif self.layout_type in {'GRID'}:
+            pass
+
+
 class RootComponents_GroupsList(RootComponents_TemplateList):
 
     icon = ui_icons['WOW_STUDIO_WMO']
@@ -91,7 +114,8 @@ _ui_lists = {
     'fogs': 'RootComponents_FogsList',
     'portals': 'RootComponents_PortalsList',
     'materials': 'RootComponents_MaterialsList',
-    'lights': 'RootComponents_LightsList'
+    'lights': 'RootComponents_LightsList',
+    'doodad_sets': 'RootComponents_DoodadSetsList'
 }
 
 
@@ -99,6 +123,7 @@ _obj_props = ['wow_wmo_portal',
               'wow_wmo_fog',
               'wow_wmo_group',
               'wow_wmo_liquid'
+              'wow_wmo_doodad_set'
               ]
 
 
@@ -110,19 +135,24 @@ def is_obj_unused(obj):
     return True
 
 
+#####################
+##### Operators #####
+#####################
+
 class RootComponents_ComponentChange(bpy.types.Operator):
     bl_idname = 'scene.wow_wmo_root_components_change'
     bl_label = 'Add / Remove'
     bl_description = 'Add / Remove'
     bl_options = {'REGISTER', 'INTERNAL', 'UNDO'}
 
-    col_name = bpy.props.StringProperty()
-    cur_idx_name = bpy.props.StringProperty()
-    action = bpy.props.StringProperty(default='ADD')
+    col_name = bpy.props.StringProperty(options={'HIDDEN'})
+    cur_idx_name = bpy.props.StringProperty(options={'HIDDEN'})
+    action = bpy.props.StringProperty(default='ADD', options={'HIDDEN'})
     add_action = bpy.props.EnumProperty(
         items=[('EMPTY', 'Empty', ''),
                ('NEW', 'New', '')],
-        default='EMPTY'
+        default='EMPTY',
+        options={'HIDDEN'}
     )
 
     def execute(self, context):
@@ -189,6 +219,10 @@ class RootComponents_ComponentChange(bpy.types.Operator):
                     new_mat = bpy.data.materials.new('Material')
                     slot.pointer = new_mat
 
+            elif self.col_name == 'doodad_sets':
+                pass
+                # todo: Do stuff here
+
         elif self.action == 'REMOVE':
 
             col = getattr(context.scene.wow_wmo_root_components, self.col_name)
@@ -221,6 +255,10 @@ class RootComponents_ComponentChange(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
+#####################
+##### Panels #####
+#####################
 
 class RootComponents_GroupsPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
@@ -389,6 +427,34 @@ class RootComponents_MaterialsPanel(bpy.types.Panel):
         )
 
 
+class RootComponents_DoodadSetsPanel(bpy.types.Panel):
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_label = "WMO Doodad Sets"
+
+    def draw(self, context):
+        layout = self.layout
+        draw_list(context, layout, 'cur_doodad_set', 'doodad_sets')
+
+        root_comps = context.scene.wow_wmo_root_components
+        doodad_sets = root_comps.doodad_sets
+        cur_set = root_comps.cur_doodad_set
+
+        if len(doodad_sets) > cur_set:
+            doodad_set = doodad_sets[cur_set]
+
+            spoiler = draw_spoiler(layout, root_comps, 'is_doodad_set_props_expanded', 'Doodads', icon='SCRIPTWIN')
+            spoiler.enabled = True
+            spoiler.label('Not implemented', icon='INFO')
+
+    @classmethod
+    def poll(cls, context):
+        return (context.scene is not None
+                and context.scene.wow_scene.type == 'WMO'
+        )
+
+
 def draw_list(context, col, cur_idx_name, col_name):
 
     row = col.row()
@@ -399,16 +465,21 @@ def draw_list(context, col, cur_idx_name, col_name):
     sub_col_parent = row.column()
     sub_col2 = sub_col_parent.column(align=True)
 
-    if col_name in ('materials', 'lights'):
+    if col_name in ('materials', 'lights', 'doodad_sets'):
         op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='GO_LEFT')
         op.action, op.add_action, op.col_name, op.cur_idx_name = 'ADD', 'NEW', col_name, cur_idx_name
 
-    op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMIN')
-    op.action, op.add_action, op.col_name, op.cur_idx_name = 'ADD', 'EMPTY', col_name, cur_idx_name
+    if col_name not in ('doodad_sets', 'doodads'):
+        op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMIN')
+        op.action, op.add_action, op.col_name, op.cur_idx_name = 'ADD', 'EMPTY', col_name, cur_idx_name
 
     op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMOUT')
     op.action, op.col_name, op.cur_idx_name = 'REMOVE', col_name, cur_idx_name
 
+
+###########################
+##### Property Groups #####
+###########################
 
 def update_object_pointer(self, context, prop, obj_type):
 
@@ -536,11 +607,18 @@ class MaterialPointerPropertyGroup(bpy.types.PropertyGroup):
 
 
 def update_doodad_pointer(self, context):
-    if self.pointer:
+    if self.pointer and self.name != self.pointer.name:
         self.name = self.pointer.name
 
 
 class DoodadPointerPropertyGroup(bpy.types.PropertyGroup):
+
+    pointer = bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
+
+    name = bpy.props.StringProperty()
+
+
+class DoodadSetPointerPropertyGroup(bpy.types.PropertyGroup):
 
     pointer = bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
 
@@ -585,6 +663,10 @@ class WoWWMO_RootComponents(bpy.types.PropertyGroup):
     is_light_props_expanded = bpy.props.BoolProperty()
 
     doodads = bpy.props.CollectionProperty(type=DoodadPointerPropertyGroup)
+
+    doodad_sets = bpy.props.CollectionProperty(type=DoodadSetPointerPropertyGroup)
+    cur_doodad_set = bpy.props.IntProperty()  # todo: updaste current doodadset
+    is_doodad_set_prop_expanded = bpy.props.BoolProperty()
 
     materials = bpy.props.CollectionProperty(type=MaterialPointerPropertyGroup)
     cur_material = bpy.props.IntProperty()

@@ -111,6 +111,13 @@ class WMOExport(bpy.types.Operator, ExportHelper):
         options={'HIDDEN'}
     )
 
+    export_method = EnumProperty(
+        name='Export Method',
+        description='Partial export if the scene was exported before and was not critically modified',
+        items=[('FULL', 'Full', ''),
+               ('PARTIAL', 'Partial', '')]
+    )
+
     export_selected = BoolProperty(
         name="Export selected objects",
         description="Export only selected objects on the scene",
@@ -123,9 +130,23 @@ class WMOExport(bpy.types.Operator, ExportHelper):
         default=True,
         )
 
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, 'export_method', text='', expand=True)
+
+        if self.export_method == 'FULL':
+            layout.prop(self, 'export_selected')
+
+        layout.prop(self, 'autofill_textures')
+
     def execute(self, context):
         if context.scene and context.scene.wow_scene.type == 'WMO':
-            export_wmo_from_blender_scene(self.filepath, self.autofill_textures, self.export_selected)
+
+            if self.export_method == 'PARTIAL' and context.scene.wow_wmo_root_components.is_update_critical:
+                self.report({'ERROR'}, 'Partial export is not available. The changes are critical.')
+                return {'CANCELLED'}
+
+            export_wmo_from_blender_scene(self.filepath, self.autofill_textures, self.export_selected, self.export_method)
             return {'FINISHED'}
 
         self.report({'ERROR'}, 'Invalid scene type.')

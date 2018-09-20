@@ -5,7 +5,7 @@ from .wmo_file import WMOFile
 from .wmo_group import WMOGroupFile
 
 
-def export_wmo_from_blender_scene(filepath, autofill_textures, export_selected):
+def export_wmo_from_blender_scene(filepath, autofill_textures, export_selected, export_method):
     """ Export WoW WMO object from Blender scene to files """
 
     start_time = time.time()
@@ -15,7 +15,7 @@ def export_wmo_from_blender_scene(filepath, autofill_textures, export_selected):
 
     wmo = WMOFile(filepath)
 
-    wmo.bl_scene_objects.build_references(export_selected)
+    wmo.bl_scene_objects.build_references(export_selected, export_method)
 
     wmo.groups = list([WMOGroupFile(wmo) for _ in wmo.bl_scene_objects.groups])
 
