@@ -506,6 +506,20 @@ def update_object_pointer(self, context, prop, obj_type):
         self.name = ""
 
 
+def update_group_pointer(self, context):
+    update_object_pointer(self, context, 'wow_wmo_group', 'MESH')
+
+    # force pass index recalculation
+    if self.pointer:
+        act_obj = context.scene.objects.active
+        context.scene.objects.active = self.pointer
+
+        self.pointer.wow_wmo_group.flags = self.pointer.wow_wmo_group.flags
+        self.pointer.wow_wmo_group.place_type = self.pointer.wow_wmo_group.place_type
+
+        context.scene.objects.active = act_obj
+
+
 def update_material_pointer(self, context):
 
     if self.pointer:
@@ -524,6 +538,10 @@ def update_material_pointer(self, context):
         self.pointer_old = self.pointer
         self.name = self.pointer.name
 
+        # force pass index recalculation
+        self.pointer.wow_wmo_material.flags = self.pointer.wow_wmo_material.flags
+        self.pointer.wow_wmo_material.shader = self.pointer.wow_wmo_material.shader
+
     elif self.pointer_old:
         # handle deletion
         self.pointer_old.wow_wmo_material.enabled = False
@@ -537,7 +555,7 @@ class GroupPointerPropertyGroup(bpy.types.PropertyGroup):
         name='WMO Group',
         type=bpy.types.Object,
         poll=lambda self, obj: is_obj_unused(obj) and obj.type == 'MESH',
-        update=lambda self, ctx: update_object_pointer(self, ctx, 'wow_wmo_group', 'MESH')
+        update=update_group_pointer
     )
 
     pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)

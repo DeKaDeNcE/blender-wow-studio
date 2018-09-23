@@ -96,24 +96,42 @@ def collision_validator(self, context):
 
 
 def update_place_type(self, context):
+
+    obj = context.object
+
+    if not obj:
+        obj = context.scene.objects.active
+
+    if not obj:
+        return
+
     if self.place_type == '8':
-        context.object.pass_index |= 0x1 # BlenderWMOObjectRenderFlags.IsOutdoor
-        context.object.pass_index &= ~0x2 # BlenderWMOObjectRenderFlags.IsIndoor
+        obj.pass_index |= 0x1 # BlenderWMOObjectRenderFlags.IsOutdoor
+        obj.pass_index &= ~0x2 # BlenderWMOObjectRenderFlags.IsIndoor
     else:
-        context.object.pass_index &= ~0x1
-        context.object.pass_index |= 0x2
+        obj.pass_index &= ~0x1
+        obj.pass_index |= 0x2
 
 
 def update_flags(self, context):
+
+    obj = context.object
+
+    if not obj:
+        obj = context.scene.objects.active
+
+    if not obj:
+        return
+
     if '0' in self.flags:
-        context.object.pass_index |= 0x20  # BlenderWMOObjectRenderFlags.HasVertexColor
+        obj.pass_index |= 0x20  # BlenderWMOObjectRenderFlags.HasVertexColor
     else:
-        context.object.pass_index &= ~0x20
+        obj.pass_index &= ~0x20
 
     if '1' in self.flags:
-        context.object.pass_index |= 0x4  # BlenderWMOObjectRenderFlags.NoLocalLight
+        obj.pass_index |= 0x4  # BlenderWMOObjectRenderFlags.NoLocalLight
     else:
-        context.object.pass_index &= ~0x4
+        obj.pass_index &= ~0x4
 
 
 class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
