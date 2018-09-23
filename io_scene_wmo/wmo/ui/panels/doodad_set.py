@@ -1,6 +1,6 @@
 import bpy
 from .... import ui_icons
-from .root_components import update_current_object, update_doodad_pointer, RootComponents_TemplateList
+from .utils import update_current_object, update_doodad_pointer, RootComponents_TemplateList
 
 
 def draw_list(context, col, cur_idx_name, col_name):
