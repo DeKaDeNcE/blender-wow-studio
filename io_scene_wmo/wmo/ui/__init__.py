@@ -2,6 +2,7 @@ from . import panels
 
 panels_list = [
     'doodad',
+    'doodad_set',
     'fog',
     'group',
     'light',

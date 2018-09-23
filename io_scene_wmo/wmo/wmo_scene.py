@@ -62,8 +62,6 @@ class BlenderWMOScene:
         # process lights
         self.bl_lights = [slot.pointer for slot in root_comps.lights]
 
-
-
         empties = []
         scene_objects = bpy.context.scene.objects if not export_selected else bpy.context.selected_objects
 
@@ -383,7 +381,7 @@ class BlenderWMOScene:
 
             path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
 
-            doodad_col = bpy.context.scene.wow_wmo_root_components.doodads
+            doodad_col = bpy.context.scene.wow_wmo_root_components.doodads_proto
             obj_idx = doodad_col.find(path_hash)
 
             if obj_idx < 0:

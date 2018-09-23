@@ -1,4 +1,5 @@
 import bpy
+from .root_components import draw_list
 
 
 class WoWDoodadPanel(bpy.types.Panel):

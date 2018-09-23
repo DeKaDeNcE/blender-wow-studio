@@ -7,6 +7,7 @@ from .group import WowWMOGroupPanel
 from .portal import WowPortalPlanePanel
 from .fog import WowFogPanel
 from .light import WowLightPanel
+from .doodad_set import WoWDoodadSetPanel
 
 
 ######################
@@ -93,6 +94,28 @@ class RootComponents_GroupsList(RootComponents_TemplateList):
 class RootComponents_FogsList(RootComponents_TemplateList):
 
     icon = ui_icons['WOW_STUDIO_FOG']
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+
+            row = layout.row(align=True)
+            sub_col = row.column()
+            sub_col.scale_x = 0.5
+
+            s_row = sub_col.row(align=True)
+
+            if isinstance(self.icon, int):
+                s_row.label("#{} ".format(index), icon_value=self.icon)
+
+            elif isinstance(self.icon, str):
+                s_row.label("#{} ".format(index), icon=self.icon)
+
+            if item.pointer:
+                s_row.label(item.pointer.name)
+
+        elif self.layout_type in {'GRID'}:
+            pass
 
 
 class RootComponents_PortalsList(RootComponents_TemplateList):
@@ -220,8 +243,23 @@ class RootComponents_ComponentChange(bpy.types.Operator):
                     slot.pointer = new_mat
 
             elif self.col_name == 'doodad_sets':
-                pass
-                # todo: Do stuff here
+                act_obj = bpy.context.scene.objects.active
+                bpy.ops.object.empty_add(type='ARROWS', location=(0, 0,0))
+
+                d_set = bpy.context.scene.objects.active
+                bpy.context.scene.objects.active = act_obj
+
+                d_set.hide_select = True
+                d_set.hide = True
+                d_set.wow_wmo_doodad_set.enabled = True
+
+                if not len(bpy.context.scene.wow_wmo_root_components.doodad_sets):
+                    d_set.name = '$SetDefaultGlobal'
+                else:
+                    d_set.name = 'Doodad_Set'
+
+                slot = bpy.context.scene.wow_wmo_root_components.doodad_sets.add()
+                slot.pointer = d_set
 
         elif self.action == 'REMOVE':
 
@@ -243,8 +281,14 @@ class RootComponents_ComponentChange(bpy.types.Operator):
                 elif self.col_name == 'fogs':
                     item.wow_wmo_fog.enabled = False
 
+                elif self.col_name == 'lights':
+                    item.wow_wmo_light.enabled = False
+
                 elif self.col_name == 'materials':
                     item.wow_wmo_material.enabled = False
+
+                elif self.col_name == 'doodad_sets':
+                    item.wow_wmo_doodad_set.enabled = False
 
             col.remove(cur_idx)
             context.scene.wow_wmo_root_components.is_update_critical = True
@@ -443,10 +487,15 @@ class RootComponents_DoodadSetsPanel(bpy.types.Panel):
 
         if len(doodad_sets) > cur_set:
             doodad_set = doodad_sets[cur_set]
-
             spoiler = draw_spoiler(layout, root_comps, 'is_doodad_set_props_expanded', 'Doodads', icon='SCRIPTWIN')
-            spoiler.enabled = True
-            spoiler.label('Not implemented', icon='INFO')
+
+            if spoiler:
+                spoiler.enabled = True
+
+                ctx_override = namedtuple('ctx_override', ('object', 'scene', 'layout'))
+
+                ctx = ctx_override(doodad_set.pointer, context.scene, spoiler)
+                WoWDoodadSetPanel.draw(ctx, ctx)
 
     @classmethod
     def poll(cls, context):
@@ -632,7 +681,7 @@ def update_doodad_pointer(self, context):
         self.name = self.pointer.name
 
 
-class DoodadPointerPropertyGroup(bpy.types.PropertyGroup):
+class DoodadProtoPointerPropertyGroup(bpy.types.PropertyGroup):
 
     pointer = bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
 
@@ -663,6 +712,18 @@ def update_current_object(self, context, col_name, cur_item_name):
         slot.pointer.select = True
 
 
+def update_current_doodad_set(self, context):
+
+    for d_set in self.doodad_sets:
+        if d_set.name == self.doodad_sets[self.cur_doodad_set].name:
+            for child in d_set.pointer.children:
+                child.hide = False
+
+        else:
+            for child in d_set.pointer.children:
+                child.hide = True
+
+
 class WoWWMO_RootComponents(bpy.types.PropertyGroup):
 
     is_update_critical = bpy.props.BoolProperty(default=False)
@@ -683,28 +744,21 @@ class WoWWMO_RootComponents(bpy.types.PropertyGroup):
     cur_light = bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'lights', 'cur_light'))
     is_light_props_expanded = bpy.props.BoolProperty()
 
-    doodads = bpy.props.CollectionProperty(type=DoodadPointerPropertyGroup)
+    doodads_proto = bpy.props.CollectionProperty(type=DoodadProtoPointerPropertyGroup)
 
     doodad_sets = bpy.props.CollectionProperty(type=DoodadSetPointerPropertyGroup)
-    cur_doodad_set = bpy.props.IntProperty()  # todo: updaste current doodadset
-    is_doodad_set_prop_expanded = bpy.props.BoolProperty()
+    cur_doodad_set = bpy.props.IntProperty(update=update_current_doodad_set)
+    is_doodad_set_props_expanded = bpy.props.BoolProperty()
 
     materials = bpy.props.CollectionProperty(type=MaterialPointerPropertyGroup)
     cur_material = bpy.props.IntProperty()
     is_material_props_expanded = bpy.props.BoolProperty()
 
 
-class WoWWMODoodadSetProperptyGroup(bpy.types.PropertyGroup):
-
-    enabled = bpy.props.BoolProperty()
-
-
 def register():
     bpy.types.Scene.wow_wmo_root_components = bpy.props.PointerProperty(type=WoWWMO_RootComponents)
-    bpy.types.Object.wow_wmo_doodad_set = bpy.props.PointerProperty(type=WoWWMODoodadSetProperptyGroup)
 
 
 def unregister():
     del bpy.types.Scene.wow_wmo_root_components
-    del bpy.types.Object.wow_wmo_doodad_set
 
