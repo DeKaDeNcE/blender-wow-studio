@@ -237,13 +237,7 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
 
     def execute(self, context):
 
-        game_data = load_game_data()
-
-        if not game_data or not game_data.files:
-            self.report({'ERROR'}, "Failed to import model. Connect to game client first.")
-            return {'CANCELLED'}
-
-        addon_preferences = get_addon_prefs()
+        cache_path = get_addon_prefs().cache_dir_path
         m2_path = wmv_get_last_m2()
 
         if not m2_path:
@@ -251,27 +245,59 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
             Make sure to use compatible WMV version or open an .m2 there.""")
             return {'CANCELLED'}
 
-        proto_scene = (bpy.data.scenes.get('$WMODoodadPrototypes') or bpy.data.scenes.new(name='$WMODoodadPrototypes'))
-        try:
-            obj = import_doodad(addon_preferences.cache_dir_path, m2_path, proto_scene)
-        except:
-            bpy.ops.mesh.primitive_cube_add()
-            obj = bpy.context.scene.objects.active
-            traceback.print_exc()
-            self.report({'WARNING'}, "Failed to import model. Placeholder is imported instead.")
-        else:
-            self.report({'INFO'}, "Imported model: {}".format(m2_path))
+        doodad_path_noext = os.path.splitext(m2_path)[0]
+        doodad_path = doodad_path_noext + ".m2"
+        doodad_path_blend = doodad_path_noext + '.blend'
 
-        if bpy.context.scene.objects.active and bpy.context.scene.objects.active.select:
-            obj.location = bpy.context.scene.objects.active.location
-        else:
-            obj.location = bpy.context.scene.cursor_location
+        path_local = doodad_path_blend.replace('\\', '/') if os.name != 'nt' else doodad_path_blend
+        library_path = os.path.join(cache_path, path_local)
 
-        obj.wow_wmo_doodad.enabled = True
-        obj.wow_wmo_doodad.path = m2_path
+        path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
 
-        bpy.ops.object.select_all(action='DESELECT')
-        bpy.context.scene.objects.active = obj
-        obj.select = True
+        doodad_col = bpy.context.scene.wow_wmo_root_components.doodads_proto
+        obj_idx = doodad_col.find(path_hash)
+
+        if obj_idx < 0:
+
+            if not os.path.exists(library_path):
+                library_dir = os.path.split(library_path)[0]
+                if not os.path.exists(library_dir):
+                    os.makedirs(library_dir)
+
+                try:
+                    p_obj = import_doodad(cache_path, doodad_path)
+                except:
+
+                    p_obj = import_doodad(cache_path, 'Spells\\Errorcube.m2')
+                    p_obj.wow_wmo_doodad.enabled = True
+                    p_obj.wow_wmo_doodad.path = doodad_path
+                    p_obj.name = path_hash
+                    traceback.print_exc()
+                    print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
+
+                bpy.data.libraries.write(library_path, {p_obj}, fake_user=True)
+                bpy.data.objects.remove(p_obj)
+
+            with bpy.data.libraries.load(library_path, link=True) as (data_from, data_to):
+                data_to.objects = [ob_name for ob_name in data_from.objects if ob_name == path_hash]
+
+            obj = data_to.objects[0]
+
+            obj.wow_wmo_doodad.enabled = True
+            obj.wow_wmo_doodad.path = m2_path
+
+            slot = doodad_col.add()
+            slot.pointer = obj
+
+            bpy.context.scene.objects.link(obj)
+
+            bpy.ops.object.select_all(action='DESELECT')
+            bpy.context.scene.objects.active = obj
+            obj.select = True
+
+            assert obj is not None
+
+        elif doodad_col[obj_idx].pointer.library is None:
+            raise Exception('\nNon-library doodad data-block collision ({})'.format(path_hash))
 
         return {'FINISHED'}

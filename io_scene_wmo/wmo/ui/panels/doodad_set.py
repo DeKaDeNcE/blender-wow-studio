@@ -3,25 +3,51 @@ from .... import ui_icons
 from .utils import update_current_object, update_doodad_pointer, RootComponents_TemplateList
 
 
-def draw_list(context, col, cur_idx_name, col_name):
+class DoodadSet_ComponentChange(bpy.types.Operator):
+    bl_idname = 'scene.wow_wmo_doodad_set_components_change'
+    bl_label = 'Add / Remove'
+    bl_description = 'Add / Remove'
+    bl_options = {'REGISTER', 'INTERNAL', 'UNDO'}
 
-    row = col.row()
-    sub_col1 = row.column()
-    sub_col1.template_list('DoodadSet_DoodadList', "",
-                           context.object.wow_wmo_doodad_set,
-                           'doodads', context.object.wow_wmo_doodad_set, 'cur_doodad')
-    sub_col_parent = row.column()
-    sub_col2 = sub_col_parent.column(align=True)
+    action = bpy.props.StringProperty(default='ADD', options={'HIDDEN'})
 
-    op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='GO_LEFT')
-    op.action, op.add_action, op.col_name, op.cur_idx_name = 'ADD', 'NEW', col_name, cur_idx_name
+    def execute(self, context):
 
-    op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMOUT')
-    op.action, op.col_name, op.cur_idx_name = 'REMOVE', col_name, cur_idx_name
+        root_comps = context.scene.wow_wmo_root_components
+
+        if self.action == 'ADD':
+            d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
+            bpy.ops.scene.wow_wmo_import_doodad_from_wmv()
+            slot = d_set.doodads.add()
+            slot.pointer = bpy.data.objects[-1]
+            slot.pointer.parent = d_set.pointer
+        else:
+            d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
+
+            if d_set.cur_doodad < len(d_set.doodads):
+                d_set.doodads.remove(d_set.cur_doodad)
+
+        return {'FINISHED'}
 
 
 class DoodadSet_DoodadList(RootComponents_TemplateList):
     icon = ui_icons['WOW_STUDIO_M2']
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+
+            row = layout.row(align=True)
+            sub_col = row.column()
+            sub_col.scale_x = 0.5
+
+            s_row = sub_col.row(align=True)
+
+            s_row.label("#{}".format(index), icon='WORLD' if item.pointer.name == '$SetDefaultGlobal' else 'GROUP')
+            s_row.prop(item.pointer, 'name', emboss=False)
+
+        elif self.layout_type in {'GRID'}:
+            pass
 
 
 class WoWDoodadSetPanel(bpy.types.Panel):
@@ -32,7 +58,20 @@ class WoWDoodadSetPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        draw_list(context, layout, 'cur_doodad', 'doodads')
+
+        root_comps = context.scene.wow_wmo_root_components
+        d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
+        row = layout.row()
+        sub_col1 = row.column()
+        sub_col1.template_list('DoodadSet_DoodadList', "", d_set, 'doodads', d_set, 'cur_doodad')
+        sub_col_parent = row.column()
+        sub_col2 = sub_col_parent.column(align=True)
+
+        op = sub_col2.operator("scene.wow_wmo_doodad_set_components_change", text='', icon='GO_LEFT')
+        op.action = 'ADD'
+
+        op = sub_col2.operator("scene.wow_wmo_doodad_set_components_change", text='', icon='ZOOMOUT')
+        op.action = 'REMOVE'
 
     @classmethod
     def poll(cls, context):
@@ -59,6 +98,10 @@ class WoWWMODoodadSetProperptyGroup(bpy.types.PropertyGroup):
     )
 
     doodads = bpy.props.CollectionProperty(type=DoodadPointerPropertyGroup)
+
+    pointer = bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
+
+    name = bpy.props.StringProperty()
 
 
 def register():

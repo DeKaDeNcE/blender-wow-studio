@@ -7,7 +7,7 @@ from .group import WowWMOGroupPanel
 from .portal import WowPortalPlanePanel
 from .fog import WowFogPanel
 from .light import WowLightPanel
-from .doodad_set import WoWDoodadSetPanel
+from .doodad_set import WoWDoodadSetPanel, WoWWMODoodadSetProperptyGroup
 from .utils import RootComponents_TemplateList, update_current_object, update_doodad_pointer
 
 
@@ -643,13 +643,6 @@ class DoodadProtoPointerPropertyGroup(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty()
 
 
-class DoodadSetPointerPropertyGroup(bpy.types.PropertyGroup):
-
-    pointer = bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
-
-    name = bpy.props.StringProperty()
-
-
 class WoWWMO_RootComponents(bpy.types.PropertyGroup):
 
     is_update_critical = bpy.props.BoolProperty(default=False)
@@ -672,7 +665,7 @@ class WoWWMO_RootComponents(bpy.types.PropertyGroup):
 
     doodads_proto = bpy.props.CollectionProperty(type=DoodadProtoPointerPropertyGroup)
 
-    doodad_sets = bpy.props.CollectionProperty(type=DoodadSetPointerPropertyGroup)
+    doodad_sets = bpy.props.CollectionProperty(type=WoWWMODoodadSetProperptyGroup)
     cur_doodad_set = bpy.props.IntProperty(update=update_current_doodad_set)
     is_doodad_set_props_expanded = bpy.props.BoolProperty()
 
