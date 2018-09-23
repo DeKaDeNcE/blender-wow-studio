@@ -122,7 +122,7 @@ _ui_lists = {
 _obj_props = ['wow_wmo_portal',
               'wow_wmo_fog',
               'wow_wmo_group',
-              'wow_wmo_liquid'
+              'wow_wmo_liquid',
               'wow_wmo_doodad_set'
               ]
 
@@ -673,10 +673,17 @@ class WoWWMO_RootComponents(bpy.types.PropertyGroup):
     is_material_props_expanded = bpy.props.BoolProperty()
 
 
+class WoWWMODoodadSetProperptyGroup(bpy.types.PropertyGroup):
+
+    enabled = bpy.props.BoolProperty()
+
+
 def register():
     bpy.types.Scene.wow_wmo_root_components = bpy.props.PointerProperty(type=WoWWMO_RootComponents)
+    bpy.types.Object.wow_wmo_doodad_set = bpy.props.PointerProperty(type=WoWWMODoodadSetProperptyGroup)
 
 
 def unregister():
     del bpy.types.Scene.wow_wmo_root_components
+    del bpy.types.Object.wow_wmo_doodad_set
 
