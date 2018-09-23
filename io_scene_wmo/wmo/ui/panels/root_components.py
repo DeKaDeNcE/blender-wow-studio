@@ -2,7 +2,7 @@ import bpy
 from collections import namedtuple
 from ....utils import draw_spoiler
 from .... import ui_icons
-from .material import WowMaterialPanel
+from .material import WowMaterialPanel, update_flags, update_shader
 from .group import WowWMOGroupPanel
 from .portal import WowPortalPlanePanel
 from .fog import WowFogPanel
@@ -539,8 +539,11 @@ def update_material_pointer(self, context):
         self.name = self.pointer.name
 
         # force pass index recalculation
-        self.pointer.wow_wmo_material.flags = self.pointer.wow_wmo_material.flags
-        self.pointer.wow_wmo_material.shader = self.pointer.wow_wmo_material.shader
+
+        ctx_override = namedtuple('ctx_override', ('material',))
+        ctx = ctx_override(self.pointer)
+        update_shader(self.pointer.wow_wmo_material, ctx)
+        update_flags(self.pointer.wow_wmo_material, ctx)
 
     elif self.pointer_old:
         # handle deletion
