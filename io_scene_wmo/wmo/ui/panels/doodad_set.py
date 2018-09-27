@@ -17,10 +17,15 @@ class DoodadSet_ComponentChange(bpy.types.Operator):
 
         if self.action == 'ADD':
             d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
+
+            act_obj = context.scene.objects.active
             bpy.ops.scene.wow_wmo_import_doodad_from_wmv()
+            doodad = context.scene.objects.active
+            context.scene.objects.active = act_obj
+
             slot = d_set.doodads.add()
-            slot.pointer = bpy.data.objects[-1]
-            slot.pointer.parent = d_set.pointer
+            slot.pointer = doodad
+            doodad.parent = d_set.pointer
         else:
             d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
 

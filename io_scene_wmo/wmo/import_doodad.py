@@ -246,18 +246,20 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
             return {'CANCELLED'}
 
         doodad_path_noext = os.path.splitext(m2_path)[0]
-        doodad_path = doodad_path_noext + ".m2"
-        doodad_path_blend = doodad_path_noext + '.blend'
+        doodad_path_noext_uni = doodad_path_noext.replace('\\', '/')
 
-        path_local = doodad_path_blend.replace('\\', '/') if os.name != 'nt' else doodad_path_blend
+        doodad_path = doodad_path_noext + ".m2"
+        doodad_path_blend = doodad_path_noext_uni + '.blend'
+        doodad_basename = os.path.basename(doodad_path_noext_uni)
+        path_local = doodad_path_blend
         library_path = os.path.join(cache_path, path_local)
 
         path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
 
         doodad_col = bpy.context.scene.wow_wmo_root_components.doodads_proto
-        obj_idx = doodad_col.find(path_hash)
+        p_obj = doodad_col.get(path_hash)
 
-        if obj_idx < 0:
+        if not p_obj:
 
             if not os.path.exists(library_path):
                 library_dir = os.path.split(library_path)[0]
@@ -278,26 +280,22 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
                 bpy.data.libraries.write(library_path, {p_obj}, fake_user=True)
                 bpy.data.objects.remove(p_obj)
 
-            with bpy.data.libraries.load(library_path, link=True) as (data_from, data_to):
-                data_to.objects = [ob_name for ob_name in data_from.objects if ob_name == path_hash]
+        with bpy.data.libraries.load(library_path, link=True) as (data_from, data_to):
+            data_to.objects = [ob_name for ob_name in data_from.objects if ob_name == path_hash]
 
-            obj = data_to.objects[0]
+        p_obj = data_to.objects[0]
 
-            obj.wow_wmo_doodad.enabled = True
-            obj.wow_wmo_doodad.path = m2_path
+        slot = doodad_col.add()
+        slot.pointer = p_obj
 
-            slot = doodad_col.add()
-            slot.pointer = obj
+        obj = bpy.data.objects.new(doodad_basename, p_obj.data)
+        bpy.context.scene.objects.link(obj)
 
-            bpy.context.scene.objects.link(obj)
+        obj.wow_wmo_doodad.enabled = True
+        obj.wow_wmo_doodad.path = m2_path
 
-            bpy.ops.object.select_all(action='DESELECT')
-            bpy.context.scene.objects.active = obj
-            obj.select = True
-
-            assert obj is not None
-
-        elif doodad_col[obj_idx].pointer.library is None:
-            raise Exception('\nNon-library doodad data-block collision ({})'.format(path_hash))
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.context.scene.objects.active = obj
+        obj.select = True
 
         return {'FINISHED'}
