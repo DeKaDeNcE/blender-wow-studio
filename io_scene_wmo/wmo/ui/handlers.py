@@ -6,7 +6,9 @@ __reload_order_index__ = 0
 _obj_props = [('wow_wmo_group', 'groups'),
               ('wow_wmo_portal', 'portals'),
               ('wow_wmo_fog', 'fogs'),
-              ('wow_wmo_light', 'lights')
+              ('wow_wmo_light', 'lights'),
+              ('wow_wmo_doodad_set', 'doodad_sets'),
+              ('wow_wmo_doodad', 'doodad_sets')
              ]
 
 
@@ -20,6 +22,21 @@ def _remove_col_items(scene, col_name):
         return
 
     _remove_col_items(scene, col_name)
+
+
+def _remove_col_items_doodads(scene):
+    col = scene.wow_wmo_root_components.doodad_sets
+
+    for d_set in col:
+        for i, doodad in enumerate(d_set.doodad):
+            if doodad.pointer and doodad.pointer.name not in scene.objects:
+                d_set.remove(i)
+                break
+
+        else:
+            return
+
+    _remove_col_items_doodads(scene)
 
 
 @persistent
@@ -36,6 +53,8 @@ def sync_wmo_root_components_collections(scene):
         _remove_col_items(scene, 'portals')
         _remove_col_items(scene, 'fogs')
         _remove_col_items(scene, 'lights')
+        _remove_col_items(scene, 'doodad_sets')
+        _remove_col_items_doodads(scene)
 
     else:
         bpy.n_scene_objects = n_objs
@@ -44,10 +63,29 @@ def sync_wmo_root_components_collections(scene):
             for prop, col_name in _obj_props:
                 col = getattr(scene.wow_wmo_root_components, col_name)
                 prop_group = getattr(obj, prop)
-                if prop_group.enabled and col.find(obj.name) < 0:
-                    prop_group.enabled = False
-                    slot = col.add()
-                    slot.pointer = obj
+
+                if prop == 'doodads' and prop_group.enabled:
+
+                    # identify if doodad is not in any doodad set
+                    for d_set in scene.wow_wmo_root_components.doodad_sets:
+                        index = d_set.doodads.find(obj.name)
+                        if index >= 0:
+                            break
+
+                    else:
+                        # attempt adding to active doodad set
+                        if len(scene.wow_wmo_root_components.doodad_sets):
+                            act_set = scene.wow_wmo_root_components.doodad_sets[0]
+                            slot = act_set.doodads.add()
+                            slot.pointer = obj
+
+                        else:
+                            bpy.data.objects.remove(obj, do_unlink=True)
+
+                elif prop_group.enabled and col.find(obj.name) < 0:
+                        prop_group.enabled = False
+                        slot = col.add()
+                        slot.pointer = obj
 
 
 def register_wmo_handlers():
