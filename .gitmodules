@@ -1,3 +1,6 @@
 [submodule "pywowlib"]
 	path = pywowlib
 	url = https://github.com/WowDevTools/pywowlib.git
+[submodule "io_scene_wmo/pywowlib"]
+	path = io_scene_wmo/pywowlib
+	url = https://github.com/WowDevTools/pywowlib.git
