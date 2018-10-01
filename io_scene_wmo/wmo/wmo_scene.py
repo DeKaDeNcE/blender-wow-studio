@@ -204,7 +204,13 @@ class BlenderWMOScene:
             self.material_lookup[index] = mat
 
             mat.wow_wmo_material.enabled = True
-            mat.wow_wmo_material.shader = str(wmo_material.shader)
+
+            try:
+                mat.wow_wmo_material.shader = str(wmo_material.shader)
+            except TypeError:
+                print("Incorrect shader id \"{}\". Most likely badly retro-ported WMO.".format(str(wmo_material.shader)))
+                mat.wow_wmo_material.shader = "0"
+
             mat.wow_wmo_material.blending_mode = str(wmo_material.blend_mode)
             mat.wow_wmo_material.emissive_color = [pow(x / 255, 2.2) for x in wmo_material.emissive_color]
             mat.wow_wmo_material.diff_color = [pow(x / 255, 2.2) for x in wmo_material.diff_color]
