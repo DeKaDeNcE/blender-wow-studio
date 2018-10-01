@@ -32,7 +32,7 @@ def _remove_col_items_doodads(scene):
         return
 
     for d_set in col:
-        for i, doodad in enumerate(d_set.doodad):
+        for i, doodad in enumerate(d_set.doodads):
             if doodad.pointer and doodad.pointer.name not in scene.objects:
                 d_set.remove(i)
                 break
