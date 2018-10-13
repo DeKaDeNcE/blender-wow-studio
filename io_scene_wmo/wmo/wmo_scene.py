@@ -431,6 +431,11 @@ class BlenderWMOScene:
 
             anchor = bpy.data.objects.new(doodad_set.name, None)
             anchor.empty_draw_type = 'SPHERE'
+
+            anchor.wow_wmo_doodad_set.enabled = True
+            slot = scene.wow_wmo_root_components.doodad_sets.add()
+            slot.pointer = anchor
+
             bpy.context.scene.objects.link(anchor)
             anchor.name = doodad_set.name
             anchor.hide = True
@@ -482,6 +487,8 @@ class BlenderWMOScene:
                                             doodad.rotation[2])
                 nobj.parent = anchor
                 nobj.hide = True
+                slot = scene.wow_wmo_root_components.doodad_sets[-1].doodads.add()
+                slot.pointer = nobj
 
                 progress.progress_step()
 

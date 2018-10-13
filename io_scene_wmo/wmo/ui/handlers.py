@@ -32,9 +32,9 @@ def _remove_col_items_doodads(scene):
         return
 
     for d_set in col:
-        for i, doodad in enumerate(d_set.doodad):
+        for i, doodad in enumerate(d_set.doodads):
             if doodad.pointer and doodad.pointer.name not in scene.objects:
-                d_set.remove(i)
+                d_set.doodads.remove(i)
                 break
 
         else:
@@ -75,7 +75,6 @@ def sync_wmo_root_components_collections(scene):
                         for d_set in scene.wow_wmo_root_components.doodad_sets:
                             index = d_set.doodads.find(obj.name)
                             if index >= 0:
-                                print('hi')
                                 break
 
                         else:
@@ -88,6 +87,9 @@ def sync_wmo_root_components_collections(scene):
 
                             else:
                                 bpy.data.objects.remove(obj, do_unlink=True)
+
+                    else:
+                        continue
 
                 elif prop_group.enabled:
 
