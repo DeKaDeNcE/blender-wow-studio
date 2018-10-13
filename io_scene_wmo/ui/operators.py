@@ -177,8 +177,9 @@ class M2Import(bpy.types.Operator):
     version = EnumProperty(
         name="Version",
         description="Version of World of Warcraft",
-        items=[('264', 'WOTLK', "")],
-        default='264'
+        items=[('264', 'WOTLK', ""),
+               ('274', 'Legion', "")],
+        default='274'
     )
 
     def execute(self, context):
