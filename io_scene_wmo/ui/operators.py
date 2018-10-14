@@ -85,7 +85,6 @@ class WMOImport(bpy.types.Operator):
         default=False,
         )
 
-
     def execute(self, context):
         import_wmo_to_blender_scene(self.filepath, self.import_doodads, self.import_lights,
                                     self.import_fogs, self.group_objects)

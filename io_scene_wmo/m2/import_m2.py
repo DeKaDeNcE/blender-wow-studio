@@ -23,7 +23,8 @@ def import_m2(version, file, load_textures):  # TODO: implement multiversioning
             game_data = load_game_data()
 
             print("\n\n### Extracting textures ###")
-            textures = [m2_texture.filename.value for m2_texture in m2.textures if not m2_texture.type]
+            textures = [m2_texture.filename.value for m2_texture in m2.textures
+                        if not m2_texture.type and m2_texture.filename.value]
             game_data.extract_textures_as_png(addon_preferences.cache_dir_path, textures)
 
         print("\n\n### Importing M2 model ###")

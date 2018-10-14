@@ -11,6 +11,7 @@ class WowScenePanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
+        col.prop(context.scene.wow_scene, 'version')
         col.prop(context.scene.wow_scene, 'type')
         col.prop(context.scene.wow_scene, 'game_path')
 
@@ -20,14 +21,22 @@ class WowScenePanel(bpy.types.Panel):
 
 
 class WowScenePropertyGroup(bpy.types.PropertyGroup):
+
+    version = bpy.props.EnumProperty(
+        name='Client version',
+        items=[('264', 'WotLK', "", ui_icons['WOTLK'], 0),
+               ('274', 'Legion', "", ui_icons['LEGION'], 1)],
+        default='274'
+    )
+
     type = bpy.props.EnumProperty(
         name='Scene type',
         description='Sets up the UI to work with a specific WoW game format',
-        items=(
-            ('M2', 'M2', 'M2 model'),
-            ('WMO', 'WMO', 'World Map Object (WMO)')    # TODO: verify module availability
-            )
-        )
+        items=[
+            ('M2', 'M2', 'M2 model',  ui_icons['WOW_STUDIO_M2'], 0),
+            ('WMO', 'WMO', 'World Map Object (WMO)', ui_icons['WOW_STUDIO_WMO'], 1)
+            ]
+    )
 
     game_path = bpy.props.StringProperty(
         name='Game path',
@@ -47,6 +56,7 @@ def render_top_bar(self, context):
     layout = self.layout
     row = layout.row(align=True)
     row.label('Scene:')
+    row.prop(context.scene.wow_scene, 'version', text='')
     row.prop(context.scene.wow_scene, 'type', text='')
     row.operator("scene.reload_wow_filesystem", text="", icon_value=ui_icons['WOW_STUDIO_RELOAD'])
 
