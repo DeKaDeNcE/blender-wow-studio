@@ -1,6 +1,7 @@
 import bpy
 
 from ..enums import get_anim_ids, ANIMATION_FLAGS
+from ....pywowlib import WoWVersions
 
 
 ###############################
@@ -181,7 +182,13 @@ class AnimationEditorDialog(bpy.types.Operator):
             row.operator("scene.wow_m2_animation_id_search", text=anim_ids[int(cur_anim_track.animation_id)][1],
                          icon='VIEWZOOM')
             col.prop(cur_anim_track, 'move_speed', text="Move speed")
-            col.prop(cur_anim_track, 'blend_time', text="Blend time")
+
+            if context.scene.wow_scene.version >= WoWVersions.WOD:
+                col.prop(cur_anim_track, 'blend_time_in', text="Blend time in")
+                col.prop(cur_anim_track, 'blend_time_out', text="Blend time out")
+            else:
+                col.prop(cur_anim_track, 'blend_time', text="Blend time")
+
             col.prop(cur_anim_track, 'frequency', text="Frequency")
 
             col.label(text='Random repeat:')
@@ -817,12 +824,6 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         default=1.0
     )
 
-    blend_time = bpy.props.IntProperty(
-        name="Blend time",
-        description="",
-        min=0
-    )
-
     frequency = bpy.props.IntProperty(
         name="Frequency",
         description="This is used to determine how often the animation is played.",
@@ -849,6 +850,24 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         description='Index of animation used as a alias for this one',
         min=0,
         update=update_animation_collection
+    )
+
+    blend_time = bpy.props.IntProperty(
+        name="Blend time",
+        description="",
+        min=0
+    )
+
+    blend_time_in = bpy.props.IntProperty(
+        name="Blend time",
+        description="",
+        min=0
+    )
+
+    blend_time_out = bpy.props.IntProperty(
+        name="Blend time",
+        description="",
+        min=0
     )
 
 

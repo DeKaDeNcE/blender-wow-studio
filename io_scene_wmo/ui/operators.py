@@ -173,16 +173,8 @@ class M2Import(bpy.types.Operator):
         default=True,
         )
 
-    version = EnumProperty(
-        name="Version",
-        description="Version of World of Warcraft",
-        items=[('264', 'WOTLK', ""),
-               ('274', 'Legion', "")],
-        default='274'
-    )
-
     def execute(self, context):
-        import_m2(int(self.version), self.filepath, self.load_textures)
+        import_m2(int(context.scene.wow_scene.version), self.filepath, self.load_textures)
         context.scene.wow_scene.type = 'M2'
         return {'FINISHED'}
 
@@ -221,12 +213,12 @@ class M2Export(bpy.types.Operator, ExportHelper):
     autofill_textures = BoolProperty(
         name="Fill texture paths",
         description="Automatically assign texture paths based on texture filenames",
-        default=True,
+        default=True
         )
 
     def execute(self, context):
         if context.scene and context.scene.wow_scene.type == 'M2':
-            export_m2(int(self.version), self.filepath, self.export_selected, self.autofill_textures)
+            export_m2(int(context.scene.wow_scene.version), self.filepath, self.export_selected, self.autofill_textures)
             return {'FINISHED'}
 
         self.report({'ERROR'}, 'Invalid scene type.')

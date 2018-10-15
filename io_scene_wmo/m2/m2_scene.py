@@ -5,6 +5,7 @@ from math import sqrt, degrees
 
 from ..utils import resolve_texture_path, get_origin_position, get_objs_boundbox_world, get_obj_boundbox_center, get_obj_radius
 from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
+from ..pywowlib.file_formats.wow_common_types import M2Versions
 from ..utils import parse_bitfield, construct_bitfield, load_game_data
 from .ui.enums import mesh_part_id_menu
 from .ui.panels.camera import update_follow_path_constraints
@@ -533,7 +534,13 @@ class BlenderM2Scene:
             anim.frequency = sequence.frequency
             anim.replay_min = sequence.replay.minimum
             anim.replay_max = sequence.replay.maximum
-            anim.blend_time = sequence.blend_time
+
+            if self.m2.root.version >= M2Versions.WOD:
+                anim.blend_time_in = sequence.blend_time_in
+                anim.blend_time_out = sequence.blend_time_out
+
+            else:
+                anim.blend_time = sequence.blend_time
 
             if '64' in anim.flags:  # check if sequence is an alias
                 anim.is_alias = True

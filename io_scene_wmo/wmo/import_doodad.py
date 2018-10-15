@@ -251,7 +251,7 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
         doodad_path = doodad_path_noext + ".m2"
         doodad_path_blend = doodad_path_noext_uni + '.blend'
         doodad_basename = os.path.basename(doodad_path_noext_uni)
-        path_local = doodad_path_blend
+        path_local = doodad_path_blend if os.name != 'nt' else doodad_path_noext + '.blend'
         library_path = os.path.join(cache_path, path_local)
 
         path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
@@ -282,6 +282,8 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
 
         with bpy.data.libraries.load(library_path, link=True) as (data_from, data_to):
             data_to.objects = [ob_name for ob_name in data_from.objects if ob_name == path_hash]
+
+        print(library_path)
 
         p_obj = data_to.objects[0]
 
