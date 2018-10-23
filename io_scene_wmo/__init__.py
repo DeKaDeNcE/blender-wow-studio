@@ -29,10 +29,23 @@ bl_info = {
 }
 
 import os
+import sys
 import traceback
 import bpy
 import bpy.utils.previews
 from bpy.props import StringProperty, BoolProperty
+
+# load vendored libraries
+##################################
+
+# Add vendor directory to module search path
+parent_dir = os.path.abspath(os.path.dirname(__file__))
+vendor_dir = os.path.join(parent_dir, 'third_party')
+
+sys.path.append(vendor_dir)
+
+import bitarray
+
 
 # load custom icons
 ##################################

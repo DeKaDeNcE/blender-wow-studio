@@ -16,7 +16,6 @@ def live_update_materials(dummy):
     except IndexError:
         pass
 
-
 @persistent
 def load_handler(dummy):
     register_m2_driver_utils()
