@@ -29,14 +29,19 @@ bl_info = {
 }
 
 import os
+import sys
 import traceback
 import bpy
 import bpy.utils.previews
 from bpy.props import StringProperty, BoolProperty
 
-# load custom icons
-##################################
+# include custom lib vendoring dir
+parent_dir = os.path.abspath(os.path.dirname(__file__))
+vendor_dir = os.path.join(parent_dir, 'third_party')
 
+sys.path.append(vendor_dir)
+
+# load custom icons
 ui_icons = {}
 pcoll = None
 
@@ -51,7 +56,6 @@ for name, icon_file in pcoll.items():
     ui_icons[name] = icon_file.icon_id
 
 # load and reload submodules
-##################################
 import importlib
 from . import developer_utils
 importlib.reload(developer_utils)
