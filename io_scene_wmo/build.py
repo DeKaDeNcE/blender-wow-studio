@@ -20,15 +20,16 @@ def build_project():
 
     addon_root_path = os.path.realpath(os.path.dirname(os.path.abspath(__file__)).replace('\\', '/'))
 
-    cython_module_relpaths = (
+    extension_dirs = (
         "pywowlib/archives/casc/",
+        "pywowlib/archives/mpq/",
         "pywowlib/blp/"
 
     )
 
     print('\nBuilding pywowlib C++ extensions.')
     try:
-        for module_relpath in cython_module_relpaths:
+        for module_relpath in extension_dirs:
             os.chdir(os.path.join(addon_root_path, module_relpath))
             run_setup('setup.py', script_args=['build_ext', '--inplace'])
 
