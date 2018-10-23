@@ -1,3 +1,4 @@
+from distutils.core import run_setup
 
 
 def build_project():
@@ -16,9 +17,8 @@ def build_project():
             raise Exception("\npip is required to build this project")
 
     import os
-    import subprocess
 
-    ADDON_ROOT_PATH = os.path.realpath(os.path.dirname(os.path.abspath(__file__)).replace('\\', '/'))
+    addon_root_path = os.path.realpath(os.path.dirname(os.path.abspath(__file__)).replace('\\', '/'))
 
     cython_module_relpaths = (
         "pywowlib/archives/casc/",
@@ -29,13 +29,13 @@ def build_project():
     print('\nBuilding pywowlib C++ extensions.')
     try:
         for module_relpath in cython_module_relpaths:
-            os.chdir(os.path.join(ADDON_ROOT_PATH, module_relpath))
-            subprocess.call(["python3", "setup.py", "build_ext", "--inplace"])
+            os.chdir(os.path.join(addon_root_path, module_relpath))
+            run_setup('setup.py', script_args=['build_ext', '--inplace'])
 
     except PermissionError:
         raise PermissionError("\nThis build script may need to be called with admin (root) rights.")
 
-    os.chdir(ADDON_ROOT_PATH)
+    os.chdir(addon_root_path)
 
     print('\nInstalling third-party modules.')
 
