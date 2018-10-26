@@ -22,7 +22,7 @@ def build_project():
 
     extension_dirs = (
         "pywowlib/archives/casc/",
-        "pywowlib/archives/mpq/",
+        "pywowlib/archives/mpq/native/",
         "pywowlib/blp/"
 
     )
