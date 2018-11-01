@@ -1,3 +1,4 @@
+import subprocess
 from distutils.core import run_setup
 
 
@@ -45,7 +46,7 @@ def build_project():
             if 'require-python-3' in line:
                 continue
 
-            status = pipmain(['install', line, '-t', 'third_party', '--upgrade'])
+            status = subprocess.call(['pip3', 'install', line, '-t', 'third_party', '--upgrade'])
             if status:
                 print('\nError: failed installing module \"{}\". See pip error above.'.format(line))
 
