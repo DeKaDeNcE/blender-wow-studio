@@ -24,7 +24,8 @@ def build_project():
     extension_dirs = (
         "pywowlib/archives/casc/",
         "pywowlib/archives/mpq/native/",
-        "pywowlib/blp/"
+        "pywowlib/blp/BLP2PNG/",
+        "pywowlib/blp/PNG2BLP/"
 
     )
 
@@ -43,9 +44,6 @@ def build_project():
 
     def install_requirements(f):
         for line in f.readlines():
-            if 'require-python-3' in line:
-                continue
-
             status = subprocess.call(['pip3', 'install', line, '-t', 'third_party', '--upgrade'])
             if status:
                 print('\nError: failed installing module \"{}\". See pip error above.'.format(line))

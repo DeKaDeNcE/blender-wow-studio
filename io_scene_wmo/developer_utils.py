@@ -2,6 +2,8 @@ import os
 import pkgutil
 import importlib
 
+modules_to_ignore = ["test"]
+
 
 def setup_addon_modules(path, package_name, reload):
     """
@@ -16,6 +18,9 @@ def setup_addon_modules(path, package_name, reload):
     def get_submodule_names(path=path[0], root=""):
         module_names = []
         for importer, module_name, is_package in pkgutil.iter_modules([path]):
+            if module_name in modules_to_ignore:
+                continue
+
             if is_package:
                 sub_path = os.path.join(path, module_name)
                 sub_root = root + module_name + "."
@@ -27,6 +32,8 @@ def setup_addon_modules(path, package_name, reload):
     def import_submodules(names):
         modules = []
         for name in names:
+            if name in modules_to_ignore:
+                continue
             modules.append(importlib.import_module("." + name, package_name))
         return modules
 
