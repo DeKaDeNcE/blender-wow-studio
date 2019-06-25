@@ -378,7 +378,7 @@ class WMOFile:
             obj = bpy.data.objects.new(light_name, light)
             obj.location = self.molt.lights[i].position
 
-            bpy.context.scene.objects.link(obj)
+            bpy.context.collection.objects.link(obj)
 
             if self.parent:
                 obj.parent = self.parent
@@ -491,7 +491,7 @@ class WMOFile:
                         nobj = obj
                     else:
                         nobj = obj.copy()
-                        scene.objects.link(nobj)
+                        collection.objects.link(nobj)
 
                     nobj.wow_wmo_doodad.color = (doodad.color[2] / 255,
                                                  doodad.color[1] / 255,
@@ -594,7 +594,7 @@ class WMOFile:
                         break
 
             mesh.from_pydata(verts, [], faces)
-            bpy.context.scene.objects.link(obj)
+            bpy.context.collection.objects.link(obj)
 
             if self.parent:
                 obj.parent = self.parent

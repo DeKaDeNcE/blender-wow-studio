@@ -385,7 +385,7 @@ class M2_OT_camera_curve_compose(bpy.types.Operator):
 
         curve = bpy.data.curves.new(name='BakedCurve', type='CURVE')
         curve_obj = bpy.data.objects.new(name='BakedCurve', object_data=curve)
-        bpy.context.scene.objects.link(curve_obj)
+        bpy.context.collection.objects.link(curve_obj)
         curve.dimensions = '3D'
         curve.resolution_u = 64
 
@@ -471,7 +471,7 @@ class M2_OT_camera_curve_decompose(bpy.types.Operator):
 
         # create a parent for curve segments
         p_obj = bpy.data.objects.new("{}_Decomposed".format(curve_obj.name), None)
-        bpy.context.scene.objects.link(p_obj)
+        bpy.context.collection.objects.link(p_obj)
 
         # create segment curves
         new_segments = []
@@ -483,7 +483,7 @@ class M2_OT_camera_curve_decompose(bpy.types.Operator):
             name = "{}_BakedSegment".format(curve_obj.name)
             curve = bpy.data.curves.new(name=name, type='CURVE')
             new_obj = bpy.data.objects.new(name=name, object_data=curve)
-            bpy.context.scene.objects.link(new_obj)
+            bpy.context.collection.objects.link(new_obj)
             new_obj.parent = p_obj
 
             curve.dimensions = '3D'

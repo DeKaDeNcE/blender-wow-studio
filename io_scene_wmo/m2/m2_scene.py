@@ -377,7 +377,7 @@ class BlenderM2Scene:
 
         # Link the object to the scene
         scene = bpy.context.scene
-        scene.objects.link(rig)
+        collection.objects.link(rig)
         scene.objects.active = rig
 
         bpy.context.view_layer.update()
@@ -705,7 +705,7 @@ class BlenderM2Scene:
             # get object name
             name = M2SkinMeshPartID.get_mesh_part_name(smesh.skin_section_id)
             obj = bpy.data.objects.new(name if name else 'Geoset', mesh)
-            bpy.context.scene.objects.link(obj)
+            bpy.context.collection.objects.link(obj)
 
             obj.wow_m2_geoset.mesh_part_group = name
             obj.wow_m2_geoset.mesh_part_id = str(smesh.skin_section_id)
@@ -1229,7 +1229,7 @@ class BlenderM2Scene:
 
             # create a parent for curve segments
             p_obj = bpy.data.objects.new(name, None)
-            bpy.context.scene.objects.link(p_obj)
+            bpy.context.collection.objects.link(p_obj)
 
             curves = []
             for i in range(1, len(frames)):
@@ -1240,7 +1240,7 @@ class BlenderM2Scene:
                 curve = bpy.data.curves.new(name=curve_name, type='CURVE')
                 curve_obj = bpy.data.objects.new(name=curve_name, object_data=curve)
                 curve_obj.parent = p_obj
-                bpy.context.scene.objects.link(curve_obj)
+                bpy.context.collection.objects.link(curve_obj)
 
                 curve.dimensions = '3D'
                 curve.resolution_u = 64
@@ -1322,7 +1322,7 @@ class BlenderM2Scene:
             # create camera object
             cam = bpy.data.cameras.new('Camera')
             obj = bpy.data.objects.new('Camera', cam)
-            bpy.context.scene.objects.link(obj)
+            bpy.context.collection.objects.link(obj)
 
             obj.location = camera.position_base
             obj.wow_m2_camera.type = str(camera.type)
@@ -1336,7 +1336,7 @@ class BlenderM2Scene:
 
             # create camera target object
             t_obj = bpy.data.objects.new("{}_Target".format(obj.name), None)
-            bpy.context.scene.objects.link(t_obj)
+            bpy.context.collection.objects.link(t_obj)
 
             t_obj.location = camera.target_position_base
             t_obj.wow_m2_camera.enabled = True
@@ -1457,7 +1457,7 @@ class BlenderM2Scene:
 
         # create object
         obj = bpy.data.objects.new('Collision', mesh)
-        bpy.context.scene.objects.link(obj)
+        bpy.context.collection.objects.link(obj)
         obj.wow_m2_geoset.collision_mesh = True
         obj.hide_viewport = True
         # TODO: add transparent material
@@ -1588,7 +1588,7 @@ class BlenderM2Scene:
             new_obj.data = obj.data.copy()
             proxy_objects.append(new_obj)
 
-            bpy.context.scene.objects.link(new_obj)
+            bpy.context.collection.objects.link(new_obj)
 
             bpy.context.scene.objects.active = new_obj
             mesh = new_obj.data
@@ -1726,7 +1726,7 @@ class BlenderM2Scene:
             new_obj.data = obj.data.copy()
             proxy_objects.append(new_obj)
 
-            bpy.context.scene.objects.link(new_obj)
+            bpy.context.collection.objects.link(new_obj)
 
             bpy.context.scene.objects.active = new_obj
             mesh = new_obj.data

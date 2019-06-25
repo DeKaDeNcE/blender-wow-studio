@@ -175,7 +175,7 @@ class WMO_OT_root_components_components_change(bpy.types.Operator):
 
                 if self.add_action == 'NEW':
                     light = bpy.data.objects.new(name='Lamp', object_data=bpy.data.lamps.new('Lamp', type='POINT'))
-                    bpy.context.scene.objects.link(light)
+                    bpy.context.collection.objects.link(light)
                     light.location = bpy.context.scene.cursor_location
                     slot.pointer = light
 

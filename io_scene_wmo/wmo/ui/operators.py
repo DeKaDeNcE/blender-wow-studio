@@ -294,7 +294,7 @@ class WMO_OT_import_adt_scene(bpy.types.Operator):
                 if cached_obj:
                     obj = cached_obj.copy()
                     obj.data = cached_obj.data.copy()
-                    bpy.context.scene.objects.link(obj)
+                    bpy.context.collection.objects.link(obj)
 
                 else:
                     proto_scene = (bpy.data.scenes.get('$WMODoodadPrototypes') or bpy.data.scenes.new(
@@ -377,7 +377,7 @@ class WMO_OT_import_adt_scene(bpy.types.Operator):
                         nobj = child.copy()
                         if nobj.data:
                             nobj.data = child.data.copy()
-                        bpy.context.scene.objects.link(nobj)
+                        bpy.context.collection.objects.link(nobj)
 
                         nobj.parent = obj
 
@@ -834,7 +834,7 @@ class WMO_OT_doodadset_template_action(bpy.types.Operator):
                         bpy.data.objects.remove(obj, do_unlink=True)
 
                         obj = new_obj.copy()
-                        bpy.context.scene.objects.link(obj)
+                        bpy.context.collection.objects.link(obj)
                         bpy.context.scene.objects.active = obj
 
                         obj.location = location

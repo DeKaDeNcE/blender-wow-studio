@@ -218,7 +218,7 @@ class BlenderWMOSceneGroup:
 
         # set mesh location
         obj.location = pos
-        bpy.context.scene.objects.link(obj)
+        bpy.context.collection.objects.link(obj)
 
         bpy.context.scene.objects.active = obj
 
@@ -292,7 +292,7 @@ class BlenderWMOSceneGroup:
         scn = bpy.context.scene
 
         nobj = bpy.data.objects.new(self.name, mesh)
-        scn.objects.link(nobj)
+        scn.collection.objects.link(nobj)
 
         collision_face_ids = []
         for i, poly in enumerate(mesh.polygons):
@@ -572,7 +572,7 @@ class BlenderWMOSceneGroup:
             bm.free()
 
             c_obj = bpy.data.objects.new(c_mesh.name, c_mesh)
-            scn.objects.link(c_obj)
+            scn.collection.objects.link(c_obj)
             nobj.wow_wmo_group.collision_mesh = c_obj
 
 

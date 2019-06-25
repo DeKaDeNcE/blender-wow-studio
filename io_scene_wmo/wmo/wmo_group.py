@@ -310,7 +310,7 @@ class WMOGroupFile:
 
         # set mesh location
         obj.location = pos
-        bpy.context.scene.objects.link(obj)
+        bpy.context.collection.objects.link(obj)
 
         bpy.context.scene.objects.active = obj
 
@@ -390,7 +390,7 @@ class WMOGroupFile:
             o.select_set(False)
 
         nobj = bpy.data.objects.new(obj_name, mesh)
-        scn.objects.link(nobj)
+        scn.collection.objects.link(nobj)
 
         for poly in mesh.polygons:
             poly.use_smooth = True

@@ -291,7 +291,7 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
         slot.pointer = p_obj
 
         obj = bpy.data.objects.new(doodad_basename, p_obj.data)
-        bpy.context.scene.objects.link(obj)
+        bpy.context.collection.objects.link(obj)
 
         obj.wow_wmo_doodad.enabled = True
         obj.wow_wmo_doodad.path = m2_path

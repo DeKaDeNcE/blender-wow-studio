@@ -302,7 +302,7 @@ class BlenderWMOScene:
             obj.wow_wmo_light.attenuation_start = wmo_light.attenuation_start
             obj.wow_wmo_light.attenuation_end = wmo_light.attenuation_end
 
-            bpy.context.scene.objects.link(obj)
+            bpy.context.collection.objects.link(obj)
 
             self.bl_lights.append(light)
 
@@ -432,7 +432,7 @@ class BlenderWMOScene:
             slot = scene.wow_wmo_root_components.doodad_sets.add()
             slot.pointer = anchor
 
-            bpy.context.scene.objects.link(anchor)
+            bpy.context.collection.objects.link(anchor)
             anchor.name = doodad_set.name
             anchor.hide_viewport = True
             anchor.hide_select = True
@@ -454,7 +454,7 @@ class BlenderWMOScene:
                     raise FileNotFoundError('\nWMO is referencing non-existing doodad.')
 
                 nobj = bpy.data.objects.new(doodad_basename, proto_obj.data)
-                scene.objects.link(nobj)
+                collection.objects.link(nobj)
 
                 nobj.wow_wmo_doodad.enabled = True
                 nobj.wow_wmo_doodad.path = doodad_path
@@ -529,7 +529,7 @@ class BlenderWMOScene:
                         break
 
             mesh.from_pydata(verts, [], faces)
-            bpy.context.scene.objects.link(obj)
+            bpy.context.collection.objects.link(obj)
 
             self.bl_portals.append(obj)
 

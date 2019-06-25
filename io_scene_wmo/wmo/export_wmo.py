@@ -34,7 +34,7 @@ def export_wmo_from_blender_scene(filepath, autofill_textures, export_selected, 
     def restore_doodads():
         for set in wmo.bl_scene_objects.doodad_sets:
             for doodad in set[1]:
-                bpy.context.scene.objects.link(doodad)
+                bpy.context.collection.objects.link(doodad)
                 doodad.use_fake_user = False
 
     try:
@@ -47,7 +47,7 @@ def export_wmo_from_blender_scene(filepath, autofill_textures, export_selected, 
             obj = wmo.bl_scene_objects.groups[index]
             proxy_obj = obj.copy()
             proxy_obj.data = obj.data.copy()
-            bpy.context.scene.objects.link(proxy_obj)
+            bpy.context.collection.objects.link(proxy_obj)
             try:
                 group.save(obj, proxy_obj, autofill_textures)
             except Exception as exception:
