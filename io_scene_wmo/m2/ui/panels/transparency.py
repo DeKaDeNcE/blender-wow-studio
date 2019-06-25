@@ -18,8 +18,8 @@ class M2_PT_transparency_panel(bpy.types.Panel):
                                context.scene, "wow_m2_cur_transparency_index")
 
         sub_col2 = row.column().column(align=True)
-        sub_col2.operator("scene.wow_m2_transparency_add_value", text='', icon='ZOOMIN')
-        sub_col2.operator("scene.wow_m2_transparency_remove_value", text='', icon='ZOOMOUT')
+        sub_col2.operator("scene.wow_m2_transparency_add_value", text='', icon='ADD')
+        sub_col2.operator("scene.wow_m2_transparency_remove_value", text='', icon='REMOVE')
 
     @classmethod
     def poll(cls, context):

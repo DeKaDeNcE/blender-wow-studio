@@ -610,7 +610,7 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
         description="Choose operator action",
         items=[
             ("ADD", "Add to existing set", "", 'PLUGIN', 0),
-            ("CUSTOM", "Create new set", "", 'ZOOMIN', 1),
+            ("CUSTOM", "Create new set", "", 'ADD', 1),
             ("GLOBAL", "Create new global set", "", 'WORLD', 2),
         ]
     )

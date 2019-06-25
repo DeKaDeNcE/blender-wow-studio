@@ -15,7 +15,7 @@ class WMO_PT_portal(bpy.types.Panel):
         op.prop_group = 'wow_wmo_portal'
 
         if bpy.context.scene.wow_wmo_root_components.portals.find(context.object.name) < 0:
-            row.label('', icon='ERROR')
+            row.label(text='', icon='ERROR')
 
     def draw(self, context):
         layout = self.layout
@@ -27,10 +27,10 @@ class WMO_PT_portal(bpy.types.Panel):
         col = layout.column()
 
         col.separator()
-        col.label("Relation direction:")
+        col.label(text="Relation direction:")
         col.prop(context.object.wow_wmo_portal, "algorithm", expand=True)
 
-        layout.enabled = context.object.wow_wmo_portal.enabled
+        layout.enabled = context.object.wowF_wmo_portal.enabled
 
     @classmethod
     def poll(cls, context):

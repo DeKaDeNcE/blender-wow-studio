@@ -15,7 +15,7 @@ from .utils import WMO_UL_root_components_template_list, update_current_object, 
 ###### UI Lists ######
 ######################
 
-class RootComponents_DoodadSetsList(WMO_UL_root_components_template_list):
+class WMO_UL_root_components_doodadset_list(WMO_UL_root_components_template_list):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
 
@@ -27,19 +27,19 @@ class RootComponents_DoodadSetsList(WMO_UL_root_components_template_list):
 
             s_row = sub_col.row(align=True)
 
-            s_row.label("#{}".format(index), icon='WORLD' if item.pointer.name == '$SetDefaultGlobal' else 'GROUP')
+            s_row.label(text="#{}".format(index), icon='WORLD' if item.pointer.name == '$SetDefaultGlobal' else 'GROUP')
             s_row.prop(item.pointer, 'name', emboss=False)
 
         elif self.layout_type in {'GRID'}:
             pass
 
 
-class RootComponents_GroupsList(WMO_UL_root_components_template_list):
+class WMO_UL_root_components_groups_list(WMO_UL_root_components_template_list):
 
     icon = ui_icons['WOW_STUDIO_WMO']
 
 
-class RootComponents_FogsList(WMO_UL_root_components_template_list):
+class WMO_UL_root_components_fogs_list(WMO_UL_root_components_template_list):
 
     icon = ui_icons['WOW_STUDIO_FOG']
 
@@ -54,13 +54,13 @@ class RootComponents_FogsList(WMO_UL_root_components_template_list):
             s_row = sub_col.row(align=True)
 
             if isinstance(self.icon, int):
-                s_row.label("#{} ".format(index), icon_value=self.icon)
+                s_row.label(text="#{} ".format(index), icon_value=self.icon)
 
             elif isinstance(self.icon, str):
-                s_row.label("#{} ".format(index), icon=self.icon)
+                s_row.label(text="#{} ".format(index), icon=self.icon)
 
             if item.pointer:
-                s_row.label(item.pointer.name)
+                s_row.label(text=item.pointer.name)
 
         elif self.layout_type in {'GRID'}:
             pass
@@ -81,12 +81,12 @@ class WMO_UL_root_components_lights_list(WMO_UL_root_components_template_list):
 
 
 _ui_lists = {
-    'groups': 'RootComponents_GroupsList',
-    'fogs': 'RootComponents_FogsList',
-    'portals': 'RootComponents_PortalsList',
-    'materials': 'RootComponents_MaterialsList',
-    'lights': 'RootComponents_LightsList',
-    'doodad_sets': 'RootComponents_DoodadSetsList'
+    'groups': 'WMO_UL_root_components_groups_list',
+    'fogs': 'WMO_UL_root_components_fogs_list',
+    'portals': 'WMO_UL_root_components_portal_list',
+    'materials': 'WMO_UL_root_components_materials_list',
+    'lights': 'WMO_UL_root_components_lights_list',
+    'doodad_sets': 'WMO_UL_root_components_doodadset_list'
 }
 
 
@@ -174,7 +174,7 @@ class WMO_OT_root_components_components_change(bpy.types.Operator):
                 slot = bpy.context.scene.wow_wmo_root_components.lights.add()
 
                 if self.add_action == 'NEW':
-                    light = bpy.data.objects.new(name='Lamp', object_data=bpy.data.lamps.new('Lamp', type='POINT'))
+                    light = bpy.data.objects.new(name='Lamp', object_data=bpy.data.lights.new('Lamp', type='POINT'))
                     bpy.context.collection.objects.link(light)
                     light.location = bpy.context.scene.cursor_location
                     slot.pointer = light
@@ -463,14 +463,14 @@ def draw_list(context, col, cur_idx_name, col_name):
     sub_col2 = sub_col_parent.column(align=True)
 
     if col_name in ('materials', 'lights', 'doodad_sets'):
-        op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='GO_LEFT')
+        op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ADD')
         op.action, op.add_action, op.col_name, op.cur_idx_name = 'ADD', 'NEW', col_name, cur_idx_name
 
     if col_name not in ('doodad_sets', 'doodads'):
-        op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMIN')
+        op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ADD')
         op.action, op.add_action, op.col_name, op.cur_idx_name = 'ADD', 'EMPTY', col_name, cur_idx_name
 
-    op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ZOOMOUT')
+    op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='REMOVE')
     op.action, op.col_name, op.cur_idx_name = 'REMOVE', col_name, cur_idx_name
 
 

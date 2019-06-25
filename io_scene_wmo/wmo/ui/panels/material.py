@@ -21,7 +21,7 @@ class WMO_PT_material(bpy.types.Panel):
         col.prop(context.material.wow_wmo_material, "diff_texture_2")
 
         col.separator()
-        col.label("Flags:")
+        col.label(text="Flags:")
         col.prop(context.material.wow_wmo_material, "flags")
 
         layout.prop(context.material.wow_wmo_material, "emissive_color")

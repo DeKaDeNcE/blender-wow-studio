@@ -193,16 +193,16 @@ class M2_PT_camera_panel(bpy.types.Panel):
             layout.enabled = context.object.wow_m2_camera.enabled
             self.bl_label = 'M2 Camera Target'
 
-        col.label('Path curves:')
+        col.label(text='Path curves:')
         row = col.row()
         sub_col1 = row.column()
-        sub_col1.template_list("WowM2Camera_CurveList", "", context.object.wow_m2_camera, "animation_curves",
+        sub_col1.template_list("M2_UL_camera_curve_list", "", context.object.wow_m2_camera, "animation_curves",
                                context.object.wow_m2_camera, "cur_anim_curve_index")
 
         sub_col_parent = row.column()
         sub_col2 = sub_col_parent.column(align=True)
-        sub_col2.operator("object.wow_m2_camera_curve_add", text='', icon='ZOOMIN')
-        sub_col2.operator("object.wow_m2_camera_curve_remove", text='', icon='ZOOMOUT')
+        sub_col2.operator("object.wow_m2_camera_curve_add", text='', icon='ADD')
+        sub_col2.operator("object.wow_m2_camera_curve_remove", text='', icon='REMOVE')
 
         sub_col_parent.separator()
 
@@ -210,7 +210,7 @@ class M2_PT_camera_panel(bpy.types.Panel):
         sub_col3.operator("object.wow_m2_camera_curve_move", text='', icon='TRIA_UP').direction = 'UP'
         sub_col3.operator("object.wow_m2_camera_curve_move", text='', icon='TRIA_DOWN').direction = 'DOWN'
 
-        split = col.row().split(percentage=0.94)
+        split = col.row().split(factor=0.94)
         row_split = split.row(align=True)
         row_split.operator("object.wow_m2_camera_curve_compose", text='Compose curve', icon='RNDCURVE')
         row_split.operator("object.wow_m2_camera_curve_decompose", text='Decompose curve', icon='CURVE_PATH')
@@ -220,16 +220,16 @@ class M2_PT_camera_panel(bpy.types.Panel):
         errors = sorted(validate_camera_path(context.object.wow_m2_camera), key=lambda x: x[1])
         if errors:
             col.separator()
-            col.label('Errors:')
+            col.label(text='Errors:')
             box = col.box()
 
             for error_msg, error_code in errors:
                 sub_box = box.box()
                 lines = wrap_text(ceil(bpy.context.area.width / 9), error_msg)
-                sub_box.row(align=True).label(lines[0], icon='ERROR')
+                sub_box.row(align=True).label(text=lines[0], icon='ERROR')
 
                 for i in range(1, len(lines)):
-                    sub_box.row(align=True).label(lines[i])
+                    sub_box.row(align=True).label(text=lines[i])
 
     @classmethod
     def poll(cls, context):
@@ -308,7 +308,7 @@ class M2_UL_camera_curve_list(bpy.types.UIList):
             row = layout.row(align=True)
             row1 = row.row(align=True)
             row1.scale_x = 0.5
-            row1.label("#{}".format(index), icon='CURVE_BEZCURVE')
+            row1.label(text="#{}".format(index), icon='CURVE_BEZCURVE')
             row.prop(item, "object", text="")
             row.prop(item, "duration")
 

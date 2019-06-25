@@ -18,8 +18,8 @@ class M2_PT_colors_panel(bpy.types.Panel):
                                "wow_m2_cur_color_index")
 
         sub_col2 = row.column().column(align=True)
-        sub_col2.operator("scene.wow_m2_colors_add_color", text='', icon='ZOOMIN')
-        sub_col2.operator("scene.wow_m2_colors_remove_color", text='', icon='ZOOMOUT')
+        sub_col2.operator("scene.wow_m2_colors_add_color", text='', icon='ADD')
+        sub_col2.operator("scene.wow_m2_colors_remove_color", text='', icon='REMOVE')
 
     @classmethod
     def poll(cls, context):

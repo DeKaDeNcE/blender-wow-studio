@@ -11,13 +11,13 @@ class M2_PT_material_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.label('Render settings:')
+        col.label(text='Render settings:')
         col.prop(context.material.wow_m2_material, "live_update")
         col.separator()
-        col.label('flags:')
+        col.label(text='Flags:')
         col.prop(context.material.wow_m2_material, "flags")
         col.separator()
-        col.label('Render flags:')
+        col.label(text='Render flags:')
         col.prop(context.material.wow_m2_material, "render_flags")
         col.separator()
         col.prop(context.material.wow_m2_material, "blending_mode")

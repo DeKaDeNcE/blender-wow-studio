@@ -48,7 +48,7 @@ class WMO_UL_doodad_set_doodad_list(WMO_UL_root_components_template_list):
 
             s_row = sub_col.row(align=True)
 
-            s_row.label("#{}".format(index), icon='WORLD' if item.pointer.name == '$SetDefaultGlobal' else 'GROUP')
+            s_row.label(text="#{}".format(index), icon='WORLD' if item.pointer.name == '$SetDefaultGlobal' else 'GROUP')
             s_row.prop(item.pointer, 'name', emboss=False)
 
         elif self.layout_type in {'GRID'}:
@@ -72,10 +72,10 @@ class WMO_PT_doodad_set(bpy.types.Panel):
         sub_col_parent = row.column()
         sub_col2 = sub_col_parent.column(align=True)
 
-        op = sub_col2.operator("scene.wow_wmo_doodad_set_components_change", text='', icon='GO_LEFT')
+        op = sub_col2.operator("scene.wow_wmo_doodad_set_components_change", text='', icon='ADD')
         op.action = 'ADD'
 
-        op = sub_col2.operator("scene.wow_wmo_doodad_set_components_change", text='', icon='ZOOMOUT')
+        op = sub_col2.operator("scene.wow_wmo_doodad_set_components_change", text='', icon='REMOVE')
         op.action = 'REMOVE'
 
     @classmethod

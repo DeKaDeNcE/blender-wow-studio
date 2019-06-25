@@ -112,24 +112,24 @@ class M2_OT_creature_editor_dialog(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        split = layout.split(percentage=0.5)
+        split = layout.split(factor=0.5)
         col = split.column()
         col1 = split.column()
 
         if not context.scene.wow_scene.game_path:
-            col.label('Model path is unknown.', icon='ERROR')
+            col.label(text='Model path is unknown.', icon='ERROR')
             return
 
-        col.label('Model data:')
+        col.label(text='Model data:')
         col.prop(context.scene.wow_m2_creature, 'CreatureModelData', text='')
         col.separator()
 
         if context.scene.wow_m2_creature.CreatureModelData != 'None':
-            col1.label('Display Info:')
+            col1.label(text='Display Info:')
             col1.prop(context.scene.wow_m2_creature, 'CreatureDisplayInfo', text='')
 
             if context.scene.wow_m2_creature.CreatureDisplayInfo != 'None':
-                col1.label('Settings:', icon='SETTINGS')
+                col1.label(text='Settings:', icon='SETTINGS')
                 box = col1.box()
                 box.prop(context.scene.wow_m2_creature, 'DisplaySound')
                 box.prop(context.scene.wow_m2_creature, 'DisplayScale')
@@ -164,7 +164,7 @@ class M2_OT_creature_editor_dialog(bpy.types.Operator):
                 box.prop(context.scene.wow_m2_creature, 'ExtraDisplayInformation')
 
                 if context.scene.wow_m2_creature.ExtraDisplayInformation != 0:
-                    box.label('Settings:', icon='SETTINGS')
+                    box.label(text='Settings:', icon='SETTINGS')
                     box1 = box.box()
 
                     box1.prop(context.scene.wow_m2_creature, 'DisplayExtraCanEquip')
@@ -177,7 +177,7 @@ class M2_OT_creature_editor_dialog(bpy.types.Operator):
                     box1.prop(context.scene.wow_m2_creature, 'DisplayExtraHairStyle')
                     box1.prop(context.scene.wow_m2_creature, 'DisplayExtraBeardStyle')
 
-                    box1.label('Equipment:')
+                    box1.label(text='Equipment:')
                     row = box1.row()
                     row.prop(context.scene.wow_m2_creature, 'DisplayExtraHelm')
                     row = box1.row()
@@ -202,7 +202,7 @@ class M2_OT_creature_editor_dialog(bpy.types.Operator):
                     row.prop(context.scene.wow_m2_creature, 'DisplayExtraCape')
 
         else:
-            col.label('No display info found.', icon='PMARKER_ACT')
+            col.label(text='No display info found.', icon='PMARKER_ACT')
 
     def check(self, context):  # redraw the popup window
         return True

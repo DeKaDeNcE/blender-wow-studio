@@ -278,7 +278,7 @@ class BlenderWMOScene:
 
             light_name = "{}_Light_{}".format(self.wmo.display_name, str(i).zfill(2))
 
-            light = bpy.data.lamps.new(light_name, l_type)
+            light = bpy.data.lights.new(light_name, l_type)
             obj = bpy.data.objects.new(light_name, light)
             obj.location = self.wmo.molt.lights[i].position
 

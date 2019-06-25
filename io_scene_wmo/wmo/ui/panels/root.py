@@ -23,13 +23,13 @@ class WMO_PT_root(bpy.types.Panel):
         col.prop(context.scene.wow_wmo_root, "wmo_id")
 
         col.separator()
-        col.label('Render settings', icon='RESTRICT_RENDER_OFF')
+        col.label(text='Render settings', icon='RESTRICT_RENDER_OFF')
         col.prop(context.scene.wow_wmo_root, "ext_ambient_color")
         col.prop(context.scene.wow_wmo_root, "ext_dir_color")
         col.prop(context.scene.wow_wmo_root, "sidn_scalar")
 
         if context.scene.render.engine == 'CYCLES':
-            col.label('Sun Direciton:')
+            col.label(text='Sun Direciton:')
             col.prop(context.scene.wow_wmo_root, "sun_direction", text='')
 
     @classmethod

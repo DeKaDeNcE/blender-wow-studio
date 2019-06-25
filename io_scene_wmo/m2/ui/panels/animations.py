@@ -47,7 +47,7 @@ class M2_PT_animations_panel(bpy.types.Panel):
         except IndexError:
             pass
 
-        col.operator('scene.wow_animation_editor_toggle', text='Edit animations', icon='CLIP')
+        col.operator('scene.wow_animation_editor_toggle', text='Edit animations', icon='VIEW_CAMERA')
 
     @classmethod
     def poll(cls, context):

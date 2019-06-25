@@ -25,22 +25,22 @@ class M2_OT_animation_editor_dialog(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        split = layout.split(percentage=0.5)
+        split = layout.split(factor=0.5)
 
         # Top row - collections: animations, objects
         # Animations column
 
         col = split.column()
-        col.label('Animations:', icon='CLIP')
+        col.label(text='Animations:', icon='VIEW_CAMERA')
 
         row = col.row()
         sub_col1 = row.column()
-        sub_col1.template_list("AnimationEditor_AnimationList", "", context.scene, "wow_m2_animations", context.scene,
+        sub_col1.template_list("M2_UL_animation_editor_animation_list", "", context.scene, "wow_m2_animations", context.scene,
                                "wow_m2_cur_anim_index")
         sub_col_parent = row.column()
         sub_col2 = sub_col_parent.column(align=True)
-        sub_col2.operator("scene.wow_m2_animation_editor_seq_add", text='', icon='ZOOMIN')
-        sub_col2.operator("scene.wow_m2_animation_editor_seq_remove", text='', icon='ZOOMOUT')
+        sub_col2.operator("scene.wow_m2_animation_editor_seq_add", text='', icon='ADD')
+        sub_col2.operator("scene.wow_m2_animation_editor_seq_remove", text='', icon='REMOVE')
 
         sub_col_parent.separator()
 
@@ -51,7 +51,7 @@ class M2_OT_animation_editor_dialog(bpy.types.Operator):
         # Objects column
 
         col = split.column()
-        col.label('Objects:', icon='OBJECT_DATA')
+        col.label(text='Objects:', icon='OBJECT_DATA')
 
         cur_anim_track = None
 
@@ -68,26 +68,26 @@ class M2_OT_animation_editor_dialog(bpy.types.Operator):
             row = col.row()
             sub_col1 = row.column()
 
-            sub_col1.template_list("AnimationEditor_SequenceObjectList", "", cur_anim_track, "anim_pairs",
+            sub_col1.template_list("M2_UL_animation_editor_sequence_object_list", "", cur_anim_track, "anim_pairs",
                                    cur_anim_track, "active_object_index")
             sub_col2 = row.column(align=True)
-            sub_col2.operator("scene.wow_m2_animation_editor_object_add", text='', icon='ZOOMIN')
-            sub_col2.operator("scene.wow_m2_animation_editor_object_remove", text='', icon='ZOOMOUT')
+            sub_col2.operator("scene.wow_m2_animation_editor_object_add", text='', icon='ADD')
+            sub_col2.operator("scene.wow_m2_animation_editor_object_remove", text='', icon='REMOVE')
 
             try:
                 cur_anim_pair = cur_anim_track.anim_pairs[cur_anim_track.active_object_index]
             except IndexError:
                 pass
         else:
-            col.label('No sequence selected.', icon='ERROR')
+            col.label(text='No sequence selected.', icon='ERROR')
 
         # Lower row of top layout: active item editing properties
-        split = layout.split(percentage=0.5)
+        split = layout.split(factor=0.5)
         col = split.column()
 
         if cur_anim_track and context.scene.wow_m2_cur_anim_index >= 0:
             row = col.row()
-            row_split = row.split(percentage=0.935)
+            row_split = row.split(factor=0.935)
             row_split = row_split.row(align=True)
             row_split.prop(cur_anim_track, "playback_speed", text='Speed')
 
@@ -117,10 +117,10 @@ class M2_OT_animation_editor_dialog(bpy.types.Operator):
 
                 col = split.column()
 
-                row_split = col.row().split(percentage=0.93)
+                row_split = col.row().split(factor=0.93)
                 row = row_split.row(align=True)
-                row_split = row.split(percentage=0.30)
-                row_split.row().label('Object' if cur_anim_pair.type == 'OBJECT' else 'Scene')
+                row_split = row.split(factor=0.30)
+                row_split.row().label(text='Object' if cur_anim_pair.type == 'OBJECT' else 'Scene')
                 row = row_split.row(align=True)
                 row.prop(cur_anim_pair, "type", text="", expand=True)
 
@@ -133,15 +133,15 @@ class M2_OT_animation_editor_dialog(bpy.types.Operator):
                     else:
                         sub_row = row.row()
                         sub_row.enabled = False
-                        sub_row.label("", icon='ZOOM_SELECTED')
+                        sub_row.label(text="", icon='ZOOM_SELECTED')
                 else:
                     row.prop(cur_anim_pair, "scene", text='')
 
-                row_split = col.row().split(percentage=0.93)
+                row_split = col.row().split(factor=0.93)
                 row = row_split.row(align=True)
                 col = row.column()
                 col.scale_x = 0.54
-                col.label("Action:")
+                col.label(text="Action:")
 
                 col = row.column(align=True)
                 col.scale_x = 1.0 if cur_anim_pair.action else 1.55
@@ -154,20 +154,20 @@ class M2_OT_animation_editor_dialog(bpy.types.Operator):
                 col = split.column()
 
                 row = col.row()
-                row_split = row.split(percentage=0.88)
-                row_split.label("Object: no object selected")
+                row_split = row.split(factor=0.88)
+                row_split.label(text="Object: no object selected")
 
                 row = col.row()
-                row_split = row.split(percentage=0.88)
-                row_split.label("Action: no action available")
+                row_split = row.split(factor=0.88)
+                row_split.label(text="Action: no action available")
 
             # Lower row: animation and blender playback properties
 
             row = layout.row()
             row.separator()
-            layout.row().label("Animation properties", icon='UI')
+            layout.row().label(text="Animation properties", icon='UI')
 
-            split = layout.split(percentage=0.5)
+            split = layout.split(factor=0.5)
 
             col = split.column()
             col.separator()
@@ -177,7 +177,7 @@ class M2_OT_animation_editor_dialog(bpy.types.Operator):
             col.enabled = not cur_anim_track.is_global_sequence
 
             row = col.row(align=True)
-            row.label("Animation ID: ")
+            row.label(text="Animation ID: ")
             anim_ids = get_anim_ids(None, None)
             row.operator("scene.wow_m2_animation_id_search", text=anim_ids[int(cur_anim_track.animation_id)][1],
                          icon='VIEWZOOM')
@@ -198,7 +198,7 @@ class M2_OT_animation_editor_dialog(bpy.types.Operator):
             col.label(text='Relations:')
             row = col.row(align=True)
             row.enabled = cur_anim_track.is_alias
-            row.label('', icon='FILE_TICK' if cur_anim_track.alias_next < len(context.scene.wow_m2_animations) else 'ERROR')
+            row.label(text='', icon='FILE_TICK' if cur_anim_track.alias_next < len(context.scene.wow_m2_animations) else 'ERROR')
             row.prop(cur_anim_track, 'alias_next', text="Next alias")
             row.operator("scene.wow_m2_animation_editor_go_to_index", text="", icon='ZOOM_SELECTED').anim_index = \
                 cur_anim_track.alias_next
@@ -277,11 +277,11 @@ class M2_UL_animation_editor_animation_list(bpy.types.UIList):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
 
             row = layout.row()
-            row.label(item.name, icon='SEQUENCE')
+            row.label(text=item.name, icon='SEQUENCE')
 
             if not item.is_global_sequence:
                 if item.is_alias and len(data.wow_m2_animations) < item.alias_next:
-                    row.label("", icon='ERROR')
+                    row.label(text="", icon='ERROR')
                 row.prop(item, "is_primary_sequence", emboss=False, text="",
                          icon='POSE_HLT' if item.is_primary_sequence else 'OUTLINER_DATA_POSE')
                 row.prop(item, "is_alias", emboss=False, text="",
@@ -435,11 +435,11 @@ class M2_UL_animation_editor_sequence_object_list(bpy.types.UIList):
                     elif item.object.wow_m2_uv_transform.enabled:
                         icon = 'ASSET_MANAGER'
 
-                row.label(item.object.name, icon=icon)
+                row.label(text=item.object.name, icon=icon)
             elif item.type == 'SCENE' and item.scene:
-                row.label(item.scene.name, icon='SCENE_DATA')
+                row.label(text=item.scene.name, icon='SCENE_DATA')
             else:
-                row.label("Empty slot", icon='MATCUBE')
+                row.label(text="Empty slot", icon='MATCUBE')
 
         elif self.layout_type in {'GRID'}:
             pass

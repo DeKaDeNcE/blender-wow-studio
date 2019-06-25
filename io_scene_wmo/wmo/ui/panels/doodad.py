@@ -13,7 +13,7 @@ class WMO_PT_doodad(bpy.types.Panel):
         layout.prop(context.object, "color")
 
         col = layout.column()
-        col.label("Flags:")
+        col.label(text="Flags:")
         col.prop(context.object.wow_wmo_doodad, "flags")
         layout.enabled = context.object.wow_wmo_doodad.enabled
 

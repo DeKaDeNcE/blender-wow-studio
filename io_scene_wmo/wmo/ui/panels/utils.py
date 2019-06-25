@@ -38,10 +38,10 @@ class WMO_UL_root_components_template_list(bpy.types.UIList):
             s_row = sub_col.row(align=True)
 
             if isinstance(self.icon, int):
-                s_row.label("#{} ".format(index), icon_value=self.icon)
+                s_row.label(text="#{} ".format(index), icon_value=self.icon)
 
             elif isinstance(self.icon, str):
-                s_row.label("#{} ".format(index), icon=self.icon)
+                s_row.label(text="#{} ".format(index), icon=self.icon)
 
             s_row.prop(item, 'pointer', emboss=True, text='')
 

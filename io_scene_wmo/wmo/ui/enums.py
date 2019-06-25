@@ -60,8 +60,8 @@ liquid_type_enum = [
 
 portal_dir_alg_enum = [
     ("0", "Auto", "", 'MONKEY', 0),
-    ("1", "Positive", "", 'ZOOMIN', 1),
-    ("2", "Negative", "", 'ZOOMOUT', 2)
+    ("1", "Positive", "", 'ADD', 1),
+    ("2", "Negative", "", 'REMOVE', 2)
 ]
 
 root_flags_enum = [

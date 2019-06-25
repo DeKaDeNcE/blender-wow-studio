@@ -15,7 +15,7 @@ class WMO_PT_wmo_group(bpy.types.Panel):
         op.prop_group = 'wow_wmo_group'
 
         if bpy.context.scene.wow_wmo_root_components.groups.find(context.object.name) < 0:
-            row.label('', icon='ERROR')
+            row.label(text='', icon='ERROR')
             row.alert = True
 
     def draw(self, context):
@@ -23,12 +23,12 @@ class WMO_PT_wmo_group(bpy.types.Panel):
         col.prop(context.object.wow_wmo_group, "description")
 
         col.separator()
-        col.label("Flags:")
+        col.label(text="Flags:")
         col.prop(context.object.wow_wmo_group, "place_type")
         col.prop(context.object.wow_wmo_group, "flags")
 
         col.separator()
-        col.label("Fogs:")
+        col.label(text="Fogs:")
         col.prop(context.object.wow_wmo_group, "fog1")
         col.prop(context.object.wow_wmo_group, "fog2")
         col.prop(context.object.wow_wmo_group, "fog3")

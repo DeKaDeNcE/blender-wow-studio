@@ -222,7 +222,7 @@ class WMO_PT_tools_object_mode_doodads(bpy.types.Panel):
         box_col2 = box.column(align=True)
 
         if not has_sets:
-            box_col2.operator("scene.wow_doodad_set_add", text='Add to doodadset', icon='ZOOMIN')
+            box_col2.operator("scene.wow_doodad_set_add", text='Add to doodadset', icon='ADD')
             box_col2.operator("scene.wow_doodads_bake_color", text='Bake color', icon='GROUP_VCOL')
             box_col2.operator("scene.wow_doodad_set_color", text='Set color', icon='COLOR')
             box_col2.operator("scene.wow_doodad_set_template_action", text='Template action', icon='FORCE_MAGNETIC')
