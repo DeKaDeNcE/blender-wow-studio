@@ -43,7 +43,7 @@ class BlenderWMOScene:
                 if not slot.pointer.export:
                     continue
 
-            elif (export_selected and not slot.pointer.select) or slot.pointer.hide:
+            elif (export_selected and not slot.pointer.select) or slot.pointer.hide_viewport:
                 continue
 
             slot.pointer.wow_wmo_group.group_id = i
@@ -65,7 +65,7 @@ class BlenderWMOScene:
         empties = []
         scene_objects = bpy.context.scene.objects if not export_selected else bpy.context.selected_objects
 
-        for obj in filter(lambda o: not obj.wow_wmo_doodad.enabled and not o.hide, scene_objects):
+        for obj in filter(lambda o: not obj.wow_wmo_doodad.enabled and not o.hide_viewport, scene_objects):
 
             if obj.type == 'MESH':
 
@@ -314,7 +314,7 @@ class BlenderWMOScene:
             fog = bpy.context.scene.objects.active
 
             if not wmo_fog.big_radius:
-                fog.hide = False
+                fog.hide_viewport = False
 
             fog.name = "{}_Fog_{}".format(self.wmo.display_name, str(i).zfill(2))
 
@@ -434,7 +434,7 @@ class BlenderWMOScene:
 
             bpy.context.scene.objects.link(anchor)
             anchor.name = doodad_set.name
-            anchor.hide = True
+            anchor.hide_viewport = True
             anchor.hide_select = True
             anchor.lock_location = (True, True, True)
             anchor.lock_rotation = (True, True, True)
@@ -482,7 +482,7 @@ class BlenderWMOScene:
                                             doodad.rotation[1],
                                             doodad.rotation[2])
                 nobj.parent = anchor
-                nobj.hide = True
+                nobj.hide_viewport = True
                 slot = scene.wow_wmo_root_components.doodad_sets[-1].doodads.add()
                 slot.pointer = nobj
 

@@ -198,7 +198,7 @@ class WMO_OT_root_components_components_change(bpy.types.Operator):
                 bpy.context.scene.objects.active = act_obj
 
                 d_set.hide_select = True
-                d_set.hide = True
+                d_set.hide_viewport = True
                 d_set.wow_wmo_doodad_set.enabled = True
 
                 if not len(bpy.context.scene.wow_wmo_root_components.doodad_sets):
@@ -629,11 +629,11 @@ def update_current_doodad_set(self, context):
     for d_set in self.doodad_sets:
         if d_set.name == self.doodad_sets[self.cur_doodad_set].name:
             for child in d_set.pointer.children:
-                child.hide = False
+                child.hide_viewport = False
 
         else:
             for child in d_set.pointer.children:
-                child.hide = True
+                child.hide_viewport = True
 
 
 class DoodadProtoPointerPropertyGroup(bpy.types.PropertyGroup):

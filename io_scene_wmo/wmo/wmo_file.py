@@ -393,7 +393,7 @@ class WMOFile:
             fog = bpy.context.scene.objects.active
 
             if not f.big_radius:
-                fog.hide = False
+                fog.hide_viewport = False
 
             fog.name = self.display_name + "_Fog_" + str(i).zfill(2)
 
@@ -460,7 +460,7 @@ class WMOFile:
                 bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
                 anchor = bpy.context.scene.objects.active
                 anchor.name = doodad_set.name
-                anchor.hide = True
+                anchor.hide_viewport = True
                 anchor.hide_select = True
                 anchor.lock_location = (True, True, True)
                 anchor.lock_rotation = (True, True, True)
@@ -517,7 +517,7 @@ class WMOFile:
                                                 doodad.rotation[1],
                                                 doodad.rotation[2])
                     nobj.parent = anchor
-                    nobj.hide = True
+                    nobj.hide_viewport = True
 
         else:
             string_filter = []
@@ -1019,7 +1019,7 @@ class BlenderSceneObjects:
 
         for obj in bpy.context.scene.objects:
             if not obj.wow_wmo_doodad.enabled and not obj.type == 'EMPTY':
-                if obj.hide or export_selected and not obj.select:
+                if obj.hide_viewport or export_selected and not obj.select:
                     continue
                 else:
                     bpy.context.scene.objects.active = obj

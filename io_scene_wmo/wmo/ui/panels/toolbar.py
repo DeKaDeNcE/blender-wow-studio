@@ -9,40 +9,40 @@ def update_wow_visibility(self, context):
 
     for obj in self.objects:
         if 'wow_hide' not in obj:
-            obj['wow_hide'] = obj.hide
+            obj['wow_hide'] = obj.hide_viewport
 
-        if obj['wow_hide'] != obj.hide:
+        if obj['wow_hide'] != obj.hide_viewport:
             continue
 
         if obj.type == "MESH":
             if obj.wow_wmo_group.enabled:
                 if obj.wow_wmo_group.place_type == '8':
-                    obj.hide = '0' not in values
+                    obj.hide_viewport = '0' not in values
                 else:
-                    obj.hide = '1' not in values
+                    obj.hide_viewport = '1' not in values
 
                 if obj.wow_wmo_group.collision_mesh:
                     col = obj.wow_wmo_group.collision_mesh
 
                     if 'wow_hide' not in col:
-                        col['wow_hide'] = col.hide
+                        col['wow_hide'] = col.hide_viewport
 
-                    if col['wow_hide'] != col.hide:
+                    if col['wow_hide'] != col.hide_viewport:
                         continue
 
-                    col.hide = '6' not in values
-                    col['wow_hide'] = col.hide
+                    col.hide_viewport = '6' not in values
+                    col['wow_hide'] = col.hide_viewport
 
             elif obj.wow_wmo_portal.enabled:
-                obj.hide = '2' not in values
+                obj.hide_viewport = '2' not in values
             elif obj.wow_wmo_fog.enabled:
-                obj.hide = '3' not in values
+                obj.hide_viewport = '3' not in values
             elif obj.wow_wmo_liquid.enabled:
-                obj.hide = '4' not in values
+                obj.hide_viewport = '4' not in values
         elif obj.type == "LAMP" and obj.data.wow_wmo_light.enabled:
-            obj.hide = '5' not in values
+            obj.hide_viewport = '5' not in values
 
-        obj['wow_hide'] = obj.hide
+        obj['wow_hide'] = obj.hide_viewport
 
 
 def update_liquid_flags(self, context):
@@ -90,9 +90,9 @@ def switch_doodad_set(self, context):
         if obj.wow_wmo_doodad.enabled:
             if obj.parent:
                 name = obj.parent.name
-                obj.hide = set == "None" or name != set and name != "Set_$DefaultGlobal"
+                obj.hide_viewport = set == "None" or name != set and name != "Set_$DefaultGlobal"
             else:
-                obj.hide = True
+                obj.hide_viewport = True
 
 
 class WMO_PT_tools_object_mode_display(bpy.types.Panel):

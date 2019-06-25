@@ -664,7 +664,7 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
                 bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
                 obj = bpy.context.scene.objects.active
                 obj.name = self.Name
-                obj.hide = True
+                obj.hide_viewport = True
                 obj.hide_select = True
                 obj.lock_location = (True, True, True)
                 obj.lock_rotation = (True, True, True)
@@ -683,7 +683,7 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
                 bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
                 obj = bpy.context.scene.objects.active
                 obj.name = "Set_$DefaultGlobal"
-                obj.hide = True
+                obj.hide_viewport = True
                 obj.hide_select = True
                 obj.lock_location = (True, True, True)
                 obj.lock_rotation = (True, True, True)
@@ -962,7 +962,7 @@ class WMO_OT_bake_portal_relations(bpy.types.Operator):
 
         success = False
 
-        groups = tuple(x for x in bpy.context.scene.objects if x.wow_wmo_group.enabled and not x.hide)
+        groups = tuple(x for x in bpy.context.scene.objects if x.wow_wmo_group.enabled and not x.hide_viewport)
 
         for obj in bpy.context.selected_objects:
             if obj.wow_wmo_portal.enabled:
@@ -1064,7 +1064,7 @@ class WMO_OT_add_water(bpy.types.Operator):
 
         water.wow_wmo_liquid.enabled = True
 
-        water.hide = False if "4" in bpy.context.scene.wow_visibility else True
+        water.hide_viewport = False if "4" in bpy.context.scene.wow_visibility else True
 
         self.report({'INFO'}, "Successfully сreated WoW liquid: " + water.name)
         return {'FINISHED'}
@@ -1109,7 +1109,7 @@ class WMO_OT_add_flag(bpy.types.Operator):
         slot = bpy.context.scene.wow_wmo_root_components.fogs.add()
         slot.pointer = fog
 
-        fog.hide = False if "3" in bpy.context.scene.wow_visibility else True
+        fog.hide_viewport = False if "3" in bpy.context.scene.wow_visibility else True
 
         self.report({'INFO'}, "Successfully сreated WoW fog: " + fog.name)
         return {'FINISHED'}
@@ -1287,7 +1287,7 @@ class WMO_OT_to_wmo_portal(bpy.types.Operator):
                 ob.wow_wmo_fog.enabled = False
                 ob.wow_wmo_portal.enabled = True
 
-                ob.hide = False if "2" in bpy.context.scene.wow_visibility else True
+                ob.hide_viewport = False if "2" in bpy.context.scene.wow_visibility else True
                 success = True
 
         if success:
@@ -1349,9 +1349,9 @@ class WMO_OT_to_group(bpy.types.Operator):
 
                 if self.place_type == "8" and "0" in scene.wow_visibility \
                         or self.place_type == "8192" and "1" in scene.wow_visibility:
-                    ob.hide = False
+                    ob.hide_viewport = False
                 else:
-                    ob.hide = True
+                    ob.hide_viewport = True
                 success = True
 
         if success:
@@ -1485,7 +1485,7 @@ class WMO_OT_select_entity(bpy.types.Operator):
     def execute(self, context):
 
         for obj in bpy.context.scene.objects:
-            if obj.hide:
+            if obj.hide_viewport:
                 continue
 
             if obj.type == 'MESH':
