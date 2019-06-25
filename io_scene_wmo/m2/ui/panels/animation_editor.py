@@ -10,7 +10,7 @@ from ....pywowlib import WoWVersions
 
 #### Pop-up dialog ####
 
-class AnimationEditorDialog(bpy.types.Operator):
+class M2_OT_animation_editor_dialog(bpy.types.Operator):
     bl_idname = 'scene.wow_animation_editor_toggle'
     bl_label = 'WoW M2 Animation Editor'
 
@@ -214,14 +214,14 @@ class AnimationEditorDialog(bpy.types.Operator):
         return True
 
 
-class AnimationEditor_IDSearch(bpy.types.Operator):
+class M2_OT_animation_editor_id_search(bpy.types.Operator):
     bl_idname = "scene.wow_m2_animation_id_search"
     bl_label = "Search animation ID"
     bl_description = "Select WoW M2 animation ID"
     bl_options = {'REGISTER', 'INTERNAL'}
     bl_property = "animation_id"
 
-    animation_id = bpy.props.EnumProperty(items=get_anim_ids)
+    animation_id:  bpy.props.EnumProperty(items=get_anim_ids)
 
     def execute(self, context):
 
@@ -270,7 +270,7 @@ def update_animation_collection(self, context):
             anim.name = "#{} Global Sequence ({})".format(i, anim.chain_index)
 
 
-class AnimationEditor_AnimationList(bpy.types.UIList):
+class M2_UL_animation_editor_animation_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
         self.use_filter_show = True
 
@@ -319,7 +319,7 @@ class AnimationEditor_AnimationList(bpy.types.UIList):
         return flt_flags, flt_neworder
 
 
-class AnimationEditor_SequenceAdd(bpy.types.Operator):
+class M2_OT_animation_editor_sequence_add(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_seq_add'
     bl_label = 'Add WoW animation'
     bl_description = 'Add WoW animation sequence'
@@ -333,7 +333,7 @@ class AnimationEditor_SequenceAdd(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class AnimationEditor_SequenceRemove(bpy.types.Operator):
+class M2_OT_animation_editor_sequence_remove(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_seq_remove'
     bl_label = 'Remove WoW animation'
     bl_description = 'Remove WoW animation sequence'
@@ -346,13 +346,13 @@ class AnimationEditor_SequenceRemove(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class AnimationEditor_SequenceMove(bpy.types.Operator):
+class M2_OT_animation_editor_sequence_move(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_seq_move'
     bl_label = 'Move WoW animation'
     bl_description = 'Move WoW animation sequence'
     bl_options = {'REGISTER', 'INTERNAL'}
 
-    direction = bpy.props.StringProperty()
+    direction:  bpy.props.StringProperty()
 
     def execute(self, context):
 
@@ -370,7 +370,7 @@ class AnimationEditor_SequenceMove(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class AnimationEditor_SequenceDeselect(bpy.types.Operator):
+class M2_OT_animation_editor_sequence_deselect(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_seq_deselect'
     bl_label = 'Get back to rest pose'
     bl_description = 'Deselect WoW animation sequence'
@@ -389,12 +389,12 @@ class AnimationEditor_SequenceDeselect(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class AnimationEditor_GoToAnimation(bpy.types.Operator):
+class M2_OT_animation_editor_go_to_animation(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_go_to_index'
     bl_label = 'Go to this WoW animation'
     bl_options = {'REGISTER', 'INTERNAL'}
 
-    anim_index = bpy.props.IntProperty()
+    anim_index:  bpy.props.IntProperty()
 
     def execute(self, context):
         if self.anim_index < len(context.scene.wow_m2_animations):
@@ -407,7 +407,7 @@ class AnimationEditor_GoToAnimation(bpy.types.Operator):
 
 
 # Object list
-class AnimationEditor_SequenceObjectList(bpy.types.UIList):
+class M2_UL_animation_editor_sequence_object_list(bpy.types.UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         self.use_filter_show = True
@@ -467,7 +467,7 @@ class AnimationEditor_SequenceObjectList(bpy.types.UIList):
         return flt_flags, flt_neworder
 
 
-class AnimationEditor_ObjectAdd(bpy.types.Operator):
+class M2_OT_animation_editor_object_add(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_object_add'
     bl_label = 'Add object'
     bl_description = 'Add new object to selected animation sequence'
@@ -488,7 +488,7 @@ class AnimationEditor_ObjectAdd(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class AnimationEditor_ObjectRemove(bpy.types.Operator):
+class M2_OT_animation_editor_object_remove(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_object_remove'
     bl_label = 'Remove object'
     bl_description = 'Remove object from selected animation sequence'
@@ -509,19 +509,19 @@ class AnimationEditor_ObjectRemove(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class AnimationEditor_ObjectSelect(bpy.types.Operator):
+class M2_OT_animation_editor_object_select(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_select_object'
     bl_label = 'Select object'
     bl_options = {'REGISTER', 'INTERNAL'}
 
-    name = bpy.props.StringProperty()
+    name:  bpy.props.StringProperty()
 
     def execute(self, context):
         bpy.data.objects[self.name].select = True
         return {'FINISHED'}
 
 
-class AnimationEditor_ActionAdd(bpy.types.Operator):
+class M2_OT_animation_editor_action_add(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_action_add'
     bl_label = 'Add new action'
     bl_options = {'REGISTER', 'INTERNAL'}
@@ -536,7 +536,7 @@ class AnimationEditor_ActionAdd(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class AnimationEditor_ActionUnlink(bpy.types.Operator):
+class M2_OT_animation_editor_action_unlink(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_animation_editor_action_unlink'
     bl_label = 'Unlink action'
     bl_options = {'REGISTER', 'INTERNAL'}
@@ -635,7 +635,7 @@ def update_anim_pair_type(self, context):
 
 class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
 
-    type = bpy.props.EnumProperty(
+    type:  bpy.props.EnumProperty(
         name="Type",
         description="Defines whether object or scene is animated",
         items=[('OBJECT', "Object", "", 'OBJECT_DATA', 0),
@@ -644,7 +644,7 @@ class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
         update=update_anim_pair_type
     )
 
-    object = bpy.props.PointerProperty(
+    object:  bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Object",
         description="Object to animate in this animation sequence",
@@ -652,7 +652,7 @@ class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
         update=update_object
     )
 
-    scene = bpy.props.PointerProperty(
+    scene:  bpy.props.PointerProperty(
         type=bpy.types.Scene,
         name="Scene",
         description="Scene to animate in this animation sequence",
@@ -660,7 +660,7 @@ class WowM2AnimationEditorAnimationPairsPropertyGroup(bpy.types.PropertyGroup):
         update=update_scene
     )
 
-    action = bpy.props.PointerProperty(
+    action:  bpy.props.PointerProperty(
         type=bpy.types.Action,
         name="Action",
         description="Action to use in this animation sequence",
@@ -750,17 +750,17 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
 
     # Collection
 
-    anim_pairs = bpy.props.CollectionProperty(type=WowM2AnimationEditorAnimationPairsPropertyGroup)
+    anim_pairs:  bpy.props.CollectionProperty(type=WowM2AnimationEditorAnimationPairsPropertyGroup)
 
-    active_object_index = bpy.props.IntProperty(update=update_animation_collection)
+    active_object_index:  bpy.props.IntProperty(update=update_animation_collection)
 
-    chain_index = bpy.props.IntProperty()
+    chain_index:  bpy.props.IntProperty()
 
-    name = bpy.props.StringProperty()
+    name:  bpy.props.StringProperty()
 
     # Playback properties
 
-    playback_speed = bpy.props.FloatProperty(
+    playback_speed:  bpy.props.FloatProperty(
         name="Speed",
         description="Playback speed of this animation. Does not affect in-game playback speed.",
         min=0.1,
@@ -769,26 +769,26 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         update=update_playback_speed
     )
 
-    stash_to_nla = bpy.props.BoolProperty(
+    stash_to_nla:  bpy.props.BoolProperty(
         name='Enable persistent playing',
         description='Enable persistent playing of this global sequences, no matter what animation is chosen',
         update=update_stash_to_nla
     )
 
-    live_update = bpy.props.BoolProperty(
+    live_update:  bpy.props.BoolProperty(
         name='Live update',
         description='Automatically update materials that have live update turned on. May decrease FPS.'
     )
 
     # Layout properties
-    is_primary_sequence = bpy.props.BoolProperty(
+    is_primary_sequence:  bpy.props.BoolProperty(
         name='Primary sequence',
         description="If set, the animation data is in the .m2 file, else in an .anim file",
         default=True,
         update=update_primary_sequence
     )
 
-    is_alias = bpy.props.BoolProperty(
+    is_alias:  bpy.props.BoolProperty(
         name='Is alias',
         description="The animation uses transformation data from another sequence, changing its action won't affect the in-game track",
         default=False,
@@ -796,20 +796,20 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
     )
 
     # Actual properties
-    is_global_sequence = bpy.props.BoolProperty(
+    is_global_sequence:  bpy.props.BoolProperty(
         name="Global sequence",
         description='Global sequences are animation loops that are constantly played and blended with current animation',
         default=False
     )
 
-    animation_id = bpy.props.EnumProperty(
+    animation_id:  bpy.props.EnumProperty(
         name="animation_id",
         description="WoW Animation ID",
         items=get_anim_ids,
         update=update_animation_collection
     )
 
-    flags = bpy.props.EnumProperty(
+    flags:  bpy.props.EnumProperty(
         name='Flags',
         description="WoW M2 Animation Flags",
         items=ANIMATION_FLAGS,
@@ -817,54 +817,54 @@ class WowM2AnimationEditorPropertyGroup(bpy.types.PropertyGroup):
         update=update_animation_flags
     )
 
-    move_speed = bpy.props.FloatProperty(
+    move_speed:  bpy.props.FloatProperty(
         name="Move speed",
         description="The speed the character moves with in this animation",
         min=0.0,
         default=1.0
     )
 
-    frequency = bpy.props.IntProperty(
+    frequency:  bpy.props.IntProperty(
         name="Frequency",
         description="This is used to determine how often the animation is played.",
         min=0,
         max=32767
     )
 
-    replay_min = bpy.props.IntProperty(
+    replay_min:  bpy.props.IntProperty(
         name="Replay Min",
         description="Client will pick a random number of repetitions within bounds if given.",
         min=0,
         max=65535
     )
 
-    replay_max = bpy.props.IntProperty(
+    replay_max:  bpy.props.IntProperty(
         name="Replay Max",
         description="Client will pick a random number of repetitions within bounds if given.",
         min=0,
         max=65535
     )
 
-    alias_next = bpy.props.IntProperty(
+    alias_next:  bpy.props.IntProperty(
         name='Alias',
         description='Index of animation used as a alias for this one',
         min=0,
         update=update_animation_collection
     )
 
-    blend_time = bpy.props.IntProperty(
+    blend_time:  bpy.props.IntProperty(
         name="Blend time",
         description="",
         min=0
     )
 
-    blend_time_in = bpy.props.IntProperty(
+    blend_time_in:  bpy.props.IntProperty(
         name="Blend time",
         description="",
         min=0
     )
 
-    blend_time_out = bpy.props.IntProperty(
+    blend_time_out:  bpy.props.IntProperty(
         name="Blend time",
         description="",
         min=0
@@ -965,13 +965,13 @@ def update_animation(self, context):
 
 
 def register():
-    bpy.types.Scene.wow_m2_animations = bpy.props.CollectionProperty(
+    bpy.types.Scene.wow_m2_animations:  bpy.props.CollectionProperty(
         type=WowM2AnimationEditorPropertyGroup,
         name="Animations",
         description="WoW M2 animation sequences"
     )
 
-    bpy.types.Scene.wow_m2_cur_anim_index = bpy.props.IntProperty(
+    bpy.types.Scene.wow_m2_cur_anim_index:  bpy.props.IntProperty(
         name='M2 Animation',
         description='Current WoW M2 animation',
         update=update_animation

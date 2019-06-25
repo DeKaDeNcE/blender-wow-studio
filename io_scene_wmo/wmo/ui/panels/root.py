@@ -2,7 +2,7 @@ import bpy
 from ..enums import *
 
 
-class WoWRootPanel(bpy.types.Panel):
+class WMO_PT_root(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -38,26 +38,26 @@ class WoWRootPanel(bpy.types.Panel):
 
 
 class MODS_Set(bpy.types.PropertyGroup):
-    name = bpy.props.StringProperty()
-    start_doodad = bpy.props.IntProperty()
-    n_doodads = bpy.props.IntProperty()
-    padding = bpy.props.IntProperty()
+    name:  bpy.props.StringProperty()
+    start_doodad:  bpy.props.IntProperty()
+    n_doodads:  bpy.props.IntProperty()
+    padding:  bpy.props.IntProperty()
 
 
 class MODN_String(bpy.types.PropertyGroup):
-    ofs = bpy.props.IntProperty()
-    string = bpy.props.StringProperty()
+    ofs:  bpy.props.IntProperty()
+    string:  bpy.props.StringProperty()
 
 
 class MODD_Definition(bpy.types.PropertyGroup):
-    name_ofs = bpy.props.IntProperty()
-    flags = bpy.props.IntProperty()
-    position = bpy.props.FloatVectorProperty()
-    rotation = bpy.props.FloatVectorProperty()
-    tilt = bpy.props.FloatProperty()
-    scale = bpy.props.FloatProperty()
-    color = bpy.props.FloatVectorProperty()
-    color_alpha = bpy.props.FloatProperty()
+    name_ofs:  bpy.props.IntProperty()
+    flags:  bpy.props.IntProperty()
+    position:  bpy.props.FloatVectorProperty()
+    rotation:  bpy.props.FloatVectorProperty()
+    tilt:  bpy.props.FloatProperty()
+    scale:  bpy.props.FloatProperty()
+    color:  bpy.props.FloatVectorProperty()
+    color_alpha:  bpy.props.FloatProperty()
 
 
 def update_flags(self, context):
@@ -117,11 +117,11 @@ def update_sun_direction(self, context):
 
 class WowRootPropertyGroup(bpy.types.PropertyGroup):
 
-    mods_sets = bpy.props.CollectionProperty(type=MODS_Set)
-    modn_string_table = bpy.props.CollectionProperty(type=MODN_String)
-    modd_definitions = bpy.props.CollectionProperty(type=MODD_Definition)
+    mods_sets:  bpy.props.CollectionProperty(type=MODS_Set)
+    modn_string_table:  bpy.props.CollectionProperty(type=MODN_String)
+    modd_definitions:  bpy.props.CollectionProperty(type=MODD_Definition)
 
-    flags = bpy.props.EnumProperty(
+    flags:  bpy.props.EnumProperty(
         name="Root flags",
         description="WoW WMO root flags",
         items=root_flags_enum,
@@ -129,7 +129,7 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
         update=update_flags
         )
 
-    ambient_color = bpy.props.FloatVectorProperty(
+    ambient_color:  bpy.props.FloatVectorProperty(
         name="Ambient Color",
         subtype='COLOR',
         default=(1, 1, 1, 1),
@@ -139,20 +139,20 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
         update=update_ambient_color
         )
 
-    skybox_path = bpy.props.StringProperty(
+    skybox_path:  bpy.props.StringProperty(
         name="Skybox Path",
         description="Skybox for WMO (.MDX)",
         default='',
         )
 
-    wmo_id = bpy.props.IntProperty(
+    wmo_id:  bpy.props.IntProperty(
         name="DBC ID",
         description="Used in WMOAreaTable (optional)",
         default=0,
         )
 
     # render controls
-    ext_ambient_color = bpy.props.FloatVectorProperty(
+    ext_ambient_color:  bpy.props.FloatVectorProperty(
         name="Ext. Ambient Color",
         subtype='COLOR',
         default=(0.138, 0.223, 0.323, 1),
@@ -162,7 +162,7 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
         update=update_ext_ambient_color
         )
 
-    ext_dir_color = bpy.props.FloatVectorProperty(
+    ext_dir_color:  bpy.props.FloatVectorProperty(
         name="Ext. Dir Color",
         subtype='COLOR',
         default=(0.991, 0.246, 0, 1),
@@ -172,7 +172,7 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
         update=update_ext_dir_color
     )
 
-    sidn_scalar = bpy.props.FloatProperty(
+    sidn_scalar:  bpy.props.FloatProperty(
         name='SIDN intensity',
         description='Controls intensity of night glow in materials',
         min=0.0,
@@ -180,7 +180,7 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
         update=update_sidn_scalar
     )
 
-    sun_direction = bpy.props.FloatVectorProperty(
+    sun_direction:  bpy.props.FloatVectorProperty(
         name='Sun Direction',
         description='Defines the direction of the sun',
         default=(0.2, 0.7, 0.6),
@@ -191,7 +191,7 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Scene.wow_wmo_root = bpy.props.PointerProperty(type=WowRootPropertyGroup)
+    bpy.types.Scene.wow_wmo_root:  bpy.props.PointerProperty(type=WowRootPropertyGroup)
 
 
 def unregister():

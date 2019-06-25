@@ -1,7 +1,7 @@
 import bpy
 
 
-class WowM2TextureTransformControllerPanel(bpy.types.Panel):
+class M2_PT_texture_transform_controller_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
@@ -27,7 +27,7 @@ class WowM2TextureTransformControllerPanel(bpy.types.Panel):
 
 class WowM2TextureTransformControllerPropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty(
+    enabled:  bpy.props.BoolProperty(
         name='Enabled',
         description='Enable this object to be WoW M2 texture transform controller',
         default=False
@@ -35,7 +35,7 @@ class WowM2TextureTransformControllerPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_m2_uv_transform = bpy.props.PointerProperty(type=WowM2TextureTransformControllerPropertyGroup)
+    bpy.types.Object.wow_m2_uv_transform:  bpy.props.PointerProperty(type=WowM2TextureTransformControllerPropertyGroup)
 
 
 def unregister():

@@ -171,7 +171,7 @@ def update_camera_target(self, context):
             bpy.ops.constraint.move_down(ctx_override, constraint=track_to.name, owner='OBJECT')
 
 
-class WowM2CameraPanel(bpy.types.Panel):
+class M2_PT_camera_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
@@ -249,7 +249,7 @@ class WowM2CameraPanel(bpy.types.Panel):
 
 class WowM2CameraPathPropertyGroup(bpy.types.PropertyGroup):
 
-    object = bpy.props.PointerProperty(
+    object:  bpy.props.PointerProperty(
         type=bpy.types.Object,
         name='Curve',
         description='Bezier curve with only one spline with 2 bezier points, defining camera path for a frame range.',
@@ -258,7 +258,7 @@ class WowM2CameraPathPropertyGroup(bpy.types.PropertyGroup):
 
     )
 
-    duration = bpy.props.FloatProperty(
+    duration:  bpy.props.FloatProperty(
         name='Duration',
         description="Duration in frames of the camera travelling along this path segment.",
         min=0,
@@ -266,20 +266,20 @@ class WowM2CameraPathPropertyGroup(bpy.types.PropertyGroup):
     )
 
     # for internal use only
-    name = bpy.props.StringProperty()
-    this_object = bpy.props.PointerProperty(type=bpy.types.Object)
+    name:  bpy.props.StringProperty()
+    this_object:  bpy.props.PointerProperty(type=bpy.types.Object)
 
 
 class WowM2CameraPropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty(
+    enabled:  bpy.props.BoolProperty(
         name='Enabled',
         description='Enable this empty to be a camera target controller.',
         default=False,
         update=update_empty_draw_type
     )
 
-    type = bpy.props.EnumProperty(
+    type:  bpy.props.EnumProperty(
         name='Type',
         description='Type of this camera',
         items=[("0", "Portrait", "", 'OUTLINER_OB_ARMATURE', 0),
@@ -287,10 +287,10 @@ class WowM2CameraPropertyGroup(bpy.types.PropertyGroup):
                ("-1", "Flyby", "", 'FORCE_BOID', -1)]
     )
 
-    animation_curves = bpy.props.CollectionProperty(type=WowM2CameraPathPropertyGroup)
-    cur_anim_curve_index = bpy.props.IntProperty()
+    animation_curves:  bpy.props.CollectionProperty(type=WowM2CameraPathPropertyGroup)
+    cur_anim_curve_index:  bpy.props.IntProperty()
 
-    target = bpy.props.PointerProperty(
+    target:  bpy.props.PointerProperty(
         type=bpy.types.Object,
         name='Target',
         description='Target of the camera. Can be animated using curves.',
@@ -299,7 +299,7 @@ class WowM2CameraPropertyGroup(bpy.types.PropertyGroup):
     )
 
 
-class WowM2Camera_CurveList(bpy.types.UIList):
+class M2_UL_camera_curve_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
         self.use_filter_show = False
 
@@ -316,7 +316,7 @@ class WowM2Camera_CurveList(bpy.types.UIList):
             pass
 
 
-class WowM2Camera_CurveAdd(bpy.types.Operator):
+class M2_OT_camera_curve_add(bpy.types.Operator):
     bl_idname = 'object.wow_m2_camera_curve_add'
     bl_label = 'Add curve segment'
     bl_options = {'REGISTER', 'INTERNAL'}
@@ -330,7 +330,7 @@ class WowM2Camera_CurveAdd(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WowM2Camera_CurveRemove(bpy.types.Operator):
+class M2_OT_camera_curve_remove(bpy.types.Operator):
     bl_idname = 'object.wow_m2_camera_curve_remove'
     bl_label = 'Remove curve segment'
     bl_options = {'REGISTER', 'INTERNAL'}
@@ -342,12 +342,12 @@ class WowM2Camera_CurveRemove(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WowM2Camera_CurveMove(bpy.types.Operator):
+class M2_OT_camera_curve_move(bpy.types.Operator):
     bl_idname = 'object.wow_m2_camera_curve_move'
     bl_label = 'Move curve segment'
     bl_options = {'REGISTER', 'INTERNAL'}
 
-    direction = bpy.props.StringProperty()
+    direction:  bpy.props.StringProperty()
 
     def execute(self, context):
 
@@ -369,7 +369,7 @@ class WowM2Camera_CurveMove(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WowM2Camera_CurveCompose(bpy.types.Operator):
+class M2_OT_camera_curve_compose(bpy.types.Operator):
     bl_idname = 'object.wow_m2_camera_curve_compose'
     bl_label = 'Compose curve'
     bl_description = 'Convert current curves to a single curve'
@@ -410,18 +410,18 @@ class WowM2Camera_CurveCompose(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WowM2Camera_CurveDecompose(bpy.types.Operator):
+class M2_OT_camera_curve_decompose(bpy.types.Operator):
     bl_idname = 'object.wow_m2_camera_curve_decompose'
     bl_label = 'Decompose curve'
     bl_description = 'Convert a single curves to timed curve segments'
     bl_options = {'REGISTER', 'INTERNAL'}
 
-    curve_obj = bpy.props.StringProperty(
+    curve_obj:  bpy.props.StringProperty(
         name='Curve',
         description='Curve object to be decomposed to timed curve segments'
     )
 
-    preserve_timing = bpy.props.BoolProperty(
+    preserve_timing:  bpy.props.BoolProperty(
         name='Preserve Timing',
         description='Align decomposed curve segments to already existing timed slots.',
         default=True
@@ -524,7 +524,7 @@ class WowM2Camera_CurveDecompose(bpy.types.Operator):
 
 
 def register():
-    bpy.types.Object.wow_m2_camera = bpy.props.PointerProperty(type=WowM2CameraPropertyGroup)
+    bpy.types.Object.wow_m2_camera:  bpy.props.PointerProperty(type=WowM2CameraPropertyGroup)
 
 
 def unregister():

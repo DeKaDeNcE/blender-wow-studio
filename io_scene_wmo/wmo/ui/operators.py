@@ -19,12 +19,12 @@ from ..render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
 ## WMO operators
 ###############################
 
-class WoWWMO_DestroyProperty(bpy.types.Operator):
+class WMO_OT_destroy_property(bpy.types.Operator):
     bl_idname = "scene.wow_wmo_destroy_wow_property"
     bl_label = "Disable Property"
     bl_options = {'UNDO', 'REGISTER', 'INTERNAL'}
 
-    prop_group = bpy.props.StringProperty()
+    prop_group:  bpy.props.StringProperty()
 
     prop_map = {
         'wow_wmo_group': 'groups',
@@ -54,7 +54,7 @@ class WoWWMO_DestroyProperty(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WoWWMO_GenerateMaterials(bpy.types.Operator):
+class WMO_OT_generate_materials(bpy.types.Operator):
     bl_idname = "scene.wow_wmo_generate_materials"
     bl_label = "Generate WMO Textures"
     bl_description = "Generate WMO materials."
@@ -72,7 +72,7 @@ class WoWWMO_GenerateMaterials(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WoWWMO_ReloadTexturesFromCache(bpy.types.Operator):
+class WMO_OT_reload_textures_from_cache(bpy.types.Operator):
     bl_idname = "scene.wow_wmo_reload_textures_from_cache"
     bl_label = "Reload WMO textures"
     bl_description = "Reload textures from WoW cache."
@@ -111,7 +111,7 @@ class WoWWMO_ReloadTexturesFromCache(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WoWWMOFixMaterailDuplicates_OP(bpy.types.Operator):
+class WMO_OT_fix_material_duplicates(bpy.types.Operator):
     bl_idname = "scene.wow_fix_material_duplicates"
     bl_label = "Fix material duplicates"
     bl_description = "Fix duplicated materials in WMO groups."
@@ -159,7 +159,7 @@ class WoWWMOFixMaterailDuplicates_OP(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class IMPORT_ADT_SCENE(bpy.types.Operator):
+class WMO_OT_import_adt_scene(bpy.types.Operator):
     bl_idname = "scene.wow_import_adt_scene"
     bl_label = "Import M2s and WMOs from ADT"
     bl_description = "Import M2s and WMOs from ADT"
@@ -169,26 +169,26 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
     def poll(cls, context):
         return True
 
-    dir_path = bpy.props.StringProperty(
+    dir_path:  bpy.props.StringProperty(
         name="",
         description="Choose a directory with ADTs:",
         default="",
         maxlen=1024,
         subtype='DIR_PATH')
 
-    doodads_on = bpy.props.BoolProperty(
+    doodads_on:  bpy.props.BoolProperty(
         name="As doodads",
         description="Import M2 models as doodads",
         default=True
     )
 
-    group_objects = bpy.props.BoolProperty(
+    group_objects:  bpy.props.BoolProperty(
         name="Group objects",
         description="Add imported objects to a new group",
         default=True
     )
 
-    move_to_center = bpy.props.BoolProperty(
+    move_to_center:  bpy.props.BoolProperty(
         name="Move to center",
         description="Move imported objects to center of coordinates",
         default=True
@@ -412,7 +412,7 @@ class IMPORT_ADT_SCENE(bpy.types.Operator):
         return context.window_manager.invoke_confirm(self, event)
 
 
-class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
+class WMO_OT_import_last_wmo_from_wmv(bpy.types.Operator):
     bl_idname = "scene.wow_import_last_wmo_from_wmv"
     bl_label = "Load last WMO from WMV"
     bl_description = "Load last WMO from WMV"
@@ -491,7 +491,7 @@ class IMPORT_LAST_WMO_FROM_WMV(bpy.types.Operator):
 ## Doodad operators
 ###############################
 
-class DOODADS_BAKE_COLOR(bpy.types.Operator):
+class WMO_OT_doodads_bake_color(bpy.types.Operator):
     bl_idname = "scene.wow_doodads_bake_color"
     bl_label = "Bake doodads color"
     bl_description = "Bake doodads colors from nearby vertex color values"
@@ -599,13 +599,13 @@ class DOODADS_BAKE_COLOR(bpy.types.Operator):
         return context.window_manager.invoke_confirm(self, event)
 
 
-class DOODAD_SET_ADD(bpy.types.Operator):
+class WMO_OT_doodadset_add(bpy.types.Operator):
     bl_idname = 'scene.wow_doodad_set_add'
     bl_label = 'Add doodad set'
     bl_description = 'Add models to doodadset'
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
-    Action = bpy.props.EnumProperty(
+    Action:  bpy.props.EnumProperty(
         name="Operator action",
         description="Choose operator action",
         items=[
@@ -615,14 +615,14 @@ class DOODAD_SET_ADD(bpy.types.Operator):
         ]
     )
 
-    Set = bpy.props.EnumProperty(
+    Set:  bpy.props.EnumProperty(
         name="",
         description="Select doodad set",
         items=get_doodad_sets,
         update=switch_doodad_set
     )
 
-    Name = bpy.props.StringProperty(
+    Name:  bpy.props.StringProperty(
         name=""
     )
 
@@ -701,13 +701,13 @@ class DOODAD_SET_ADD(bpy.types.Operator):
 
         return {'FINISHED'}
 
-class DOODAD_SET_COLOR(bpy.types.Operator):
+class WMO_OT_doodadset_color(bpy.types.Operator):
     bl_idname = 'scene.wow_doodad_set_color'
     bl_label = 'Set Doodad Color'
     bl_description = "Set color to selected doodads"
     bl_options = {'REGISTER', 'UNDO'}
 
-    Color = bpy.props.FloatVectorProperty(
+    Color:  bpy.props.FloatVectorProperty(
         name='Color',
         description='Color applied to doodads',
         subtype='COLOR',
@@ -737,13 +737,13 @@ class DOODAD_SET_COLOR(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class DOODAD_SET_TEMPLATE_ACTION(bpy.types.Operator):
+class WMO_OT_doodadset_template_action(bpy.types.Operator):
     bl_idname = 'scene.wow_doodad_set_template_action'
     bl_label = 'Template action'
     bl_description = 'Apply an action to all instances of selected object on the scene'
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
-    Action = bpy.props.EnumProperty(
+    Action:  bpy.props.EnumProperty(
         items=[
             ('SELECT', "Select", "Rotate all instances of selected doodads", 'PMARKER_ACT', 0),
             ('REPLACE', "Replace", "Replace all instances of selected doodads with last M2 from WMV", 'FILE_REFRESH', 1),
@@ -753,7 +753,7 @@ class DOODAD_SET_TEMPLATE_ACTION(bpy.types.Operator):
         default='SELECT'
     )
 
-    Scale = bpy.props.FloatProperty(
+    Scale:  bpy.props.FloatProperty(
         name="Scale",
         description="Scale applied to doodads",
         min=0.01,
@@ -761,7 +761,7 @@ class DOODAD_SET_TEMPLATE_ACTION(bpy.types.Operator):
         default=1
     )
 
-    Rotation = bpy.props.FloatVectorProperty(
+    Rotation:  bpy.props.FloatVectorProperty(
         name="Rotation",
         default=(0, 0, 0, 0),
         size=4
@@ -885,12 +885,12 @@ class DOODAD_SET_TEMPLATE_ACTION(bpy.types.Operator):
 ## Water operators
 ###############################
 
-class OBJECT_OP_ADD_FLAG(bpy.types.Operator):
+class WMO_OT_add_liquid_flag(bpy.types.Operator):
     bl_idname = 'scene.wow_mliq_change_flags'
     bl_label = 'Change liquid flags'
     bl_description = 'Change WoW liquid flags'
 
-    Action = bpy.props.EnumProperty(
+    Action:  bpy.props.EnumProperty(
         name="",
         description="Select flag action",
         items=[("ADD", "", ""),
@@ -934,7 +934,7 @@ class OBJECT_OP_ADD_FLAG(bpy.types.Operator):
 ## Object operators
 ###############################
 
-class OBJECT_OP_Bake_Portal_Relations(bpy.types.Operator):
+class WMO_OT_bake_portal_relations(bpy.types.Operator):
     bl_idname = 'scene.wow_bake_portal_relations'
     bl_label = 'Bake portal relations'
     bl_description = 'Bake portal relations'
@@ -979,13 +979,13 @@ class OBJECT_OP_Bake_Portal_Relations(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OP_Add_Scale(bpy.types.Operator):
+class WMO_OT_add_scale(bpy.types.Operator):
     bl_idname = 'scene.wow_add_scale_reference'
     bl_label = 'Add scale'
     bl_description = 'Add a WoW scale prop'
     bl_options = {'REGISTER', 'UNDO'}
 
-    ScaleType = bpy.props.EnumProperty(
+    ScaleType:  bpy.props.EnumProperty(
         name="Scale Type",
         description="Select scale reference type",
         items=[('HUMAN', "Human Scale (average)", ""),
@@ -1025,20 +1025,20 @@ class OBJECT_OP_Add_Scale(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OP_Add_Water(bpy.types.Operator):
+class WMO_OT_add_water(bpy.types.Operator):
     bl_idname = 'scene.wow_add_water'
     bl_label = 'Add water'
     bl_description = 'Add a WoW water plane'
     bl_options = {'REGISTER', 'UNDO'}
 
-    xPlanes = bpy.props.IntProperty(
+    xPlanes:  bpy.props.IntProperty(
         name="X subdivisions:",
         description="Amount of WoW liquid planes in a row. One plane is 4.1666625 in its radius.",
         default=10,
         min=1
     )
 
-    yPlanes = bpy.props.IntProperty(
+    yPlanes:  bpy.props.IntProperty(
         name="Y subdivisions:",
         description="Amount of WoW liquid planes in a column. One plane is 4.1666625 in its radius.",
         default=10,
@@ -1070,7 +1070,7 @@ class OBJECT_OP_Add_Water(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OP_Add_Fog(bpy.types.Operator):
+class WMO_OT_add_flag(bpy.types.Operator):
     bl_idname = 'scene.wow_add_fog'
     bl_label = 'Add fog'
     bl_description = 'Add a WoW fog object to the scene'
@@ -1115,13 +1115,13 @@ class OBJECT_OP_Add_Fog(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OP_Invert_Portals(bpy.types.Operator):
+class WMO_OT_invert_portals(bpy.types.Operator):
     bl_idname = 'scene.wow_set_portal_dir_alg'
     bl_label = 'Set portal direction algorithm'
     bl_description = 'Set portal direction calculation algorithm.'
     bl_options = {'REGISTER', 'UNDO'}
 
-    Algorithm = bpy.props.EnumProperty(
+    Algorithm:  bpy.props.EnumProperty(
         items=portal_dir_alg_enum,
         default="0"
     )
@@ -1141,7 +1141,7 @@ class OBJECT_OP_Invert_Portals(bpy.types.Operator):
             return {'CANCELLED'}
 
 
-class OBJECT_OP_Fill_Textures(bpy.types.Operator):
+class WMO_OT_fill_textures(bpy.types.Operator):
     bl_idname = 'scene.wow_fill_textures'
     bl_label = 'Fill textures'
     bl_description = """Fill Texture 1 field of WoW materials with paths from applied image. """
@@ -1192,13 +1192,13 @@ class OBJECT_OP_Fill_Textures(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OP_Quick_Collision(bpy.types.Operator):
+class WMO_OT_quick_collision(bpy.types.Operator):
     bl_idname = 'scene.wow_quick_collision'
     bl_label = 'Generate basic collision for selected objects'
     bl_description = 'Generate WoW collision equal to geometry of the selected objects'
     bl_options = {'REGISTER', 'UNDO'}
 
-    NodeSize = bpy.props.IntProperty(
+    NodeSize:  bpy.props.IntProperty(
         name="Node max size",
         description="Max count of faces for a node in bsp tree",
         default=2500,
@@ -1206,7 +1206,7 @@ class OBJECT_OP_Quick_Collision(bpy.types.Operator):
         soft_max=5000
     )
 
-    CleanUp = bpy.props.BoolProperty(
+    CleanUp:  bpy.props.BoolProperty(
         name="Clean up",
         description="Remove unreferenced vertex groups",
         default=False
@@ -1253,7 +1253,7 @@ class OBJECT_OP_Quick_Collision(bpy.types.Operator):
             return {'CANCELLED'}
 
 
-class OBJECT_OP_Texface_to_material(bpy.types.Operator):
+class WMO_OT_texface_to_material(bpy.types.Operator):
     bl_idname = 'scene.wow_texface_to_material'
     bl_label = 'Texface to material'
     bl_description = 'Generate materials out of texfaces in selected objects'
@@ -1268,7 +1268,7 @@ class OBJECT_OP_Texface_to_material(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OP_To_WMOPortal(bpy.types.Operator):
+class WMO_OT_to_wmo_portal(bpy.types.Operator):
     bl_idname = 'scene.wow_selected_objects_to_portals'
     bl_label = 'Selected objects to WMO portals'
     bl_description = 'Transfer all selected objects to WoW WMO portals'
@@ -1298,32 +1298,32 @@ class OBJECT_OP_To_WMOPortal(bpy.types.Operator):
             return {'CANCELLED'}
 
 
-class OBJECT_OP_To_Group(bpy.types.Operator):
+class WMO_OT_to_group(bpy.types.Operator):
     bl_idname = 'scene.wow_selected_objects_to_group'
     bl_label = 'Selected objects to WMO group'
     bl_description = 'Transfer all selected objects to WoW WMO groups'
     bl_options = {'REGISTER', 'UNDO'}
 
-    GroupName = bpy.props.StringProperty(name="Name")
-    description = bpy.props.StringProperty(name="Description")
+    GroupName:  bpy.props.StringProperty(name="Name")
+    description:  bpy.props.StringProperty(name="Description")
 
-    place_type = bpy.props.EnumProperty(
+    place_type:  bpy.props.EnumProperty(
         items=place_type_enum,
         name="Place Type",
         description="Group is indoor or outdoor"
     )
 
-    Flags = bpy.props.EnumProperty(
+    Flags:  bpy.props.EnumProperty(
         items=group_flag_enum,
         options={'ENUM_FLAG'}
     )
 
-    GroupDBCid = bpy.props.IntProperty(
+    GroupDBCid:  bpy.props.IntProperty(
         name="DBC Group ID",
         description="WMO Group ID in DBC file"
     )
 
-    LiquidType = bpy.props.EnumProperty(
+    LiquidType:  bpy.props.EnumProperty(
         items=liquid_type_enum,
         name="LiquidType",
         description="Fill this WMO group with selected liquid."
@@ -1362,37 +1362,37 @@ class OBJECT_OP_To_Group(bpy.types.Operator):
             return {'CANCELLED'}
 
 
-class OBJECT_OP_To_WoWMaterial(bpy.types.Operator):
+class WMO_OT_to_wow_material(bpy.types.Operator):
     bl_idname = 'scene.wow_selected_objects_to_wow_material'
     bl_label = 'Materials of selected objects to WoW Material'
     bl_description = 'Transfer all materials of selected objects to WoW material'
     bl_options = {'REGISTER', 'UNDO'}
 
-    Flags = bpy.props.EnumProperty(
+    Flags:  bpy.props.EnumProperty(
         name="Material flags",
         description="WoW material flags",
         items=material_flag_enum,
         options={"ENUM_FLAG"}
     )
 
-    Shader = bpy.props.EnumProperty(
+    Shader:  bpy.props.EnumProperty(
         items=shader_enum,
         name="Shader",
         description="WoW shader assigned to this material"
     )
 
-    BlendingMode = bpy.props.EnumProperty(
+    BlendingMode:  bpy.props.EnumProperty(
         items=blending_enum,
         name="Blending",
         description="WoW material blending mode"
     )
 
-    Texture1 = bpy.props.StringProperty(
+    Texture1:  bpy.props.StringProperty(
         name="Texture 1",
         description="Diffuse texture"
     )
 
-    EmissiveColor = bpy.props.FloatVectorProperty(
+    EmissiveColor:  bpy.props.FloatVectorProperty(
         name="Emissive Color",
         subtype='COLOR',
         default=(1, 1, 1, 1),
@@ -1401,12 +1401,12 @@ class OBJECT_OP_To_WoWMaterial(bpy.types.Operator):
         max=1.0
     )
 
-    Texture2 = bpy.props.StringProperty(
+    Texture2:  bpy.props.StringProperty(
         name="Texture 2",
         description="Environment texture"
     )
 
-    DiffColor = bpy.props.FloatVectorProperty(
+    DiffColor:  bpy.props.FloatVectorProperty(
         name="Diffuse Color",
         subtype='COLOR',
         default=(1, 1, 1, 1),
@@ -1415,7 +1415,7 @@ class OBJECT_OP_To_WoWMaterial(bpy.types.Operator):
         max=1.0
     )
 
-    TerrainType = bpy.props.EnumProperty(
+    TerrainType:  bpy.props.EnumProperty(
         items=terrain_type_enum,
         name="Terrain Type",
         description="Terrain type assigned to this material. Used for producing correct footstep sounds."
@@ -1461,13 +1461,13 @@ class OBJECT_OP_To_WoWMaterial(bpy.types.Operator):
             return {'FINISHED'}
 
 
-class WOW_WMO_SELECT_ENTITY(bpy.types.Operator):
+class WMO_OT_select_entity(bpy.types.Operator):
     bl_idname = 'scene.wow_wmo_select_entity'
     bl_label = 'Select WMO entities'
     bl_description = 'Select all WMO entities of given type'
     bl_options = {'REGISTER', 'INTERNAL'}
 
-    entity = bpy.props.EnumProperty(
+    entity:  bpy.props.EnumProperty(
         name="Entity",
         description="Select WMO component entity objects",
         items=[

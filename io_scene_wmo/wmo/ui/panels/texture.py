@@ -1,7 +1,7 @@
 import bpy
 
 
-class WowWMOTexturePanel(bpy.types.Panel):
+class WBS_PT_texture(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "texture"
@@ -22,14 +22,14 @@ class WowWMOTexturePanel(bpy.types.Panel):
 
 class WowWMOTexturePropertyGroup(bpy.types.PropertyGroup):
 
-    path = bpy.props.StringProperty(
+    path:  bpy.props.StringProperty(
         name="Texture 1",
         description="Diffuse texture"
         )
 
 
 def register():
-    bpy.types.ImageTexture.wow_wmo_texture = bpy.props.PointerProperty(type=WowWMOTexturePropertyGroup)
+    bpy.types.ImageTexture.wow_wmo_texture:  bpy.props.PointerProperty(type=WowWMOTexturePropertyGroup)
 
 
 def unregister():

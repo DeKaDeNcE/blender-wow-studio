@@ -2,7 +2,7 @@ import bpy
 from ..enums import *
 
 
-class WowWMOGroupPanel(bpy.types.Panel):
+class WMO_PT_wmo_group(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
@@ -53,27 +53,27 @@ class WowWMOGroupPanel(bpy.types.Panel):
 
 
 class WowWMOMODRStore(bpy.types.PropertyGroup):
-    value = bpy.props.IntProperty(name="Doodads Ref")
+    value:  bpy.props.IntProperty(name="Doodads Ref")
 
 
 class WowWMOPortalRel(bpy.types.PropertyGroup):
-    id = bpy.props.StringProperty()
+    id:  bpy.props.StringProperty()
 
 
 class WowWMOLightRel(bpy.types.PropertyGroup):
-    id = bpy.props.IntProperty()
+    id:  bpy.props.IntProperty()
 
 
 class WowWMODoodadRel(bpy.types.PropertyGroup):
-    id = bpy.props.IntProperty()
+    id:  bpy.props.IntProperty()
 
 
 class WowWMOGroupRelations(bpy.types.PropertyGroup):
     """Used for export internally"""
-    portals = bpy.props.CollectionProperty(type=WowWMOPortalRel)
-    lights = bpy.props.CollectionProperty(type=WowWMOLightRel)
-    liquid = bpy.props.StringProperty()
-    doodads = bpy.props.CollectionProperty(type=WowWMODoodadRel)
+    portals:  bpy.props.CollectionProperty(type=WowWMOPortalRel)
+    lights:  bpy.props.CollectionProperty(type=WowWMOLightRel)
+    liquid:  bpy.props.StringProperty()
+    doodads:  bpy.props.CollectionProperty(type=WowWMODoodadRel)
 
 
 def fog_validator(self, context):
@@ -136,71 +136,71 @@ def update_flags(self, context):
 
 class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
 
-    description = bpy.props.StringProperty(name="Description")
+    description:  bpy.props.StringProperty(name="Description")
 
-    enabled = bpy.props.BoolProperty(
+    enabled:  bpy.props.BoolProperty(
         name="",
         description="Enable wow WMO group properties"
         )
 
-    flags = bpy.props.EnumProperty(
+    flags:  bpy.props.EnumProperty(
         items=group_flag_enum,
         options={'ENUM_FLAG'},
         update=update_flags
         )
 
-    place_type = bpy.props.EnumProperty(
+    place_type:  bpy.props.EnumProperty(
         items=place_type_enum,
         name="Place Type",
         description="Group is indoor or outdoor",
         update=update_place_type
         )
 
-    group_id = bpy.props.IntProperty(
+    group_id:  bpy.props.IntProperty(
         name="",
         description="Group identifier used for export"
         )
 
-    group_dbc_id = bpy.props.IntProperty(
+    group_dbc_id:  bpy.props.IntProperty(
         name="DBC Group ID",
         description="WMO Group ID in DBC file"
         )
 
-    liquid_type = bpy.props.EnumProperty(
+    liquid_type:  bpy.props.EnumProperty(
         items=liquid_type_enum,
         name="LiquidType",
         description="Fill this WMO group with selected liquid."
         )
 
-    fog1 = bpy.props.PointerProperty(
+    fog1:  bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Fog #1",
         poll=lambda self, obj: obj.wow_wmo_fog.enabled and obj.name in bpy.context.scene.objects,
         update=fog_validator
     )
 
-    fog2 = bpy.props.PointerProperty(
+    fog2:  bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Fog #2",
         poll=lambda self, obj: obj.wow_wmo_fog.enabled and obj.name in bpy.context.scene.objects,
         update=fog_validator
     )
 
-    fog3 = bpy.props.PointerProperty(
+    fog3:  bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Fog #3",
         poll=lambda self, obj: obj.wow_wmo_fog.enabled and obj.name in bpy.context.scene.objects,
         update=fog_validator
     )
 
-    fog4 = bpy.props.PointerProperty(
+    fog4:  bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Fog #4",
         poll=lambda self, obj: obj.wow_wmo_fog.enabled and obj.name in bpy.context.scene.objects,
         update=fog_validator
     )
 
-    collision_mesh = bpy.props.PointerProperty(
+    collision_mesh:  bpy.props.PointerProperty(
         type=bpy.types.Object,
         name='Collision',
         description='Invisible collision geometry of this group',
@@ -208,13 +208,13 @@ class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
         update=collision_validator
     )
 
-    modr = bpy.props.CollectionProperty(type=WowWMOMODRStore)
+    modr:  bpy.props.CollectionProperty(type=WowWMOMODRStore)
 
-    relations = bpy.props.PointerProperty(type=WowWMOGroupRelations)
+    relations:  bpy.props.PointerProperty(type=WowWMOGroupRelations)
 
 
 def register():
-    bpy.types.Object.wow_wmo_group = bpy.props.PointerProperty(type=WowWMOGroupPropertyGroup)
+    bpy.types.Object.wow_wmo_group:  bpy.props.PointerProperty(type=WowWMOGroupPropertyGroup)
 
 
 def unregister():

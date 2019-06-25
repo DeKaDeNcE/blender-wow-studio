@@ -1,15 +1,15 @@
 import bpy
 from .... import ui_icons
-from .utils import update_current_object, update_doodad_pointer, RootComponents_TemplateList
+from .utils import update_current_object, update_doodad_pointer, WMO_UL_root_components_template_list
 
 
-class DoodadSet_ComponentChange(bpy.types.Operator):
+class WMO_OT_doodad_set_components_change(bpy.types.Operator):
     bl_idname = 'scene.wow_wmo_doodad_set_components_change'
     bl_label = 'Add / Remove'
     bl_description = 'Add / Remove'
     bl_options = {'REGISTER', 'INTERNAL', 'UNDO'}
 
-    action = bpy.props.StringProperty(default='ADD', options={'HIDDEN'})
+    action:  bpy.props.StringProperty(default='ADD', options={'HIDDEN'})
 
     def execute(self, context):
 
@@ -35,7 +35,7 @@ class DoodadSet_ComponentChange(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class DoodadSet_DoodadList(RootComponents_TemplateList):
+class WMO_UL_doodad_set_doodad_list(WMO_UL_root_components_template_list):
     icon = ui_icons['WOW_STUDIO_M2']
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
@@ -55,7 +55,7 @@ class DoodadSet_DoodadList(RootComponents_TemplateList):
             pass
 
 
-class WoWDoodadSetPanel(bpy.types.Panel):
+class WMO_PT_doodad_set(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
@@ -89,28 +89,28 @@ class WoWDoodadSetPanel(bpy.types.Panel):
 
 class DoodadPointerPropertyGroup(bpy.types.PropertyGroup):
 
-    pointer = bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
+    pointer:  bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
 
-    name = bpy.props.StringProperty()
+    name:  bpy.props.StringProperty()
 
 
 class WoWWMODoodadSetProperptyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty()
+    enabled:  bpy.props.BoolProperty()
 
-    cur_doodad = bpy.props.IntProperty(
+    cur_doodad:  bpy.props.IntProperty(
         update=lambda self, ctx: update_current_object(self, ctx, 'doodads', 'cur_doodad')
     )
 
-    doodads = bpy.props.CollectionProperty(type=DoodadPointerPropertyGroup)
+    doodads:  bpy.props.CollectionProperty(type=DoodadPointerPropertyGroup)
 
-    pointer = bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
+    pointer:  bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
 
-    name = bpy.props.StringProperty()
+    name:  bpy.props.StringProperty()
 
 
 def register():
-    bpy.types.Object.wow_wmo_doodad_set = bpy.props.PointerProperty(type=WoWWMODoodadSetProperptyGroup)
+    bpy.types.Object.wow_wmo_doodad_set:  bpy.props.PointerProperty(type=WoWWMODoodadSetProperptyGroup)
 
 
 def unregister():

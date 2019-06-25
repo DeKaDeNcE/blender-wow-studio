@@ -2,7 +2,7 @@ import bpy
 from ..enums import *
 
 
-class WowM2EventPanel(bpy.types.Panel):
+class M2_PT_event_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
@@ -41,25 +41,25 @@ class WowM2EventPanel(bpy.types.Panel):
 
 class WowM2EventPropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty(
+    enabled:  bpy.props.BoolProperty(
         name='Enabled',
         description='Enabled this object to be a WoW M2 event',
         default=False
     )
 
-    token = bpy.props.EnumProperty(
+    token:  bpy.props.EnumProperty(
         name='Token',
         description='This token defines the purpose of the event',
         items=get_event_names
     )
 
-    data = bpy.props.IntProperty(
+    data:  bpy.props.IntProperty(
         name='Data',
         description='Data passed when this event is fired',
         min=0
     )
 
-    fire = bpy.props.BoolProperty(
+    fire:  bpy.props.BoolProperty(
         name='Enabled',
         description='Enable this event in this specific animation keyframe',
         default=False
@@ -67,7 +67,7 @@ class WowM2EventPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_m2_event = bpy.props.PointerProperty(type=WowM2EventPropertyGroup)
+    bpy.types.Object.wow_m2_event:  bpy.props.PointerProperty(type=WowM2EventPropertyGroup)
 
 
 def unregister():

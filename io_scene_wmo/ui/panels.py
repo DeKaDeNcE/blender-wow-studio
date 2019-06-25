@@ -2,7 +2,7 @@ import bpy
 from .. import ui_icons
 
 
-class WowScenePanel(bpy.types.Panel):
+class WBS_PT_wow_scene(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -22,14 +22,14 @@ class WowScenePanel(bpy.types.Panel):
 
 class WowScenePropertyGroup(bpy.types.PropertyGroup):
 
-    version = bpy.props.EnumProperty(
+    version:  bpy.props.EnumProperty(
         name='Client version',
         items=[('264', 'WotLK', "", ui_icons['WOTLK'], 0),
                ('274', 'Legion', "", ui_icons['LEGION'], 1)],
         default='274'
     )
 
-    type = bpy.props.EnumProperty(
+    type:  bpy.props.EnumProperty(
         name='Scene type',
         description='Sets up the UI to work with a specific WoW game format',
         items=[
@@ -38,14 +38,14 @@ class WowScenePropertyGroup(bpy.types.PropertyGroup):
             ]
     )
 
-    game_path = bpy.props.StringProperty(
+    game_path:  bpy.props.StringProperty(
         name='Game path',
         description='A path to the model in WoW filesystem.'
     )
 
 
 def register_wow_scene_properties():
-    bpy.types.Scene.wow_scene = bpy.props.PointerProperty(type=WowScenePropertyGroup)
+    bpy.types.Scene.wow_scene:  bpy.props.PointerProperty(type=WowScenePropertyGroup)
 
 
 def unregister_wow_scene_properties():
@@ -70,16 +70,16 @@ menu_export_m2 = lambda self, ctx: self.layout.operator("export_mesh.m2", text="
 def register_panels():
     register_wow_scene_properties()
     bpy.types.INFO_HT_header.append(render_top_bar)
-    bpy.types.INFO_MT_file_import.append(menu_import_wmo)
-    bpy.types.INFO_MT_file_import.append(menu_import_m2)
-    bpy.types.INFO_MT_file_export.append(menu_export_wmo)
-    bpy.types.INFO_MT_file_export.append(menu_export_m2)
+    bpy.types.TOPBAR_MT_file_import.append(menu_import_wmo)
+    bpy.types.TOPBAR_MT_file_import.append(menu_import_m2)
+    bpy.types.TOPBAR_MT_file_export.append(menu_export_wmo)
+    bpy.types.TOPBAR_MT_file_export.append(menu_export_m2)
 
 
 def unregister_panels():
     unregister_wow_scene_properties()
-    bpy.types.INFO_MT_file_import.remove(menu_import_wmo)
-    bpy.types.INFO_MT_file_import.remove(menu_import_m2)
-    bpy.types.INFO_MT_file_export.remove(menu_export_wmo)
-    bpy.types.INFO_MT_file_export.remove(menu_export_m2)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_import_wmo)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_import_m2)
+    bpy.types.TOPBAR_MT_file_export.remove(menu_export_wmo)
+    bpy.types.TOPBAR_MT_file_export.remove(menu_export_m2)
     bpy.types.INFO_HT_header.remove(render_top_bar)

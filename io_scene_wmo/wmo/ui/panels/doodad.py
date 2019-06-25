@@ -1,7 +1,7 @@
 import bpy
 
 
-class WoWDoodadPanel(bpy.types.Panel):
+class WMO_PT_doodad(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
@@ -31,11 +31,11 @@ class WoWDoodadPanel(bpy.types.Panel):
 
 class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty()
+    enabled:  bpy.props.BoolProperty()
 
-    path = bpy.props.StringProperty()
+    path:  bpy.props.StringProperty()
 
-    color = bpy.props.FloatVectorProperty(
+    color:  bpy.props.FloatVectorProperty(
         name="Color",
         subtype='COLOR',
         size=4,
@@ -44,7 +44,7 @@ class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
         max=1.0
     )
 
-    flags = bpy.props.EnumProperty(
+    flags:  bpy.props.EnumProperty(
         name="Doodad flags",
         description="WoW doodad instance flags",
         items=[("1", "Accept Projected Tex.", ""),
@@ -56,7 +56,7 @@ class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_wmo_doodad = bpy.props.PointerProperty(type=WoWDoodadPropertyGroup)
+    bpy.types.Object.wow_wmo_doodad:  bpy.props.PointerProperty(type=WoWDoodadPropertyGroup)
 
 
 def unregister():

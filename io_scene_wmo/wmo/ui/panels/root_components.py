@@ -2,20 +2,20 @@ import bpy
 from collections import namedtuple
 from ....utils import draw_spoiler
 from .... import ui_icons
-from .material import WowMaterialPanel, update_flags, update_shader
-from .group import WowWMOGroupPanel
-from .portal import WowPortalPlanePanel
-from .fog import WowFogPanel
-from .light import WowLightPanel
-from .doodad_set import WoWDoodadSetPanel, WoWWMODoodadSetProperptyGroup
-from .utils import RootComponents_TemplateList, update_current_object, update_doodad_pointer
+from .material import WMO_PT_material, update_flags, update_shader
+from .group import WMO_PT_wmo_group
+from .portal import WMO_PT_portal
+from .fog import WMO_PT_fog
+from .light import WMO_PT_light
+from .doodad_set import WMO_PT_doodad_set, WoWWMODoodadSetProperptyGroup
+from .utils import WMO_UL_root_components_template_list, update_current_object, update_doodad_pointer
 
 
 ######################
 ###### UI Lists ######
 ######################
 
-class RootComponents_DoodadSetsList(RootComponents_TemplateList):
+class RootComponents_DoodadSetsList(WMO_UL_root_components_template_list):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
 
@@ -34,12 +34,12 @@ class RootComponents_DoodadSetsList(RootComponents_TemplateList):
             pass
 
 
-class RootComponents_GroupsList(RootComponents_TemplateList):
+class RootComponents_GroupsList(WMO_UL_root_components_template_list):
 
     icon = ui_icons['WOW_STUDIO_WMO']
 
 
-class RootComponents_FogsList(RootComponents_TemplateList):
+class RootComponents_FogsList(WMO_UL_root_components_template_list):
 
     icon = ui_icons['WOW_STUDIO_FOG']
 
@@ -66,16 +66,16 @@ class RootComponents_FogsList(RootComponents_TemplateList):
             pass
 
 
-class RootComponents_PortalsList(RootComponents_TemplateList):
+class WMO_UL_root_components_portal_list(WMO_UL_root_components_template_list):
 
     icon = ui_icons['WOW_STUDIO_CONVERT_PORTAL']
 
 
-class RootComponents_MaterialsList(RootComponents_TemplateList):
+class WMO_UL_root_components_materials_list(WMO_UL_root_components_template_list):
 
     icon = 'MATERIAL_DATA'
 
-class RootComponents_LightsList(RootComponents_TemplateList):
+class WMO_UL_root_components_lights_list(WMO_UL_root_components_template_list):
 
     icon = 'LAMP'
 
@@ -110,16 +110,16 @@ def is_obj_unused(obj):
 ##### Operators #####
 #####################
 
-class RootComponents_ComponentChange(bpy.types.Operator):
+class WMO_OT_root_components_components_change(bpy.types.Operator):
     bl_idname = 'scene.wow_wmo_root_components_change'
     bl_label = 'Add / Remove'
     bl_description = 'Add / Remove'
     bl_options = {'REGISTER', 'INTERNAL', 'UNDO'}
 
-    col_name = bpy.props.StringProperty(options={'HIDDEN'})
-    cur_idx_name = bpy.props.StringProperty(options={'HIDDEN'})
-    action = bpy.props.StringProperty(default='ADD', options={'HIDDEN'})
-    add_action = bpy.props.EnumProperty(
+    col_name:  bpy.props.StringProperty(options={'HIDDEN'})
+    cur_idx_name:  bpy.props.StringProperty(options={'HIDDEN'})
+    action:  bpy.props.StringProperty(default='ADD', options={'HIDDEN'})
+    add_action:  bpy.props.EnumProperty(
         items=[('EMPTY', 'Empty', ''),
                ('NEW', 'New', '')],
         default='EMPTY',
@@ -252,7 +252,7 @@ class RootComponents_ComponentChange(bpy.types.Operator):
 ##### Panels #####
 #####################
 
-class RootComponents_GroupsPanel(bpy.types.Panel):
+class WMO_PT_root_components_groups(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -275,7 +275,7 @@ class RootComponents_GroupsPanel(bpy.types.Panel):
                                        'Properties', icon='SCRIPTWIN')
                 if spoiler:
                     ctx = ctx_override(obj, context.scene, spoiler)
-                    WowWMOGroupPanel.draw(ctx, ctx)
+                    WMO_PT_wmo_group.draw(ctx, ctx)
                     spoiler.enabled = True
 
         layout.prop(root_comps, 'is_update_critical')  # temporary
@@ -287,7 +287,7 @@ class RootComponents_GroupsPanel(bpy.types.Panel):
         )
 
 
-class RootComponents_FogsPanel(bpy.types.Panel):
+class WMO_PT_root_components_fogs(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -310,7 +310,7 @@ class RootComponents_FogsPanel(bpy.types.Panel):
                                        'Properties', icon='SCRIPTWIN')
                 if spoiler:
                     ctx = ctx_override(obj, context.scene, spoiler)
-                    WowFogPanel.draw(ctx, ctx)
+                    WMO_PT_fog.draw(ctx, ctx)
                     spoiler.enabled = True
 
     @classmethod
@@ -320,7 +320,7 @@ class RootComponents_FogsPanel(bpy.types.Panel):
         )
 
 
-class RootComponents_PortalsPanel(bpy.types.Panel):
+class WBS_PT_root_components_portals(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -343,7 +343,7 @@ class RootComponents_PortalsPanel(bpy.types.Panel):
                                        'Properties', icon='SCRIPTWIN')
                 if spoiler:
                     ctx = ctx_override(obj, context.scene, spoiler)
-                    WowPortalPlanePanel.draw(ctx, ctx)
+                    WMO_PT_portal.draw(ctx, ctx)
                     spoiler.enabled = True
 
     @classmethod
@@ -353,7 +353,7 @@ class RootComponents_PortalsPanel(bpy.types.Panel):
         )
 
 
-class RootComponents_LightsPanel(bpy.types.Panel):
+class WBS_PT_root_components_lights(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -376,7 +376,7 @@ class RootComponents_LightsPanel(bpy.types.Panel):
                                        'Properties', icon='SCRIPTWIN')
                 if spoiler:
                     ctx = ctx_override(obj, context.scene, spoiler)
-                    WowLightPanel.draw(ctx, ctx)
+                    WMO_PT_light.draw(ctx, ctx)
                     spoiler.enabled = True
 
     @classmethod
@@ -386,7 +386,7 @@ class RootComponents_LightsPanel(bpy.types.Panel):
         )
 
 
-class RootComponents_MaterialsPanel(bpy.types.Panel):
+class WBS_PT_root_components_materials(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -409,7 +409,7 @@ class RootComponents_MaterialsPanel(bpy.types.Panel):
                                        'Properties', icon='SCRIPTWIN')
                 if spoiler:
                     ctx = ctx_override(mat, context.scene, spoiler)
-                    WowMaterialPanel.draw(ctx, ctx)
+                    WMO_PT_material.draw(ctx, ctx)
                     spoiler.enabled = True
 
     @classmethod
@@ -419,7 +419,7 @@ class RootComponents_MaterialsPanel(bpy.types.Panel):
         )
 
 
-class RootComponents_DoodadSetsPanel(bpy.types.Panel):
+class WMO_PT_doodadsets_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -443,7 +443,7 @@ class RootComponents_DoodadSetsPanel(bpy.types.Panel):
                 ctx_override = namedtuple('ctx_override', ('object', 'scene', 'layout'))
 
                 ctx = ctx_override(doodad_set.pointer, context.scene, spoiler)
-                WoWDoodadSetPanel.draw(ctx, ctx)
+                WMO_PT_doodad_set.draw(ctx, ctx)
 
     @classmethod
     def poll(cls, context):
@@ -551,18 +551,18 @@ def update_material_pointer(self, context):
 
 class GroupPointerPropertyGroup(bpy.types.PropertyGroup):
 
-    pointer = bpy.props.PointerProperty(
+    pointer:  bpy.props.PointerProperty(
         name='WMO Group',
         type=bpy.types.Object,
         poll=lambda self, obj: is_obj_unused(obj) and obj.type == 'MESH',
         update=update_group_pointer
     )
 
-    pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
+    pointer_old:  bpy.props.PointerProperty(type=bpy.types.Object)
 
-    name = bpy.props.StringProperty()
+    name:  bpy.props.StringProperty()
 
-    export = bpy.props.BoolProperty(
+    export:  bpy.props.BoolProperty(
         name='Export group',
         description='Mark this group for export'
     )
@@ -570,58 +570,58 @@ class GroupPointerPropertyGroup(bpy.types.PropertyGroup):
 
 class FogPointerPropertyGroup(bpy.types.PropertyGroup):
 
-    pointer = bpy.props.PointerProperty(
+    pointer:  bpy.props.PointerProperty(
         name='WMO Fog',
         type=bpy.types.Object,
         poll=lambda self, obj: is_obj_unused(obj) and obj.type == 'MESH',
         update=lambda self, ctx: update_object_pointer(self, ctx, 'wow_wmo_fog', 'MESH')
     )
 
-    pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
+    pointer_old:  bpy.props.PointerProperty(type=bpy.types.Object)
 
-    name = bpy.props.StringProperty()
+    name:  bpy.props.StringProperty()
 
 
 class LightPointerPropertyGroup(bpy.types.PropertyGroup):
 
-    pointer = bpy.props.PointerProperty(
+    pointer:  bpy.props.PointerProperty(
         name='WMO Light',
         type=bpy.types.Object,
         poll=lambda self, obj: is_obj_unused(obj) and obj.type == 'LAMP',
         update=lambda self, ctx: update_object_pointer(self, ctx, 'wow_wmo_light', 'LAMP')
     )
 
-    pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
+    pointer_old:  bpy.props.PointerProperty(type=bpy.types.Object)
 
-    name = bpy.props.StringProperty()
+    name:  bpy.props.StringProperty()
 
 
 class PortalPointerPropertyGroup(bpy.types.PropertyGroup):
 
-    pointer = bpy.props.PointerProperty(
+    pointer:  bpy.props.PointerProperty(
         name='WMO Portal',
         type=bpy.types.Object,
         poll=lambda self, obj: is_obj_unused(obj) and obj.type == 'MESH',
         update=lambda self, ctx: update_object_pointer(self, ctx, 'wow_wmo_portal', 'MESH')
     )
 
-    pointer_old = bpy.props.PointerProperty(type=bpy.types.Object)
+    pointer_old:  bpy.props.PointerProperty(type=bpy.types.Object)
 
-    name = bpy.props.StringProperty()
+    name:  bpy.props.StringProperty()
 
 
 class MaterialPointerPropertyGroup(bpy.types.PropertyGroup):
 
-    pointer = bpy.props.PointerProperty(
+    pointer:  bpy.props.PointerProperty(
         name='WMO Material',
         type=bpy.types.Material,
         poll=lambda self, mat: not mat.wow_wmo_material.enabled,
         update=update_material_pointer
     )
 
-    pointer_old = bpy.props.PointerProperty(type=bpy.types.Material)
+    pointer_old:  bpy.props.PointerProperty(type=bpy.types.Material)
 
-    name = bpy.props.StringProperty()
+    name:  bpy.props.StringProperty()
 
 
 def update_current_doodad_set(self, context):
@@ -638,44 +638,44 @@ def update_current_doodad_set(self, context):
 
 class DoodadProtoPointerPropertyGroup(bpy.types.PropertyGroup):
 
-    pointer = bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
+    pointer:  bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
 
-    name = bpy.props.StringProperty()
+    name:  bpy.props.StringProperty()
 
 
 class WoWWMO_RootComponents(bpy.types.PropertyGroup):
 
-    is_update_critical = bpy.props.BoolProperty(default=False)
+    is_update_critical:  bpy.props.BoolProperty(default=False)
 
-    groups = bpy.props.CollectionProperty(type=GroupPointerPropertyGroup)
-    cur_group = bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'groups', 'cur_group'))
-    is_group_props_expanded = bpy.props.BoolProperty()
+    groups:  bpy.props.CollectionProperty(type=GroupPointerPropertyGroup)
+    cur_group:  bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'groups', 'cur_group'))
+    is_group_props_expanded:  bpy.props.BoolProperty()
 
-    fogs = bpy.props.CollectionProperty(type=FogPointerPropertyGroup)
-    cur_fog = bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'fogs', 'cur_fog'))
-    is_fog_props_expanded = bpy.props.BoolProperty()
+    fogs:  bpy.props.CollectionProperty(type=FogPointerPropertyGroup)
+    cur_fog:  bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'fogs', 'cur_fog'))
+    is_fog_props_expanded:  bpy.props.BoolProperty()
 
-    portals = bpy.props.CollectionProperty(type=PortalPointerPropertyGroup)
-    cur_portal = bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'portals', 'cur_portal'))
-    is_portal_props_expanded = bpy.props.BoolProperty()
+    portals:  bpy.props.CollectionProperty(type=PortalPointerPropertyGroup)
+    cur_portal:  bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'portals', 'cur_portal'))
+    is_portal_props_expanded:  bpy.props.BoolProperty()
 
-    lights = bpy.props.CollectionProperty(type=LightPointerPropertyGroup)
-    cur_light = bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'lights', 'cur_light'))
-    is_light_props_expanded = bpy.props.BoolProperty()
+    lights:  bpy.props.CollectionProperty(type=LightPointerPropertyGroup)
+    cur_light:  bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'lights', 'cur_light'))
+    is_light_props_expanded:  bpy.props.BoolProperty()
 
-    doodads_proto = bpy.props.CollectionProperty(type=DoodadProtoPointerPropertyGroup)
+    doodads_proto:  bpy.props.CollectionProperty(type=DoodadProtoPointerPropertyGroup)
 
-    doodad_sets = bpy.props.CollectionProperty(type=WoWWMODoodadSetProperptyGroup)
-    cur_doodad_set = bpy.props.IntProperty(update=update_current_doodad_set)
-    is_doodad_set_props_expanded = bpy.props.BoolProperty()
+    doodad_sets:  bpy.props.CollectionProperty(type=WoWWMODoodadSetProperptyGroup)
+    cur_doodad_set:  bpy.props.IntProperty(update=update_current_doodad_set)
+    is_doodad_set_props_expanded:  bpy.props.BoolProperty()
 
-    materials = bpy.props.CollectionProperty(type=MaterialPointerPropertyGroup)
-    cur_material = bpy.props.IntProperty()
-    is_material_props_expanded = bpy.props.BoolProperty()
+    materials:  bpy.props.CollectionProperty(type=MaterialPointerPropertyGroup)
+    cur_material:  bpy.props.IntProperty()
+    is_material_props_expanded:  bpy.props.BoolProperty()
 
 
 def register():
-    bpy.types.Scene.wow_wmo_root_components = bpy.props.PointerProperty(type=WoWWMO_RootComponents)
+    bpy.types.Scene.wow_wmo_root_components:  bpy.props.PointerProperty(type=WoWWMO_RootComponents)
 
 
 def unregister():

@@ -2,7 +2,7 @@ import bpy
 from ..enums import *
 
 
-class WowLightPanel(bpy.types.Panel):
+class WMO_PT_light(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "data"
@@ -38,30 +38,30 @@ class WowLightPanel(bpy.types.Panel):
 
 class WowLightPropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty()
+    enabled:  bpy.props.BoolProperty()
 
-    light_type = bpy.props.EnumProperty(
+    light_type:  bpy.props.EnumProperty(
         items=light_type_enum,
         name="Type",
         description="Type of the lamp"
         )
 
-    type = bpy.props.BoolProperty(
+    type:  bpy.props.BoolProperty(
         name="Type",
         description="Unknown"
         )
 
-    use_attenuation = bpy.props.BoolProperty(
+    use_attenuation:  bpy.props.BoolProperty(
         name="Use attenuation",
         description="True if lamp use attenuation"
         )
 
-    padding = bpy.props.BoolProperty(
+    padding:  bpy.props.BoolProperty(
         name="Padding",
         description="True if lamp use padding"
         )
 
-    color = bpy.props.FloatVectorProperty(
+    color:  bpy.props.FloatVectorProperty(
         name="Color",
         subtype='COLOR',
         default=(1, 1, 1),
@@ -69,12 +69,12 @@ class WowLightPropertyGroup(bpy.types.PropertyGroup):
         max=1.0
         )
 
-    intensity = bpy.props.FloatProperty(
+    intensity:  bpy.props.FloatProperty(
         name="Intensity",
         description="Intensity of the lamp"
         )
 
-    color_alpha = bpy.props.FloatProperty(
+    color_alpha:  bpy.props.FloatProperty(
         name="ColorAlpha",
         description="Color alpha",
         default=1,
@@ -82,19 +82,19 @@ class WowLightPropertyGroup(bpy.types.PropertyGroup):
         max=1.0
         )
 
-    attenuation_start = bpy.props.FloatProperty(
+    attenuation_start:  bpy.props.FloatProperty(
         name="Attenuation start",
         description="Distance at which light intensity starts to decrease"
         )
 
-    attenuation_end = bpy.props.FloatProperty(
+    attenuation_end:  bpy.props.FloatProperty(
         name="Attenuation end",
         description="Distance at which light intensity reach 0"
         )
 
 
 def register():
-    bpy.types.Object.wow_wmo_light = bpy.props.PointerProperty(type=WowLightPropertyGroup)
+    bpy.types.Object.wow_wmo_light:  bpy.props.PointerProperty(type=WowLightPropertyGroup)
 
 
 def unregister():

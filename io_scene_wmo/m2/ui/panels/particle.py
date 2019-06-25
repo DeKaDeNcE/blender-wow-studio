@@ -1,7 +1,7 @@
 import bpy
 
 
-class WowM2ParticlePanel(bpy.types.Panel):
+class M2_PT_particle_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "particle"
@@ -22,11 +22,11 @@ class WowM2ParticlePanel(bpy.types.Panel):
 
 class WowM2ParticlePropertyGroup(bpy.types.PropertyGroup):
 
-    type = bpy.props.IntProperty()
+    type:  bpy.props.IntProperty()
 
 
 def register():
-    bpy.types.ParticleSettings.wow_m2_particle = bpy.props.PointerProperty(type=WowM2ParticlePropertyGroup)
+    bpy.types.ParticleSettings.wow_m2_particle:  bpy.props.PointerProperty(type=WowM2ParticlePropertyGroup)
 
 
 def unregister():

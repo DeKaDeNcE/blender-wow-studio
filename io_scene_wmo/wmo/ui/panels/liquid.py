@@ -2,7 +2,7 @@ import bpy
 from ..enums import *
 
 
-class WowLiquidPanel(bpy.types.Panel):
+class WMO_PT_liquid(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
@@ -43,9 +43,9 @@ def liquid_poll(self, obj):
 
 class WowLiquidPropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty()
+    enabled:  bpy.props.BoolProperty()
 
-    color = bpy.props.FloatVectorProperty(
+    color:  bpy.props.FloatVectorProperty(
         name="Color",
         subtype='COLOR',
         default=(0.08, 0.08, 0.08, 1),
@@ -54,13 +54,13 @@ class WowLiquidPropertyGroup(bpy.types.PropertyGroup):
         max=1.0
         )
 
-    liquid_type = bpy.props.EnumProperty(
+    liquid_type:  bpy.props.EnumProperty(
         items=liquid_type_enum,
         name="Liquid Type",
         description="Type of the liquid present in this WMO group"
         )
 
-    wmo_group = bpy.props.PointerProperty(
+    wmo_group:  bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="WMO Group",
         poll=liquid_poll,
@@ -69,7 +69,7 @@ class WowLiquidPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_wmo_liquid = bpy.props.PointerProperty(type=WowLiquidPropertyGroup)
+    bpy.types.Object.wow_wmo_liquid:  bpy.props.PointerProperty(type=WowLiquidPropertyGroup)
 
 
 def unregister():

@@ -2,7 +2,7 @@ import bpy
 from ..enums import *
 
 
-class M2GeosetPanel(bpy.types.Panel):
+class M2_PT_geoset_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
@@ -52,24 +52,24 @@ def update_geoset_uv_transform(self, context):
 
 
 class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
-    collision_mesh = bpy.props.BoolProperty(
+    collision_mesh:  bpy.props.BoolProperty(
         name='Collision mesh',
         default=False
     )
 
-    mesh_part_group = bpy.props.EnumProperty(
+    mesh_part_group:  bpy.props.EnumProperty(
         name="Geoset group",
         description="Group of this geoset",
         items=MESH_PART_TYPES
     )
 
-    mesh_part_id = bpy.props.EnumProperty(
+    mesh_part_id:  bpy.props.EnumProperty(
         name="Geoset ID",
         description="Mesh part ID of this geoset",
         items=mesh_part_id_menu
     )
 
-    uv_transform = bpy.props.PointerProperty(
+    uv_transform:  bpy.props.PointerProperty(
         name="UV Transform",
         type=bpy.types.Object,
         poll=lambda self, obj: obj.wow_m2_uv_transform.enabled,
@@ -77,12 +77,12 @@ class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
     )
 
 
-class WowM2Geoset_AddTextureTransform(bpy.types.Operator):
+class M2_OT_add_texture_transform(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_geoset_add_texture_transform'
     bl_label = 'Add new UV transform controller'
     bl_options = {'REGISTER', 'INTERNAL'}
 
-    anim_index = bpy.props.IntProperty()
+    anim_index:  bpy.props.IntProperty()
 
     def execute(self, context):
         obj = context.object
@@ -103,7 +103,7 @@ class WowM2Geoset_AddTextureTransform(bpy.types.Operator):
 
 
 def register():
-    bpy.types.Object.wow_m2_geoset = bpy.props.PointerProperty(type=WowM2GeosetPropertyGroup)
+    bpy.types.Object.wow_m2_geoset:  bpy.props.PointerProperty(type=WowM2GeosetPropertyGroup)
 
 
 def unregister():

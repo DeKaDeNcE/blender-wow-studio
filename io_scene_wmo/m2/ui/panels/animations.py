@@ -1,7 +1,7 @@
 import bpy
 
 
-class WowM2AnimationsPanel(bpy.types.Panel):
+class M2_PT_animations_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"

@@ -1,7 +1,7 @@
 import bpy
 
 
-class WowM2ColorsPanel(bpy.types.Panel):
+class M2_PT_colors_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -26,7 +26,7 @@ class WowM2ColorsPanel(bpy.types.Panel):
         return context.scene is not None and context.scene.wow_scene.type == 'M2'
 
 
-class WowM2Colors_ColorList(bpy.types.UIList):
+class M2_UL_color_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
         self.use_filter_show = False
 
@@ -41,7 +41,7 @@ class WowM2Colors_ColorList(bpy.types.UIList):
             pass
 
 
-class WowM2Colors_ColorAdd(bpy.types.Operator):
+class M2_OT_color_add(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_colors_add_color'
     bl_label = 'Add WoW color'
     bl_description = 'Add WoW color'
@@ -55,7 +55,7 @@ class WowM2Colors_ColorAdd(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WowM2Colors_ColorRemove(bpy.types.Operator):
+class M2_OT_color_remove(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_colors_remove_color'
     bl_label = 'Remove WoW color'
     bl_description = 'Remove WoW color'
@@ -76,7 +76,7 @@ def update_color_change(self, context):
 
 class WowM2ColorPropertyGroup(bpy.types.PropertyGroup):
 
-    color = bpy.props.FloatVectorProperty(
+    color:  bpy.props.FloatVectorProperty(
         name='Color',
         description='The color applied to WoW material. Can be animated. Alpha defines model transparency and is multiplied with transparency value',
         subtype='COLOR',
@@ -87,19 +87,19 @@ class WowM2ColorPropertyGroup(bpy.types.PropertyGroup):
         update=update_color_change
     )
 
-    name = bpy.props.StringProperty(
+    name:  bpy.props.StringProperty(
         name='Color name',
         description='Only used for scene organization purposes, ignored on export'
     )
 
 
 def register():
-    bpy.types.Scene.wow_m2_colors = bpy.props.CollectionProperty(
+    bpy.types.Scene.wow_m2_colors:  bpy.props.CollectionProperty(
         name='Colors',
         type=WowM2ColorPropertyGroup
     )
 
-    bpy.types.Scene.wow_m2_cur_color_index = bpy.props.IntProperty()
+    bpy.types.Scene.wow_m2_cur_color_index:  bpy.props.IntProperty()
 
 
 def unregister():

@@ -1,7 +1,7 @@
 import bpy
 
 
-class WowVertexInfoPanel(bpy.types.Panel):
+class WMO_PT_vertex_info(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "data"
@@ -51,28 +51,28 @@ def update_has_blend_map(self, context):
 
 class WowVertexInfoPropertyGroup(bpy.types.PropertyGroup):
 
-    vertex_group = bpy.props.StringProperty()
+    vertex_group:  bpy.props.StringProperty()
 
-    node_size = bpy.props.IntProperty(
+    node_size:  bpy.props.IntProperty(
         name="Node max size",
         description="Max count of faces for a node in bsp tree",
         default=2500, min=1,
         soft_max=5000
         )
 
-    has_batch_int = bpy.props.BoolProperty(
+    has_batch_int:  bpy.props.BoolProperty(
         name='Use Interior Batches',
         default=False,
         update=update_has_batch_int
     )
 
-    has_batch_trans = bpy.props.BoolProperty(
+    has_batch_trans:  bpy.props.BoolProperty(
         name='Use Trans Batches',
         default=False,
         update=update_has_batch_trans
     )
 
-    has_blend_map = bpy.props.BoolProperty(
+    has_blend_map:  bpy.props.BoolProperty(
         name='Has Blend Map',
         default=False,
         update=update_has_blend_map
@@ -80,7 +80,7 @@ class WowVertexInfoPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_wmo_vertex_info = bpy.props.PointerProperty(type=WowVertexInfoPropertyGroup)
+    bpy.types.Object.wow_wmo_vertex_info:  bpy.props.PointerProperty(type=WowVertexInfoPropertyGroup)
 
 
 def unregister():

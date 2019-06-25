@@ -95,7 +95,7 @@ def load_display_extra_properties(self, context):
 
 #### Pop-up dialog ####
 
-class CreatureEditorDialog(bpy.types.Operator):
+class M2_OT_creature_editor_dialog(bpy.types.Operator):
     bl_idname = 'scene.wow_creature_editor_toggle'
     bl_label = 'WoW M2 Creature Editor'
 
@@ -212,20 +212,20 @@ class WowM2CreaturePropertyGroup(bpy.types.PropertyGroup):
 
     # DBs
 
-    CreatureModelData = bpy.props.EnumProperty(
+    CreatureModelData:  bpy.props.EnumProperty(
         name='Model data',
         description='CreatureModelData.db entry',
         items=get_creature_model_data
     )
 
-    CreatureDisplayInfo = bpy.props.EnumProperty(
+    CreatureDisplayInfo:  bpy.props.EnumProperty(
         name='Creature display',
         description='CreatureDisplayInfo.db entry',
         items=get_creature_display_infos,
         update=load_display_info_properties
     )
 
-    ExtraDisplayInformation = bpy.props.IntProperty(
+    ExtraDisplayInformation:  bpy.props.IntProperty(
         name='Display extra',
         description='Applies only to NPCs with character model (hair/facial feature/... and equipment settings). Not used for creatures.',
         default=0,
@@ -235,157 +235,157 @@ class WowM2CreaturePropertyGroup(bpy.types.PropertyGroup):
 
     # Creature display info
 
-    DisplaySound = bpy.props.IntProperty(
+    DisplaySound:  bpy.props.IntProperty(
         name='Sound',
         description='If 0 - CreatureModelData information is used. Otherwise, overrides generic model settings for this displayID.',
         default=0,
         min=0
     )
 
-    DisplayScale = bpy.props.FloatProperty(
+    DisplayScale:  bpy.props.FloatProperty(
         name='Scale',
         description='Default scale. Stacks (by multiplying) with other scale settings (in creature_template, applied auras...).',
         default=1.0,
         min=0.0
     )
 
-    DisplayTexture1 = bpy.props.StringProperty(
+    DisplayTexture1:  bpy.props.StringProperty(
         name='Texture 1',
         description='First creature skin texture. Texture must be in the same folder as the model.',
     )
 
-    DisplayTexture2 = bpy.props.StringProperty(
+    DisplayTexture2:  bpy.props.StringProperty(
         name='Texture 2',
         description='Second creature skin texture. Texture must be in the same folder as the model.',
     )
 
-    DisplayTexture3 = bpy.props.StringProperty(
+    DisplayTexture3:  bpy.props.StringProperty(
         name='Texture 3',
         description='Third creature skin texture. Texture must be in the same folder as the model.',
     )
 
-    DisplayPortraitTextureName = bpy.props.StringProperty(
+    DisplayPortraitTextureName:  bpy.props.StringProperty(
         name='Portrait Texture',
         description='Holding an icon like INV_Misc_Food_59. Only on a few.',
     )
 
     # Creature display info extra
 
-    DisplayExtraRace = bpy.props.EnumProperty(
+    DisplayExtraRace:  bpy.props.EnumProperty(
         name='Race',
         description='The race this NPC belongs to',
         items=get_char_races
     )
 
-    DisplayExtraGender = bpy.props.EnumProperty(
+    DisplayExtraGender:  bpy.props.EnumProperty(
         name='Gender',
         description='0 for Male, 1 for Female',
         items=[('0', 'Male', ''),
                ('1', 'Female', '')]
     )
 
-    DisplayExtraSkinColor = bpy.props.IntProperty(
+    DisplayExtraSkinColor:  bpy.props.IntProperty(
         name='Skin Color',
         default=0,
         min=0
     )
 
-    DisplayExtraFaceType = bpy.props.IntProperty(
+    DisplayExtraFaceType:  bpy.props.IntProperty(
         name='Face type',
         default=0,
         min=0
     )
 
-    DisplayExtraHairType = bpy.props.IntProperty(
+    DisplayExtraHairType:  bpy.props.IntProperty(
         name='Hair type',
         default=0,
         min=0
     )
 
-    DisplayExtraHairStyle = bpy.props.IntProperty(
+    DisplayExtraHairStyle:  bpy.props.IntProperty(
         name='Hairstyle',
         default=0,
         min=0
     )
 
-    DisplayExtraBeardStyle = bpy.props.IntProperty(
+    DisplayExtraBeardStyle:  bpy.props.IntProperty(
         name='Beard',
         default=0,
         min=0
     )
 
-    DisplayExtraHelm = bpy.props.IntProperty(
+    DisplayExtraHelm:  bpy.props.IntProperty(
         name='Helm',
         default=0,
         min=0
     )
 
-    DisplayExtraShoulder = bpy.props.IntProperty(
+    DisplayExtraShoulder:  bpy.props.IntProperty(
         name='Shoulder',
         default=0,
         min=0
     )
 
-    DisplayExtraShirt = bpy.props.IntProperty(
+    DisplayExtraShirt:  bpy.props.IntProperty(
         name='Shirt',
         default=0,
         min=0
     )
 
-    DisplayExtraCuirass = bpy.props.IntProperty(
+    DisplayExtraCuirass:  bpy.props.IntProperty(
         name='Cuirass',
         default=0,
         min=0
     )
 
-    DisplayExtraBelt = bpy.props.IntProperty(
+    DisplayExtraBelt:  bpy.props.IntProperty(
         name='Belt',
         default=0,
         min=0
     )
 
-    DisplayExtraLegs = bpy.props.IntProperty(
+    DisplayExtraLegs:  bpy.props.IntProperty(
         name='Legs',
         default=0,
         min=0
     )
 
-    DisplayExtraBoots = bpy.props.IntProperty(
+    DisplayExtraBoots:  bpy.props.IntProperty(
         name='Boots',
         default=0,
         min=0
     )
 
-    DisplayExtraWrist = bpy.props.IntProperty(
+    DisplayExtraWrist:  bpy.props.IntProperty(
         name='Wrist',
         default=0,
         min=0
     )
 
-    DisplayExtraGloves = bpy.props.IntProperty(
+    DisplayExtraGloves:  bpy.props.IntProperty(
         name='Gloves',
         default=0,
         min=0
     )
 
-    DisplayExtraTabard = bpy.props.IntProperty(
+    DisplayExtraTabard:  bpy.props.IntProperty(
         name='Tabard',
         default=0,
         min=0
     )
 
-    DisplayExtraCape = bpy.props.IntProperty(
+    DisplayExtraCape:  bpy.props.IntProperty(
         name='Cape',
         default=0,
         min=0
     )
 
-    DisplayExtraCanEquip = bpy.props.BoolProperty(
+    DisplayExtraCanEquip:  bpy.props.BoolProperty(
         name='Can equip',
         default=True,
     )
 
-    DisplayExtraTexture = bpy.props.StringProperty(
+    DisplayExtraTexture:  bpy.props.StringProperty(
         name='Texture'
     )
 
@@ -395,15 +395,15 @@ class WowM2CreaturePropertyGroup(bpy.types.PropertyGroup):
 ## Operators
 ###############################
 
-class CreatureEditorLoadTextures(bpy.types.Operator):
+class M2_OT_creature_editor_load_textures(bpy.types.Operator):
     bl_idname = 'scene.wow_creature_load_textures'
     bl_label = 'Load creature skins'
     bl_description = 'Loads skin textures on import .M2'
     bl_options = {'REGISTER', 'INTERNAL'}
 
-    Path = bpy.props.StringProperty()
-    TexNum = bpy.props.IntProperty()
-    LoadAll = bpy.props.BoolProperty()
+    Path:  bpy.props.StringProperty()
+    TexNum:  bpy.props.IntProperty()
+    LoadAll:  bpy.props.BoolProperty()
 
     @staticmethod
     def load_skin_texture(context, path, tex_type):
@@ -462,7 +462,7 @@ class CreatureEditorLoadTextures(bpy.types.Operator):
 
 
 def register():
-    bpy.types.Scene.wow_m2_creature = bpy.props.PointerProperty(type=WowM2CreaturePropertyGroup)
+    bpy.types.Scene.wow_m2_creature:  bpy.props.PointerProperty(type=WowM2CreaturePropertyGroup)
 
 
 def unregister():

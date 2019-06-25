@@ -2,7 +2,7 @@ import bpy
 from ..enums import *
 
 
-class WowM2TexturePanel(bpy.types.Panel):
+class M2_PT_texture_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "texture"
@@ -31,7 +31,7 @@ class WowM2TexturePanel(bpy.types.Panel):
 
 class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
 
-    flags = bpy.props.EnumProperty(
+    flags:  bpy.props.EnumProperty(
         name="Texture flags",
         description="WoW  M2 texture flags",
         items=TEXTURE_FLAGS,
@@ -39,30 +39,30 @@ class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
         default={'1', '2'}
         )
 
-    texture_type = bpy.props.EnumProperty(
+    texture_type:  bpy.props.EnumProperty(
         name="Texture type",
         description="WoW  M2 texture type",
         items=TEXTURE_TYPES
         )
 
-    path = bpy.props.StringProperty(
+    path:  bpy.props.StringProperty(
         name='Path',
         description='Path to .blp file in wow file system.'
     )
 
-    color = bpy.props.StringProperty(
+    color:  bpy.props.StringProperty(
         name='Color',
         description='Color track linked to this texture.'
     )
 
-    transparency = bpy.props.StringProperty(
+    transparency:  bpy.props.StringProperty(
         name='Transparency',
         description='Transparency track linked to this texture.'
     )
 
 
 def register():
-    bpy.types.ImageTexture.wow_m2_texture = bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)
+    bpy.types.ImageTexture.wow_m2_texture:  bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)
 
 
 def unregister():

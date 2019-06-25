@@ -2,7 +2,7 @@ import bpy
 from ..enums import *
 
 
-class WowM2AttachmentPanel(bpy.types.Panel):
+class M2_PT_attachment_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
@@ -33,19 +33,19 @@ class WowM2AttachmentPanel(bpy.types.Panel):
 
 class WowM2AttachmentPropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty(
+    enabled:  bpy.props.BoolProperty(
         name='Enabled',
         description='Enabled this object to be a WoW M2 attachment point',
         default=False
     )
 
-    type = bpy.props.EnumProperty(
+    type:  bpy.props.EnumProperty(
         name="Type",
         description="WoW Attachment Type",
         items=get_attachment_types
     )
 
-    animate = bpy.props.BoolProperty(
+    animate:  bpy.props.BoolProperty(
         name='Animate',
         description='Animate attached object at this keyframe',
         default=True
@@ -53,7 +53,7 @@ class WowM2AttachmentPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_m2_attachment = bpy.props.PointerProperty(type=WowM2AttachmentPropertyGroup)
+    bpy.types.Object.wow_m2_attachment:  bpy.props.PointerProperty(type=WowM2AttachmentPropertyGroup)
 
 
 def unregister():

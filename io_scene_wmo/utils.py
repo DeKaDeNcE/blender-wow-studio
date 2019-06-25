@@ -58,18 +58,19 @@ def get_material_viewport_image(material):
 
 def load_game_data():
     if not hasattr(bpy, 'wow_game_data'):
-        addon_preferences = bpy.context.user_preferences.addons[__package__].preferences
+
+        addon_preferences = bpy.context.preferences.addons[__package__].preferences
         bpy.wow_game_data = WoWFileData(addon_preferences.wow_path, addon_preferences.project_dir_path)
 
         if not bpy.wow_game_data.files:
-            raise ChildProcessError("WoW game data is not loaded. Check settings.")
+            raise UserWarning("WoW game data is not loaded. Check settings.")
 
     return bpy.wow_game_data
 
 
 def resolve_texture_path(filepath):
     filepath = os.path.splitext(bpy.path.abspath(filepath))[0] + ".blp"
-    prefs = bpy.context.user_preferences.addons[__package__].preferences
+    prefs = bpy.context.preferences.addons[__package__].preferences
 
     # TODO: project folder
     rel_path = os.path.relpath(filepath, start=prefs.cache_dir_path)

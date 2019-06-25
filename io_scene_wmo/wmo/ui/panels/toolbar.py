@@ -95,11 +95,10 @@ def switch_doodad_set(self, context):
                 obj.hide = True
 
 
-class WMOToolsPanelObjectModeDisplay(bpy.types.Panel):
+class WMO_PT_tools_object_mode_display(bpy.types.Panel):
     bl_label = 'Display'
-    bl_idname = 'WMODisplay'
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
     bl_context = 'objectmode'
     bl_category = 'WMO'
 
@@ -127,11 +126,10 @@ class WMOToolsPanelObjectModeDisplay(bpy.types.Panel):
         return context.scene is not None and context.scene.wow_scene.type == 'WMO'
 
 
-class WMOToolsPanelObjectModeAddToScene(bpy.types.Panel):
+class WMO_PT_tools_panel_object_mode_add_to_scene(bpy.types.Panel):
     bl_label = 'Add to scene'
-    bl_idname = 'WMOAddToScene'
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
     bl_context = 'objectmode'
     bl_category = 'WMO'
 
@@ -169,11 +167,10 @@ class WMOToolsPanelObjectModeAddToScene(bpy.types.Panel):
         return context.scene is not None and context.scene.wow_scene.type == 'WMO'
 
 
-class WMOToolsPanelObjectModeActions(bpy.types.Panel):
+class WMO_PT_tools_object_mode_actions(bpy.types.Panel):
     bl_label = 'Actions'
-    bl_idname = 'WMOQuickPanelObjModeActions'
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
     bl_context = 'objectmode'
     bl_category = 'WMO'
 
@@ -188,7 +185,7 @@ class WMOToolsPanelObjectModeActions(bpy.types.Panel):
         if bpy.context.selected_objects:
             box = col.box()
             box.label(text="Selected:")
-            box.menu("view3D.convert_to_menu", text="Convert selected")
+            box.menu("WMO_MT_convert_operators", text="Convert selected")
             box.label(text="Apply:")
             box_col = box.column(align=True)
             box_col.operator("scene.wow_quick_collision", text='Quick collision', icon='STYLUS_PRESSURE')
@@ -203,11 +200,10 @@ class WMOToolsPanelObjectModeActions(bpy.types.Panel):
         return context.scene is not None and context.scene.wow_scene.type == 'WMO'
 
 
-class WMOToolsPanelObjectModeDoodads(bpy.types.Panel):
+class WMO_PT_tools_object_mode_doodads(bpy.types.Panel):
     bl_label = 'Doodads'
-    bl_idname = 'WMOQuickPanelObjModeDoodads'
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
     bl_context = 'objectmode'
     bl_category = 'WMO'
 
@@ -234,9 +230,8 @@ class WMOToolsPanelObjectModeDoodads(bpy.types.Panel):
             box_col2.operator("scene.wow_clear_preserved_doodad_sets", text='Clear doodad sets', icon='CANCEL')
 
 
-class ConvertOperators(bpy.types.Menu):
+class WMO_MT_convert_operators(bpy.types.Menu):
     bl_label = "Convert"
-    bl_idname = "view3D.convert_to_menu"
     bl_options = {'REGISTER'}
 
     def draw(self, context):
@@ -252,9 +247,8 @@ class ConvertOperators(bpy.types.Menu):
         return context.scene is not None and context.scene.wow_scene.type == 'WMO'
 
 
-class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
+class WMO_MT_mesh_wow_components_add(bpy.types.Menu):
     bl_label = "WoW"
-    bl_idname = "view3D.add_wow_components_menu"
     bl_options = {'REGISTER'}
 
     def draw(self, context):
@@ -276,14 +270,13 @@ class INFO_MT_mesh_WoW_components_add(bpy.types.Menu):
 
 
 def wow_components_add_menu_item(self, context):
-    self.layout.menu("view3D.add_wow_components_menu", icon_value=ui_icons['WOW_STUDIO_WOW_ADD'])
+    self.layout.menu("WMO_MT_mesh_wow_components_add", icon_value=ui_icons['WOW_STUDIO_WOW_ADD'])
 
 
-class WoWToolsPanelLiquidFlags(bpy.types.Panel):
+class WMO_PT_tools_liquid_flags(bpy.types.Panel):
     bl_label = 'Liquid Flags'
-    bl_idname = 'WMOQuickPanelVertexColorMode'
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
     bl_context = 'vertexpaint'
     bl_category = 'WMO'
 
@@ -313,7 +306,7 @@ class WoWToolsPanelLiquidFlags(bpy.types.Panel):
 
 
 def register():
-    bpy.types.Scene.wow_visibility = bpy.props.EnumProperty(
+    bpy.types.Scene.wow_visibility:  bpy.props.EnumProperty(
         items=[
             ('0', "Outdoor", "Display outdoor groups", 'OBJECT_DATA', 0x1),
             ('1', "Indoor", "Display indoor groups", 'MOD_SUBSURF', 0x2),
@@ -327,7 +320,7 @@ def register():
         update=update_wow_visibility
     )
 
-    bpy.types.Scene.wow_liquid_flags = bpy.props.EnumProperty(
+    bpy.types.Scene.wow_liquid_flags:  bpy.props.EnumProperty(
         items=[
             ('0x1', "Flag 0x01", "Switch to this flag", 'MOD_SOFT', 0),
             ('0x2', "Flag 0x02", "Switch to this flag", 'MOD_SOFT', 1),
@@ -341,14 +334,14 @@ def register():
         update=update_liquid_flags
     )
 
-    bpy.types.Scene.wow_doodad_visibility = bpy.props.EnumProperty(
+    bpy.types.Scene.wow_doodad_visibility:  bpy.props.EnumProperty(
         name="",
         description="Switch doodad sets",
         items=get_doodad_sets,
         update=switch_doodad_set
     )
 
-    bpy.types.INFO_MT_add.prepend(wow_components_add_menu_item)
+    bpy.types.VIEW3D_MT_add.prepend(wow_components_add_menu_item)
 
 
 def unregister():
@@ -356,4 +349,4 @@ def unregister():
     del bpy.types.Scene.wow_liquid_flags
     del bpy.types.Scene.wow_doodad_visibility
 
-    bpy.types.INFO_MT_add.remove(wow_components_add_menu_item)
+    bpy.types.VIEW3D_MT_add.remove(wow_components_add_menu_item)

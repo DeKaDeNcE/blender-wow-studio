@@ -3,7 +3,7 @@ from ..enums import *
 from ...render import update_wmo_mat_node_tree
 
 
-class WowMaterialPanel(bpy.types.Panel):
+class WMO_PT_material(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "material"
@@ -109,9 +109,9 @@ def update_wmo_material_enabled(self, context):
 
 class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty()
+    enabled:  bpy.props.BoolProperty()
 
-    flags = bpy.props.EnumProperty(
+    flags:  bpy.props.EnumProperty(
         name="Material flags",
         description="WoW material flags",
         items=material_flag_enum,
@@ -119,20 +119,20 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
         update=update_flags
         )
 
-    shader = bpy.props.EnumProperty(
+    shader:  bpy.props.EnumProperty(
         items=shader_enum,
         name="Shader",
         description="WoW shader assigned to this material",
         update=update_shader
         )
 
-    blending_mode = bpy.props.EnumProperty(
+    blending_mode:  bpy.props.EnumProperty(
         items=blending_enum,
         name="Blending",
         description="WoW material blending mode"
         )
 
-    emissive_color = bpy.props.FloatVectorProperty(
+    emissive_color:  bpy.props.FloatVectorProperty(
         name="Emissive Color",
         subtype='COLOR',
         default=(1,1,1,1),
@@ -142,7 +142,7 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
         update=update_emissive_color
         )
 
-    diff_color = bpy.props.FloatVectorProperty(
+    diff_color:  bpy.props.FloatVectorProperty(
         name="Diffuse Color",
         subtype='COLOR',
         default=(1, 1, 1, 1),
@@ -151,19 +151,19 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
         max=1.0
         )
 
-    terrain_type = bpy.props.EnumProperty(
+    terrain_type:  bpy.props.EnumProperty(
         items=terrain_type_enum,
         name="Terrain Type",
         description="Terrain type assigned to this material. Used for producing correct footstep sounds."
         )
 
-    diff_texture_1 = bpy.props.PointerProperty(
+    diff_texture_1:  bpy.props.PointerProperty(
         type=bpy.types.Texture,
         name='Texture 1',
         update=update_diff_texture_1
     )
 
-    diff_texture_2 = bpy.props.PointerProperty(
+    diff_texture_2:  bpy.props.PointerProperty(
         type=bpy.types.Texture,
         name='Texture 2',
         update=update_diff_texture_2
@@ -171,7 +171,7 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Material.wow_wmo_material = bpy.props.PointerProperty(type=WowMaterialPropertyGroup)
+    bpy.types.Material.wow_wmo_material:  bpy.props.PointerProperty(type=WowMaterialPropertyGroup)
 
 
 def unregister():

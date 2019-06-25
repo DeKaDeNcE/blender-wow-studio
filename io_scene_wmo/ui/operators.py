@@ -14,7 +14,7 @@ from . import get_addon_prefs
 #############################################################
 
 
-class ReloadWoWFileSystemOP(bpy.types.Operator):
+class WBS_OT_reload_wow_file_system(bpy.types.Operator):
     bl_idname = 'scene.reload_wow_filesystem'
     bl_label = 'Reoad WoW filesystem'
     bl_description = 'Re-establish connection to World of Warcraft client files'
@@ -46,40 +46,40 @@ class ReloadWoWFileSystemOP(bpy.types.Operator):
 #############################################################
 
 
-class WMOImport(bpy.types.Operator):
+class WBS_OT_wmo_import(bpy.types.Operator):
     """Load WMO mesh data"""
     bl_idname = "import_mesh.wmo"
     bl_label = "Import WMO"
     bl_options = {'UNDO', 'REGISTER'}
 
-    filepath = StringProperty(
+    filepath: StringProperty(
         subtype='FILE_PATH',
         )
 
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
         default="*.wmo",
         options={'HIDDEN'}
         )
 
-    import_lights = BoolProperty(
+    import_lights: BoolProperty(
         name="Import lights",
         description="Import WMO lights to scene",
         default=True,
         )
 
-    import_doodads = BoolProperty(
+    import_doodads: BoolProperty(
         name="Import doodads",
         description='Import WMO doodads to scene',
         default=True
     )
 
-    import_fogs = BoolProperty(
+    import_fogs: BoolProperty(
         name="Import fogs",
         description="Import WMO fogs to scene",
         default=True,
         )
 
-    group_objects = BoolProperty(
+    group_objects: BoolProperty(
         name="Group objects",
         description="Group all objects of this WMO on import",
         default=False,
@@ -97,7 +97,7 @@ class WMOImport(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 
-class WMOExport(bpy.types.Operator, ExportHelper):
+class WBS_OT_wmo_export(bpy.types.Operator, ExportHelper):
     """Save WMO mesh data"""
     bl_idname = "export_mesh.wmo"
     bl_label = "Export WMO"
@@ -105,25 +105,26 @@ class WMOExport(bpy.types.Operator, ExportHelper):
 
     filename_ext = ".wmo"
 
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
         default="*.wmo",
         options={'HIDDEN'}
     )
 
-    export_method = EnumProperty(
+    export_method: EnumProperty(
         name='Export Method',
         description='Partial export if the scene was exported before and was not critically modified',
         items=[('FULL', 'Full', ''),
-               ('PARTIAL', 'Partial', '')]
+               ('PARTIAL', 'Partial', '')
+               ]
     )
 
-    export_selected = BoolProperty(
+    export_selected: BoolProperty(
         name="Export selected objects",
         description="Export only selected objects on the scene",
         default=False,
         )
 
-    autofill_textures = BoolProperty(
+    autofill_textures: BoolProperty(
         name="Fill texture paths",
         description="Automatically assign texture paths based on texture filenames",
         default=True,
@@ -152,22 +153,22 @@ class WMOExport(bpy.types.Operator, ExportHelper):
         return {'CANCELLED'}
 
 
-class M2Import(bpy.types.Operator):
+class WBS_OT_m2_import(bpy.types.Operator):
     """Load M2 data"""
     bl_idname = "import_mesh.m2"
     bl_label = "Import M2"
     bl_options = {'UNDO', 'REGISTER'}
 
-    filepath = StringProperty(
+    filepath: StringProperty(
         subtype='FILE_PATH',
         )
 
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
         default="*.m2",
         options={'HIDDEN'}
         )
 
-    load_textures = BoolProperty(
+    load_textures: BoolProperty(
         name="Fetch textures",
         description="Automatically fetch textures from game data",
         default=True,
@@ -184,7 +185,7 @@ class M2Import(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 
-class M2Export(bpy.types.Operator, ExportHelper):
+class WBS_OT_m2_export(bpy.types.Operator, ExportHelper):
     """Save M2 mesh data"""
     bl_idname = "export_mesh.m2"
     bl_label = "Export M2"
@@ -192,25 +193,25 @@ class M2Export(bpy.types.Operator, ExportHelper):
 
     filename_ext = ".m2"
 
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
         default="*.m2",
         options={'HIDDEN'}
     )
 
-    export_selected = BoolProperty(
+    export_selected: BoolProperty(
         name="Export selected objects",
         description="Export only selected objects on the scene",
         default=False,
         )
 
-    version = EnumProperty(
+    version: EnumProperty(
         name="Version",
         description="Version of World of Warcraft",
         items=[('264', 'WOTLK', "")],
         default='264'
     )
 
-    autofill_textures = BoolProperty(
+    autofill_textures: BoolProperty(
         name="Fill texture paths",
         description="Automatically assign texture paths based on texture filenames",
         default=True

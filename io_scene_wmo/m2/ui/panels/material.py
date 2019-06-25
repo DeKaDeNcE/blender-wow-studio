@@ -2,7 +2,7 @@ import bpy
 from ..enums import *
 
 
-class WowM2MaterialPanel(bpy.types.Panel):
+class M2_PT_material_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "material"
@@ -32,27 +32,27 @@ class WowM2MaterialPanel(bpy.types.Panel):
 
 class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
 
-    flags = bpy.props.EnumProperty(
+    flags:  bpy.props.EnumProperty(
         name="Material flags",
         description="WoW  M2 material flags",
         items=TEX_UNIT_FLAGS,
         options={"ENUM_FLAG"}
         )
 
-    render_flags = bpy.props.EnumProperty(
+    render_flags:  bpy.props.EnumProperty(
         name="Render flags",
         description="WoW  M2 render flags",
         items=RENDER_FLAGS,
         options={"ENUM_FLAG"}
         )
 
-    shader = bpy.props.EnumProperty(
+    shader:  bpy.props.EnumProperty(
         items=SHADERS,
         name="shader",
         description="WoW shader assigned to this material"
         )
 
-    blending_mode = bpy.props.EnumProperty(
+    blending_mode:  bpy.props.EnumProperty(
         items=BLENDING_MODES,
         name="Blending",
         description="WoW material blending mode"
@@ -60,7 +60,7 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
 
     # Blender animation playback settings
 
-    live_update = bpy.props.BoolProperty(
+    live_update:  bpy.props.BoolProperty(
         name='Live update',
         description='Automatically update this material on scene frame changes, if global live update is on. May decrease FPS.',
         default=False
@@ -68,7 +68,7 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Material.wow_m2_material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
+    bpy.types.Material.wow_m2_material:  bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
 
 
 def unregister():

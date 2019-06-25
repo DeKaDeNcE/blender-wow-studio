@@ -103,9 +103,9 @@ def sync_wmo_root_components_collections(scene):
 
 def register_wmo_handlers():
     bpy.n_scene_objects = 0
-    bpy.app.handlers.scene_update_post.append(sync_wmo_root_components_collections)
+    bpy.app.handlers.depsgraph_update_post.append(sync_wmo_root_components_collections)
 
 
 def unregister_wmo_handlers():
-    bpy.app.handlers.scene_update_post.remove(sync_wmo_root_components_collections)
+    bpy.app.handlers.depsgraph_update_post.remove(sync_wmo_root_components_collections)
 

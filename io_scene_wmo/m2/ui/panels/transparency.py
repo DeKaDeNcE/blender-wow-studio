@@ -1,7 +1,7 @@
 import bpy
 
 
-class WowM2TransparencyPanel(bpy.types.Panel):
+class M2_PT_transparency_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -26,7 +26,7 @@ class WowM2TransparencyPanel(bpy.types.Panel):
         return context.scene is not None and context.scene.wow_scene.type == 'M2'
 
 
-class WowM2Transparency_TransparencyList(bpy.types.UIList):
+class M2_UL_transparency_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
         self.use_filter_show = False
 
@@ -41,7 +41,7 @@ class WowM2Transparency_TransparencyList(bpy.types.UIList):
             pass
 
 
-class WowM2Transparency_ValueAdd(bpy.types.Operator):
+class M2_OT_transparency_value_add(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_transparency_add_value'
     bl_label = 'Add WoW transparency'
     bl_description = 'Add WoW transparency'
@@ -55,7 +55,7 @@ class WowM2Transparency_ValueAdd(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WowM2Transparency_ValueRemove(bpy.types.Operator):
+class M2_OT_transparency_value_remove(bpy.types.Operator):
     bl_idname = 'scene.wow_m2_transparency_remove_value'
     bl_label = 'Remove WoW transparency'
     bl_description = 'Remove WoW transparency'
@@ -76,7 +76,7 @@ def update_transparency_change(self, context):
 
 class WowM2TransprencyPropertyGroup(bpy.types.PropertyGroup):
 
-    value = bpy.props.FloatProperty(
+    value:  bpy.props.FloatProperty(
         name='Transparency',
         description='Defines transparency for M2 material. Can be animated. Multiplied by alpha channel of color block.',
         min=0.0,
@@ -85,19 +85,19 @@ class WowM2TransprencyPropertyGroup(bpy.types.PropertyGroup):
         update=update_transparency_change
     )
 
-    name = bpy.props.StringProperty(
+    name:  bpy.props.StringProperty(
         name='Transparency name',
         description='Only used for scene organization purposes, ignored on export'
     )
 
 
 def register():
-    bpy.types.Scene.wow_m2_transparency = bpy.props.CollectionProperty(
+    bpy.types.Scene.wow_m2_transparency:  bpy.props.CollectionProperty(
         name='Transparency',
         type=WowM2TransprencyPropertyGroup
     )
 
-    bpy.types.Scene.wow_m2_cur_transparency_index = bpy.props.IntProperty()
+    bpy.types.Scene.wow_m2_cur_transparency_index:  bpy.props.IntProperty()
 
 
 def unregister():

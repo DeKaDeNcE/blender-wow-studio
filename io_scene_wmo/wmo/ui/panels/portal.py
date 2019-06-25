@@ -2,7 +2,7 @@ import bpy
 from ..enums import *
 
 
-class WowPortalPlanePanel(bpy.types.Panel):
+class WMO_PT_portal(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
@@ -53,35 +53,35 @@ def portal_validator(self, context):
 
 class WowPortalPlanePropertyGroup(bpy.types.PropertyGroup):
 
-    enabled = bpy.props.BoolProperty()
+    enabled:  bpy.props.BoolProperty()
 
-    first = bpy.props.PointerProperty(
+    first:  bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="First group",
         poll=lambda self, obj: obj.wow_wmo_group.enabled and self.Second != obj and obj.name in bpy.context.scene.objects,
         update=portal_validator
     )
 
-    second = bpy.props.PointerProperty(
+    second:  bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Second group",
         poll=lambda self, obj: obj.wow_wmo_group.enabled and self.First != obj and obj.name in bpy.context.scene.objects,
         update=portal_validator
     )
 
-    portal_id = bpy.props.IntProperty(
+    portal_id:  bpy.props.IntProperty(
         name="Portal's ID",
         description="Portal ID"
         )
 
-    algorithm = bpy.props.EnumProperty(
+    algorithm:  bpy.props.EnumProperty(
         items=portal_dir_alg_enum,
         default="0"
         )
 
 
 def register():
-    bpy.types.Object.wow_wmo_portal = bpy.props.PointerProperty(type=WowPortalPlanePropertyGroup)
+    bpy.types.Object.wow_wmo_portal:  bpy.props.PointerProperty(type=WowPortalPlanePropertyGroup)
 
 
 def unregister():

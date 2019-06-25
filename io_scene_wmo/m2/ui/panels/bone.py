@@ -2,7 +2,7 @@ import bpy
 from ..enums import *
 
 
-class WowM2BonePanel(bpy.types.Panel):
+class M2_PT_bone_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "bone"
@@ -23,13 +23,13 @@ class WowM2BonePanel(bpy.types.Panel):
 
 
 class WowM2BonePropertyGroup(bpy.types.PropertyGroup):
-    key_bone_id = bpy.props.EnumProperty(
+    key_bone_id:  bpy.props.EnumProperty(
         name="Keybone",
         description="WoW bone keybone ID",
         items=get_keybone_ids
     )
 
-    flags = bpy.props.EnumProperty(
+    flags:  bpy.props.EnumProperty(
         name="Bone flags",
         description="WoW bone flags",
         items=BONE_FLAGS,
@@ -38,7 +38,7 @@ class WowM2BonePropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.EditBone.wow_m2_bone = bpy.props.PointerProperty(type=WowM2BonePropertyGroup)
+    bpy.types.EditBone.wow_m2_bone:  bpy.props.PointerProperty(type=WowM2BonePropertyGroup)
 
 
 def unregister():
