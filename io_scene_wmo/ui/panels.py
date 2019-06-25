@@ -53,9 +53,12 @@ def unregister_wow_scene_properties():
 
 
 def render_top_bar(self, context):
+    if context.region.alignment == 'TOP':
+        return
+
     layout = self.layout
     row = layout.row(align=True)
-    row.label('Scene:')
+    row.label(text='Scene:')
     row.prop(context.scene.wow_scene, 'version', text='')
     row.prop(context.scene.wow_scene, 'type', text='')
     row.operator("scene.reload_wow_filesystem", text="", icon_value=ui_icons['WOW_STUDIO_RELOAD'])
@@ -69,7 +72,7 @@ menu_export_m2 = lambda self, ctx: self.layout.operator("export_mesh.m2", text="
 
 def register_panels():
     register_wow_scene_properties()
-    bpy.types.INFO_HT_header.append(render_top_bar)
+    bpy.types.TOPBAR_HT_upper_bar.append(render_top_bar)
     bpy.types.TOPBAR_MT_file_import.append(menu_import_wmo)
     bpy.types.TOPBAR_MT_file_import.append(menu_import_m2)
     bpy.types.TOPBAR_MT_file_export.append(menu_export_wmo)
@@ -82,4 +85,4 @@ def unregister_panels():
     bpy.types.TOPBAR_MT_file_import.remove(menu_import_m2)
     bpy.types.TOPBAR_MT_file_export.remove(menu_export_wmo)
     bpy.types.TOPBAR_MT_file_export.remove(menu_export_m2)
-    bpy.types.INFO_HT_header.remove(render_top_bar)
+    bpy.types.TOPBAR_HT_upper_bar.remove(render_top_bar)
