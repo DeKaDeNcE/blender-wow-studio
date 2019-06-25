@@ -110,7 +110,7 @@ class WoWWMODoodadSetProperptyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_wmo_doodad_set:  bpy.props.PointerProperty(type=WoWWMODoodadSetProperptyGroup)
+    bpy.types.Object.wow_wmo_doodad_set = bpy.props.PointerProperty(type=WoWWMODoodadSetProperptyGroup)
 
 
 def unregister():

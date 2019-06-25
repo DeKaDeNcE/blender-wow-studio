@@ -94,7 +94,7 @@ class WowLightPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_wmo_light:  bpy.props.PointerProperty(type=WowLightPropertyGroup)
+    bpy.types.Object.wow_wmo_light = bpy.props.PointerProperty(type=WowLightPropertyGroup)
 
 
 def unregister():

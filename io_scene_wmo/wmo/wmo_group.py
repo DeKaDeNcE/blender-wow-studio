@@ -615,7 +615,7 @@ class WMOGroupFile:
 
             for poly in mesh.polygons:
                 poly_normal = mathutils.Vector(poly.normal)
-                g_center = group_obj.matrix_world * poly.center + poly_normal * sys.float_info.epsilon
+                g_center = group_obj.matrix_world @ poly.center + poly_normal * sys.float_info.epsilon
 
                 dist = normal[0] * g_center[0] + normal[1] * g_center[1] \
                      + normal[2] * g_center[2] - portal_mesh.polygons[0].normal[0] \

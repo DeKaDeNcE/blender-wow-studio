@@ -510,7 +510,7 @@ class WMO_OT_doodads_bake_color(bpy.types.Operator):
         dist = 32767
         result = None
         for obj in objects:
-            obj_location_relative = obj.matrix_world.inverted() * obj_.location
+            obj_location_relative = obj.matrix_world.inverted() @ obj_.location
             hit = obj.closest_point_on_mesh(obj_location_relative)
             hit_dist = (obj_location_relative - hit[1]).length
             if hit_dist < dist:
@@ -548,7 +548,7 @@ class WMO_OT_doodads_bake_color(bpy.types.Operator):
             kd_tree = mathutils.kdtree.KDTree(len(mesh.polygons))
 
             for index, poly in enumerate(mesh.polygons):
-                kd_tree.insert(group.matrix_world * poly.center, index)
+                kd_tree.insert(group.matrix_world @ poly.center, index)
 
             kd_tree.balance()
             self.tree_map[group.name] = kd_tree
@@ -948,8 +948,8 @@ class WMO_OT_bake_portal_relations(bpy.types.Operator):
 
             for obj in objects:
                 hit = obj.closest_point_on_mesh(
-                    obj.matrix_world.inverted() * (object.matrix_world * object.data.polygons[0].center))
-                hit_dist = (obj.matrix_world * hit[1] - object.matrix_world * object.data.polygons[0].center).length
+                    obj.matrix_world.inverted() @ (object.matrix_world @ object.data.polygons[0].center))
+                hit_dist = (obj.matrix_world @ hit[1] - object.matrix_world @ object.data.polygons[0].center).length
                 pairs.append((obj, hit_dist))
 
             pairs.sort(key=lambda x: x[1])

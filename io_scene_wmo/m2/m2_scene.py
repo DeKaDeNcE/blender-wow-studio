@@ -415,7 +415,7 @@ class BlenderM2Scene:
 
             # set translation values for each channel
             for j, timestamp in enumerate(frames):
-                trans_vec = bl_bone.bone.matrix_local.inverted() * (Vector(bone.pivot)
+                trans_vec = bl_bone.bone.matrix_local.inverted() @ (Vector(bone.pivot)
                                                                     + Vector(track[j]))
 
                 frame = timestamp * 0.0266666
@@ -973,10 +973,10 @@ class BlenderM2Scene:
             constraint.subtarget = bone.name
 
             bl_edit_bone = self.rig.data.bones[bone.name]
-            obj.location = bl_edit_bone.matrix_local.inverted() * Vector(attachment.position)
+            obj.location = bl_edit_bone.matrix_local.inverted() @ Vector(attachment.position)
 
             obj.name = M2AttachmentTypes.get_attachment_name(attachment.id, i)
-            obj.wow_m2_attachment.enabled = True
+            obj.wow_m2_attachment.enabled = TrueF
             obj.wow_m2_attachment.type = str(attachment.id)
 
             # animate attachment
@@ -1072,7 +1072,7 @@ class BlenderM2Scene:
                 constraint.subtarget = bone.name
 
                 bl_edit_bone = self.rig.data.bones[bone.name]
-                obj.location = bl_edit_bone.matrix_local.inverted() * Vector(light.position)
+                obj.location = bl_edit_bone.matrix_local.inverted() @ Vector(light.position)
 
             # animate light
             obj.animation_data_create()
@@ -1162,7 +1162,7 @@ class BlenderM2Scene:
             constraint.subtarget = bone.name
 
             bl_edit_bone = self.rig.data.bones[bone.name]
-            obj.location = bl_edit_bone.matrix_local.inverted() * Vector(event.position)
+            obj.location = bl_edit_bone.matrix_local.inverted() @ Vector(event.position)
             token = M2EventTokens.get_event_name(event.identifier)
             obj.name = "Event_{}".format(token)
             obj.wow_m2_event.enabled = True
@@ -1636,7 +1636,7 @@ class BlenderM2Scene:
             bpy.ops.object.mode_set(mode='OBJECT')
 
             # export vertices
-            vertices = [new_obj.matrix_world * vertex.co for vertex in mesh.vertices]
+            vertices = [new_obj.matrix_world @ vertex.co for vertex in mesh.vertices]
             normals = [vertex.normal for vertex in mesh.vertices]
             tex_coords = [(0.0, 0.0)] * len(vertices)
 
@@ -1745,7 +1745,7 @@ class BlenderM2Scene:
             bpy.ops.object.mode_set(mode='OBJECT')
 
             # collect geometry data
-            vertices = [tuple(new_obj.matrix_world * vertex.co) for vertex in mesh.vertices]
+            vertices = [tuple(new_obj.matrix_world @ vertex.co) for vertex in mesh.vertices]
             faces = [tuple([vertex for vertex in poly.vertices]) for poly in mesh.polygons]
             normals = [tuple(poly.normal) for poly in mesh.polygons]
 

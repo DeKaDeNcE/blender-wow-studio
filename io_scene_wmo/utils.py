@@ -13,9 +13,9 @@ def find_nearest_object(obj_, objects):
     dist = sys.float_info.max
     result = None
     for obj in objects:
-        obj_location_relative = obj.matrix_world.inverted() * obj.location
+        obj_location_relative = obj.matrix_world.inverted() @ obj.location
         hit = obj_.closest_point_on_mesh(obj_location_relative)
-        hit_dist = (obj.location - obj.matrix_world * hit[1]).length
+        hit_dist = (obj.location - obj.matrix_world @ hit[1]).length
         if hit_dist < dist:
             dist = hit_dist
             result = obj
@@ -122,7 +122,7 @@ def get_origin_position():
 
 
 def get_obj_boundbox_center(obj):
-    return obj.matrix_world * (0.125 * sum((Vector(b) for b in obj.bound_box), Vector()))
+    return obj.matrix_world @ (0.125 * sum((Vector(b) for b in obj.bound_box), Vector()))
 
 
 def get_obj_radius(obj, bb_center):
@@ -137,7 +137,7 @@ def get_obj_radius(obj, bb_center):
 
 
 def get_obj_boundbox_world(obj):
-    return tuple(obj.matrix_world * Vector(obj.bound_box[0])), tuple(obj.matrix_world * Vector(obj.bound_box[6]))
+    return tuple(obj.matrix_world @ Vector(obj.bound_box[0])), tuple(obj.matrix_world @ Vector(obj.bound_box[6]))
 
 
 def get_objs_boundbox_world(objects):

@@ -191,7 +191,7 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Scene.wow_wmo_root:  bpy.props.PointerProperty(type=WowRootPropertyGroup)
+    bpy.types.Scene.wow_wmo_root = bpy.props.PointerProperty(type=WowRootPropertyGroup)
 
 
 def unregister():

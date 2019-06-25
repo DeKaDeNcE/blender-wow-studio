@@ -7,7 +7,7 @@ from .panels import register_panels, unregister_panels
 
 
 def get_addon_prefs():
-    return bpy.context.user_preferences.addons[__package__[:-3]].preferences
+    return bpy.context.preferences.addons[__package__[:-3]].preferences
 
 
 def register_ui():

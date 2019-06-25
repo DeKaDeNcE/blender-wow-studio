@@ -214,7 +214,7 @@ class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_wmo_group:  bpy.props.PointerProperty(type=WowWMOGroupPropertyGroup)
+    bpy.types.Object.wow_wmo_group = bpy.props.PointerProperty(type=WowWMOGroupPropertyGroup)
 
 
 def unregister():

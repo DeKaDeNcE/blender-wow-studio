@@ -80,7 +80,7 @@ class WowVertexInfoPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_wmo_vertex_info:  bpy.props.PointerProperty(type=WowVertexInfoPropertyGroup)
+    bpy.types.Object.wow_wmo_vertex_info = bpy.props.PointerProperty(type=WowVertexInfoPropertyGroup)
 
 
 def unregister():

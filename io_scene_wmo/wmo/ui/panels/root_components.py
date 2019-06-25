@@ -675,7 +675,7 @@ class WoWWMO_RootComponents(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Scene.wow_wmo_root_components:  bpy.props.PointerProperty(type=WoWWMO_RootComponents)
+    bpy.types.Scene.wow_wmo_root_components = bpy.props.PointerProperty(type=WoWWMO_RootComponents)
 
 
 def unregister():

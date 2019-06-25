@@ -117,7 +117,7 @@ class WowFogPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_wmo_fog:  bpy.props.PointerProperty(type=WowFogPropertyGroup)
+    bpy.types.Object.wow_wmo_fog = bpy.props.PointerProperty(type=WowFogPropertyGroup)
 
 
 def unregister():

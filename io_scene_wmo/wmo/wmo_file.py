@@ -238,7 +238,7 @@ class WMOFile:
         mat = bpy.data.materials.get("WowMaterial_ghost")
         if not mat:
             mat = bpy.data.materials.new("WowMaterial_ghost")
-            mat.diffuse_color = (0.2, 0.5, 1.0)
+            mat.diffuse_color = (0.2, 0.5, 0.5, 1.0)
             mat.diffuse_intensity = 1.0
             mat.alpha = 0.15
             mat.transparency_method = 'Z_TRANSPARENCY'
@@ -692,7 +692,7 @@ class WMOFile:
                         doodad_def.name_ofs = self.modn.add_string(path)
                         doodad_paths[path] = doodad_def.name_ofs
 
-                    doodad_def.position = doodad.matrix_world * Vector((0, 0, 0))
+                    doodad_def.position = doodad.matrix_world @ Vector((0, 0, 0))
 
                     doodad.rotation_mode = 'QUATERNION'
 
@@ -855,7 +855,7 @@ class WMOFile:
                     for poly in portal_mesh.polygons:
                         for loop_index in poly.loop_indices:
                             vertex_pos = portal_mesh.vertices[portal_mesh.loops[loop_index].vertex_index].co \
-                                         * portal_obj.matrix_world
+                                         @ portal_obj.matrix_world
                             self.mopv.portal_vertices.append(vertex_pos)
                             v.append(vertex_pos)
 
@@ -1001,9 +1001,9 @@ class BlenderSceneObjects:
         dist = sys.float_info.max
         result = None
         for obj in objects:
-            obj_location_relative = obj.matrix_world.inverted() * obj.location
+            obj_location_relative = obj.matrix_world.inverted() @ obj.location
             hit = obj_.closest_point_on_mesh(obj_location_relative)
-            hit_dist = (obj.location - obj.matrix_world * hit[1]).length
+            hit_dist = (obj.location - obj.matrix_world @ hit[1]).length
             if hit_dist < dist:
                 dist = hit_dist
                 result = obj

@@ -69,7 +69,7 @@ class WowLiquidPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_wmo_liquid:  bpy.props.PointerProperty(type=WowLiquidPropertyGroup)
+    bpy.types.Object.wow_wmo_liquid = bpy.props.PointerProperty(type=WowLiquidPropertyGroup)
 
 
 def unregister():

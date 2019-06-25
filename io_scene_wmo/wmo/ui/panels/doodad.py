@@ -56,7 +56,7 @@ class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_wmo_doodad:  bpy.props.PointerProperty(type=WoWDoodadPropertyGroup)
+    bpy.types.Object.wow_wmo_doodad = bpy.props.PointerProperty(type=WoWDoodadPropertyGroup)
 
 
 def unregister():

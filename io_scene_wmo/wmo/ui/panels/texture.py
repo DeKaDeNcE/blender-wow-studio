@@ -29,7 +29,7 @@ class WowWMOTexturePropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.ImageTexture.wow_wmo_texture:  bpy.props.PointerProperty(type=WowWMOTexturePropertyGroup)
+    bpy.types.ImageTexture.wow_wmo_texture = bpy.props.PointerProperty(type=WowWMOTexturePropertyGroup)
 
 
 def unregister():

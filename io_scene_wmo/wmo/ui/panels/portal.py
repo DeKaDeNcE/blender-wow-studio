@@ -81,7 +81,7 @@ class WowPortalPlanePropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_wmo_portal:  bpy.props.PointerProperty(type=WowPortalPlanePropertyGroup)
+    bpy.types.Object.wow_wmo_portal = bpy.props.PointerProperty(type=WowPortalPlanePropertyGroup)
 
 
 def unregister():

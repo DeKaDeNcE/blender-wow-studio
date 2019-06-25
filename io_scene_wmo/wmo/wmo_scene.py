@@ -183,11 +183,7 @@ class BlenderWMOScene:
         mat = bpy.data.materials.get("WowMaterial_ghost")
         if not mat:
             mat = bpy.data.materials.new("WowMaterial_ghost")
-            mat.diffuse_color = (0.2, 0.5, 1.0)
-            mat.diffuse_intensity = 1.0
-            mat.alpha = 0.15
-            mat.transparency_method = 'Z_TRANSPARENCY'
-            mat.use_transparency = True
+            mat.diffuse_color = (0.2, 0.5, 0.5, 1.0)
 
         self.material_lookup[0xFF] = mat
 
