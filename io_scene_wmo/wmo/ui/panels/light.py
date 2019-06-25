@@ -15,7 +15,7 @@ class WMO_PT_light(bpy.types.Panel):
         op.prop_group = 'wow_wmo_light'
 
         if bpy.context.scene.wow_wmo_root_components.lights.find(context.object.name) < 0:
-            row.label('', icon='ERROR')
+            row.label(text='', icon='ERROR')
 
     def draw(self, context):
         self.layout.prop(context.object.wow_wmo_light, "light_type")

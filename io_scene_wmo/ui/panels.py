@@ -58,7 +58,7 @@ def render_top_bar(self, context):
 
     layout = self.layout
     row = layout.row(align=True)
-    row.label(text='Scene:')
+    row.label(text='WoW Scene:')
     row.prop(context.scene.wow_scene, 'version', text='')
     row.prop(context.scene.wow_scene, 'type', text='')
     row.operator("scene.reload_wow_filesystem", text="", icon_value=ui_icons['WOW_STUDIO_RELOAD'])

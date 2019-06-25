@@ -1429,7 +1429,7 @@ class WMO_OT_to_wow_material(bpy.types.Operator):
         col.prop(self, "BlendingMode")
 
         col.separator()
-        col.label("Flags:")
+        col.label(text="Flags:")
         col.prop(self, "Flags")
 
         col.separator()

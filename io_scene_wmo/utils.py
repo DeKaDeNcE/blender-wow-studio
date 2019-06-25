@@ -206,10 +206,10 @@ def draw_spoiler(layout, data, toggle_prop_name, name="", data1=None, layout_ena
 
     if data1 and layout_enabled:
         if icon:
-            header_row.label('', icon=icon)
+            header_row.label(text='', icon=icon)
         header_row.prop(data1, layout_enabled, text=name)
     else:
-        header_row.label('       ' + name if align else name, icon=icon)
+        header_row.label(text='       ' + name if align else name, icon=icon)
 
     if is_expanded:
 
