@@ -379,7 +379,8 @@ class BlenderM2Scene:
         scene = bpy.context.scene
         scene.objects.link(rig)
         scene.objects.active = rig
-        scene.update()
+
+        bpy.context.view_layer.update()
 
         bpy.ops.object.mode_set(mode='EDIT')
 
@@ -401,7 +402,7 @@ class BlenderM2Scene:
                 parent = armature.edit_bones[self.m2.root.bones[bone.parent_bone].name]
                 bl_edit_bone.parent = parent
 
-        bpy.context.scene.update()  # update scene.
+        bpy.context.view_layer.update()  # update scene.
         bpy.ops.object.mode_set(mode='OBJECT')  # return to object mode.
 
     def load_animations(self):

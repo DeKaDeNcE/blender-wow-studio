@@ -568,7 +568,7 @@ class BlenderWMOSceneGroup:
             bmesh.ops.delete(bm, geom=bm_collision_faces, context=5)
             bm.to_mesh(mesh)
             mesh.update()
-            scn.update()
+            bpy.context.view_layer.update()
             bm.free()
 
             c_obj = bpy.data.objects.new(c_mesh.name, c_mesh)
