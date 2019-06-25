@@ -387,7 +387,7 @@ class WMOGroupFile:
         scn = bpy.context.scene
 
         for o in scn.objects:
-            o.select = False
+            o.select_set(False)
 
         nobj = bpy.data.objects.new(obj_name, mesh)
         scn.objects.link(nobj)
@@ -596,7 +596,7 @@ class WMOGroupFile:
         mesh.validate(clean_customdata=False)
         mesh.update()
 
-        nobj.select = True
+        nobj.select_set(True)
 
         if scn.objects.active is None or scn.objects.active.mode == 'OBJECT':
             scn.objects.active = nobj
@@ -678,9 +678,9 @@ class WMOGroupFile:
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        portal_obj.select = True
+        portal_obj.select_set(True)
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-        portal_obj.select = False
+        portal_obj.sselect_set(False)
 
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
 
@@ -716,9 +716,9 @@ class WMOGroupFile:
         # apply mesh transformations
         active = bpy.context.scene.objects.active
         bpy.context.scene.objects.active = ob
-        ob.select = True
+        ob.select_set(True)
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-        ob.select = False
+        ob.select_set(False)
         bpy.context.scene.objects.active = active
 
         start_vertex = 0

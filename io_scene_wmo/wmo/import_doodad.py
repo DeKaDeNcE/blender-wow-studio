@@ -298,6 +298,6 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
 
         bpy.ops.object.select_all(action='DESELECT')
         bpy.context.scene.objects.active = obj
-        obj.select = True
+        obj.select_set(True)
 
         return {'FINISHED'}

@@ -650,9 +650,9 @@ class BlenderWMOSceneGroup:
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        portal_obj.select = True
+        portal_obj.select_set(True)
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-        portal_obj.select = False
+        portal_obj.select_set(False)
 
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
 

@@ -517,7 +517,7 @@ class M2_OT_animation_editor_object_select(bpy.types.Operator):
     name:  bpy.props.StringProperty()
 
     def execute(self, context):
-        bpy.data.objects[self.name].select = True
+        bpy.data.objects[self.name].select_set(True)
         return {'FINISHED'}
 
 

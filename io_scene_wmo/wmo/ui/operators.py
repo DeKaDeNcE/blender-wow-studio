@@ -394,7 +394,7 @@ class WMO_OT_import_adt_scene(bpy.types.Operator):
             bpy.ops.object.select_all(action='DESELECT')
 
             for obj in parent.children:
-                obj.select = True
+                obj.select_set(True)
 
             bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
             bpy.ops.view3d.snap_cursor_to_selected()
@@ -404,7 +404,7 @@ class WMO_OT_import_adt_scene(bpy.types.Operator):
             bpy.ops.object.select_all(action='DESELECT')
 
             for obj in selected:
-                obj.select = True
+                obj.select_set(True)
 
         return {'FINISHED'}
 
@@ -849,7 +849,7 @@ class WMO_OT_doodadset_template_action(bpy.types.Operator):
                     elif self.Action == 'RESIZE':
 
                         obj.scale *= self.Scale
-                        obj.select = True
+                        obj.select_set(True)
 
                     elif self.Action == 'DELETE':
 
@@ -861,12 +861,12 @@ class WMO_OT_doodadset_template_action(bpy.types.Operator):
                             obj.rotation_quaternion[i] += self.Rotation[i]
 
                     elif self.Action == 'SELECT':
-                        obj.select = True
+                        obj.select_set(True)
 
                     success = True
 
                 for ob in objects_to_select:
-                    ob.select = True
+                    ob.select_set(True)
 
             if new_obj:
                 bpy.data.objects.remove(new_obj, do_unlink=True)
@@ -1491,19 +1491,19 @@ class WMO_OT_select_entity(bpy.types.Operator):
             if obj.type == 'MESH':
                 if obj.wow_wmo_group.enabled:
                     if self.entity == "Outdoor" and obj.wow_wmo_group.place_type == '8':
-                        obj.select = True
+                        obj.select_set(True)
                     elif self.entity == "Indoor" and obj.wow_wmo_group.place_type == '8192':
-                        obj.select = True
+                        obj.select_set(True)
 
                     if obj.wow_wmo_group.collision_mesh:
-                        obj.wow_wmo_group.collision_mesh.select = True
+                        obj.wow_wmo_group.collision_mesh.select_set(True)
 
                 elif self.entity not in ("wow_wmo_light", "Outdoor", "Indoor", "Collision"):
                     if getattr(obj, self.entity).enabled:
-                        obj.select = True
+                        obj.select_set(True)
 
             elif obj.type == 'LAMP' and self.entity == "wow_wmo_light":
-                obj.select = True
+                obj.select_set(True)
 
         return {'FINISHED'}
 

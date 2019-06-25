@@ -1025,7 +1025,7 @@ class BlenderSceneObjects:
                     bpy.context.scene.objects.active = obj
                     bpy.ops.object.mode_set(mode='OBJECT')
 
-            obj.select = False
+            obj.select_set(False)
 
             if obj.type == 'MESH':
 

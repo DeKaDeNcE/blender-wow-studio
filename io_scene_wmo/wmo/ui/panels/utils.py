@@ -20,7 +20,7 @@ def update_current_object(self, context, col_name, cur_item_name):
 
     if slot.pointer and not slot.pointer.hide:
         bpy.context.scene.objects.active = slot.pointer
-        slot.pointer.select = True
+        slot.pointer.select_set(True)
 
 
 class WMO_UL_root_components_template_list(bpy.types.UIList):
