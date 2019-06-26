@@ -582,7 +582,7 @@ class BlenderSceneObjects:
                 if obj.hide_viewport or export_selected and not obj.select:
                     continue
                 else:
-                    bpy.context.scene.objects.active = obj
+                    bpy.context.view_layer.objects.active = obj
                     bpy.ops.object.mode_set(mode='OBJECT')
 
             obj.select_set(False)

@@ -48,7 +48,7 @@ def update_wow_visibility(self, context):
 def update_liquid_flags(self, context):
     value = self.wow_liquid_flags
 
-    water = bpy.context.scene.objects.active
+    water = bpy.context.view_layer.objects.active
     mesh = water.data
     if water.wow_wmo_liquid.enabled:
         layer = mesh.vertex_colors.get("flag_" + value)

@@ -1,6 +1,6 @@
 import bpy
 from bpy.app.handlers import persistent
-from .drivers import register_m2_driver_utils
+from .drivers import register as register_m2_driver_utils
 
 __reload_order_index__ = 0
 
@@ -22,12 +22,12 @@ def load_handler(dummy):
     register_m2_driver_utils()
 
 
-def register_m2_handlers():
+def register():
     bpy.app.handlers.frame_change_pre.append(live_update_materials)
     load_handler(None)
     bpy.app.handlers.load_post.append(load_handler)
 
 
-def unregister_m2_handlers():
+def unregister():
     bpy.app.handlers.frame_change_pre.remove(live_update_materials)
     bpy.app.handlers.load_post.remove(load_handler)

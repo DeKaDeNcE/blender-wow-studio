@@ -33,7 +33,7 @@ class WMO_PT_fog(bpy.types.Panel):
 
 
 def update_fog_color(self, context):
-    bpy.context.scene.objects.active.color = (self.color1[0], self.color1[1], self.color1[2], 0.5)
+    bpy.context.view_layer.objects.active.color = (self.color1[0], self.color1[1], self.color1[2], 0.5)
 
 
 class WowFogPropertyGroup(bpy.types.PropertyGroup):

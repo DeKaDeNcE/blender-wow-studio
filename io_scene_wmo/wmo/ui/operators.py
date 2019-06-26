@@ -224,7 +224,7 @@ class WMO_OT_import_adt_scene(bpy.types.Operator):
                 i += 1
 
             bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
-            parent = bpy.context.scene.objects.active
+            parent = bpy.context.view_layer.objects.active
             parent.name = group_name
 
         for filename in os.listdir(dir):
@@ -303,7 +303,7 @@ class WMO_OT_import_adt_scene(bpy.types.Operator):
                         obj = import_doodad(addon_prefs.cache_dir_path, doodad_path, proto_scene)
                     except:
                         bpy.ops.mesh.primitive_cube_add()
-                        obj = bpy.context.scene.objects.active
+                        obj = bpy.context.view_layer.objects.active
                         obj.name = 'ERR_' + os.path.splitext(os.path.basename(doodad_path))[0]
                         traceback.print_exc()
                         print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
@@ -361,7 +361,7 @@ class WMO_OT_import_adt_scene(bpy.types.Operator):
 
                     except:
                         bpy.ops.mesh.primitive_cube_add()
-                        obj = bpy.context.scene.objects.active
+                        obj = bpy.context.view_layer.objects.active
                         obj.name = os.path.basename(wmo_path) + ".wmo"
                         traceback.print_exc()
                         print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(wmo_path))
@@ -370,7 +370,7 @@ class WMO_OT_import_adt_scene(bpy.types.Operator):
 
                 else:
                     bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
-                    obj = bpy.context.scene.objects.active
+                    obj = bpy.context.view_layer.objects.active
                     obj.name = os.path.basename(wmo_path) + ".wmo"
 
                     for child in cached_obj.children:
@@ -662,7 +662,7 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
         elif self.Action == "CUSTOM":
             if self.Name:
                 bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
-                obj = bpy.context.scene.objects.active
+                obj = bpy.context.view_layer.objects.active
                 obj.name = self.Name
                 obj.hide_viewport = True
                 obj.hide_select = True
@@ -681,7 +681,7 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
         elif self.Action == "GLOBAL":
             if not bpy.context.scene.objects.get("Set_$DefaultGlobal"):
                 bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
-                obj = bpy.context.scene.objects.active
+                obj = bpy.context.view_layer.objects.active
                 obj.name = "Set_$DefaultGlobal"
                 obj.hide_viewport = True
                 obj.hide_select = True
@@ -784,7 +784,7 @@ class WMO_OT_doodadset_template_action(bpy.types.Operator):
     def execute(self, context):
 
         target = None
-        active = bpy.context.scene.objects.active
+        active = bpy.context.view_layer.objects.active
 
         if active and active.wow_wmo_doodad:
             target = active.wow_wmo_doodad.path
@@ -815,7 +815,7 @@ class WMO_OT_doodadset_template_action(bpy.types.Operator):
                     return {'FINISHED'}
 
                 bpy.ops.scene.wow_wmo_import_doodad_from_wmv()
-                new_obj = bpy.context.scene.objects.active
+                new_obj = bpy.context.view_layer.objects.active
 
             for obj in bpy.context.scene.objects:
                 is_selected = obj in selected_objects if selected_only else True
@@ -835,7 +835,7 @@ class WMO_OT_doodadset_template_action(bpy.types.Operator):
 
                         obj = new_obj.copy()
                         bpy.context.collection.objects.link(obj)
-                        bpy.context.scene.objects.active = obj
+                        bpy.context.view_layer.objects.active = obj
 
                         obj.location = location
                         obj.rotation_mode = 'QUATERNION'
@@ -901,7 +901,7 @@ class WMO_OT_add_liquid_flag(bpy.types.Operator):
     )
 
     def execute(self, context):
-        water = bpy.context.scene.objects.active
+        water = bpy.context.view_layer.objects.active
         if water.wow_wmo_liquid.enabled:
             mesh = water.data
 
@@ -1050,7 +1050,7 @@ class WMO_OT_add_water(bpy.types.Operator):
                                         y_subdivisions=self.yPlanes + 1,
                                         radius=4.1666625 / 2
                                         )
-        water = bpy.context.scene.objects.active
+        water = bpy.context.view_layer.objects.active
         bpy.ops.transform.resize(value=(self.xPlanes, self.yPlanes, 1.0))
 
         water.name += "_Liquid"
@@ -1078,7 +1078,7 @@ class WMO_OT_add_flag(bpy.types.Operator):
     def execute(self, context):
 
         bpy.ops.mesh.primitive_uv_sphere_add()
-        fog = bpy.context.scene.objects.active
+        fog = bpy.context.view_layer.objects.active
         fog.name = 'Fog'
 
         # applying real object transformation
@@ -1217,7 +1217,7 @@ class WMO_OT_quick_collision(bpy.types.Operator):
         success = False
         for ob in bpy.context.selected_objects:
             if ob.wow_wmo_group.enabled:
-                bpy.context.scene.objects.active = ob
+                bpy.context.view_layer.objects.active = ob
 
                 if self.CleanUp:
                     for vertex_group in ob.vertex_groups:
@@ -1260,7 +1260,7 @@ class WMO_OT_texface_to_material(bpy.types.Operator):
 
     def execute(self, context):
         if bpy.context.selected_objects[0]:
-            bpy.context.scene.objects.active = bpy.context.selected_objects[0]
+            bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
         bpy.ops.view3d.material_remove()
         bpy.ops.view3d.texface_to_material()
 

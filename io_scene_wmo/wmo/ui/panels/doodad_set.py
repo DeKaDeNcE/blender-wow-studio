@@ -18,10 +18,10 @@ class WMO_OT_doodad_set_components_change(bpy.types.Operator):
         if self.action == 'ADD':
             d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
 
-            act_obj = context.scene.objects.active
+            act_obj = context.view_layer.objects.active
             bpy.ops.scene.wow_wmo_import_doodad_from_wmv()
-            doodad = context.scene.objects.active
-            context.scene.objects.active = act_obj
+            doodad = context.view_layer.objects.active
+            context.view_layer.objects.active = act_obj
 
             slot = d_set.doodads.add()
             slot.pointer = doodad

@@ -312,7 +312,7 @@ class WMOGroupFile:
         obj.location = pos
         bpy.context.collection.objects.link(obj)
 
-        bpy.context.scene.objects.active = obj
+        bpy.context.view_layer.objects.active = obj
 
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_all(action='SELECT')
@@ -655,7 +655,7 @@ class WMOGroupFile:
 
             return 0
 
-        bpy.context.scene.objects.active = portal_obj
+        bpy.context.view_layer.objects.active = portal_obj
 
         # check if this portal was already processed
         bound_relation_side = None
@@ -714,12 +714,12 @@ class WMOGroupFile:
         mesh = ob.data
 
         # apply mesh transformations
-        active = bpy.context.scene.objects.active
-        bpy.context.scene.objects.active = ob
+        active = bpy.context.view_layer.objects.active
+        bpy.context.view_layer.objects.active = ob
         ob.select_set(True)
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         ob.select_set(False)
-        bpy.context.scene.objects.active = active
+        bpy.context.view_layer.objects.active = active
 
         start_vertex = 0
         sum = 0
@@ -806,7 +806,7 @@ class WMOGroupFile:
         """ Save WoW WMO group data for future export """
         print("\nSaving group: <<{}>>".format(obj.name[:-4]))
 
-        bpy.context.scene.objects.active = obj
+        bpy.context.view_layer.objects.active = obj
         mesh = obj.data
 
         if mesh.has_custom_normals:

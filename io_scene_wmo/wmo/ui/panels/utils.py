@@ -19,7 +19,7 @@ def update_current_object(self, context, col_name, cur_item_name):
     bpy.ops.object.select_all(action='DESELECT')
 
     if slot.pointer and not slot.pointer.hide_viewport:
-        bpy.context.scene.objects.active = slot.pointer
+        bpy.context.view_layer.objects.active = slot.pointer
         slot.pointer.select_set(True)
 
 

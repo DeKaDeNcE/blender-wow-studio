@@ -61,13 +61,10 @@ def calc_segment_offset(constraint, obj, frame):
     return 0
 
 
-def register_camera_animation_driver_utils():
+def register():
     bpy.app.driver_namespace["in_path_segment"] = in_path_segment
     bpy.app.driver_namespace["calc_segment_offset"] = calc_segment_offset
 
-
-def register_m2_driver_utils():
-    register_camera_animation_driver_utils()
 
 
 

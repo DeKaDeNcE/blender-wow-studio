@@ -100,7 +100,7 @@ def update_place_type(self, context):
     obj = context.object
 
     if not obj:
-        obj = context.scene.objects.active
+        obj = context.view_layer.objects.active
 
     if not obj:
         return
@@ -118,7 +118,7 @@ def update_flags(self, context):
     obj = context.object
 
     if not obj:
-        obj = context.scene.objects.active
+        obj = context.view_layer.objects.active
 
     if not obj:
         return

@@ -311,7 +311,7 @@ class BlenderWMOScene:
 
         for i, wmo_fog in ProgressReport(list(enumerate(self.wmo.mfog.fogs)), msg='Importing fogs'):
             bpy.ops.mesh.primitive_uv_sphere_add()
-            fog = bpy.context.scene.objects.active
+            fog = bpy.context.view_layer.objects.active
 
             if not wmo_fog.big_radius:
                 fog.hide_viewport = False

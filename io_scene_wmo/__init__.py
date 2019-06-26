@@ -107,10 +107,6 @@ def register():
     except:
         traceback.print_exc()
 
-    from .ui import register_ui
-
-    register_ui()
-
 
 def unregister():
     try:
@@ -119,9 +115,6 @@ def unregister():
 
     except:
         traceback.print_exc()
-
-    from .ui import unregister_ui
-    unregister_ui()
 
     global pcoll
     bpy.utils.previews.remove(pcoll)

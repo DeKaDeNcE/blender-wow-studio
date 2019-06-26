@@ -297,7 +297,7 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
         obj.wow_wmo_doodad.path = m2_path
 
         bpy.ops.object.select_all(action='DESELECT')
-        bpy.context.scene.objects.active = obj
+        bpy.context.view_layer.objects.active = obj
         obj.select_set(True)
 
         return {'FINISHED'}

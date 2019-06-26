@@ -376,9 +376,8 @@ class BlenderM2Scene:
         self.rig = rig
 
         # Link the object to the scene
-        scene = bpy.context.scene
-        collection.objects.link(rig)
-        scene.objects.active = rig
+        bpy.context.collection.objects.link(rig)
+        bpy.context.view_layer.objects.active = rig
 
         bpy.context.view_layer.update()
 
@@ -468,7 +467,7 @@ class BlenderM2Scene:
         rig = self.rig
         rig.animation_data_create()
         rig.animation_data.action_blend_type = 'ADD'
-        bpy.context.scene.objects.active = rig
+        bpy.context.view_layer.objects.active = rig
 
         anim_data_dbc = load_game_data().db_files_client.AnimationData
 
@@ -718,7 +717,7 @@ class BlenderM2Scene:
                 obj.parent = self.rig
 
                 # bind armature to geometry
-                bpy.context.scene.objects.active = obj
+                bpy.context.view_layer.objects.active = obj
                 bpy.ops.object.modifier_add(type='ARMATURE')
                 bpy.context.object.modifiers["Armature"].object = self.rig
 
@@ -863,10 +862,10 @@ class BlenderM2Scene:
 
                 if not c_obj:
                     bpy.ops.object.empty_add(type='SINGLE_ARROW', location=(0, 0, 0))
-                    c_obj = bpy.context.scene.objects.active
+                    c_obj = bpy.context.view_layer.objects.active
                     c_obj.name = "TT_Controller"
                     c_obj.wow_m2_uv_transform.enabled = True
-                    c_obj = bpy.context.scene.objects.active
+                    c_obj = bpy.context.view_layer.objects.active
                     c_obj.rotation_mode = 'QUATERNION'
                     c_obj.empty_draw_size = 0.5
                     c_obj.animation_data_create()
@@ -874,7 +873,7 @@ class BlenderM2Scene:
 
                     self.uv_transforms[tex_tranform_index] = c_obj
 
-                bpy.context.scene.objects.active = obj
+                bpy.context.view_layer.objects.active = obj
                 bpy.ops.object.modifier_add(type='UV_WARP')
                 uv_transform = bpy.context.object.modifiers[-1]
                 uv_transform.name = 'M2TexTransform'
@@ -963,7 +962,7 @@ class BlenderM2Scene:
 
         for i, attachment in enumerate(self.m2.root.attachments):
             bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
-            obj = bpy.context.scene.objects.active
+            obj = bpy.context.view_layer.objects.active
             obj.scale = (0.094431, 0.094431, 0.094431)
             obj.empty_draw_size = 0.07
             bpy.ops.object.constraint_add(type='COPY_TRANSFORMS')
@@ -977,7 +976,7 @@ class BlenderM2Scene:
             obj.location = bl_edit_bone.matrix_local.inverted() @ Vector(attachment.position)
 
             obj.name = M2AttachmentTypes.get_attachment_name(attachment.id, i)
-            obj.wow_m2_attachment.enabled = TrueF
+            obj.wow_m2_attachment.enabled = True
             obj.wow_m2_attachment.type = str(attachment.id)
 
             # animate attachment
@@ -1059,7 +1058,7 @@ class BlenderM2Scene:
 
         for i, light in enumerate(self.m2.root.lights):
             bpy.ops.object.lamp_add(type='POINT' if light.type else 'SPOT', location=(0, 0, 0))
-            obj = bpy.context.scene.objects.active
+            obj = bpy.context.view_layer.objects.active
             obj.data.wow_m2_light.type = str(light.type)
 
             if self.rig:
@@ -1153,7 +1152,7 @@ class BlenderM2Scene:
 
         for event in self.m2.root.events:
             bpy.ops.object.empty_add(type='CUBE', location=(0, 0, 0))
-            obj = bpy.context.scene.objects.active
+            obj = bpy.context.view_layer.objects.active
             obj.scale = (0.019463, 0.019463, 0.019463)
             bpy.ops.object.constraint_add(type='CHILD_OF')
             constraint = obj.constraints[-1]
@@ -1273,7 +1272,7 @@ class BlenderM2Scene:
             anim_pair.object.location = (0, 0, 0)
 
             # active object is required for constraints / drivers to install properly
-            bpy.context.scene.objects.active = anim_pair.object
+            bpy.context.view_layer.objects.active = anim_pair.object
             update_follow_path_constraints(None, bpy.context)
 
         def animate_camera_roll(anim_pair, name, cam_track, anim_index):
@@ -1407,7 +1406,7 @@ class BlenderM2Scene:
                     animate_camera_roll(t_anim_pair, t_name, camera.roll, anim_index)
 
             # set target for camera
-            bpy.context.scene.objects.active = obj  # active object is required for constraints to install properly
+            bpy.context.view_layer.objects.active = obj  # active object is required for constraints to install properly
             obj.wow_m2_camera.target = t_obj
 
 
@@ -1425,13 +1424,13 @@ class BlenderM2Scene:
         for particle in self.m2.root.particles:
             if particle.emitter_type == 1:
                 bpy.ops.mesh.primitive_plane_add(radius=1, location=(0, 0, 0))
-                emitter = bpy.context.scene.objects.active
+                emitter = bpy.context.view_layer.objects.active
                 emitter.dimensions[0] = particle.emission_area_length
                 emitter.dimensions[1] = particle.emission_area_width
 
             elif particle.emitter_type == 2:
                 bpy.ops.mesh.primitive_uv_sphere_add(size=particle.emission_area_length, location=(0, 0, 0))
-                emitter = bpy.context.scene.objects.active
+                emitter = bpy.context.view_layer.objects.active
                 # TODO: emission_area_with
 
             elif particle.emitter_type == 3:
@@ -1494,7 +1493,7 @@ class BlenderM2Scene:
 
         for rig in rigs:
             self.rig = rig
-            bpy.context.scene.objects.active = rig
+            bpy.context.view_layer.objects.active = rig
             bpy.ops.object.mode_set(mode='EDIT')
 
             armature = rig.data
@@ -1590,7 +1589,7 @@ class BlenderM2Scene:
 
             bpy.context.collection.objects.link(new_obj)
 
-            bpy.context.scene.objects.active = new_obj
+            bpy.context.view_layer.objects.active = new_obj
             mesh = new_obj.data
 
             # security checks
@@ -1728,7 +1727,7 @@ class BlenderM2Scene:
 
             bpy.context.collection.objects.link(new_obj)
 
-            bpy.context.scene.objects.active = new_obj
+            bpy.context.view_layer.objects.active = new_obj
             mesh = new_obj.data
 
             # apply all modifiers

@@ -70,7 +70,7 @@ menu_import_m2 = lambda self, ctx: self.layout.operator("import_mesh.m2", text="
 menu_export_m2 = lambda self, ctx: self.layout.operator("export_mesh.m2", text="WoW M2 (.m2)")
 
 
-def register_panels():
+def register():
     register_wow_scene_properties()
     bpy.types.TOPBAR_HT_upper_bar.append(render_top_bar)
     bpy.types.TOPBAR_MT_file_import.append(menu_import_wmo)
@@ -79,7 +79,7 @@ def register_panels():
     bpy.types.TOPBAR_MT_file_export.append(menu_export_m2)
 
 
-def unregister_panels():
+def unregister():
     unregister_wow_scene_properties()
     bpy.types.TOPBAR_MT_file_import.remove(menu_import_wmo)
     bpy.types.TOPBAR_MT_file_import.remove(menu_import_m2)

@@ -87,17 +87,17 @@ class M2_OT_add_texture_transform(bpy.types.Operator):
     def execute(self, context):
         obj = context.object
         bpy.ops.object.empty_add(type='SINGLE_ARROW', location=(0, 0, 0))
-        c_obj = bpy.context.scene.objects.active
+        c_obj = bpy.context.view_layer.objects.active
         c_obj.name = "TT_Controller"
         c_obj.wow_m2_uv_transform.enabled = True
-        c_obj = bpy.context.scene.objects.active
+        c_obj = bpy.context.view_layer.objects.active
         c_obj.rotation_mode = 'QUATERNION'
         c_obj.empty_draw_size = 0.5
         c_obj.animation_data_create()
         c_obj.animation_data.action_blend_type = 'ADD'
 
         obj.wow_m2_geoset.uv_transform = c_obj
-        bpy.context.scene.objects.active = obj
+        bpy.context.view_layer.objects.active = obj
 
         return {'FINISHED'}
 

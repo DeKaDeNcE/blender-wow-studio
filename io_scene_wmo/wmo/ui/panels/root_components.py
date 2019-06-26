@@ -130,7 +130,7 @@ class WMO_OT_root_components_components_change(bpy.types.Operator):
         if self.action == 'ADD':
             if self.col_name == 'groups':
 
-                obj = bpy.context.scene.objects.active
+                obj = bpy.context.view_layer.objects.active
 
                 if obj and obj.select:
 
@@ -191,11 +191,11 @@ class WMO_OT_root_components_components_change(bpy.types.Operator):
                     slot.pointer = new_mat
 
             elif self.col_name == 'doodad_sets':
-                act_obj = bpy.context.scene.objects.active
+                act_obj = bpy.context.view_layer.objects.active
                 bpy.ops.object.empty_add(type='ARROWS', location=(0, 0,0))
 
-                d_set = bpy.context.scene.objects.active
-                bpy.context.scene.objects.active = act_obj
+                d_set = bpy.context.view_layer.objects.active
+                bpy.context.view_layer.objects.active = act_obj
 
                 d_set.hide_select = True
                 d_set.hide_viewport = True
@@ -508,13 +508,13 @@ def update_group_pointer(self, context):
 
     # force pass index recalculation
     if self.pointer:
-        act_obj = context.scene.objects.active
-        context.scene.objects.active = self.pointer
+        act_obj = context.view_layer.objects.active
+        context.view_layer.objects.active = self.pointer
 
         self.pointer.wow_wmo_group.flags = self.pointer.wow_wmo_group.flags
         self.pointer.wow_wmo_group.place_type = self.pointer.wow_wmo_group.place_type
 
-        context.scene.objects.active = act_obj
+        context.view_layer.objects.active = act_obj
 
 
 def update_material_pointer(self, context):

@@ -101,11 +101,11 @@ def sync_wmo_root_components_collections(scene):
                         slot.pointer = obj
 
 
-def register_wmo_handlers():
+def register():
     bpy.n_scene_objects = 0
     bpy.app.handlers.depsgraph_update_post.append(sync_wmo_root_components_collections)
 
 
-def unregister_wmo_handlers():
+def unregister():
     bpy.app.handlers.depsgraph_update_post.remove(sync_wmo_root_components_collections)
 
