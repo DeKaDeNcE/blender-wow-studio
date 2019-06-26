@@ -245,7 +245,6 @@ class BlenderWMOScene:
             if wmo_light.light_type in {0, 1}:
                 light.falloff_type = 'INVERSE_LINEAR'
                 light.distance = wmo_light.unknown4 / 2
-                light.use_sphere = True
 
             obj.wow_wmo_light.enabled = True
             obj.wow_wmo_light.light_type = str(wmo_light.light_type)

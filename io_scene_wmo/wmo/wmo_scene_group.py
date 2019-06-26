@@ -163,7 +163,7 @@ class BlenderWMOSceneGroup:
             y_pos = group.mliq.position[1] + y * 4.1666625
             for x in range(0, group.mliq.x_verts):
                 x_pos = group.mliq.position[0] + x * 4.1666625
-                vertices.append((x_pos, y_pos, group.mliq.vertex_map[y * group.mliq.x_verts + x].height[0]))
+                vertices.append((x_pos, y_pos, group.mliq.vertex_map[y * group.mliq.x_verts + x].height))
 
         # calculate faces
         indices = []
@@ -197,7 +197,7 @@ class BlenderWMOSceneGroup:
                 uv_map[vertex.index] = (group.mliq.vertex_map[vertex.index].u,
                                         group.mliq.vertex_map[vertex.index].v)
 
-            mesh.uv_layers.new("UVMap")
+            mesh.uv_layers.new(name="UVMap")
             uv_layer1 = mesh.uv_layers[0]
 
             for poly in mesh.polygons:
@@ -208,12 +208,12 @@ class BlenderWMOSceneGroup:
         # setting flags in a hacky way using vertex colors
         bit = 1
         while bit <= 0x80:
-            vc_layer = mesh.vertex_colors.new("flag_" + hex(bit))
+            vc_layer = mesh.vertex_colors.new(name="flag_" + hex(bit))
             for poly in mesh.polygons:
                 tile_flag = group.mliq.tile_flags[poly.index]
                 for loop in poly.loop_indices:
                     if tile_flag & bit:
-                        vc_layer.data[loop].color = (0, 0, 255)
+                        vc_layer.data[loop].color = (0, 0, 255, 255)
             bit <<= 1
 
         # set mesh location
