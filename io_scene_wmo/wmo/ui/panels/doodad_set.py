@@ -68,7 +68,7 @@ class WMO_PT_doodad_set(bpy.types.Panel):
         d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
         row = layout.row()
         sub_col1 = row.column()
-        sub_col1.template_list('DoodadSet_DoodadList', "", d_set, 'doodads', d_set, 'cur_doodad')
+        sub_col1.template_list('WMO_UL_doodad_set_doodad_list', "", d_set, 'doodads', d_set, 'cur_doodad')
         sub_col_parent = row.column()
         sub_col2 = sub_col_parent.column(align=True)
 
