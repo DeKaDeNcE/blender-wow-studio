@@ -6,6 +6,7 @@ import mathutils
 
 from math import floor, ceil, pi
 from .bsp_tree import *
+from .utils.portals import calculate_portal_direction
 from ..pywowlib.file_formats.wmo_format_group import *
 from ..pywowlib.file_formats.wmo_format_root import MVER
 
@@ -289,7 +290,7 @@ class WMOGroupFile:
                 uv_map[vertex.index] = (self.mliq.vertex_map[vertex.index].u,
                                         self.mliq.vertex_map[vertex.index].v)
 
-            mesh.uv_textures.new("UVMap")
+            mesh.uv_layers.new("UVMap")
             uv_layer1 = mesh.uv_layers[0]
 
             for poly in mesh.polygons:
@@ -430,14 +431,14 @@ class WMOGroupFile:
                 vertex.groups[blendmap.index].weight = self.mocv2.vert_colors[vertex.index][3] / 255
 
         # set uv
-        uv1 = mesh.uv_textures.new("UVMap")
+        uv1 = mesh.uv_layers.new("UVMap")
         uv_layer1 = mesh.uv_layers[0]
         for i in range(len(uv_layer1.data)):
             uv = tex_coords[mesh.loops[i].vertex_index]
             uv_layer1.data[i].uv = (uv[0], 1 - uv[1])
 
         if self.mogp.flags & MOGPFlags.HasTwoMOTV:
-            uv2 = mesh.uv_textures.new("UVMap_2")
+            uv2 = mesh.uv_layers.new("UVMap_2")
             nobj.wow_wmo_vertex_info.second_uv = uv2.name
             uv_layer2 = mesh.uv_layers[1]
 
@@ -516,11 +517,6 @@ class WMOGroupFile:
             mat_id = self.mopy.triangle_materials[i].material_id
 
             mesh.polygons[i].material_index = material_indices[mat_id]
-
-            # set texture displayed in viewport
-            img = material_viewport_textures[material_indices[mat_id]]
-            if img is not None:
-                uv1.data[i].image = img
 
         # DEBUG BSP
         """for iNode in range(len(self.mobn.Nodes)):
@@ -607,54 +603,6 @@ class WMOGroupFile:
     def get_portal_direction(self, portal_obj, group_obj):
         """ Get the direction of MOPR portal relation given a portal object and a target group """
 
-        def try_calculate_direction():
-
-            mesh = group_obj.data
-            portal_mesh = portal_obj.data
-            normal = portal_obj.data.polygons[0].normal
-
-            for poly in mesh.polygons:
-                poly_normal = mathutils.Vector(poly.normal)
-                g_center = group_obj.matrix_world @ poly.center + poly_normal * sys.float_info.epsilon
-
-                dist = normal[0] * g_center[0] + normal[1] * g_center[1] \
-                     + normal[2] * g_center[2] - portal_mesh.polygons[0].normal[0] \
-                     * portal_mesh.vertices[portal_mesh.polygons[0].vertices[0]].co[0] \
-                     - portal_mesh.polygons[0].normal[1] \
-                     * portal_mesh.vertices[portal_mesh.polygons[0].vertices[0]].co[1] \
-                     - portal_mesh.polygons[0].normal[2] \
-                     * portal_mesh.vertices[portal_mesh.polygons[0].vertices[0]].co[2]
-
-                if dist == 0:
-                    continue
-
-                for portal_poly in portal_mesh.polygons:
-
-                    direction = portal_poly.center - g_center
-                    length = mathutils.Vector(direction).length
-                    direction.normalize()
-
-                    angle = mathutils.Vector(direction).angle(poly.normal, None)
-
-                    if angle is None or angle >= pi * 0.5:
-                        continue
-
-                    ray_cast_result = bpy.context.scene.ray_cast(g_center, direction)
-
-                    if not ray_cast_result[0] \
-                    or ray_cast_result[4].name == portal_obj.name \
-                    or mathutils.Vector(
-                        (ray_cast_result[1][0] - g_center[0], ray_cast_result[1][1] - g_center[1],
-                         ray_cast_result[1][2] - g_center[2])).length > length:
-                        result = 1 if dist > 0 else -1
-
-                        if bound_relation_side == 0:
-                            bound_relation.Side = -result
-
-                        return result
-
-            return 0
-
         bpy.context.view_layer.objects.active = portal_obj
 
         # check if this portal was already processed
@@ -684,7 +632,7 @@ class WMOGroupFile:
 
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
 
-        result = try_calculate_direction()
+        result = calculate_portal_direction(group_obj, portal_obj, bound_relation, bound_relation_side)
 
         if result:
             return result
@@ -696,7 +644,7 @@ class WMOGroupFile:
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        result = try_calculate_direction()
+        result = calculate_portal_direction(group_obj, portal_obj, bound_relation, bound_relation_side)
 
         if result:
             return result

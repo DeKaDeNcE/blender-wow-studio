@@ -8,6 +8,8 @@ from ..ui import get_addon_prefs
 from .import_doodad import import_doodad
 from ..utils import find_nearest_object, ProgressReport
 from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies
+from .utils.fogs import create_fog_object
+from .utils.materials import load_texture, add_ghost_material
 
 
 class BlenderWMOMaterialRenderFlags:
@@ -144,48 +146,12 @@ class BlenderWMOScene:
     def load_materials(self, texture_dir=None):
         """ Load materials from WoW WMO root file """
 
-        def _load_texture(textures, filename, texture_dir):
-
-            new_filename = os.path.splitext(filename)[0] + '.png'
-
-            if os.name != 'nt':
-                new_filename = new_filename.replace('\\', '/')
-
-            tex1_name = os.path.basename(new_filename)
-
-            texture = None
-
-            # check if texture is already loaded
-            for tex_name, tex in textures.items():
-                if tex_name == filename:
-                    texture = tex
-                    break
-
-            # if image is not loaded, do it
-            if not texture:
-                texture = bpy.data.textures.new(tex1_name, 'IMAGE')
-                texture.wow_wmo_texture.path = filename
-                tex1_img = bpy.data.images.load(os.path.join(texture_dir, new_filename))
-                texture.image = tex1_img
-
-                textures[filename] = texture
-
-            return texture
-
         addon_prefs = get_addon_prefs()
 
         if texture_dir is None:
             texture_dir = addon_prefs.cache_dir_path
 
-        self.material_lookup = {}
-
-        # Add ghost material
-        mat = bpy.data.materials.get("WowMaterial_ghost")
-        if not mat:
-            mat = bpy.data.materials.new("WowMaterial_ghost")
-            mat.diffuse_color = (0.2, 0.5, 0.5, 1.0)
-
-        self.material_lookup[0xFF] = mat
+        self.material_lookup = { 0xFF : add_ghost_material() }
 
         load_wmo_shader_dependencies(reload_shader=True)
 
@@ -223,26 +189,17 @@ class BlenderWMOScene:
             # create texture slots and load textures
 
             if texture1:
-                tex_slot = mat.texture_slots.create(0)
-                tex_slot.uv_layer = "UVMap"
-                tex_slot.texture_coords = 'UV'
-
                 try:
-                    tex = _load_texture(textures, texture1, texture_dir)
-                    tex_slot.texture = tex
+                    tex = load_texture(textures, texture1, texture_dir)
                     mat.wow_wmo_material.diff_texture_1 = tex
                     mat.use_textures[0] = False
                 except:
                     pass
 
             if texture2:
-                tex_slot = mat.texture_slots.create(0)
-                tex_slot.uv_layer = "UVMap"
-                tex_slot.texture_coords = 'UV'
 
                 try:
-                    tex = _load_texture(textures, texture2, texture_dir)
-                    tex_slot.texture = tex
+                    tex = load_texture(textures, texture2, texture_dir)
                     mat.wow_wmo_material.diff_texture_2 = tex
                     mat.use_textures[1] = False
                 except:
@@ -310,64 +267,36 @@ class BlenderWMOScene:
         """ Load fogs from WMO Root File"""
 
         for i, wmo_fog in ProgressReport(list(enumerate(self.wmo.mfog.fogs)), msg='Importing fogs'):
-            bpy.ops.mesh.primitive_uv_sphere_add()
-            fog = bpy.context.view_layer.objects.active
 
-            if not wmo_fog.big_radius:
-                fog.hide_viewport = False
-
-            fog.name = "{}_Fog_{}".format(self.wmo.display_name, str(i).zfill(2))
-
-            # applying real object transformation
-            fog.location = wmo_fog.position
-            bpy.ops.transform.resize(value=(wmo_fog.big_radius, wmo_fog.big_radius, wmo_fog.big_radius))  # 0.5 is the default sphere radius
-
-            bpy.ops.object.shade_smooth()
-            fog.draw_type = 'SOLID'
-            fog.show_transparent = True
-            fog.show_name = True
-            fog.color = (wmo_fog.color1[2] / 255, wmo_fog.color1[1] / 255, wmo_fog.color1[0] / 255, 0.0)
-
-            mesh = fog.data
-
-            material = bpy.data.materials.new(name=fog.name)
-
-            if mesh.materials:
-                mesh.materials[0] = material
-            else:
-                mesh.materials.append(material)
-
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.select_all(action='SELECT')
-            bpy.ops.object.material_slot_assign()
-            bpy.ops.mesh.select_all(action='DESELECT')
-            bpy.ops.object.mode_set(mode='OBJECT')
-
-            mesh.materials[0].use_object_color = True
-            mesh.materials[0].use_transparency = True
-            mesh.materials[0].alpha = 0.35
+            fog_obj = create_fog_object(  name="{}_Fog_{}".format(self.wmo.display_name, str(i).zfill(2))
+                                        , location=wmo_fog.position
+                                        , radius=wmo_fog.big_radius
+                                        , color=(wmo_fog.color1[2] / 255,
+                                                 wmo_fog.color1[1] / 255,
+                                                 wmo_fog.color1[0] / 255,
+                                                 0.0
+                                                )
+                                        )
 
             # applying object properties
 
-            fog.wow_wmo_fog.enabled = True
-            if wmo_fog.flags & 0x01:
-                fog.wow_wmo_fog.ignore_radius = True
-            if wmo_fog.flags & 0x10:
-                fog.wow_wmo_fog.unknown = True
+            fog_obj.wow_wmo_fog.enabled = True
+            fog_obj.wow_wmo_fog.ignore_radius = wmo_fog.flags & 0x01
+            fog_obj.wow_wmo_fog.unknown = wmo_fog.flags & 0x10
 
             if wmo_fog.small_radius != 0:
-                fog.wow_wmo_fog.inner_radius = int(wmo_fog.small_radius / wmo_fog.big_radius * 100)
+                fog_obj.wow_wmo_fog.inner_radius = int(wmo_fog.small_radius / wmo_fog.big_radius * 100)
             else:
-                fog.wow_wmo_fog.inner_radius = 0
+                fog_obj.wow_wmo_fog.inner_radius = 0
 
-            fog.wow_wmo_fog.end_dist = wmo_fog.end_dist
-            fog.wow_wmo_fog.start_factor = wmo_fog.start_factor
-            fog.wow_wmo_fog.color1 = (wmo_fog.color1[2] / 255, wmo_fog.color1[1] / 255, wmo_fog.color1[0] / 255)
-            fog.wow_wmo_fog.end_dist2 = wmo_fog.end_dist
-            fog.wow_wmo_fog.start_factor2 = wmo_fog.start_factor2
-            fog.wow_wmo_fog.color2 = (wmo_fog.color2[2] / 255, wmo_fog.color2[1] / 255, wmo_fog.color2[0] / 255)
+            fog_obj.wow_wmo_fog.end_dist = wmo_fog.end_dist
+            fog_obj.wow_wmo_fog.start_factor = wmo_fog.start_factor
+            fog_obj.wow_wmo_fog.color1 = (wmo_fog.color1[2] / 255, wmo_fog.color1[1] / 255, wmo_fog.color1[0] / 255)
+            fog_obj.wow_wmo_fog.end_dist2 = wmo_fog.end_dist
+            fog_obj.wow_wmo_fog.start_factor2 = wmo_fog.start_factor2
+            fog_obj.wow_wmo_fog.color2 = (wmo_fog.color2[2] / 255, wmo_fog.color2[1] / 255, wmo_fog.color2[0] / 255)
 
-            self.bl_fogs.append(fog)
+            self.bl_fogs.append(fog_obj)
 
     def load_doodads(self, assets_dir=None):
 
@@ -426,7 +355,7 @@ class BlenderWMOScene:
         for doodad_set in self.wmo.mods.sets:
 
             anchor = bpy.data.objects.new(doodad_set.name, None)
-            anchor.empty_draw_type = 'SPHERE'
+            anchor.empty_display_type = 'SPHERE'
 
             anchor.wow_wmo_doodad_set.enabled = True
             slot = scene.wow_wmo_root_components.doodad_sets.add()
@@ -454,7 +383,7 @@ class BlenderWMOScene:
                     raise FileNotFoundError('\nWMO is referencing non-existing doodad.')
 
                 nobj = bpy.data.objects.new(doodad_basename, proto_obj.data)
-                collection.objects.link(nobj)
+                bpy.context.collection.objects.link(nobj)
 
                 nobj.wow_wmo_doodad.enabled = True
                 nobj.wow_wmo_doodad.path = doodad_path
@@ -536,10 +465,10 @@ class BlenderWMOScene:
     def load_properties(self):
         """ Load global WoW WMO properties """
         properties = bpy.context.scene.wow_wmo_root
-        properties.ambient_color = [pow(self.wmo.mohd.ambient_color[2] / 255, 2.2),
+        properties.ambient_color = (pow(self.wmo.mohd.ambient_color[2] / 255, 2.2),
                                     pow(self.wmo.mohd.ambient_color[1] / 255, 2.2),
                                     pow(self.wmo.mohd.ambient_color[0] / 255, 2.2),
-                                    pow(self.wmo.mohd.ambient_color[3] / 255, 2.2)]
+                                    pow(self.wmo.mohd.ambient_color[3] / 255, 2.2))
 
         flags = set()
         if self.wmo.mohd.flags & 0x1:
@@ -562,52 +491,6 @@ class BlenderWMOScene:
             if not bl_group.name == 'antiportal':
                 bl_group.load_object()
 
-    @staticmethod
-    def get_object_bounding_box(obj):
-        """ Calculate bounding box of an object """
-        corner1 = [0.0, 0.0, 0.0]
-        corner2 = [0.0, 0.0, 0.0]
-
-        for v in obj.bound_box:
-            if v[0] < corner1[0]:
-                corner1[0] = v[0]
-            if v[1] < corner1[1]:
-                corner1[1] = v[1]
-            if v[2] < corner1[2]:
-                corner1[2] = v[2]
-
-            if v[0] > corner2[0]:
-                corner2[0] = v[0]
-            if v[1] > corner2[1]:
-                corner2[1] = v[1]
-            if v[2] > corner2[2]:
-                corner2[2] = v[2]
-
-        return corner1, corner2
-
-    def get_global_bounding_box(self):
-        """ Calculate bounding box of an entire scene """
-        corner1 = self.wmo.mogi.infos[0].bounding_box_corner1
-        corner2 = self.wmo.mogi.infos[0].bounding_box_corner2
-
-        for gi in self.wmo.mogi.infos:
-            v = gi.bounding_box_corner1
-            if v[0] < corner1[0]:
-                corner1[0] = v[0]
-            if v[1] < corner1[1]:
-                corner1[1] = v[1]
-            if v[2] < corner1[2]:
-                corner1[2] = v[2]
-
-            v = gi.bounding_box_corner2
-            if v[0] > corner2[0]:
-                corner2[0] = v[0]
-            if v[1] > corner2[1]:
-                corner2[1] = v[1]
-            if v[2] > corner2[2]:
-                corner2[2] = v[2]
-
-        return corner1, corner2
 
 
 

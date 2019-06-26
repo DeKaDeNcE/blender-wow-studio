@@ -28,7 +28,7 @@ class WMO_PT_root(bpy.types.Panel):
         col.prop(context.scene.wow_wmo_root, "ext_dir_color")
         col.prop(context.scene.wow_wmo_root, "sidn_scalar")
 
-        if context.scene.render.engine == 'CYCLES':
+        if context.scene.render.engine in ('CYCLES', 'BLENDER_EEVEE'):
             col.label(text='Sun Direciton:')
             col.prop(context.scene.wow_wmo_root, "sun_direction", text='')
 

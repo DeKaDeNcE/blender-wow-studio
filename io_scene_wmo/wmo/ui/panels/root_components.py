@@ -102,7 +102,8 @@ _obj_props = ['wow_wmo_portal',
               'wow_wmo_fog',
               'wow_wmo_group',
               'wow_wmo_liquid',
-              'wow_wmo_doodad_set'
+              'wow_wmo_doodad_set',
+              'wow_wmo_light'
               ]
 
 

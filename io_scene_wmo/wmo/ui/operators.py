@@ -13,6 +13,7 @@ from ..import_doodad import import_doodad
 from ...ui import get_addon_prefs
 from ...utils import load_game_data
 from ..render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
+from ..utils.fogs import create_fog_object
 
 
 ###############################
@@ -1070,46 +1071,14 @@ class WMO_OT_add_water(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WMO_OT_add_flag(bpy.types.Operator):
+class WMO_OT_add_fog(bpy.types.Operator):
     bl_idname = 'scene.wow_add_fog'
     bl_label = 'Add fog'
     bl_description = 'Add a WoW fog object to the scene'
 
     def execute(self, context):
 
-        bpy.ops.mesh.primitive_uv_sphere_add()
-        fog = bpy.context.view_layer.objects.active
-        fog.name = 'Fog'
-
-        # applying real object transformation
-        bpy.ops.object.shade_smooth()
-        fog.draw_type = 'SOLID'
-        fog.show_transparent = True
-        fog.show_name = True
-
-        mesh = fog.data
-
-        material = bpy.data.materials.new(name=fog.name)
-
-        if mesh.materials:
-            mesh.materials[0] = material
-        else:
-            mesh.materials.append(material)
-
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.object.material_slot_assign()
-        bpy.ops.mesh.select_all(action='DESELECT')
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        mesh.materials[0].use_object_color = True
-        mesh.materials[0].use_transparency = True
-        mesh.materials[0].alpha = 0.35
-
-        slot = bpy.context.scene.wow_wmo_root_components.fogs.add()
-        slot.pointer = fog
-
-        fog.hide_viewport = False if "3" in bpy.context.scene.wow_visibility else True
+        fog = create_fog_object()
 
         self.report({'INFO'}, "Successfully сreated WoW fog: " + fog.name)
         return {'FINISHED'}

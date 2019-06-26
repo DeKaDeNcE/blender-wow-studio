@@ -423,7 +423,7 @@ class M2_OT_creature_editor_load_textures(bpy.types.Operator):
                     if material.active_texture.wow_m2_texture.texture_type == str(tex_type):
                         material.active_texture.image = img
 
-                        uv = obj.data.uv_textures.active
+                        uv = obj.data.uv_layers.active
                         for poly in obj.data.polygons:
                             if poly.material_index == i:
                                 uv.data[poly.index].image = img

@@ -687,7 +687,7 @@ class BlenderM2Scene:
                 vertex.normal = normals[index]
 
             # set uv
-            uv1 = mesh.uv_textures.new("UVMap")
+            uv1 = mesh.uv_layers.new("UVMap")
             uv_layer1 = mesh.uv_layers[0]
             for i in range(len(uv_layer1.data)):
                 uv = tex_coords[mesh.loops[i].vertex_index]
@@ -698,7 +698,6 @@ class BlenderM2Scene:
             mesh.materials.append(material)
 
             for i, poly in enumerate(mesh.polygons):
-                uv1.data[i].image = material.active_texture.image
                 poly.material_index = 0  # ???
 
             # get object name
@@ -1340,7 +1339,7 @@ class BlenderM2Scene:
             t_obj.location = camera.target_position_base
             t_obj.wow_m2_camera.enabled = True
             t_obj.empty_draw_size = 0.07
-            t_obj.empty_draw_type = 'CONE'
+            t_obj.empty_display_type = 'CONE'
             t_obj.rotation_mode = 'AXIS_ANGLE'
             t_obj.rotation_axis_angle = (0, 1, 0, 0)
             t_obj.lock_rotation = (True, True, True)

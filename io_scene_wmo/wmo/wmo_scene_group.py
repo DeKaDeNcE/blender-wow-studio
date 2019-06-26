@@ -197,7 +197,7 @@ class BlenderWMOSceneGroup:
                 uv_map[vertex.index] = (group.mliq.vertex_map[vertex.index].u,
                                         group.mliq.vertex_map[vertex.index].v)
 
-            mesh.uv_textures.new("UVMap")
+            mesh.uv_layers.new("UVMap")
             uv_layer1 = mesh.uv_layers[0]
 
             for poly in mesh.polygons:
@@ -322,21 +322,21 @@ class BlenderWMOSceneGroup:
             flag_set = nobj.wow_wmo_group.flags
             flag_set.add('0')
             nobj.wow_wmo_group.flags = flag_set
-            vertex_color_layer = mesh.vertex_colors.new("Col")
-            lightmap = mesh.vertex_colors.new("Lightmap")
+            vertex_color_layer = mesh.vertex_colors.new(name="Col")
+            lightmap = mesh.vertex_colors.new(name="Lightmap")
 
             pass_index |= BlenderWMOObjectRenderFlags.HasVertexColor
             pass_index |= BlenderWMOObjectRenderFlags.HasLightmap
 
         blendmap = None
         if group.mogp.flags & MOGPFlags.HasTwoMOCV:
-            blendmap = mesh.vertex_colors.new("Blendmap")
+            blendmap = mesh.vertex_colors.new(name="Blendmap")
             nobj.wow_wmo_vertex_info.blendmap = blendmap.name
 
             pass_index |= BlenderWMOObjectRenderFlags.HasBlendmap
 
         # set uv
-        uv1 = mesh.uv_textures.new("UVMap")
+        uv1 = mesh.uv_layers.new(name="UVMap")
         uv_layer1 = mesh.uv_layers[0]
 
         for i in range(len(uv_layer1.data)):
@@ -346,7 +346,7 @@ class BlenderWMOSceneGroup:
 
         uv_layer2 = None
         if group.mogp.flags & MOGPFlags.HasTwoMOTV:
-            uv2 = mesh.uv_textures.new("UVMap.001")
+            uv2 = mesh.uv_layers.new(name="UVMap.001")
             nobj.wow_wmo_vertex_info.second_uv = uv2.name
             uv_layer2 = mesh.uv_layers[1]
 
@@ -360,11 +360,11 @@ class BlenderWMOSceneGroup:
         batch_map_b = None
 
         if group.mogp.n_batches_a != 0:
-            batch_map_a = mesh.vertex_colors.new("BatchmapTrans")
+            batch_map_a = mesh.vertex_colors.new(name="BatchmapTrans")
             pass_index |= BlenderWMOObjectRenderFlags.HasBatchA
 
         if group.mogp.n_batches_b != 0:
-            batch_map_b = mesh.vertex_colors.new("BatchmapInt")
+            batch_map_b = mesh.vertex_colors.new(name="BatchmapInt")
             pass_index |= BlenderWMOObjectRenderFlags.HasBatchB
 
         # nobj.wow_wmo_vertex_info.batch_map = batch_map.name
@@ -398,11 +398,6 @@ class BlenderWMOSceneGroup:
 
                 poly.material_index = mat_index_local
 
-                # set texture displayed in viewport
-                img = material_viewport_textures[mat_index_local]
-                if img is not None:
-                    uv1.data[poly.index].image = img
-
             batch_material_map[(batch.start_triangle // 3,
                                 (batch.start_triangle + group.moba.batches[i].n_triangles) // 3)] = batch.material_id
 
@@ -421,29 +416,32 @@ class BlenderWMOSceneGroup:
             if vertex_color_layer is not None:
                 mesh.vertex_colors['Col'].data[i].color = (group.mocv.vert_colors[loop.vertex_index][2] / 255,
                                                            group.mocv.vert_colors[loop.vertex_index][1] / 255,
-                                                           group.mocv.vert_colors[loop.vertex_index][0] / 255)
+                                                           group.mocv.vert_colors[loop.vertex_index][0] / 255,
+                                                           1.0)
 
                 mesh.vertex_colors['Lightmap'].data[i].color = (group.mocv.vert_colors[loop.vertex_index][3] / 255,
                                                                 group.mocv.vert_colors[loop.vertex_index][3] / 255,
-                                                                group.mocv.vert_colors[loop.vertex_index][3] / 255)
+                                                                group.mocv.vert_colors[loop.vertex_index][3] / 255,
+                                                                1.0)
 
             if blendmap is not None:
                 mocv_layer = group.mocv2 if group.mogp.flags & MOGPFlags.HasVertexColor else group.mocv
                 mesh.vertex_colors['Blendmap'].data[i].color = (mocv_layer.vert_colors[loop.vertex_index][3] / 255,
                                                                 mocv_layer.vert_colors[loop.vertex_index][3] / 255,
-                                                                mocv_layer.vert_colors[loop.vertex_index][3] / 255)
+                                                                mocv_layer.vert_colors[loop.vertex_index][3] / 255,
+                                                                1.0)
 
             if uv_layer2 is not None:
                 uv = group.motv2.tex_coords[loop.vertex_index]
                 uv_layer2.data[i].uv = (uv[0], 1 - uv[1])
 
             if batch_map_a:
-                mesh.vertex_colors['BatchmapTrans'].data[i].color = (1, 1, 1) if loop.vertex_index in batch_a_range else (0, 0, 0)
+                mesh.vertex_colors['BatchmapTrans'].data[i].color = (1, 1, 1, 1) if loop.vertex_index in batch_a_range else (0, 0, 0, 0)
                 pass_index |= 0x10
                 nobj.wow_wmo_vertex_info.has_batch_trans = True
 
             if batch_map_b:
-                mesh.vertex_colors['BatchmapInt'].data[i].color = (1, 1, 1) if loop.vertex_index in batch_b_range else (0, 0, 0)
+                mesh.vertex_colors['BatchmapInt'].data[i].color = (1, 1, 1, 1) if loop.vertex_index in batch_b_range else (0, 0, 0, 0)
                 pass_index |= 0x8
                 nobj.wow_wmo_vertex_info.has_batch_int = True
         '''
@@ -475,7 +473,7 @@ class BlenderWMOSceneGroup:
         collision_indices = self.get_collision_indices()
 
         if collision_indices:
-            collision_vg = nobj.vertex_groups.new("Collision")
+            collision_vg = nobj.vertex_groups.new(name="Collision")
             collision_vg.add(collision_indices, 1.0, 'ADD')
             nobj.wow_wmo_vertex_info.vertex_group = collision_vg.name
 
@@ -560,12 +558,12 @@ class BlenderWMOSceneGroup:
                     pass
                     # print('\nWARNING: Duplicated face was removed from collision geometry.')
 
-            c_mesh = bpy.data.meshes.new(self.name + '_Collision')
+            c_mesh = bpy.data.meshes.new(name=self.name + '_Collision')
             bm_col.to_mesh(c_mesh)
             bm_col.free()
 
             # remove collision faces from original mesh
-            bmesh.ops.delete(bm, geom=bm_collision_faces, context=5)
+            bmesh.ops.delete(bm, geom=bm_collision_faces, context='FACES')
             bm.to_mesh(mesh)
             mesh.update()
             bpy.context.view_layer.update()

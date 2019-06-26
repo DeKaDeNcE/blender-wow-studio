@@ -121,8 +121,8 @@ def update_camera_path_curve(self, context):
     update_follow_path_constraints(None, context)
 
 
-def update_empty_draw_type(self, context):
-    context.object.empty_draw_type = 'CONE'
+def update_empty_display_type(self, context):
+    context.object.empty_display_type = 'CONE'
 
 
 def update_scene_animation(self, context):
@@ -265,7 +265,7 @@ class WowM2CameraPathPropertyGroup(bpy.types.PropertyGroup):
         update=update_scene_animation
     )
 
-    # for internal use only
+    # for eevee use only
     name:  bpy.props.StringProperty()
     this_object:  bpy.props.PointerProperty(type=bpy.types.Object)
 
@@ -276,7 +276,7 @@ class WowM2CameraPropertyGroup(bpy.types.PropertyGroup):
         name='Enabled',
         description='Enable this empty to be a camera target controller.',
         default=False,
-        update=update_empty_draw_type
+        update=update_empty_display_type
     )
 
     type:  bpy.props.EnumProperty(

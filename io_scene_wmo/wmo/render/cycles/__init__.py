@@ -5,7 +5,6 @@ def update_wmo_mat_node_tree_cycles(bl_mat):
 
     # setup material node tree
     bl_mat.use_nodes = True
-    bl_mat.use_shadeless = True
     tree = bl_mat.node_tree
     links = tree.links
 

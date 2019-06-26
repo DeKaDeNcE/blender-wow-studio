@@ -167,8 +167,7 @@ def import_doodad(asset_dir, filepath):
         vertex.normal = normals[index]
 
     # set uv
-    uv1 = mesh.uv_textures.new("UVMap")
-    uv_layer1 = mesh.uv_layers[0]
+    uv_layer1 = mesh.uv_layers.new(name="UVMap")
     for i in range(len(uv_layer1.data)):
         uv = uv_coords[mesh.loops[i].vertex_index]
         uv_layer1.data[i].uv = (uv[0], 1 - uv[1])
@@ -195,17 +194,14 @@ def import_doodad(asset_dir, filepath):
         # set material for rendering
         mat = bpy.data.materials.new("{}_{}".format(m2_name, i))
         mesh.materials.append(mat)
-        mat.use_object_color = True
-        mat.use_shadeless = True
 
         texture = bpy.data.textures.new(mat.name, type='IMAGE')
         texture.image = img
-        tex_slot = mat.texture_slots.add()
-        tex_slot.texture = texture
+
+        # TODO: MATERIALS
 
         if img:
             for j in range(submesh.start_triangle // 3, (submesh.start_triangle + submesh.n_triangles) // 3):
-                uv1.data[j].image = img
                 mesh.polygons[j].material_index = i
 
     nobj = bpy.data.objects.new(m2_name, mesh)

@@ -306,7 +306,7 @@ class WMO_PT_tools_liquid_flags(bpy.types.Panel):
 
 
 def register():
-    bpy.types.Scene.wow_visibility:  bpy.props.EnumProperty(
+    bpy.types.Scene.wow_visibility = bpy.props.EnumProperty(
         items=[
             ('0', "Outdoor", "Display outdoor groups", 'OBJECT_DATA', 0x1),
             ('1', "Indoor", "Display indoor groups", 'MOD_SUBSURF', 0x2),
@@ -320,7 +320,7 @@ def register():
         update=update_wow_visibility
     )
 
-    bpy.types.Scene.wow_liquid_flags:  bpy.props.EnumProperty(
+    bpy.types.Scene.wow_liquid_flags = bpy.props.EnumProperty(
         items=[
             ('0x1', "Flag 0x01", "Switch to this flag", 'MOD_SOFT', 0),
             ('0x2', "Flag 0x02", "Switch to this flag", 'MOD_SOFT', 1),
@@ -334,7 +334,7 @@ def register():
         update=update_liquid_flags
     )
 
-    bpy.types.Scene.wow_doodad_visibility:  bpy.props.EnumProperty(
+    bpy.types.Scene.wow_doodad_visibility = bpy.props.EnumProperty(
         name="",
         description="Switch doodad sets",
         items=get_doodad_sets,
