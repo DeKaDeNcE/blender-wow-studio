@@ -24,7 +24,7 @@ class M2_PT_light_panel(bpy.types.Panel):
         return (context.scene is not None
                 and context.scene.wow_scene.type == 'M2'
                 and context.object is not None
-                and context.object.type == 'LAMP')
+                and context.object.type == 'LIGHT')
 
 
 def update_lamp_type(self, context):

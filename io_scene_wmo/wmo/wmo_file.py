@@ -579,7 +579,7 @@ class BlenderSceneObjects:
 
         for obj in bpy.context.scene.objects:
             if not obj.wow_wmo_doodad.enabled and not obj.type == 'EMPTY':
-                if obj.hide_viewport or export_selected and not obj.select:
+                if obj.hide_viewport or export_selected and not obj.select_get():
                     continue
                 else:
                     bpy.context.view_layer.objects.active = obj
@@ -620,7 +620,7 @@ class BlenderSceneObjects:
                         print("\nWARNING: liquid <<{}>> points to a non-existing object.".format(obj.wow_wmo_liquid.wmo_group))
                         continue
 
-            elif obj.type == 'LAMP' and obj.data.wow_wmo_light.enabled:
+            elif obj.type == 'LIGHT' and obj.data.wow_wmo_light.enabled:
                 self.lights.append(obj)
 
             elif obj.type == 'EMPTY':

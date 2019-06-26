@@ -691,9 +691,9 @@ class BlenderWMOSceneGroup:
         # apply mesh transformations
         active = bpy.context.view_layer.objects.active
         bpy.context.view_layer.objects.active = ob
-        ob.select = True
+        ob.set_selected(True)
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-        ob.select = False
+        ob.set_selected(False)
         bpy.context.view_layer.objects.active = active
 
         start_vertex = 0

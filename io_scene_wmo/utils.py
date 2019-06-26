@@ -105,7 +105,7 @@ def resolve_texture_path(filepath):
 
 
 def get_origin_position():
-    loc = bpy.context.scene.cursor_location
+    loc = bpy.context.scene.cursor.location
 
     origin_loc = None
     for area in bpy.context.screen.areas:
@@ -114,9 +114,9 @@ def get_origin_position():
             ctx['area'] = area
             ctx['region'] = area.regions[-1]
             bpy.ops.view3d.snap_cursor_to_selected(ctx)
-            origin_loc = bpy.context.scene.cursor_location
+            origin_loc = bpy.context.scene.cursor.location
 
-    bpy.context.scene.cursor_location = loc
+    bpy.context.scene.cursor.location = loc
 
     return origin_loc
 

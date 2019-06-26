@@ -31,7 +31,7 @@ class M2_OT_animation_editor_dialog(bpy.types.Operator):
         # Animations column
 
         col = split.column()
-        col.label(text='Animations:', icon='VIEW_CAMERA')
+        col.label(text='Animations:', icon='SEQUENCE')
 
         row = col.row()
         sub_col1 = row.column()
@@ -421,7 +421,7 @@ class M2_UL_animation_editor_sequence_object_list(bpy.types.UIList):
 
                 if item.object.type == 'ARMATURE':
                     icon = 'OUTLINER_OB_ARMATURE'
-                elif item.object.type == 'LAMP':
+                elif item.object.type == 'LIGHT':
                     icon = 'LAMP_SUN'
                 elif item.object.type == 'CAMERA':
                     icon = 'RESTRICT_RENDER_OFF'
@@ -571,7 +571,7 @@ def poll_object(self, obj):
         if anim_pair.object == obj:
             return False
 
-    if obj.type not in ('CAMERA', 'ARMATURE', 'LAMP', 'EMPTY'):
+    if obj.type not in ('CAMERA', 'ARMATURE', 'LIGHT', 'EMPTY'):
         return False
 
     if obj.type == 'EMPTY' and not (obj.wow_m2_uv_transform.enabled

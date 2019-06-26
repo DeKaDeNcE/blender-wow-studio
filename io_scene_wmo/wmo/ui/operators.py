@@ -399,7 +399,7 @@ class WMO_OT_import_adt_scene(bpy.types.Operator):
             bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
             bpy.ops.view3d.snap_cursor_to_selected()
 
-            bpy.ops.transform.translate(value=tuple(-x for x in bpy.context.space_data.cursor_location))
+            bpy.ops.transform.translate(value=tuple(-x for x in bpy.context.space_data.cursor.location))
 
             bpy.ops.object.select_all(action='DESELECT')
 
@@ -646,7 +646,7 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
 
         selected_objs = []
         for obj in bpy.context.scene.objects:
-            if obj.select and obj.wow_wmo_doodad.enabled:
+            if obj.select_get() and obj.wow_wmo_doodad.enabled:
                 selected_objs.append(obj)
 
         if self.Action == "ADD":
@@ -1502,7 +1502,7 @@ class WMO_OT_select_entity(bpy.types.Operator):
                     if getattr(obj, self.entity).enabled:
                         obj.select_set(True)
 
-            elif obj.type == 'LAMP' and self.entity == "wow_wmo_light":
+            elif obj.type == 'LIGHT' and self.entity == "wow_wmo_light":
                 obj.select_set(True)
 
         return {'FINISHED'}

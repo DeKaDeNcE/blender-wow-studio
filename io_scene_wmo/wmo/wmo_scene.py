@@ -43,7 +43,7 @@ class BlenderWMOScene:
                 if not slot.pointer.export:
                     continue
 
-            elif (export_selected and not slot.pointer.select) or slot.pointer.hide_viewport:
+            elif (export_selected and not slot.pointer.select_get()) or slot.pointer.hide_viewport:
                 continue
 
             slot.pointer.wow_wmo_group.group_id = i
@@ -101,7 +101,7 @@ class BlenderWMOScene:
                             obj.wow_wmo_liquid.wmo_group))
                         continue
 
-            elif obj.type == 'LAMP' and obj.data.wow_wmo_light.enabled:
+            elif obj.type == 'LIGHT' and obj.data.wow_wmo_light.enabled:
                 self.bl_lights.append(obj)
 
             elif obj.type == 'EMPTY':

@@ -31,7 +31,7 @@ class WMO_PT_light(bpy.types.Panel):
                 and context.scene.wow_scene.type == 'WMO'
                 and context.object is not None
                 and context.object.data is not None
-                and context.object.type == 'LAMP'
+                and context.object.type == 'LIGHT'
                 and context.object.wow_wmo_light.enabled
                 )
 
