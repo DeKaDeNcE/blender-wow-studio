@@ -30,7 +30,7 @@ class WMO_PT_portal(bpy.types.Panel):
         col.label(text="Relation direction:")
         col.prop(context.object.wow_wmo_portal, "algorithm", expand=True)
 
-        layout.enabled = context.object.wowF_wmo_portal.enabled
+        layout.enabled = context.object.wow_wmo_portal.enabled
 
     @classmethod
     def poll(cls, context):
