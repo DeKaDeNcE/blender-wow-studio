@@ -72,8 +72,8 @@ class BlenderWMOScene:
             if obj.type == 'MESH':
 
                 if obj.wow_wmo_group.enabled:
-                    self.groups.append(obj)
-                    obj.wow_wmo_group.group_id = len(self.groups) - 1
+                    self.bl_groups.append(obj)
+                    obj.wow_wmo_group.group_id = len(self.bl_groups) - 1
 
                 elif obj.wow_wmo_portal.enabled:
                     self.bl_portals.append(obj)
