@@ -6,6 +6,7 @@ import inspect
 import pkgutil
 import importlib
 from pathlib import Path
+from .third_party.ordered_set import OrderedSet
 
 __all__ = (
     "init",
@@ -89,9 +90,9 @@ def get_ordered_classes_to_register(modules):
 
 def get_register_deps_dict(modules):
     deps_dict = {}
-    classes_to_register = set(iter_classes_to_register(modules))
+    classes_to_register = OrderedSet(iter_classes_to_register(modules))
     for cls in classes_to_register:
-        deps_dict[cls] = set(iter_own_register_deps(cls, classes_to_register))
+        deps_dict[cls] = OrderedSet(iter_own_register_deps(cls, classes_to_register))
     return deps_dict
 
 
@@ -121,7 +122,7 @@ def iter_classes_to_register(modules):
 
 
 def get_classes_in_modules(modules):
-    classes = set()
+    classes = OrderedSet()
     for module in modules:
         for cls in iter_classes_in_module(module):
             classes.add(cls)
@@ -135,7 +136,7 @@ def iter_classes_in_module(module):
 
 
 def get_register_base_types():
-    return set(getattr(bpy.types, name) for name in [
+    return OrderedSet(getattr(bpy.types, name) for name in [
         "Panel", "Operator", "PropertyGroup",
         "AddonPreferences", "Header", "Menu",
         "Node", "NodeSocket", "NodeTree",
@@ -148,7 +149,7 @@ def get_register_base_types():
 
 def toposort(deps_dict):
     sorted_list = []
-    sorted_values = set()
+    sorted_values = OrderedSet()
     while len(deps_dict) > 0:
         unsorted = []
         for value, deps in deps_dict.items():
