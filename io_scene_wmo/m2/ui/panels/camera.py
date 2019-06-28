@@ -1,6 +1,8 @@
-import bpy
 from math import ceil
-from ....utils import wrap_text
+
+import bpy
+
+from ....utils.misc import wrap_text
 
 
 class CameraErrors:

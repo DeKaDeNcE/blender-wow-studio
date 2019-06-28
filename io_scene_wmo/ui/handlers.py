@@ -1,7 +1,7 @@
 import bpy
-
 from bpy.app.handlers import persistent
-from ..utils import load_game_data
+
+from ..utils.misc import load_game_data
 
 
 @persistent

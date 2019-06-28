@@ -1,15 +1,16 @@
-import bpy
-import traceback
-import os
 import hashlib
+import os
+import traceback
 
-from .wmo_scene_group import BlenderWMOSceneGroup
-from ..ui import get_addon_prefs
+import bpy
+
+from ..utils.misc import find_nearest_object, ProgressReport
 from .import_doodad import import_doodad
-from ..utils import find_nearest_object, ProgressReport
 from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies
 from .utils.fogs import create_fog_object
 from .utils.materials import load_texture, add_ghost_material
+from .wmo_scene_group import BlenderWMOSceneGroup
+from ..ui import get_addon_prefs
 
 
 class BlenderWMOMaterialRenderFlags:
@@ -387,7 +388,24 @@ class BlenderWMOScene:
                 nobj.data = nobj.data.copy()
 
                 for j, mat in enumerate(nobj.data.materials):
-                    nobj.data.materials[j] = mat.copy()
+                    mat = mat.copy()
+                    nobj.data.materials[j] = mat
+
+                    # drive doodad color
+
+                    doodad_color_fcurve = mat.node_tree.nodes['DoodadColor'].outputs['Color'].driver_add("default_value")
+
+                    for k in range(3):
+                        driver = doodad_color_fcurve[k].driver
+                        driver.type = 'SCRIPTED'
+
+                        obj_name_var = driver.variables.new()
+                        obj_name_var.name = 'value'
+                        obj_name_var.targets[0].id_type = 'OBJECT'
+                        obj_name_var.targets[0].id = nobj
+                        obj_name_var.targets[0].data_path = 'color[{}]'.format(k)
+
+                        driver.expression = 'value'.format(k)
 
                 nobj.wow_wmo_doodad.enabled = True
                 nobj.wow_wmo_doodad.path = doodad_path

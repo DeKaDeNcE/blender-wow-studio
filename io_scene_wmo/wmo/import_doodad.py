@@ -1,12 +1,14 @@
-import bpy
-import os
-import io
-import traceback
 import hashlib
+import io
+import os
+import traceback
 
-from ..ui import get_addon_prefs
-from ..utils import load_game_data
+import bpy
+
+from ..utils.misc import load_game_data
+from ..utils.node_builder import NodeTreeBuilder
 from ..pywowlib.io_utils.types import *
+from ..ui import get_addon_prefs
 
 
 # This file is implementing basic M2 geometry parsing in prodedural style for the sake of performance.
@@ -211,6 +213,12 @@ def import_doodad(asset_dir, filepath):
     # unpack and convert textures
     game_data.extract_textures_as_png(asset_dir, texture_paths)
 
+    # create object
+    nobj = bpy.data.objects.new(m2_name, mesh)
+    nobj.use_fake_user = True
+    nobj.wow_wmo_doodad.enabled = True
+    nobj.wow_wmo_doodad.path = filepath
+
     # set textures
     for i, submesh in enumerate(submeshes):
         tex_path = os.path.splitext(texture_paths[texture_lookup_table[submesh.texture_id]])[0] + '.png'
@@ -234,18 +242,29 @@ def import_doodad(asset_dir, filepath):
         mat = bpy.data.materials.new(name="{}_{}".format(m2_name, i))
 
         mat.use_nodes = True
+
         node_tree = mat.node_tree
+        tree_builder = NodeTreeBuilder(node_tree)
 
-        for node in node_tree.nodes:
-            node_tree.nodes.remove(node)
-
-        bsdf = mat.node_tree.nodes.new('ShaderNodeBsdfDiffuse')
-        tex_image = mat.node_tree.nodes.new('ShaderNodeTexImage')
+        tex_image = tree_builder.add_node('ShaderNodeTexImage', "Texture", 0, 0)
         tex_image.image = img
-        mat.node_tree.links.new(bsdf.inputs['Color'], tex_image.outputs['Color'])
-        output = mat.node_tree.nodes.new('ShaderNodeOutputMaterial')
+
+        doodad_color = tree_builder.add_node('ShaderNodeRGB', "DoodadColor", 0, 2)
+
+        mix_rgb = tree_builder.add_node('ShaderNodeMixRGB', "Mix", 1, 1)
+        mix_rgb.inputs['Fac'].default_value = 1.0
+        mix_rgb.blend_type = 'MULTIPLY'
+
+        bsdf = tree_builder.add_node('ShaderNodeBsdfDiffuse', "Diffuse", 2, 1)
+        output = tree_builder.add_node('ShaderNodeOutputMaterial', "Output", 3, 1)
+
+        mat.node_tree.links.new(tex_image.outputs['Color'], mix_rgb.inputs['Color1'])
+        mat.node_tree.links.new(doodad_color.outputs['Color'], mix_rgb.inputs['Color2'])
+        mat.node_tree.links.new(mix_rgb.outputs['Color'], bsdf.inputs['Color'])
         mat.node_tree.links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
 
+
+        # configure blending
         if submesh.blend_mode == 0:
             mat.blend_method = 'OPAQUE'
         elif submesh.blend_mode == 1:
@@ -256,13 +275,7 @@ def import_doodad(asset_dir, filepath):
         else:
             mat.blend_method = 'ADD'
 
-
         mesh.materials.append(mat)
-
-    nobj = bpy.data.objects.new(m2_name, mesh)
-    nobj.use_fake_user = True
-    nobj.wow_wmo_doodad.enabled = True
-    nobj.wow_wmo_doodad.path = filepath
 
     return nobj
 

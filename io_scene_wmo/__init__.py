@@ -36,6 +36,8 @@ import bpy.utils.previews
 from bpy.props import StringProperty
 from . import auto_load
 
+PACKAGE_NAME = __package__
+
 # include custom lib vendoring dir
 parent_dir = os.path.abspath(os.path.dirname(__file__))
 vendor_dir = os.path.join(parent_dir, 'third_party')

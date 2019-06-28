@@ -1,11 +1,10 @@
-import bpy
 import time
-from .wmo_scene import BlenderWMOScene
-from ..pywowlib.wmo_file import WMOFile
-from ..pywowlib import CLIENT_VERSION
 
+from ..utils.misc import load_game_data
+from .wmo_scene import BlenderWMOScene
+from ..pywowlib import CLIENT_VERSION
+from ..pywowlib.wmo_file import WMOFile
 from ..ui import get_addon_prefs
-from ..utils import load_game_data, ProgressReport
 
 
 def import_wmo_to_blender_scene(filepath, import_doodads, import_lights, import_fogs, group_objects):

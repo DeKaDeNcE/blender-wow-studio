@@ -1,14 +1,16 @@
-import bpy
 from collections import namedtuple
-from ....utils import draw_spoiler
-from .... import ui_icons
-from .material import WMO_PT_material, update_flags, update_shader
-from .group import WMO_PT_wmo_group
-from .portal import WMO_PT_portal
-from .fog import WMO_PT_fog
-from .light import WMO_PT_light
+
+import bpy
+
+from ....utils.misc import draw_spoiler
 from .doodad_set import WMO_PT_doodad_set, WoWWMODoodadSetProperptyGroup
+from .fog import WMO_PT_fog
+from .group import WMO_PT_wmo_group
+from .light import WMO_PT_light
+from .material import WMO_PT_material, update_flags, update_shader
+from .portal import WMO_PT_portal
 from .utils import WMO_UL_root_components_template_list, update_current_object, update_doodad_pointer
+from .... import ui_icons
 
 
 ######################

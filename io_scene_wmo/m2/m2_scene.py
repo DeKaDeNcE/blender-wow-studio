@@ -1,14 +1,16 @@
-import bpy
 import os
-from mathutils import Vector
-from math import sqrt, degrees
+from math import sqrt
 
-from ..utils import resolve_texture_path, get_origin_position, get_objs_boundbox_world, get_obj_boundbox_center, get_obj_radius
-from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
-from ..pywowlib.file_formats.wow_common_types import M2Versions
-from ..utils import parse_bitfield, construct_bitfield, load_game_data
+import bpy
+from mathutils import Vector
+
+from ..utils.misc import parse_bitfield, construct_bitfield, load_game_data
+from ..utils.misc import resolve_texture_path, get_origin_position, get_objs_boundbox_world, get_obj_boundbox_center, \
+    get_obj_radius
 from .ui.enums import mesh_part_id_menu
 from .ui.panels.camera import update_follow_path_constraints
+from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
+from ..pywowlib.file_formats.wow_common_types import M2Versions
 
 
 class BlenderM2Scene:

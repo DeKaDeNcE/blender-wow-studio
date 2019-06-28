@@ -1,19 +1,20 @@
-import bpy
-import subprocess
-import mathutils
-import operator
-import traceback
 import math
+import operator
 import os
 import struct
+import subprocess
+import traceback
 
+import bpy
+import mathutils
+
+from ...utils.misc import load_game_data
 from .enums import *
-from .panels.toolbar import switch_doodad_set, update_wow_visibility, get_doodad_sets
+from .panels.toolbar import switch_doodad_set, get_doodad_sets
 from ..import_doodad import import_doodad
-from ...ui import get_addon_prefs
-from ...utils import load_game_data
 from ..render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
 from ..utils.fogs import create_fog_object
+from ...ui import get_addon_prefs
 
 
 ###############################

@@ -1,11 +1,7 @@
-import bpy
-import os
-
-from ..pywowlib.m2_file import M2File
+from ..utils.misc import load_game_data
 from .m2_scene import BlenderM2Scene
-
+from ..pywowlib.m2_file import M2File
 from ..ui import get_addon_prefs
-from ..utils import load_game_data
 
 
 def import_m2(version, file, load_textures):  # TODO: implement multiversioning

@@ -16,20 +16,16 @@ class WMO_OT_doodad_set_components_change(bpy.types.Operator):
         root_comps = context.scene.wow_wmo_root_components
 
         if self.action == 'ADD':
-            d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
-
-            act_obj = context.view_layer.objects.active
             bpy.ops.scene.wow_wmo_import_doodad_from_wmv()
-            doodad = context.view_layer.objects.active
-            context.view_layer.objects.active = act_obj
+            obj = bpy.context.view_layer.objects.active
+            obj.parent = root_comps.doodad_sets[root_comps.cur_doodad_set].pointer
 
-            slot = d_set.doodads.add()
-            slot.pointer = doodad
-            doodad.parent = d_set.pointer
+
         else:
             d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
 
             if d_set.cur_doodad < len(d_set.doodads):
+                d_set.doodads[d_set.cur_doodad].pointer.parent = None
                 d_set.doodads.remove(d_set.cur_doodad)
 
         return {'FINISHED'}
@@ -110,8 +106,10 @@ class WoWWMODoodadSetProperptyGroup(bpy.types.PropertyGroup):
 
 
 def register():
+    bpy.utils.register_class(WMO_UL_doodad_set_doodad_list)
     bpy.types.Object.wow_wmo_doodad_set = bpy.props.PointerProperty(type=WoWWMODoodadSetProperptyGroup)
 
 
 def unregister():
+    bpy.utils.unregister_class(WMO_UL_doodad_set_doodad_list)
     del bpy.types.Object.wow_wmo_doodad_set

@@ -23,7 +23,6 @@ class WMO_PT_doodad(bpy.types.Panel):
                 and context.scene.wow_scene.type == 'WMO'
                 and context.object is not None
                 and context.object.wow_wmo_doodad.enabled
-                and context.object.data.library is not None
                 and (context.object.type == 'MESH'
                      or context.object.type == 'EMPTY')
         )

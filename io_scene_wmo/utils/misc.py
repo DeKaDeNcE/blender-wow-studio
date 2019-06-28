@@ -4,7 +4,8 @@ import sys
 import time
 
 from mathutils import Vector
-from .pywowlib.archives.wow_filesystem import WoWFileData
+from ..pywowlib.archives.wow_filesystem import WoWFileData
+from .. import PACKAGE_NAME
 
 
 def find_nearest_object(obj_, objects):
@@ -59,7 +60,7 @@ def get_material_viewport_image(material):
 def load_game_data():
     if not hasattr(bpy, 'wow_game_data'):
 
-        addon_preferences = bpy.context.preferences.addons[__package__].preferences
+        addon_preferences = bpy.context.preferences.addons[PACKAGE_NAME].preferences
         bpy.wow_game_data = WoWFileData(addon_preferences.wow_path, addon_preferences.project_dir_path)
 
         if not bpy.wow_game_data.files:
