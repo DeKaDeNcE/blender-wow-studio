@@ -384,6 +384,11 @@ class BlenderWMOScene:
                 nobj = bpy.data.objects.new(doodad_basename, proto_obj.data)
                 bpy.context.collection.objects.link(nobj)
 
+                nobj.data = nobj.data.copy()
+
+                for j, mat in enumerate(nobj.data.materials):
+                    nobj.data.materials[j] = mat.copy()
+
                 nobj.wow_wmo_doodad.enabled = True
                 nobj.wow_wmo_doodad.path = doodad_path
                 nobj.color = (pow(doodad.color[2] / 255, 2.2),

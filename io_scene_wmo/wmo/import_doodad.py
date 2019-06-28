@@ -191,18 +191,26 @@ def import_doodad(asset_dir, filepath):
             traceback.print_exc()
             print("\nFailed to load texture: <<{}>>. File is missing or corrupted.".format(tex_path))
 
-        # set material for rendering
-        mat = bpy.data.materials.new("{}_{}".format(m2_name, i))
-        mesh.materials.append(mat)
-
-        texture = bpy.data.textures.new(mat.name, type='IMAGE')
-        texture.image = img
-
-        # TODO: MATERIALS
-
         if img:
             for j in range(submesh.start_triangle // 3, (submesh.start_triangle + submesh.n_triangles) // 3):
                 mesh.polygons[j].material_index = i
+
+        mat = bpy.data.materials.new(name="{}_{}".format(m2_name, i))
+
+        mat.use_nodes = True
+        node_tree = mat.node_tree
+
+        for node in node_tree.nodes:
+            node_tree.nodes.remove(node)
+
+        bsdf = mat.node_tree.nodes.new('ShaderNodeBsdfDiffuse')
+        tex_image = mat.node_tree.nodes.new('ShaderNodeTexImage')
+        tex_image.image = img
+        mat.node_tree.links.new(bsdf.inputs['Color'], tex_image.outputs['Color'])
+        output = mat.node_tree.nodes.new('ShaderNodeOutputMaterial')
+        mat.node_tree.links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
+
+        mesh.materials.append(mat)
 
     nobj = bpy.data.objects.new(m2_name, mesh)
     nobj.use_fake_user = True
@@ -278,8 +286,6 @@ class WowWMOImportDoodadWMV(bpy.types.Operator):
 
         with bpy.data.libraries.load(library_path, link=True) as (data_from, data_to):
             data_to.objects = [ob_name for ob_name in data_from.objects if ob_name == path_hash]
-
-        print(library_path)
 
         p_obj = data_to.objects[0]
 
