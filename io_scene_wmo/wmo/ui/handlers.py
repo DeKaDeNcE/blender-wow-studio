@@ -1,5 +1,6 @@
 import bpy
 from bpy.app.handlers import persistent
+from ...utils.misc import show_message_box
 
 __reload_order_index__ = 0
 
@@ -102,9 +103,11 @@ def sync_wmo_root_components_collections(scene):
 
 
 depsgraph_lock = False
+@persistent
 def protect_doodad_mesh(_):
     depsgraph = bpy.context.view_layer.depsgraph
     global depsgraph_lock
+    deleted = False
 
     if depsgraph_lock:
         return
@@ -115,7 +118,7 @@ def protect_doodad_mesh(_):
             depsgraph_lock = True
             obj = bpy.data.objects[update.id.name]
 
-            if obj.mode == 'EDIT':
+            if obj.mode != 'OBJECT':
                 bpy.ops.object.mode_set(mode='OBJECT')
 
             if len(obj.modifiers):
@@ -123,10 +126,14 @@ def protect_doodad_mesh(_):
 
             if update.is_updated_geometry:
                 bpy.data.objects.remove(obj, do_unlink=True)
+                deleted = True
 
             depsgraph_lock = False
 
-
+    if deleted:
+        show_message_box('One or more doodads were deleted due to mesh changes. Editing doodads is not allowed.'
+                         , "WoW Blender Studio Error"
+                         , icon='ERROR')
 
 def register():
     bpy.n_scene_objects = 0

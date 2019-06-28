@@ -222,6 +222,13 @@ def draw_spoiler(layout, data, toggle_prop_name, name="", data1=None, layout_ena
         return content
 
 
+def show_message_box(message = "", title = "Message Box", icon = 'INFO'):
+
+    def draw(self, context):
+        self.layout.label(text=message)
+
+    bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
+
 
 class ProgressReport:
     def __init__(self, iterable, msg):
