@@ -101,11 +101,40 @@ def sync_wmo_root_components_collections(scene):
                         slot.pointer = obj
 
 
+depsgraph_lock = False
+def protect_doodad_mesh(_):
+    depsgraph = bpy.context.view_layer.depsgraph
+    global depsgraph_lock
+
+    if depsgraph_lock:
+        return
+
+    for update in depsgraph.updates:
+
+        if isinstance(update.id, bpy.types.Object) and update.id.type == 'MESH' and update.id.wow_wmo_doodad.enabled:
+            depsgraph_lock = True
+            obj = bpy.data.objects[update.id.name]
+
+            if obj.mode == 'EDIT':
+                bpy.ops.object.mode_set(mode='OBJECT')
+
+            if len(obj.modifiers):
+                obj.modifiers.clear()
+
+            if update.is_updated_geometry:
+                bpy.data.objects.remove(obj, do_unlink=True)
+
+            depsgraph_lock = False
+
+
+
 def register():
     bpy.n_scene_objects = 0
     bpy.app.handlers.depsgraph_update_post.append(sync_wmo_root_components_collections)
+    bpy.app.handlers.depsgraph_update_pre.append(protect_doodad_mesh)
 
 
 def unregister():
+    bpy.app.handlers.depsgraph_update_pre.remove(protect_doodad_mesh)
     bpy.app.handlers.depsgraph_update_post.remove(sync_wmo_root_components_collections)
 
