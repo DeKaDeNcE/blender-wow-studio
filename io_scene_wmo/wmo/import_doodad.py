@@ -3,10 +3,10 @@ import os
 import io
 import traceback
 import hashlib
-from struct import unpack
 
 from ..ui import get_addon_prefs
 from ..utils import load_game_data
+from ..pywowlib.io_utils.types import *
 
 
 # This file is implementing basic M2 geometry parsing in prodedural style for the sake of performance.
@@ -16,16 +16,18 @@ class Submesh:
         "n_vertices",
         "start_triangle",
         "n_triangles",
-        "texture_id"
+        "texture_id",
+        "blend_mode"
     )
 
     def __init__(self, f):
         skip(f, 4)
-        self.start_vertex = unpack('H', f.read(2))[0]
-        self.n_vertices = unpack('H', f.read(2))[0]
-        self.start_triangle = unpack('H', f.read(2))[0]
-        self.n_triangles = unpack('H', f.read(2))[0]
+        self.start_vertex = uint16.read(f)
+        self.n_vertices = uint16.read(f)
+        self.start_triangle = uint16.read(f)
+        self.n_triangles = uint16.read(f)
         self.texture_id = 0
+        self.blend_mode = 0
 
         skip(f, 36)
 
@@ -59,41 +61,55 @@ def import_doodad(asset_dir, filepath):
     f = m2_file
     magic = f.read(4).decode("utf-8")
     while magic not in ('MD20', 'MD21'):
-        skip(f, unpack('I', f.read(4))[0])
+        skip(f, uint32.read(f))
         magic = f.read(4).decode("utf-8")
 
+    # read flags
+    f.seek(16)
+    global_flags = uint32.read(f)
+
     # read vertex positions
-    skip(f, 56)
-    n_vertices = unpack('I', f.read(4))[0]
-    f.seek(unpack('I', f.read(4))[0])
+    f.seek(60)
+    n_vertices = uint32.read(f)
+    f.seek(uint32.read(f))
 
     vertices = [(0.0, 0.0, 0.0)] * n_vertices
     normals = [(0.0, 0.0, 0.0)] * n_vertices
     uv_coords = [(0.0, 0.0)] * n_vertices
 
     for i in range(n_vertices):
-        vertices[i] = unpack('fff', f.read(12))
+        vertices[i] = float32.read(f, 3)
         skip(f, 8)
-        normals[i] = unpack('fff', f.read(12))
-        uv_coords[i] = unpack('ff', f.read(8))
+        normals[i] = float32.read(f, 3)
+        uv_coords[i] = float32.read(f, 2)
         skip(f, 8)
+
+    # read render flags and blending modes
+    f.seek(112)
+    n_render_flags = uint32.read(f)
+    f.seek(uint32.read(f))
+
+    blend_modes = []  # skip render flags for now
+    for _ in range(n_render_flags):
+        skip(f, 2)
+        blend_modes.append(uint16.read(f))
 
     # read texture lookup
     f.seek(128)
-    n_tex_lookups = unpack('I', f.read(4))[0]
-    f.seek(unpack('I', f.read(4))[0])
-    texture_lookup_table = [unpack('H', f.read(2))[0] for _ in range(n_tex_lookups)]
+    n_tex_lookups = uint32.read(f)
+    f.seek(uint32.read(f))
+    texture_lookup_table = [uint16.read(f) for _ in range(n_tex_lookups)]
 
     # read texture names
     f.seek(80)
-    n_textures = unpack('I', f.read(4))[0]
-    f.seek(unpack('I', f.read(4))[0])
+    n_textures = uint32.read(f)
+    f.seek(uint32.read(f))
 
     texture_paths = []
     for _ in range(n_textures):
         skip(f, 8)
-        len_tex = unpack('I', f.read(4))[0]
-        ofs_tex = unpack('I', f.read(4))[0]
+        len_tex = uint32.read(f)
+        ofs_tex = uint32.read(f)
 
         if not len_tex:
             texture_paths.append(None)
@@ -116,34 +132,54 @@ def import_doodad(asset_dir, filepath):
         padding = 4
         f.seek(0)
 
-    n_indices = unpack('I', f.read(4))[0]
-    f.seek(unpack('I', f.read(4))[0])
+    n_indices = uint32.read(f)
+    f.seek(uint32.read(f))
     indices = unpack('{}H'.format(n_indices), f.read(2 * n_indices))
 
     # triangles
     f.seek(12 - padding)
-    n_triangles = unpack('I', f.read(4))[0] // 3
-    f.seek(unpack('I', f.read(4))[0])
+    n_triangles = uint32.read(f) // 3
+    f.seek(uint32.read(f))
     triangles = [(0, 0, 0)] * n_triangles
     for i in range(n_triangles):
         triangles[i] = unpack('HHH', f.read(6))
 
     # submeshes
     f.seek(28 - padding)
-    n_submeshes = unpack('I', f.read(4))[0]
-    f.seek(unpack('I', f.read(4))[0])
+    n_submeshes = uint32.read(f)
+    f.seek(uint32.read(f))
     submeshes = [Submesh(f) for _ in range(n_submeshes)]
+
+    # read blend mode overrides
+    if global_flags & 0x08:
+        f.seek(304)
+        n_blendmode_overrides = uint32.read(f)
+        f.seek(uint32.read(f))
+
+        blend_mode_overrides = []
+        for _ in range(n_blendmode_overrides):
+            n_blendmode_overrides.append(uint16.read(f))
 
     # texture units
     f.seek(36 - padding)
-    n_tex_units = unpack('I', f.read(4))[0]
-    f.seek(unpack('I', f.read(4))[0])
+    n_tex_units = uint32.read(f)
+    f.seek(uint32.read(f))
     for _ in range(n_tex_units):
+        skip(f, 2)
+        shader_id = uint16.read(f)
+        submesh_id = uint16.read(f)
         skip(f, 4)
-        submesh_id = unpack('H', f.read(2))[0]
-        skip(f, 10)
-        submeshes[submesh_id].texture_id = unpack('H', f.read(2))[0]
+        render_flag_index = uint16.read(f)
+        skip(f, 4)
+        submeshes[submesh_id].texture_id = uint16.read(f)
         skip(f, 6)
+
+        # determine blending mode
+        if global_flags & 0x08 and shader_id < len(blend_mode_overrides):
+            submeshes[submesh_id].blend_mode = blend_mode_overrides[shader_id]
+        else:
+            submeshes[submesh_id].blend_mode = blend_modes[render_flag_index]
+
 
     ###### Build blender object ######
     faces = [[0, 0, 0]] * n_triangles
@@ -209,6 +245,17 @@ def import_doodad(asset_dir, filepath):
         mat.node_tree.links.new(bsdf.inputs['Color'], tex_image.outputs['Color'])
         output = mat.node_tree.nodes.new('ShaderNodeOutputMaterial')
         mat.node_tree.links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
+
+        if submesh.blend_mode == 0:
+            mat.blend_method = 'OPAQUE'
+        elif submesh.blend_mode == 1:
+            mat.blend_method = 'CLIP'
+            mat.alpha_threshold = 0.9999
+        elif submesh.blend_mode == 5:
+            mat.blend_method = 'MULTIPLY'
+        else:
+            mat.blend_method = 'ADD'
+
 
         mesh.materials.append(mat)
 
