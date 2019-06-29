@@ -11,6 +11,8 @@ class WMO_PT_material(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split = True
+
         col = layout.column()
         col.prop(context.material.wow_wmo_material, "shader")
         col.prop(context.material.wow_wmo_material, "terrain_type")

@@ -19,6 +19,7 @@ class WMO_PT_portal(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split = True
 
         column = layout.column()
         column.prop(context.object.wow_wmo_portal, "first")

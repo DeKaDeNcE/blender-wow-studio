@@ -186,6 +186,8 @@ class M2_PT_camera_panel(bpy.types.Panel):
     def draw(self, context):
 
         layout = self.layout
+        layout.use_property_split = True
+
         col = layout.column()
         if context.object.type == 'CAMERA':
             col.prop(context.object.wow_m2_camera, 'type')

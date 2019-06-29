@@ -9,6 +9,7 @@ class WMO_PT_fog(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split = True
         layout.enabled = context.object.wow_wmo_fog.enabled
 
         self.layout.prop(context.object.wow_wmo_fog, "ignore_radius")

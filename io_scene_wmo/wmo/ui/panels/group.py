@@ -19,6 +19,8 @@ class WMO_PT_wmo_group(bpy.types.Panel):
             row.alert = True
 
     def draw(self, context):
+        self.layout.use_property_split = True
+
         col = self.layout.column()
         col.prop(context.object.wow_wmo_group, "description")
 

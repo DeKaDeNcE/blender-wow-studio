@@ -1,7 +1,7 @@
 import bpy
 
 
-class WBS_PT_texture(bpy.types.Panel):
+class WMO_PT_texture(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "texture"
@@ -9,6 +9,7 @@ class WBS_PT_texture(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split = True
         col = layout.column()
         col.prop(context.texture.wow_wmo_texture, "path")
 

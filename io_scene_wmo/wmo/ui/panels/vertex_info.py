@@ -8,6 +8,7 @@ class WMO_PT_vertex_info(bpy.types.Panel):
     bl_label = "WMO Vertex Info"
 
     def draw(self, context):
+        self.layout.use_property_split = True
         self.layout.prop_search(context.object.wow_wmo_vertex_info, "vertex_group",
                                 context.object, "vertex_groups", text="Collision vertex group"
                                 )

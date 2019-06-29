@@ -10,6 +10,8 @@ class WMO_PT_liquid(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split = True
+
         layout.prop(context.object.wow_wmo_liquid, "liquid_type")
         layout.prop(context.object.wow_wmo_liquid, "color")
         layout.prop(context.object.wow_wmo_liquid, "wmo_group")

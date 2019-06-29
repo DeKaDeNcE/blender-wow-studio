@@ -18,6 +18,7 @@ class WMO_PT_light(bpy.types.Panel):
             row.label(text='', icon='ERROR')
 
     def draw(self, context):
+        self.layout.use_property_split = True
         self.layout.prop(context.object.wow_wmo_light, "light_type")
         self.layout.prop(context.object.wow_wmo_light, "use_attenuation")
         self.layout.prop(context.object.wow_wmo_light, "color")

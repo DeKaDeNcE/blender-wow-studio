@@ -10,6 +10,8 @@ class WMO_PT_root(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split = True
+
         col = layout.column()
         col.prop(context.scene.wow_wmo_root, "flags")
         col.separator()

@@ -9,11 +9,11 @@ class WMO_PT_doodad(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split = True
         layout.prop(context.object.wow_wmo_doodad, "path")
         layout.prop(context.object, "color")
 
         col = layout.column()
-        col.label(text="Flags:")
         col.prop(context.object.wow_wmo_doodad, "flags")
         layout.enabled = context.object.wow_wmo_doodad.enabled
 
@@ -32,7 +32,7 @@ class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
 
     enabled:  bpy.props.BoolProperty()
 
-    path:  bpy.props.StringProperty()
+    path:  bpy.props.StringProperty(name="Path")
 
     color:  bpy.props.FloatVectorProperty(
         name="Color",
@@ -44,7 +44,7 @@ class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
     )
 
     flags:  bpy.props.EnumProperty(
-        name="Doodad flags",
+        name="Flags",
         description="WoW doodad instance flags",
         items=[("1", "Accept Projected Tex.", ""),
                ("2", "Adjust lighting", ""),
