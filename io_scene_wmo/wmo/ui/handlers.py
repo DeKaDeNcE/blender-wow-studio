@@ -107,7 +107,8 @@ depsgraph_lock = False
 def protect_doodad_mesh(_):
     depsgraph = bpy.context.view_layer.depsgraph
     global depsgraph_lock
-    deleted = False
+    delete = False
+    is_duplicated = False
 
     if depsgraph_lock:
         return
@@ -118,6 +119,19 @@ def protect_doodad_mesh(_):
             depsgraph_lock = True
             obj = bpy.data.objects[update.id.name]
 
+            for i, mat in enumerate(obj.data.materials):
+                if mat.users > 1:
+                    mat = mat.copy()
+                    obj.data.materials[i] = mat
+
+                    is_duplicated = True
+
+                    for j in range(3):
+                        mat.node_tree.animation_data.drivers[j].driver.variables[0].targets[0].id = obj
+
+            if is_duplicated:
+                continue
+
             if obj.mode != 'OBJECT':
                 bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -125,15 +139,16 @@ def protect_doodad_mesh(_):
                 obj.modifiers.clear()
 
             if update.is_updated_geometry:
+                delete = True
                 bpy.data.objects.remove(obj, do_unlink=True)
-                deleted = True
 
-            depsgraph_lock = False
 
-    if deleted:
+    if delete:
         show_message_box('One or more doodads were deleted due to mesh changes. Editing doodads is not allowed.'
                          , "WoW Blender Studio Error"
                          , icon='ERROR')
+
+    depsgraph_lock = False
 
 def register():
     bpy.n_scene_objects = 0
