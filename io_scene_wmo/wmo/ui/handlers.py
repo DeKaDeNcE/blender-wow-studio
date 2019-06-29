@@ -154,7 +154,7 @@ def protect_doodad_mesh(_):
                 for j in range(3):
                     if obj.scale[j] > max_scale:
                         max_scale = obj.scale[j]
-                
+
                 obj.scale = (max_scale, max_scale, max_scale)
 
         finally:

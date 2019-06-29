@@ -301,8 +301,9 @@ class BlenderWMOScene:
     def load_doodads(self, assets_dir=None):
 
         cache_path = self.settings.cache_dir_path
+        doodad_prototypes = {}
 
-        for doodad_name in ProgressReport(self.wmo.modn.get_all_strings(), msg='Importing doodad prototypes'):
+        for doodad_name in ProgressReport(self.wmo.modn.get_all_strings(), msg='Importing models'):
             doodad_path_noext = os.path.splitext(doodad_name)[0]
             doodad_path = doodad_path_noext + ".m2"
             doodad_path_blend = doodad_path_noext + '.blend'
@@ -311,11 +312,9 @@ class BlenderWMOScene:
             library_path = os.path.join(cache_path, path_local)
 
             path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
+            p_obj = doodad_prototypes.get(path_hash)
 
-            doodad_col = bpy.context.scene.wow_wmo_root_components.doodads_proto
-            obj_idx = doodad_col.find(path_hash)
-
-            if obj_idx < 0:
+            if p_obj is None:
 
                 if not os.path.exists(library_path):
                     library_dir = os.path.split(library_path)[0]
@@ -334,20 +333,15 @@ class BlenderWMOScene:
                         print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
 
                     bpy.data.libraries.write(library_path, {p_obj}, fake_user=True)
-                    bpy.data.objects.remove(p_obj)
 
-                with bpy.data.libraries.load(library_path, link=True) as (data_from, data_to):
-                    data_to.objects = [ob_name for ob_name in data_from.objects if ob_name == path_hash]
+                else:
+                    with bpy.data.libraries.load(library_path, link=True) as (data_from, data_to):
+                        data_to.objects = [ob_name for ob_name in data_from.objects if ob_name == path_hash]
 
-                obj = data_to.objects[0]
+                    p_obj = data_to.objects[0]
 
-                slot = doodad_col.add()
-                slot.pointer = obj
-
-                assert obj is not None
-
-            elif doodad_col[obj_idx].pointer.library is None:
-                raise Exception('\nNon-library doodad data-block collision ({})'.format(path_hash))
+                p_obj.use_fake_user = False
+                doodad_prototypes[path_hash] = p_obj
 
         scene = bpy.context.scene
 
@@ -377,7 +371,7 @@ class BlenderWMOScene:
                 doodad_basename = os.path.basename(doodad_path_noext)
                 path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
 
-                proto_obj = bpy.data.objects.get(path_hash)
+                proto_obj = doodad_prototypes.get(path_hash)
 
                 if not proto_obj:
                     raise FileNotFoundError('\nWMO is referencing non-existing doodad.')
@@ -424,6 +418,10 @@ class BlenderWMOScene:
                 slot.pointer = nobj
 
                 progress.progress_step()
+
+
+        for obj in doodad_prototypes.values():
+            bpy.data.objects.remove(obj, do_unlink=True)
 
         progress.progress_end()
 
