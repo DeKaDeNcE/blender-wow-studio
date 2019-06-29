@@ -384,6 +384,7 @@ class BlenderWMOScene:
 
                 nobj = bpy.data.objects.new(doodad_basename, proto_obj.data)
                 bpy.context.collection.objects.link(nobj)
+                bpy.context.view_layer.objects.active = nobj
 
                 nobj.data = nobj.data.copy()
 
@@ -391,28 +392,13 @@ class BlenderWMOScene:
                     mat = mat.copy()
                     nobj.data.materials[j] = mat
 
-                    # drive doodad color
-
-                    doodad_color_fcurve = mat.node_tree.nodes['DoodadColor'].outputs['Color'].driver_add("default_value")
-
-                    for k in range(3):
-                        driver = doodad_color_fcurve[k].driver
-                        driver.type = 'SCRIPTED'
-
-                        obj_name_var = driver.variables.new()
-                        obj_name_var.name = 'value'
-                        obj_name_var.targets[0].id_type = 'OBJECT'
-                        obj_name_var.targets[0].id = nobj
-                        obj_name_var.targets[0].data_path = 'color[{}]'.format(k)
-
-                        driver.expression = 'value'.format(k)
-
                 nobj.wow_wmo_doodad.enabled = True
                 nobj.wow_wmo_doodad.path = doodad_path
-                nobj.color = (pow(doodad.color[2] / 255, 2.2),
-                              pow(doodad.color[1] / 255, 2.2),
-                              pow(doodad.color[0] / 255, 2.2),
-                              pow(doodad.color[3] / 255, 2.2))
+                nobj.wow_wmo_doodad.color = (pow(doodad.color[2] / 255, 2.2),
+                                             pow(doodad.color[1] / 255, 2.2),
+                                             pow(doodad.color[0] / 255, 2.2),
+                                             pow(doodad.color[3] / 255, 2.2)
+                                            )
 
                 flags = []
                 bit = 1

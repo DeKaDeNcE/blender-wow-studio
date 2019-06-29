@@ -1,4 +1,5 @@
 import bpy
+from .. import handlers
 
 
 class WMO_PT_doodad(bpy.types.Panel):
@@ -11,7 +12,7 @@ class WMO_PT_doodad(bpy.types.Panel):
         layout = self.layout
         layout.use_property_split = True
         layout.prop(context.object.wow_wmo_doodad, "path")
-        layout.prop(context.object, "color")
+        layout.prop(context.object.wow_wmo_doodad, "color")
 
         col = layout.column()
         col.prop(context.object.wow_wmo_doodad, "flags")
@@ -28,6 +29,15 @@ class WMO_PT_doodad(bpy.types.Panel):
         )
 
 
+def update_doodad_color(self, context):
+    mesh = context.object.data
+
+    handlers.depsgraph_lock = True
+    for mat in mesh.materials:
+        mat.node_tree.nodes['DoodadColor'].outputs[0].default_value = self.color
+
+    handlers.depsgraph_lock = False
+
 class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
 
     enabled:  bpy.props.BoolProperty()
@@ -40,7 +50,8 @@ class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
         size=4,
         default=(1, 1, 1, 1),
         min=0.0,
-        max=1.0
+        max=1.0,
+        update=update_doodad_color
     )
 
     flags:  bpy.props.EnumProperty(

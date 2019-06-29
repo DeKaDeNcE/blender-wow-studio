@@ -101,46 +101,52 @@ def sync_wmo_root_components_collections(scene):
                         slot = col.add()
                         slot.pointer = obj
 
+banned_ops = (
+    "OBJECT_OT_transform_apply",
+    "OBJECT_OT_transforms_to_deltas",
+    "OBJECT_OT_origin_set",
+    "TRANSFORM_OT_mirror",
+    "OBJECT_OT_visual_transform_apply"
+)
 
 depsgraph_lock = False
 @persistent
 def protect_doodad_mesh(_):
-    depsgraph = bpy.context.view_layer.depsgraph
     global depsgraph_lock
-    delete = False
-    is_duplicated = False
-
     if depsgraph_lock:
         return
 
-    for update in depsgraph.updates:
+    delete = False
+    is_duplicated = False
 
-        if isinstance(update.id, bpy.types.Object) and update.id.type == 'MESH' and update.id.wow_wmo_doodad.enabled:
-            depsgraph_lock = True
-            obj = bpy.data.objects[update.id.name]
+    for update in bpy.context.view_layer.depsgraph.updates:
 
-            for i, mat in enumerate(obj.data.materials):
-                if mat.users > 1:
-                    mat = mat.copy()
-                    obj.data.materials[i] = mat
+        try:
+            if isinstance(update.id, bpy.types.Object) and update.id.type == 'MESH' and update.id.wow_wmo_doodad.enabled:
+                obj = bpy.data.objects[update.id.name, update.id.library]
+                depsgraph_lock = True
 
-                    is_duplicated = True
+                if obj.active_material.users > 1:
+                    for i, mat in enumerate(obj.data.materials):
+                        mat = mat.copy()
+                        obj.data.materials[i] = mat
+                        is_duplicated = True
 
-                    for j in range(3):
-                        mat.node_tree.animation_data.drivers[j].driver.variables[0].targets[0].id = obj
+                if is_duplicated:
+                    continue
 
-            if is_duplicated:
-                continue
+                if obj.mode != 'OBJECT':
+                    bpy.ops.object.mode_set(mode='OBJECT')
 
-            if obj.mode != 'OBJECT':
-                bpy.ops.object.mode_set(mode='OBJECT')
+                if len(obj.modifiers):
+                    obj.modifiers.clear()
 
-            if len(obj.modifiers):
-                obj.modifiers.clear()
+                if bpy.context.window_manager.operators[-1].bl_idname in banned_ops:
+                    delete = True
+                    bpy.data.objects.remove(obj, do_unlink=True)
 
-            if update.is_updated_geometry:
-                delete = True
-                bpy.data.objects.remove(obj, do_unlink=True)
+        finally:
+            depsgraph_lock = False
 
 
     if delete:
@@ -148,7 +154,7 @@ def protect_doodad_mesh(_):
                          , "WoW Blender Studio Error"
                          , icon='ERROR')
 
-    depsgraph_lock = False
+
 
 def register():
     bpy.n_scene_objects = 0
