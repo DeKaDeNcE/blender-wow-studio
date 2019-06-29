@@ -251,17 +251,28 @@ def import_doodad(asset_dir, filepath):
 
         doodad_color = tree_builder.add_node('ShaderNodeRGB', "DoodadColor", 0, 2)
 
-        mix_rgb = tree_builder.add_node('ShaderNodeMixRGB', "Mix", 1, 1)
+        mix_rgb = tree_builder.add_node('ShaderNodeMixRGB', "ApplyColor", 1, 1)
         mix_rgb.inputs['Fac'].default_value = 1.0
         mix_rgb.blend_type = 'MULTIPLY'
 
-        bsdf = tree_builder.add_node('ShaderNodeBsdfDiffuse', "Diffuse", 2, 1)
-        output = tree_builder.add_node('ShaderNodeOutputMaterial', "Output", 3, 1)
+        transparent_bsdf = tree_builder.add_node('ShaderNodeBsdfTransparent', "Transparent", 2, 0)
+        bsdf = tree_builder.add_node('ShaderNodeBsdfDiffuse', "Diffuse", 2, 2)
+
+        mix_shader = tree_builder.add_node('ShaderNodeMixShader', "MixShader", 3, 0)
+        mix_shader.inputs['Fac'].default_value = 1.0
+
+        output = tree_builder.add_node('ShaderNodeOutputMaterial', "Output", 4, 1)
 
         mat.node_tree.links.new(tex_image.outputs['Color'], mix_rgb.inputs['Color1'])
+
+        if submesh.blend_mode not in (0, 3):
+            mat.node_tree.links.new(tex_image.outputs['Alpha'], mix_shader.inputs['Fac'])
+
         mat.node_tree.links.new(doodad_color.outputs['Color'], mix_rgb.inputs['Color2'])
         mat.node_tree.links.new(mix_rgb.outputs['Color'], bsdf.inputs['Color'])
-        mat.node_tree.links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
+        mat.node_tree.links.new(bsdf.outputs['BSDF'], mix_shader.inputs[2])
+        mat.node_tree.links.new(transparent_bsdf.outputs['BSDF'], mix_shader.inputs[1])
+        mat.node_tree.links.new(mix_shader.outputs['Shader'], output.inputs['Surface'])
 
 
         # configure blending
@@ -269,11 +280,15 @@ def import_doodad(asset_dir, filepath):
             mat.blend_method = 'OPAQUE'
         elif submesh.blend_mode == 1:
             mat.blend_method = 'CLIP'
-            mat.alpha_threshold = 0.9999
+            mat.alpha_threshold = 0.0
+        elif submesh.blend_mode == 2:
+            mat.blend_method = 'BLEND'
+        elif submesh.blend_mode in (3, 4):
+            mat.blend_method = 'ADD'
         elif submesh.blend_mode == 5:
             mat.blend_method = 'MULTIPLY'
         else:
-            mat.blend_method = 'ADD'
+            mat.blend_method = 'BLEND'
 
         mesh.materials.append(mat)
 
