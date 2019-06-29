@@ -160,7 +160,7 @@ def import_doodad(asset_dir, filepath):
 
         blend_mode_overrides = []
         for _ in range(n_blendmode_overrides):
-            n_blendmode_overrides.append(uint16.read(f))
+            blend_mode_overrides.append(uint16.read(f))
 
     # texture units
     f.seek(36 - padding)
