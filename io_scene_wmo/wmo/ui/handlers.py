@@ -126,6 +126,7 @@ def protect_doodad_mesh(_):
                 obj = bpy.data.objects[update.id.name, update.id.library]
                 depsgraph_lock = True
 
+                # handle object copies
                 if obj.active_material.users > 1:
                     for i, mat in enumerate(obj.data.materials):
                         mat = mat.copy()
@@ -135,15 +136,26 @@ def protect_doodad_mesh(_):
                 if is_duplicated:
                     continue
 
+                # enforce object mode
                 if obj.mode != 'OBJECT':
                     bpy.ops.object.mode_set(mode='OBJECT')
 
+                # remove modifiers
                 if len(obj.modifiers):
                     obj.modifiers.clear()
 
+                # delete if object was processed by a specific operator
                 if bpy.context.window_manager.operators[-1].bl_idname in banned_ops:
                     delete = True
                     bpy.data.objects.remove(obj, do_unlink=True)
+
+                # check if object is scaled evenly
+                max_scale = 0.0
+                for j in range(3):
+                    if obj.scale[j] > max_scale:
+                        max_scale = obj.scale[j]
+                
+                obj.scale = (max_scale, max_scale, max_scale)
 
         finally:
             depsgraph_lock = False
