@@ -224,6 +224,19 @@ class BlenderWMOScene:
             if wmo_material.blend_mode in (0, 8, 9):
                 pass_index |= BlenderWMOMaterialRenderFlags.IsOpaque
 
+            # configure blending
+            if wmo_material.blend_mode in (0, 8, 9):
+                mat.blend_method = 'OPAQUE'
+            elif wmo_material.blend_mode == 1:
+                mat.blend_method = 'CLIP'
+                mat.alpha_threshold = 0.9
+            elif wmo_material.blend_mode in (3, 7, 10):
+                mat.blend_method = 'ADD'
+            elif wmo_material.blend_mode in (4, 5):
+                mat.blend_method = 'MULTIPLY'
+            else:
+                mat.blend_method = 'BLEND'
+
             mat.pass_index = pass_index
 
     def load_lights(self):

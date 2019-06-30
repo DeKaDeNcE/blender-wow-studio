@@ -59,6 +59,25 @@ def update_shader(self, context):
         else:
             context.material.pass_index &= ~0x4
 
+def update_blending_mode(self, context):
+    if hasattr(context, 'material'):
+        blend_mode = int(self.blend_mode)
+        if blend_mode in (0, 8, 9):
+            context.material.pass_index |= 0x10 # BlenderWMOMaterialRenderFlags.IsOpaque
+        else:
+            context.material.pass_index &= ~0x10
+
+        if blend_mode in (0, 8, 9):
+            context.material.blend_method = 'OPAQUE'
+        elif blend_mode == 1:
+            context.material.blend_method = 'CLIP'
+            context.material.alpha_threshold = 0.9
+        elif blend_mode in (3, 7, 10):
+            context.material.blend_method = 'ADD'
+        elif blend_mode in (4, 5):
+            context.material.blend_method = 'MULTIPLY'
+        else:
+            context.material.blend_method = 'BLEND'
 
 def update_diff_texture_1(self, context):
     if not hasattr(context, 'material') \
@@ -66,9 +85,7 @@ def update_diff_texture_1(self, context):
             or ('DiffuseTexture1' not in context.material.node_tree.nodes):
         return
 
-    if bpy.context.scene.render.engine == 'BLENDER_RENDER':
-        context.material.node_tree.nodes['DiffuseTexture1'].texture = self.diff_texture_1
-    elif bpy.context.scene.render.engine == 'CYCLES' and self.diff_texture_1:
+    if bpy.context.scene.render.engine in ('CYCLES', 'BLENDER_EEVEE') and self.diff_texture_1:
         context.material.node_tree.nodes['DiffuseTexture1'].image = self.diff_texture_1.image
 
 
@@ -78,9 +95,7 @@ def update_diff_texture_2(self, context):
             or ('DiffuseTexture2' not in context.material.node_tree.nodes):
         return
 
-    if bpy.context.scene.render.engine == 'BLENDER_RENDER':
-        context.material.node_tree.nodes['DiffuseTexture2'].texture = self.diff_texture_2
-    elif bpy.context.scene.render.engine == 'CYCLES' and self.diff_texture_2:
+    if bpy.context.scene.render.engine in ('CYCLES', 'BLENDER_EEVEE') and self.diff_texture_2:
         context.material.node_tree.nodes['DiffuseTexture2'].image = self.diff_texture_2.image
 
 
@@ -131,7 +146,8 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
     blending_mode:  bpy.props.EnumProperty(
         items=blending_enum,
         name="Blending",
-        description="WoW material blending mode"
+        description="WoW material blending mode",
+        update=update_blending_mode
         )
 
     emissive_color:  bpy.props.FloatVectorProperty(
