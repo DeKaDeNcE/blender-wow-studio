@@ -280,7 +280,7 @@ def import_doodad(asset_dir, filepath):
             mat.blend_method = 'OPAQUE'
         elif submesh.blend_mode == 1:
             mat.blend_method = 'CLIP'
-            mat.alpha_threshold = 0.0
+            mat.alpha_threshold = 0.9
         elif submesh.blend_mode == 2:
             mat.blend_method = 'BLEND'
         elif submesh.blend_mode in (3, 4):
