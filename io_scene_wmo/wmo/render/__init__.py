@@ -19,7 +19,9 @@ node_groups = [
     'MO_ApplyVertexColor',
     'MO_FixVertexColorAlpha',
     'MO_SaturateUpper',
-    'MO_SetLighting'
+    'MO_SetLighting',
+    'MO_ShaderMix',
+    'MO_WMOShader'
  ]
 
 

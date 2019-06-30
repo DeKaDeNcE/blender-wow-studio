@@ -17,6 +17,7 @@ class BlenderWMOMaterialRenderFlags:
     Unlit = 0x1
     SIDN = 0x2
     IsTwoLayered = 0x4
+    IsOpaque = 0x10
 
 
 class BlenderWMOScene:
@@ -219,6 +220,9 @@ class BlenderWMOScene:
 
             if wmo_material.shader in (3, 5, 6, 7, 8, 9, 11, 12, 13, 15):
                 pass_index |= BlenderWMOMaterialRenderFlags.IsTwoLayered
+
+            if wmo_material.blend_mode in (0, 8, 9):
+                pass_index |= BlenderWMOMaterialRenderFlags.IsOpaque
 
             mat.pass_index = pass_index
 

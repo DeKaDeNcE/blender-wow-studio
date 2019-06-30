@@ -16,12 +16,6 @@ class NodeTreeBuilder:
         for node in self.tree.nodes:
             self.tree.nodes.remove(node)
 
-    def add_row(self):
-        self.row_count += 1
-
-    def add_column(self):
-        self.column_count += 1
-
     def add_node(  self
                  , node_type : str
                  , node_name : str
@@ -29,12 +23,6 @@ class NodeTreeBuilder:
                  , row : int
                  , node_descr : str = ""
                 ):
-
-        if row + 1 < self.row_count:
-            raise ValueError("Row {} is not created".format(row))
-
-        if column + 1 < self.column_count:
-            raise ValueError("Column {} is not created".format(column))
 
         node = self.tree.nodes.new(node_type)
         node.name = node_name
