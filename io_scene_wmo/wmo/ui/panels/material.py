@@ -1,6 +1,7 @@
 import bpy
 from ..enums import *
 from ...render import update_wmo_mat_node_tree
+from ....utils.callbacks import on_release
 
 
 class WMO_PT_material(bpy.types.Panel):
@@ -98,7 +99,7 @@ def update_diff_texture_2(self, context):
     if bpy.context.scene.render.engine in ('CYCLES', 'BLENDER_EEVEE') and self.diff_texture_2:
         context.material.node_tree.nodes['DiffuseTexture2'].image = self.diff_texture_2.image
 
-
+@on_release()
 def update_emissive_color(self, context):
     if not hasattr(context, 'material') \
             or not context.material.use_nodes \

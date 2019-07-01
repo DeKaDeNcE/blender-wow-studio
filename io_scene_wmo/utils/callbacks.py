@@ -23,7 +23,6 @@ def delay_execution(func, delay_sec=1.0):
 
     @wraps(func)
     def wrapped(*args, **kwargs):
-
         nonlocal lock
 
         if not lock:
