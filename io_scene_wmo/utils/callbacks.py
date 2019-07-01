@@ -1,5 +1,7 @@
 import bpy
 from functools import partial
+from time import time
+
 from ..third_party.boltons.funcutils import wraps
 
 def parametrized(dec):
@@ -31,25 +33,20 @@ def delay_execution(func, delay_sec=1.0):
     return wrapped
 
 @parametrized
-def on_release(func, delay_sec=0.0):
+def on_release(func, delay_sec=0.1):
 
-    lock = True
-    def exec_timer():
-        nonlocal lock
-        lock = False
+    exec_time = time()
 
     def timer(*args, **kwargs):
-        nonlocal lock
-        if not lock:
+        nonlocal exec_time
+        if not abs(exec_time - time()) < delay_sec:
             func(*args, **kwargs)
-
 
     @wraps(func)
     def wrapped(*args, **kwargs):
-        nonlocal lock
-        lock = True
+        nonlocal exec_time
+        exec_time = time()
 
-        bpy.app.timers.register(exec_timer, first_interval=0.0)
-        bpy.app.timers.register(partial(timer, *args, **kwargs), first_interval=max(1.0, delay_sec))
+        bpy.app.timers.register(partial(timer, *args, **kwargs), first_interval=max(0.1, delay_sec))
 
     return wrapped
