@@ -4,6 +4,7 @@ import sys
 import time
 
 from mathutils import Vector
+
 from ..pywowlib.archives.wow_filesystem import WoWFileData
 from .. import PACKAGE_NAME
 

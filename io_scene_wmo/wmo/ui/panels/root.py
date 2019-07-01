@@ -1,5 +1,6 @@
 import bpy
 from ..enums import *
+from ....utils.callbacks import delay_execution
 
 from functools import partial
 
@@ -64,108 +65,47 @@ class MODD_Definition(bpy.types.PropertyGroup):
     color_alpha:  bpy.props.FloatProperty()
 
 
-update_flags_lock = False
-def update_flags_timer(self):
-    global update_flags_lock
-    update_flags_lock = False
-
+@delay_execution(delay_sec=2.0)
+def update_flags(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['IsRenderPathUnified'].outputs[0].default_value = int('2' in self.flags)
         properties.nodes['DoNotFixColorVertexAlpha'].outputs[0].default_value = int('1' in self.flags)
 
-def update_flags(self, context):
-    global update_flags_lock
 
-    if not update_flags_lock:
-        update_flags_lock = True
-        bpy.app.timers.register(partial(update_flags_timer, self), first_interval=3.0)
-
-
-update_ambient_color_lock = False
-def update_ambient_color_timer(self):
-    global update_ambient_color_lock
-    update_ambient_color_lock = False
-
+@delay_execution(delay_sec=2.0)
+def update_ambient_color(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['IntAmbientColor'].outputs[0].default_value = self.ambient_color
 
-def update_ambient_color(self, context):
-    global update_ambient_color_lock
 
-    if not update_ext_ambient_color_lock:
-        update_ambient_color_lock = True
-        bpy.app.timers.register(partial(update_ambient_color_timer, self), first_interval=3.0)
-
-
-update_ext_ambient_color_lock = False
-def update_ext_ambient_color_timer(self):
-    global update_ext_ambient_color_lock
-    update_ext_ambient_color_lock = False
-
+@delay_execution(delay_sec=2.0)
+def update_ext_ambient_color(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['extLightAmbientColor'].outputs[0].default_value = self.ext_ambient_color
 
-def update_ext_ambient_color(self, context):
-    global update_ext_ambient_color_lock
 
-    if not update_ext_ambient_color_lock:
-        update_ext_ambient_color_lock = True
-        bpy.app.timers.register(partial(update_ext_ambient_color_timer, self), first_interval=3.0)
-
-
-update_ext_dir_color_lock = False
-def update_ext_dir_color_timer(self):
-    global update_ext_dir_color_lock
-    update_ext_dir_color_lock = False
-
+@delay_execution(delay_sec=2.0)
+def update_ext_dir_color(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['extLightDirColor'].outputs[0].default_value = self.ext_dir_color
 
-def update_ext_dir_color(self, context):
-    global update_ext_dir_color_lock
 
-    if not update_ext_dir_color_lock:
-        update_ext_dir_color_lock = True
-        bpy.app.timers.register(partial(update_ext_dir_color_timer, self), first_interval=3.0)
-
-
-update_sidn_scalar_lock = False
-def update_sidn_scalar_timer(self):
-    global update_sidn_scalar_lock
-    update_sidn_scalar_lock = False
-
+@delay_execution(delay_sec=2.0)
+def update_sidn_scalar(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['SIDNScalar'].outputs[0].default_value = self.sidn_scalar
 
-def update_sidn_scalar(self, context):
-    global update_sidn_scalar_lock
 
-    if not update_sidn_scalar_lock:
-        update_sidn_scalar_lock = True
-        bpy.app.timers.register(partial(update_sidn_scalar_timer, self), first_interval=3.0)
-
-
-update_sun_direction_lock = False
-def update_sun_direction_timer(self):
-    global update_sun_direction_lock
-    update_sun_direction_lock = False
-
+@delay_execution(delay_sec=3.0)
+def update_sun_direction(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['SunDirection'].inputs[1].default_value = self.sun_direction
-
-
-def update_sun_direction(self, context):
-    global update_sun_direction_lock
-
-    if not update_sun_direction_lock:
-        update_sun_direction_lock = True
-        bpy.app.timers.register(partial(update_sun_direction_timer, self), first_interval=3.0)
 
 
 class WowRootPropertyGroup(bpy.types.PropertyGroup):
