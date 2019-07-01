@@ -33,7 +33,7 @@ def delay_execution(func, delay_sec=1.0):
     return wrapped
 
 @parametrized
-def on_release(func, delay_sec=0.1):
+def on_release(func, delay_sec=1.5):
 
     exec_time = time()
 
@@ -47,6 +47,6 @@ def on_release(func, delay_sec=0.1):
         nonlocal exec_time
         exec_time = time()
 
-        bpy.app.timers.register(partial(timer, *args, **kwargs), first_interval=max(0.1, delay_sec))
+        bpy.app.timers.register(partial(timer, *args, **kwargs), first_interval=max(1.0, delay_sec))
 
     return wrapped
