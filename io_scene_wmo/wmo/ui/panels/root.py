@@ -63,7 +63,7 @@ class MODD_Definition(bpy.types.PropertyGroup):
     color_alpha:  bpy.props.FloatProperty()
 
 
-@on_release()
+@on_release(delay_sec=1.1)
 def update_flags(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
@@ -71,35 +71,35 @@ def update_flags(self, context):
         properties.nodes['DoNotFixColorVertexAlpha'].outputs[0].default_value = int('1' in self.flags)
 
 
-@on_release()
+@on_release(delay_sec=1.1)
 def update_ambient_color(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['IntAmbientColor'].outputs[0].default_value = self.ambient_color
 
 
-@on_release()
+@on_release(delay_sec=1.1)
 def update_ext_ambient_color(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['extLightAmbientColor'].outputs[0].default_value = self.ext_ambient_color
 
 
-@on_release()
+@on_release(delay_sec=1.1)
 def update_ext_dir_color(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['extLightDirColor'].outputs[0].default_value = self.ext_dir_color
 
 
-@on_release()
+@on_release(delay_sec=1.1)
 def update_sidn_scalar(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['SIDNScalar'].outputs[0].default_value = self.sidn_scalar
 
 
-@on_release()
+@on_release(delay_sec=1.1)
 def update_sun_direction(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
