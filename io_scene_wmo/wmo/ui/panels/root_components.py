@@ -331,7 +331,7 @@ class WMO_PT_root_components_fogs(bpy.types.Panel):
         )
 
 
-class WBS_PT_root_components_portals(bpy.types.Panel):
+class WMO_PT_root_components_portals(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -364,7 +364,7 @@ class WBS_PT_root_components_portals(bpy.types.Panel):
         )
 
 
-class WBS_PT_root_components_lights(bpy.types.Panel):
+class WMO_PT_root_components_lights(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -673,8 +673,6 @@ class WoWWMO_RootComponents(bpy.types.PropertyGroup):
     lights:  bpy.props.CollectionProperty(type=LightPointerPropertyGroup)
     cur_light:  bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'lights', 'cur_light'))
     is_light_props_expanded:  bpy.props.BoolProperty()
-
-    doodads_proto:  bpy.props.CollectionProperty(type=DoodadProtoPointerPropertyGroup)
 
     doodad_sets:  bpy.props.CollectionProperty(type=WoWWMODoodadSetProperptyGroup)
     cur_doodad_set:  bpy.props.IntProperty(update=update_current_doodad_set)

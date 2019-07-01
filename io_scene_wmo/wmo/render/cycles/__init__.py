@@ -33,7 +33,7 @@ def update_wmo_mat_node_tree_cycles(bl_mat):
     if img_1:
         diffuse_tex1.image = img_1
 
-    diffuse_tex2 = tree_builder.add_node('ShaderNodeTexImage', 'DiffuseTexture1', 1, 2)
+    diffuse_tex2 = tree_builder.add_node('ShaderNodeTexImage', 'DiffuseTexture2', 1, 2)
     if img_2:
         diffuse_tex1.image = img_2
 
