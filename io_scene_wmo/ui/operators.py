@@ -14,7 +14,29 @@ from . import get_addon_prefs
 #############################################################
 
 
-class WBS_OT_reload_wow_file_system(bpy.types.Operator):
+class WBS_OT_texture_transparency_toggle(bpy.types.Operator):
+    bl_idname = 'wow.toggle_image_alpha'
+    bl_label = 'Toggle texture transparency'
+    bl_description = 'Toggle texture transparency (useful for working in solid mode)'
+    bl_options = {'REGISTER'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        self.layout.label(text="This will overwrite alpha settings for images. Continue?")
+
+    def execute(self, context):
+
+        for image in bpy.data.images:
+            if image.library is not None:
+                continue
+            image.alpha_mode = 'NONE' if image.alpha_mode in ('PREMUL', 'CHANNEL_PACKED', 'STRAIGHT') else 'STRAIGHT'
+
+        return {'FINISHED'}
+
+
+class WBS_OT_reload_game_data(bpy.types.Operator):
     bl_idname = 'scene.reload_wow_filesystem'
     bl_label = 'Reoad WoW filesystem'
     bl_description = 'Re-establish connection to World of Warcraft client files'

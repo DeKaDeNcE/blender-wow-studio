@@ -64,6 +64,12 @@ def render_top_bar(self, context):
     row.operator("scene.reload_wow_filesystem", text="", icon_value=ui_icons['WOW_STUDIO_RELOAD'])
 
 
+def render_viewport_toggles_left(self, context):
+    layout = self.layout
+    row = layout.row(align=True)
+    row.operator("wow.toggle_image_alpha", icon='NODE_TEXTURE', text='')
+
+
 menu_import_wmo = lambda self, ctx: self.layout.operator("import_mesh.wmo", text="WoW WMO (.wmo)")
 menu_export_wmo = lambda self, ctx: self.layout.operator("export_mesh.wmo", text="WoW WMO (.wmo)")
 menu_import_m2 = lambda self, ctx: self.layout.operator("import_mesh.m2", text="WoW M2 (.m2)")
@@ -73,6 +79,7 @@ menu_export_m2 = lambda self, ctx: self.layout.operator("export_mesh.m2", text="
 def register():
     register_wow_scene_properties()
     bpy.types.TOPBAR_HT_upper_bar.append(render_top_bar)
+    bpy.types.VIEW3D_HT_header.append(render_viewport_toggles_left)
     bpy.types.TOPBAR_MT_file_import.append(menu_import_wmo)
     bpy.types.TOPBAR_MT_file_import.append(menu_import_m2)
     bpy.types.TOPBAR_MT_file_export.append(menu_export_wmo)
@@ -86,3 +93,4 @@ def unregister():
     bpy.types.TOPBAR_MT_file_export.remove(menu_export_wmo)
     bpy.types.TOPBAR_MT_file_export.remove(menu_export_m2)
     bpy.types.TOPBAR_HT_upper_bar.remove(render_top_bar)
+    bpy.types.VIEW3D_HT_header.append(render_viewport_toggles_left)

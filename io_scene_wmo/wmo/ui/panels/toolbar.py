@@ -305,6 +305,16 @@ class WMO_PT_tools_liquid_flags(bpy.types.Panel):
                 )
 
 
+def render_viewport_toggles_right(self, context):
+    if context.scene.wow_scene.type == 'WMO':
+        layout = self.layout
+        row = layout.row(align=True)
+        row.popover(  panel="WMO_PT_tools_object_mode_display"
+                    , text=''
+                    , icon_value=ui_icons['WOW_STUDIO_WMO']
+                   )
+
+
 def register():
     bpy.types.Scene.wow_visibility = bpy.props.EnumProperty(
         items=[
@@ -342,6 +352,7 @@ def register():
     )
 
     bpy.types.VIEW3D_MT_add.prepend(wow_components_add_menu_item)
+    bpy.types.VIEW3D_HT_header.append(render_viewport_toggles_right)
 
 
 def unregister():
@@ -350,3 +361,4 @@ def unregister():
     del bpy.types.Scene.wow_doodad_visibility
 
     bpy.types.VIEW3D_MT_add.remove(wow_components_add_menu_item)
+    bpy.types.VIEW3D_MT_add.remove(render_viewport_toggles_right)
