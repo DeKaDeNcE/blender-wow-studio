@@ -1,8 +1,6 @@
 import bpy
 from ..enums import *
-from ....utils.callbacks import delay_execution
-
-from functools import partial
+from ....utils.callbacks import delay_execution, on_release
 
 
 class WMO_PT_root(bpy.types.Panel):
@@ -65,7 +63,7 @@ class MODD_Definition(bpy.types.PropertyGroup):
     color_alpha:  bpy.props.FloatProperty()
 
 
-@delay_execution(delay_sec=2.0)
+@on_release()
 def update_flags(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
@@ -73,35 +71,35 @@ def update_flags(self, context):
         properties.nodes['DoNotFixColorVertexAlpha'].outputs[0].default_value = int('1' in self.flags)
 
 
-@delay_execution(delay_sec=2.0)
+@on_release()
 def update_ambient_color(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['IntAmbientColor'].outputs[0].default_value = self.ambient_color
 
 
-@delay_execution(delay_sec=2.0)
+@on_release()
 def update_ext_ambient_color(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['extLightAmbientColor'].outputs[0].default_value = self.ext_ambient_color
 
 
-@delay_execution(delay_sec=2.0)
+@on_release()
 def update_ext_dir_color(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['extLightDirColor'].outputs[0].default_value = self.ext_dir_color
 
 
-@delay_execution(delay_sec=2.0)
+@on_release()
 def update_sidn_scalar(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
         properties.nodes['SIDNScalar'].outputs[0].default_value = self.sidn_scalar
 
 
-@delay_execution(delay_sec=3.0)
+@on_release()
 def update_sun_direction(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
     if properties:
