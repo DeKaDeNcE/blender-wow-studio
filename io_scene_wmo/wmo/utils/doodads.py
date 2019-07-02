@@ -1,14 +1,15 @@
-import hashlib
 import io
 import os
 import traceback
 
 import bpy
 
-from ..utils.misc import load_game_data
-from ..utils.node_builder import NodeTreeBuilder
-from ..pywowlib.io_utils.types import *
-from ..ui import get_addon_prefs
+from typing import Union
+
+from ...utils.misc import load_game_data
+from ...utils.node_builder import NodeTreeBuilder
+from ...pywowlib.io_utils.types import *
+from ...ui import get_addon_prefs
 
 
 # This file is implementing basic M2 geometry parsing in prodedural style for the sake of performance.
@@ -38,15 +39,15 @@ def skip(f, n_bytes):
     f.seek(f.tell() + n_bytes)
 
 
-def import_doodad(asset_dir, filepath):
+def import_doodad_model(asset_dir : str, filepath : str) -> bpy.types.Object:
     """Import World of Warcraft M2 model to scene."""
-
-    m2_name = str(hashlib.md5(filepath.encode('utf-8')).hexdigest())
 
     game_data = load_game_data()
 
     m2_path = os.path.splitext(filepath)[0] + ".m2"
     skin_path = os.path.splitext(filepath)[0] + "00.skin"
+
+    m2_name = os.path.basename(os.path.splitext(m2_path)[0])
 
     try:
         m2_file = io.BytesIO(game_data.read_file(m2_path))
@@ -215,9 +216,8 @@ def import_doodad(asset_dir, filepath):
 
     # create object
     nobj = bpy.data.objects.new(m2_name, mesh)
-    nobj.use_fake_user = True
-    nobj.wow_wmo_doodad.enabled = True
     nobj.wow_wmo_doodad.path = filepath
+    nobj.wow_wmo_doodad.enabled = True
 
     # set textures
     for i, submesh in enumerate(submeshes):
@@ -295,7 +295,7 @@ def import_doodad(asset_dir, filepath):
     return nobj
 
 
-def wmv_get_last_m2():
+def wmv_get_last_m2() -> Union[None, str]:
     """Get the path of last M2 model from WoWModelViewer or similar log."""
 
     addon_preferences = get_addon_prefs()
@@ -308,73 +308,19 @@ def wmv_get_last_m2():
                 return line[25:].split(",", 1)[0].rstrip("\n")
 
 
-class WowWMOImportDoodadWMV(bpy.types.Operator):
-    bl_idname = 'scene.wow_wmo_import_doodad_from_wmv'
-    bl_label = 'Import last M2 from WMV'
-    bl_description = 'Import last M2 from WoW Model Viewer'
-    bl_options = {'REGISTER'}
+def import_doodad(m2_path : str, cache_path : str) -> bpy.types.Object:
 
-    def execute(self, context):
+    doodad_path_noext = os.path.splitext(m2_path)[0]
+    doodad_path = doodad_path_noext + ".m2"
+    doodad_basename = os.path.basename(doodad_path_noext)
 
-        cache_path = get_addon_prefs().cache_dir_path
-        m2_path = wmv_get_last_m2()
+    try:
+        obj = import_doodad_model(cache_path, doodad_path)
+    except:
+        obj = import_doodad_model(cache_path, 'Spells\\Errorcube.m2')
+        obj.name = doodad_basename
+        traceback.print_exc()
+        print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
 
-        if not m2_path:
-            self.report({'ERROR'}, """WoW Model Viewer log contains no model entries.
-            Make sure to use compatible WMV version or open an .m2 there.""")
-            return {'CANCELLED'}
+    return obj
 
-        doodad_path_noext = os.path.splitext(m2_path)[0]
-        doodad_path_noext_uni = doodad_path_noext.replace('\\', '/')
-
-        doodad_path = doodad_path_noext + ".m2"
-        doodad_path_blend = doodad_path_noext_uni + '.blend'
-        doodad_basename = os.path.basename(doodad_path_noext_uni)
-        path_local = doodad_path_blend if os.name != 'nt' else doodad_path_noext + '.blend'
-        library_path = os.path.join(cache_path, path_local)
-
-        path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
-
-        doodad_col = bpy.context.scene.wow_wmo_root_components.doodads_proto
-        p_obj = doodad_col.get(path_hash)
-
-        if not p_obj:
-
-            if not os.path.exists(library_path):
-                library_dir = os.path.split(library_path)[0]
-                if not os.path.exists(library_dir):
-                    os.makedirs(library_dir)
-
-                try:
-                    p_obj = import_doodad(cache_path, doodad_path)
-                except:
-
-                    p_obj = import_doodad(cache_path, 'Spells\\Errorcube.m2')
-                    p_obj.wow_wmo_doodad.enabled = True
-                    p_obj.wow_wmo_doodad.path = doodad_path
-                    p_obj.name = path_hash
-                    traceback.print_exc()
-                    print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
-
-                bpy.data.libraries.write(library_path, {p_obj}, fake_user=True)
-                bpy.data.objects.remove(p_obj)
-
-        with bpy.data.libraries.load(library_path, link=True) as (data_from, data_to):
-            data_to.objects = [ob_name for ob_name in data_from.objects if ob_name == path_hash]
-
-        p_obj = data_to.objects[0]
-
-        slot = doodad_col.add()
-        slot.pointer = p_obj
-
-        obj = bpy.data.objects.new(doodad_basename, p_obj.data)
-        bpy.context.collection.objects.link(obj)
-
-        obj.wow_wmo_doodad.enabled = True
-        obj.wow_wmo_doodad.path = m2_path
-
-        bpy.ops.object.select_all(action='DESELECT')
-        bpy.context.view_layer.objects.active = obj
-        obj.select_set(True)
-
-        return {'FINISHED'}

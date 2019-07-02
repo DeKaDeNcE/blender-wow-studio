@@ -32,11 +32,11 @@ class WMO_PT_doodad(bpy.types.Panel):
 def update_doodad_color(self, context):
     mesh = context.object.data
 
-    handlers.depsgraph_lock = True
+    handlers.DEPSGRAPH_UPDATE_LOCK = True
     for mat in mesh.materials:
         mat.node_tree.nodes['DoodadColor'].outputs[0].default_value = self.color
 
-    handlers.depsgraph_lock = False
+    handlers.DEPSGRAPH_UPDATE_LOCK = False
 
 class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
 

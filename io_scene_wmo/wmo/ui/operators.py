@@ -8,13 +8,13 @@ import traceback
 import bpy
 import mathutils
 
-from ...utils.misc import load_game_data
 from .enums import *
 from .panels.toolbar import switch_doodad_set, get_doodad_sets
-from ..import_doodad import import_doodad
 from ..render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
 from ..utils.fogs import create_fog_object
+from ..utils.doodads import import_doodad_model, import_doodad, wmv_get_last_m2
 from ...ui import get_addon_prefs
+from ...utils.misc import load_game_data
 
 
 ###############################
@@ -302,7 +302,7 @@ class WMO_OT_import_adt_scene(bpy.types.Operator):
                     proto_scene = (bpy.data.scenes.get('$WMODoodadPrototypes') or bpy.data.scenes.new(
                         name='$WMODoodadPrototypes'))
                     try:
-                        obj = import_doodad(addon_prefs.cache_dir_path, doodad_path, proto_scene)
+                        obj = import_doodad_model(addon_prefs.cache_dir_path, doodad_path, proto_scene)
                     except:
                         bpy.ops.mesh.primitive_cube_add()
                         obj = bpy.context.view_layer.objects.active
@@ -488,10 +488,70 @@ class WMO_OT_import_last_wmo_from_wmv(bpy.types.Operator):
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
 
+    class WMO_OT_wmv_import_doodad(bpy.types.Operator):
+        bl_idname = 'scene.wow_wmo_import_doodad_from_wmv'
+        bl_label = 'Import last M2 from WMV'
+        bl_description = 'Import last M2 from WoW Model Viewer'
+        bl_options = {'REGISTER', 'UNDO'}
+
+        def execute(self, context):
+
+            m2_path = wmv_get_last_m2()
+            cache_path = get_addon_prefs().cache_dir_path
+
+            root = context.scene.wow_wmo_root_components
+
+            if not len(root.doodad_sets) or len(root.doodad_sets) < root.cur_doodad_set:
+                self.report({'ERROR'}, "Failed to import doodad. No active doodad set is selected.")
+                return {'CANCELLED'}
+
+            doodad_set_obj = root.doodad_sets[root.cur_doodad_set].pointer
+
+            if not m2_path:
+                self.report({'ERROR'}, "WoW Model Viewer log contains no model entries."
+                                       "Make sure to use compatible WMV version or open an .m2 there.")
+                return {'CANCELLED'}
+
+            obj = import_doodad(m2_path, cache_path)
+            obj.parent = doodad_set_obj
+            bpy.context.collection.objects.link(obj)
+
+            return {'FINISHED'}
+
 
 ###############################
 ## Doodad operators
 ###############################
+
+class WMO_OT_wmv_import_doodad_from_wmv(bpy.types.Operator):
+    bl_idname = 'scene.wow_wmo_import_doodad_from_wmv'
+    bl_label = 'Import last M2 from WMV'
+    bl_description = 'Import last M2 from WoW Model Viewer'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        m2_path = wmv_get_last_m2()
+        cache_path = get_addon_prefs().cache_dir_path
+
+        root = context.scene.wow_wmo_root_components
+
+        if not len(root.doodad_sets) or len(root.doodad_sets) < root.cur_doodad_set:
+            self.report({'ERROR'}, "Failed to import doodad. No active doodad set is selected.")
+            return {'CANCELLED'}
+
+        doodad_set_obj = root.doodad_sets[root.cur_doodad_set].pointer
+
+        if not m2_path:
+            self.report({'ERROR'}, "WoW Model Viewer log contains no model entries."
+                                   "Make sure to use compatible WMV version or open an .m2 there.")
+            return {'CANCELLED'}
+
+        obj = import_doodad(m2_path, cache_path)
+        obj.parent = doodad_set_obj
+        bpy.context.collection.objects.link(obj)
+
+        return {'FINISHED'}
 
 class WMO_OT_doodads_bake_color(bpy.types.Operator):
     bl_idname = "scene.wow_doodads_bake_color"

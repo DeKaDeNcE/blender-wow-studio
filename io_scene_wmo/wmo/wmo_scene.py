@@ -4,13 +4,13 @@ import traceback
 
 import bpy
 
-from ..utils.misc import find_nearest_object, ProgressReport
-from .import_doodad import import_doodad
 from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies
 from .utils.fogs import create_fog_object
 from .utils.materials import load_texture, add_ghost_material
+from .utils.doodads import import_doodad_model
 from .wmo_scene_group import BlenderWMOSceneGroup
 from ..ui import get_addon_prefs
+from ..utils.misc import find_nearest_object, ProgressReport
 
 
 class BlenderWMOMaterialRenderFlags:
@@ -320,46 +320,6 @@ class BlenderWMOScene:
         cache_path = self.settings.cache_dir_path
         doodad_prototypes = {}
 
-        for doodad_name in ProgressReport(self.wmo.modn.get_all_strings(), msg='Importing models'):
-            doodad_path_noext = os.path.splitext(doodad_name)[0]
-            doodad_path = doodad_path_noext + ".m2"
-            doodad_path_blend = doodad_path_noext + '.blend'
-
-            path_local = doodad_path_blend.replace('\\', '/') if os.name != 'nt' else doodad_path_blend
-            library_path = os.path.join(cache_path, path_local)
-
-            path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
-            p_obj = doodad_prototypes.get(path_hash)
-
-            if p_obj is None:
-
-                if not os.path.exists(library_path):
-                    library_dir = os.path.split(library_path)[0]
-                    if not os.path.exists(library_dir):
-                        os.makedirs(library_dir)
-
-                    try:
-                        p_obj = import_doodad(assets_dir, doodad_path)
-                    except:
-
-                        p_obj = import_doodad(assets_dir, 'Spells\\Errorcube.m2')
-                        p_obj.wow_wmo_doodad.enabled = True
-                        p_obj.wow_wmo_doodad.path = doodad_path
-                        p_obj.name = path_hash
-                        traceback.print_exc()
-                        print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
-
-                    bpy.data.libraries.write(library_path, {p_obj}, fake_user=True)
-
-                else:
-                    with bpy.data.libraries.load(library_path, link=True) as (data_from, data_to):
-                        data_to.objects = [ob_name for ob_name in data_from.objects if ob_name == path_hash]
-
-                    p_obj = data_to.objects[0]
-
-                p_obj.use_fake_user = False
-                doodad_prototypes[path_hash] = p_obj
-
         scene = bpy.context.scene
 
         progress = ProgressReport(self.wmo.modd.definitions, msg='Importing doodads')
@@ -383,28 +343,25 @@ class BlenderWMOScene:
             for i in range(doodad_set.start_doodad, doodad_set.start_doodad + doodad_set.n_doodads):
                 doodad = self.wmo.modd.definitions[i]
 
-                doodad_path_noext = os.path.splitext(self.wmo.modn.get_string(doodad.name_ofs))[0]
-                doodad_path = doodad_path_noext + ".m2"
-                doodad_basename = os.path.basename(doodad_path_noext)
+                doodad_path = self.wmo.modn.get_string(doodad.name_ofs)
                 path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
 
                 proto_obj = doodad_prototypes.get(path_hash)
 
                 if not proto_obj:
-                    raise FileNotFoundError('\nWMO is referencing non-existing doodad.')
+                    nobj = import_doodad_model(cache_path, doodad_path)
+                    doodad_prototypes[path_hash] = nobj
+                else:
+                    nobj = proto_obj.copy()
+                    nobj.data = nobj.data.copy()
 
-                nobj = bpy.data.objects.new(doodad_basename, proto_obj.data)
+                    for j, mat in enumerate(nobj.data.materials):
+                        nobj.data.materials[j] = mat.copy()
+
+                nobj.parent = anchor
                 bpy.context.collection.objects.link(nobj)
                 bpy.context.view_layer.objects.active = nobj
 
-                nobj.data = nobj.data.copy()
-
-                for j, mat in enumerate(nobj.data.materials):
-                    mat = mat.copy()
-                    nobj.data.materials[j] = mat
-
-                nobj.wow_wmo_doodad.enabled = True
-                nobj.wow_wmo_doodad.path = doodad_path
                 nobj.wow_wmo_doodad.color = (pow(doodad.color[2] / 255, 2.2),
                                              pow(doodad.color[1] / 255, 2.2),
                                              pow(doodad.color[0] / 255, 2.2),
@@ -429,16 +386,11 @@ class BlenderWMOScene:
                                             doodad.rotation[0],
                                             doodad.rotation[1],
                                             doodad.rotation[2])
-                nobj.parent = anchor
                 nobj.hide_viewport = True
                 slot = scene.wow_wmo_root_components.doodad_sets[-1].doodads.add()
                 slot.pointer = nobj
 
                 progress.progress_step()
-
-
-        for obj in doodad_prototypes.values():
-            bpy.data.objects.remove(obj, do_unlink=True)
 
         progress.progress_end()
 
