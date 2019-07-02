@@ -162,12 +162,9 @@ class BlenderWMOScene:
         for index, wmo_material in ProgressReport(list(enumerate(self.wmo.momt.materials)), msg='Importing materials'):
             texture1 = self.wmo.motx.get_string(wmo_material.texture1_ofs)
             texture2 = self.wmo.motx.get_string(wmo_material.texture2_ofs)
-            material_name = os.path.basename(texture1)[:-4] + '.png'
 
-            mat = bpy.data.materials.new(material_name)
+            mat = bpy.data.materials.new(texture1.split('\\')[-1][:-4] + '.png')
             self.material_lookup[index] = mat
-
-            mat.wow_wmo_material.enabled = True
 
             try:
                 mat.wow_wmo_material.shader = str(wmo_material.shader)
@@ -238,6 +235,9 @@ class BlenderWMOScene:
                 mat.blend_method = 'BLEND'
 
             mat.pass_index = pass_index
+
+            slot = bpy.context.scene.wow_wmo_root_components.materials.add()
+            slot.pointer = mat
 
     def load_lights(self):
         """ Load WoW WMO MOLT lights """

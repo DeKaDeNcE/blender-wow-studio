@@ -11,8 +11,8 @@ def update_wmo_mat_node_tree_cycles(bl_mat):
     tree_builder = NodeTreeBuilder(tree)
 
     # get textures
-    img_1 = bl_mat.wow_wmo_material.diff_texture_1.image if bl_mat.wow_wmo_material.diff_texture_1 else None
-    img_2 = bl_mat.wow_wmo_material.diff_texture_2.image if bl_mat.wow_wmo_material.diff_texture_2 else None
+    img_1 = bl_mat.wow_wmo_material.diff_texture_1 if bl_mat.wow_wmo_material.diff_texture_1 else None
+    img_2 = bl_mat.wow_wmo_material.diff_texture_2 if bl_mat.wow_wmo_material.diff_texture_2 else None
 
     # create nodes
 

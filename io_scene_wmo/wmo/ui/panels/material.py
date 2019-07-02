@@ -87,7 +87,7 @@ def update_diff_texture_1(self, context):
         return
 
     if bpy.context.scene.render.engine in ('CYCLES', 'BLENDER_EEVEE') and self.diff_texture_1:
-        context.material.node_tree.nodes['DiffuseTexture1'].image = self.diff_texture_1.image
+        context.material.node_tree.nodes['DiffuseTexture1'].image = self.diff_texture_1
 
 
 def update_diff_texture_2(self, context):
@@ -97,7 +97,7 @@ def update_diff_texture_2(self, context):
         return
 
     if bpy.context.scene.render.engine in ('CYCLES', 'BLENDER_EEVEE') and self.diff_texture_2:
-        context.material.node_tree.nodes['DiffuseTexture2'].image = self.diff_texture_2.image
+        context.material.node_tree.nodes['DiffuseTexture2'].image = self.diff_texture_2
 
 @on_release()
 def update_emissive_color(self, context):
@@ -177,13 +177,13 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
         )
 
     diff_texture_1:  bpy.props.PointerProperty(
-        type=bpy.types.Texture,
+        type=bpy.types.Image,
         name='Texture 1',
         update=update_diff_texture_1
     )
 
     diff_texture_2:  bpy.props.PointerProperty(
-        type=bpy.types.Texture,
+        type=bpy.types.Image,
         name='Texture 2',
         update=update_diff_texture_2
     )
