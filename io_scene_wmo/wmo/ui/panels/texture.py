@@ -24,8 +24,8 @@ class WMO_PT_texture(bpy.types.Panel):
 class WowWMOTexturePropertyGroup(bpy.types.PropertyGroup):
 
     path:  bpy.props.StringProperty(
-        name="Texture 1",
-        description="Diffuse texture"
+        name="Path",
+        description="Warning: texture path is applied on a per-texture (per-image), not on per-material basis."
         )
 
 
