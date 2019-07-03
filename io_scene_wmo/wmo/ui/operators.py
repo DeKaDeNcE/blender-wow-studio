@@ -12,7 +12,8 @@ from .enums import *
 from .panels.toolbar import switch_doodad_set, get_doodad_sets
 from ..render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
 from ..utils.fogs import create_fog_object
-from ..utils.doodads import import_doodad_model, import_doodad, wmv_get_last_m2
+from ..utils.doodads import import_doodad_model, import_doodad
+from ..utils.wmv import wmv_get_last_wmo, wmv_get_last_m2
 from ...ui import get_addon_prefs
 from ...utils.misc import load_game_data
 
@@ -424,17 +425,6 @@ class WMO_OT_import_last_wmo_from_wmv(bpy.types.Operator):
     def poll(cls, context):
         return True
 
-    def wmv_get_last_wmo(self, wmv_path):
-        """Get the path of last M2 model from WoWModelViewer or similar log."""
-
-        if wmv_path:
-
-            lines = open(wmv_path).readlines()
-
-            for line in reversed(lines):
-                if 'Loading WMO' in line:
-                    return line[22:].rstrip("\n")
-
     def execute(self, context):
 
         game_data = load_game_data()
@@ -446,7 +436,7 @@ class WMO_OT_import_last_wmo_from_wmv(bpy.types.Operator):
         addon_prefs = get_addon_prefs()
         cache_dir = addon_prefs.cache_dir_path
 
-        wmo_path = self.wmv_get_last_wmo(addon_prefs.wmv_path)
+        wmo_path = wmv_get_last_wmo()
 
         if not wmo_path:
             self.report({'ERROR'}, """WoW Model Viewer log contains no WMO entries.

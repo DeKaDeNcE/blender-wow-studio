@@ -34,7 +34,6 @@ class WMO_PT_material(bpy.types.Panel):
             box.prop(context.material.wow_wmo_material.diff_texture_2.wow_wmo_texture, "path")
 
         col.separator()
-        col.label(text="Flags:")
         col.prop(context.material.wow_wmo_material, "flags")
 
         layout.prop(context.material.wow_wmo_material, "emissive_color")
@@ -72,7 +71,7 @@ def update_shader(self, context):
 
 def update_blending_mode(self, context):
     if hasattr(context, 'material'):
-        blend_mode = int(self.blend_mode)
+        blend_mode = int(self.blending_mode)
         if blend_mode in (0, 8, 9):
             context.material.pass_index |= 0x10 # BlenderWMOMaterialRenderFlags.IsOpaque
         else:
@@ -140,7 +139,7 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
     enabled:  bpy.props.BoolProperty()
 
     flags:  bpy.props.EnumProperty(
-        name="Material flags",
+        name="Material Flags",
         description="WoW material flags",
         items=material_flag_enum,
         options={"ENUM_FLAG"},

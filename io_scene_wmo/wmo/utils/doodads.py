@@ -4,12 +4,11 @@ import traceback
 
 import bpy
 
-from typing import Union
-
 from ...utils.misc import load_game_data
 from ...utils.node_builder import NodeTreeBuilder
 from ...pywowlib.io_utils.types import *
-from ...ui import get_addon_prefs
+
+
 
 
 # This file is implementing basic M2 geometry parsing in prodedural style for the sake of performance.
@@ -293,20 +292,6 @@ def import_doodad_model(asset_dir : str, filepath : str) -> bpy.types.Object:
         mesh.materials.append(mat)
 
     return nobj
-
-
-def wmv_get_last_m2() -> Union[None, str]:
-    """Get the path of last M2 model from WoWModelViewer or similar log."""
-
-    addon_preferences = get_addon_prefs()
-    if addon_preferences.wmv_path:
-
-        lines = open(addon_preferences.wmv_path).readlines()
-
-        for line in reversed(lines):
-            if 'Loading model:' in line:
-                return line[25:].split(",", 1)[0].rstrip("\n")
-
 
 def import_doodad(m2_path : str, cache_path : str) -> bpy.types.Object:
 
