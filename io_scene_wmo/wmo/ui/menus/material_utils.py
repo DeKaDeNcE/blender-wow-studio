@@ -1,6 +1,7 @@
 import bpy
 import bmesh
 import traceback
+import os
 
 from bpy.types import Menu
 from functools import partial
@@ -9,7 +10,7 @@ from ....ui import get_addon_prefs
 from ....utils.misc import load_game_data
 from ...utils.wmv import wmv_get_last_texture
 from ...utils.materials import load_texture
-from ...render import update_wmo_mat_node_tree
+from ...render import update_wmo_mat_node_tree, load_wmo_shader_dependencies
 
 
 class WMO_OT_assign_material(bpy.types.Operator):
@@ -62,6 +63,54 @@ class WMO_OT_assign_material(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class WMO_OT_import_texture_from_filepath(bpy.types.Operator):
+    bl_idname = "mesh.wow_import_texture_filepath"
+    bl_label = "Import texture from filepath"
+    bl_description = "Import a texture file from filepath and create material for it."
+    bl_options = {'UNDO', 'REGISTER', 'INTERNAL'}
+
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
+
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'MESH' and context.object.mode == 'EDIT'
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+
+        game_data = load_game_data()
+
+        if not game_data:
+            self.report({'ERROR'}, "Importing texture failed. Game data was not loaded.")
+            return {'CANCELLED'}
+
+        path = game_data.traverse_file_path(bpy.path.abspath(self.filepath))
+
+        if not path:
+            self.report({'INFO'}, "Texture was not found in WoW file system. Set the path in material manually.")
+
+        texture = bpy.data.images.load(bpy.path.abspath(self.filepath))
+        texture.wow_wmo_texture.path = path if path else self.filepath
+        texture.name = os.path.basename(self.filepath)
+
+        mat = bpy.data.materials.new(name=texture.name)
+        mat.wow_wmo_material.diff_texture_1 = texture
+
+        load_wmo_shader_dependencies(reload_shader=True)
+        update_wmo_mat_node_tree(mat)
+
+        slot = context.scene.wow_wmo_root_components.materials.add()
+        slot.pointer = mat
+        mat.wow_wmo_material.enabled = True
+
+        bpy.ops.mesh.wow_assign_material(mat_name=mat.name)
+
+        return {'FINISHED'}
+
+
 class WMO_OT_import_texture_from_wmv(bpy.types.Operator):
     bl_idname = "mesh.wow_import_texture_wmv"
     bl_label = "Import texture from WoWModelViewer"
@@ -92,6 +141,8 @@ class WMO_OT_import_texture_from_wmv(bpy.types.Operator):
 
         mat = bpy.data.materials.new(name=path.split('\\')[-1][:-4] + '.PNG')
         mat.wow_wmo_material.diff_texture_1 = texture
+
+        load_wmo_shader_dependencies(reload_shader=True)
         update_wmo_mat_node_tree(mat)
 
         slot = context.scene.wow_wmo_root_components.materials.add()
@@ -99,6 +150,24 @@ class WMO_OT_import_texture_from_wmv(bpy.types.Operator):
         mat.wow_wmo_material.enabled = True
 
         bpy.ops.mesh.wow_assign_material(mat_name=mat.name)
+
+        return {'FINISHED'}
+
+
+class WMO_OT_select_texture_from_recent(bpy.types.Operator):
+    bl_idname = "mesh.wow_select_texture_from_recent"
+    bl_label = ""
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    index: bpy.props.IntProperty()
+
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'MESH' and context.object.mode == 'EDIT'
+
+    def execute(self, context):
+
+        context.scene.wow_cur_image = context.scene.wow_last_selected_images[self.index].pointer
 
         return {'FINISHED'}
 
@@ -122,7 +191,17 @@ class VIEW3D_MT_select_texture(Menu):
         row.scale_y = 0.5
         row.template_ID_preview(context.scene, 'wow_cur_image', hide_buttons=True, rows=5, cols=5)
 
+        if len(context.scene.wow_last_selected_images):
+            box = pie.box()
+            row = box.row()
+            for i, texture in enumerate(context.scene.wow_last_selected_images):
+                col = row.column()
+                col.template_icon(row.icon(texture.pointer), scale=5.0)
+                op = col.operator("mesh.wow_select_texture_from_recent", text='', icon='ADD')
+                op.index = i
+
         pie.operator("mesh.wow_import_texture_wmv", text='Import from WMV', icon='ADD')
+        pie.operator("mesh.wow_import_texture_filepath", text='Import from file', icon='ADD')
 
 
 def timer(override):
@@ -131,7 +210,28 @@ def timer(override):
 
 def set_image(self, value):
     if self.wow_cur_image:
-        self.wow_cur_image_old = self.wow_cur_image
+
+        # clear invalid items
+        while True:
+            for i, tex in enumerate(self.wow_last_selected_images):
+                if not tex.pointer:
+                    self.wow_last_selected_images.remove(i)
+                    break
+            else:
+                break
+
+        # avoid duplicates and truncate the collection
+        for i, tex in enumerate(self.wow_last_selected_images):
+
+            if tex.pointer == self.wow_cur_image:
+                self.wow_last_selected_images.remove(i)
+                break
+        else:
+            if len(self.wow_last_selected_images) > 5:
+                self.wow_last_selected_images.remove(0)
+
+        slot = self.wow_last_selected_images.add()
+        slot.pointer = self.wow_cur_image
         self.wow_cur_image = None
 
         bpy.app.timers.register(partial(timer, bpy.context.copy()), first_interval=0.0)
@@ -139,8 +239,9 @@ def set_image(self, value):
 
 def get_more_materials_list(self, context):
     scene = bpy.context.scene
-    materials = list([mat for mat in scene.wow_wmo_root_components.materials if
-                      mat.pointer and mat.pointer.wow_wmo_material.diff_texture_1 == scene.wow_cur_image_old])
+    materials = list([mat for mat in scene.wow_wmo_root_components.materials
+                      if mat.pointer
+                      and mat.pointer.wow_wmo_material.diff_texture_1 == scene.wow_last_selected_images[-1].pointer])
 
     return list([(mat.name, mat.name, mat.name, 'MATERIAL', i) for i, mat in enumerate(materials[5:])]) if len(
         materials) > 6 else []
@@ -159,9 +260,9 @@ class VIEW3D_MT_select_material(Menu):
         scene = bpy.context.scene
         layout = self.layout
         pie = layout.menu_pie()
-
-        materials = list([mat for mat in scene.wow_wmo_root_components.materials if
-                          mat.pointer and mat.pointer.wow_wmo_material.diff_texture_1 == scene.wow_cur_image_old])
+        materials = list([mat for mat in scene.wow_wmo_root_components.materials
+                          if mat.pointer
+                          and mat.pointer.wow_wmo_material.diff_texture_1 == scene.wow_last_selected_images[-1].pointer])
 
         if len(materials) > 6:
             for mat in materials[:5]:
@@ -176,10 +277,15 @@ class VIEW3D_MT_select_material(Menu):
                 op = pie.operator("mesh.wow_assign_material", text=mat.pointer.name, icon='MATERIAL')
                 op.mat_name = mat.pointer.name
 
+
+class ImagePointerPropertyGroup(bpy.types.PropertyGroup):
+
+    pointer: bpy.props.PointerProperty(type=bpy.types.Image)
+
 addon_keymaps = []
 def register():
     bpy.types.Scene.wow_cur_image = bpy.props.PointerProperty(type=bpy.types.Image, update=set_image)
-    bpy.types.Scene.wow_cur_image_old = bpy.props.PointerProperty(type=bpy.types.Image)
+    bpy.types.Scene.wow_last_selected_images = bpy.props.CollectionProperty(type=ImagePointerPropertyGroup)
 
     bpy.types.Scene.more_materials = bpy.props.EnumProperty(  name='More'
                                                             , items=get_more_materials_list
@@ -195,7 +301,7 @@ def register():
 
 def unregister():
     del bpy.types.Scene.more_materials
-    del bpy.types.Scene.wow_cur_image_old
+    del bpy.types.Scene.wow_last_selected_images
     del bpy.types.Scene.wow_cur_image
 
     for km, kmi in addon_keymaps:
