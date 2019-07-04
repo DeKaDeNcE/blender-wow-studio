@@ -99,7 +99,7 @@ class WMO_OT_import_texture_from_filepath(bpy.types.Operator):
         mat = bpy.data.materials.new(name=texture.name)
         mat.wow_wmo_material.diff_texture_1 = texture
 
-        load_wmo_shader_dependencies(reload_shader=True)
+        load_wmo_shader_dependencies()
         update_wmo_mat_node_tree(mat)
 
         slot = context.scene.wow_wmo_root_components.materials.add()
@@ -142,7 +142,7 @@ class WMO_OT_import_texture_from_wmv(bpy.types.Operator):
         mat = bpy.data.materials.new(name=path.split('\\')[-1][:-4] + '.PNG')
         mat.wow_wmo_material.diff_texture_1 = texture
 
-        load_wmo_shader_dependencies(reload_shader=True)
+        load_wmo_shader_dependencies()
         update_wmo_mat_node_tree(mat)
 
         slot = context.scene.wow_wmo_root_components.materials.add()

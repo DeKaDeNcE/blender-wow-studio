@@ -34,6 +34,8 @@ def load_wmo_shader_dependencies(reload_shader=False):
             if ng_name in bpy.data.node_groups:
                 bpy.data.node_groups.remove(bpy.data.node_groups[ng_name])
 
+    missing_nodes = [ng_name for ng_name in node_groups if ng_name not in bpy.data.node_groups]
+
     if render_engine in ('CYCLES', 'BLENDER_EEVEE'):
         lib_path = os.path.join(str(Path(__file__).parent), 'cycles', 'wotlk_default.blend')
     else:
@@ -42,7 +44,7 @@ def load_wmo_shader_dependencies(reload_shader=False):
         return
 
     with bpy.data.libraries.load(lib_path) as (data_from, data_to):
-        data_to.node_groups = [node_group for node_group in data_from.node_groups if node_group in node_groups]
+        data_to.node_groups = [node_group for node_group in data_from.node_groups if node_group in missing_nodes]
 
 
 def update_wmo_mat_node_tree(bl_mat):
