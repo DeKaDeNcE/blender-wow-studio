@@ -134,19 +134,7 @@ def set_image(self, value):
         self.wow_cur_image_old = self.wow_cur_image
         self.wow_cur_image = None
 
-        win = bpy.context.window
-        scr = win.screen
-        areas3d = [area for area in scr.areas if area.type == 'VIEW_3D']
-        region = [region for region in areas3d[0].regions if region.type == 'WINDOW']
-
-        override = {'window': win,
-                    'screen': scr,
-                    'area': areas3d[0],
-                    'region': region,
-                    'scene': bpy.context.scene,
-                    }
-
-        bpy.app.timers.register(partial(timer, override), first_interval=0.0)
+        bpy.app.timers.register(partial(timer, bpy.context.copy()), first_interval=0.0)
 
 
 def get_more_materials_list(self, context):
@@ -167,6 +155,7 @@ class VIEW3D_MT_select_material(Menu):
     bl_label = "Select materials"
 
     def draw(self, context):
+
         scene = bpy.context.scene
         layout = self.layout
         pie = layout.menu_pie()
