@@ -126,7 +126,7 @@ class VIEW3D_MT_select_texture(Menu):
 
 
 def timer(override):
-    bpy.ops.wm.call_menu_pie(override, name="VIEW3D_PIE_select_materials")
+    bpy.ops.wm.call_menu_pie(override, name="VIEW3D_MT_select_material")
 
 
 def set_image(self, value):
