@@ -173,7 +173,8 @@ class WMO_OT_import_texture_from_wmv(bpy.types.Operator):
 
 class WMO_OT_select_texture_from_recent(bpy.types.Operator):
     bl_idname = "mesh.wow_select_texture_from_recent"
-    bl_label = ""
+    bl_label = "Select texture"
+    bl_description = "Select recently used texture"
     bl_options = {'REGISTER', 'INTERNAL'}
 
     index: bpy.props.IntProperty()
