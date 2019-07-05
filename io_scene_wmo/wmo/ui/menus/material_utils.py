@@ -121,7 +121,10 @@ class WMO_OT_import_texture_from_filepath(bpy.types.Operator):
         slot.pointer = mat
         mat.wow_wmo_material.enabled = True
 
+        global display_material_select_pie 
+        display_material_select_pie = False
         context.scene.wow_cur_image = texture
+        display_material_select_pie = True
 
         bpy.ops.mesh.wow_assign_material(mat_name=mat.name, action='NAME')
 
@@ -165,6 +168,11 @@ class WMO_OT_import_texture_from_wmv(bpy.types.Operator):
         slot = context.scene.wow_wmo_root_components.materials.add()
         slot.pointer = mat
         mat.wow_wmo_material.enabled = True
+
+        global display_material_select_pie
+        display_material_select_pie = False
+        context.scene.wow_cur_image = texture
+        display_material_select_pie = True
 
         bpy.ops.mesh.wow_assign_material(mat_name=mat.name, action='NAME')
 
@@ -226,33 +234,39 @@ def timer(override):
     bpy.ops.wm.call_menu_pie(override, name="VIEW3D_MT_select_material")
 
 
-def set_image(self, value):
-    if self.wow_cur_image:
-
-        # clear invalid items
-        while True:
-            for i, tex in enumerate(self.wow_last_selected_images):
-                if not tex.pointer:
-                    self.wow_last_selected_images.remove(i)
-                    break
-            else:
-                break
-
-        # avoid duplicates and truncate the collection
-        for i, tex in enumerate(self.wow_last_selected_images):
-
-            if tex.pointer == self.wow_cur_image:
-                self.wow_last_selected_images.remove(i)
+def handle_last_selected_images(scene):
+    # clear invalid items
+    while True:
+        for i, tex in enumerate(scene.wow_last_selected_images):
+            if not tex.pointer:
+                scene.wow_last_selected_images.remove(i)
                 break
         else:
-            if len(self.wow_last_selected_images) > 5:
-                self.wow_last_selected_images.remove(0)
+            break
 
-        slot = self.wow_last_selected_images.add()
-        slot.pointer = self.wow_cur_image
-        self.wow_cur_image = None
+    # avoid duplicates and truncate the collection
+    for i, tex in enumerate(scene.wow_last_selected_images):
 
-        bpy.app.timers.register(partial(timer, bpy.context.copy()), first_interval=0.0)
+        if tex.pointer == scene.wow_cur_image:
+            scene.wow_last_selected_images.remove(i)
+            break
+    else:
+        if len(scene.wow_last_selected_images) > 5:
+            scene.wow_last_selected_images.remove(0)
+
+    slot = scene.wow_last_selected_images.add()
+    slot.pointer = scene.wow_cur_image
+    scene.wow_cur_image = None
+
+display_material_select_pie = True
+def set_image(self, value):
+    if self.wow_cur_image:
+        global display_material_select_pie
+
+        handle_last_selected_images(self)
+
+        if display_material_select_pie:
+            bpy.app.timers.register(partial(timer, bpy.context.copy()), first_interval=0.0)
 
 
 def get_more_materials_list(self, context):
