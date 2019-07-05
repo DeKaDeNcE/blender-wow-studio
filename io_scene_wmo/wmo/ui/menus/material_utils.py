@@ -19,7 +19,13 @@ class WMO_OT_assign_material(bpy.types.Operator):
     bl_description = "Assign selected material to selected polygons"
     bl_options = {'UNDO', 'REGISTER', 'INTERNAL'}
 
-    mat_name: bpy.props.StringProperty()
+    mat_name: bpy.props.StringProperty(default='Material')
+    action: bpy.props.EnumProperty(
+        name='Action',
+        items=(('NAME', "", ""),
+               ('NEW', "", "")),
+        default='NAME'
+    )
 
     @classmethod
     def poll(cls, context):
@@ -31,7 +37,19 @@ class WMO_OT_assign_material(bpy.types.Operator):
             obj = context.object
             mesh = obj.data
 
-            mat = bpy.data.materials[self.mat_name]
+            mat = bpy.data.materials[self.mat_name] if self.action == 'NAME' else bpy.data.materials.new(self.mat_name)
+
+            if self.action == 'NEW':
+                texture = context.scene.wow_last_selected_images[-1].pointer
+                mat.wow_wmo_material.path = texture.wow_wmo_texture.path
+                mat.wow_wmo_material.diff_texture_1 = texture
+
+                load_wmo_shader_dependencies()
+                update_wmo_mat_node_tree(mat)
+
+                slot = context.scene.wow_wmo_root_components.materials.add()
+                slot.pointer = mat
+                mat.wow_wmo_material.enabled = True
 
             mat_index = -1
 
@@ -51,9 +69,6 @@ class WMO_OT_assign_material(bpy.types.Operator):
                     face.material_index = mat_index
 
             bmesh.update_edit_mesh(mesh, loop_triangles=False, destructive=False)
-
-            for poly in mesh.polygons:
-                poly.material_index = mat_index
 
         except:
             traceback.print_exc()
@@ -106,7 +121,9 @@ class WMO_OT_import_texture_from_filepath(bpy.types.Operator):
         slot.pointer = mat
         mat.wow_wmo_material.enabled = True
 
-        bpy.ops.mesh.wow_assign_material(mat_name=mat.name)
+        context.scene.wow_cur_image = texture
+
+        bpy.ops.mesh.wow_assign_material(mat_name=mat.name, action='NAME')
 
         return {'FINISHED'}
 
@@ -149,7 +166,7 @@ class WMO_OT_import_texture_from_wmv(bpy.types.Operator):
         slot.pointer = mat
         mat.wow_wmo_material.enabled = True
 
-        bpy.ops.mesh.wow_assign_material(mat_name=mat.name)
+        bpy.ops.mesh.wow_assign_material(mat_name=mat.name, action='NAME')
 
         return {'FINISHED'}
 
@@ -249,7 +266,7 @@ def get_more_materials_list(self, context):
 
 def update_more_materials(self, context):
     if self.more_materials:
-        bpy.ops.mesh.wow_assign_material(mat_name=self.more_materials)
+        bpy.ops.mesh.wow_assign_material(mat_name=self.more_materials, action='NAME')
 
 
 class VIEW3D_MT_select_material(Menu):
@@ -260,6 +277,10 @@ class VIEW3D_MT_select_material(Menu):
         scene = bpy.context.scene
         layout = self.layout
         pie = layout.menu_pie()
+
+        op = pie.operator("mesh.wow_assign_material", text='New material', icon='ADD')
+        op.action = 'NEW'
+
         materials = list([mat for mat in scene.wow_wmo_root_components.materials
                           if mat.pointer
                           and mat.pointer.wow_wmo_material.diff_texture_1 == scene.wow_last_selected_images[-1].pointer])
@@ -268,6 +289,7 @@ class VIEW3D_MT_select_material(Menu):
             for mat in materials[:5]:
                 op = pie.operator("mesh.wow_assign_material", text=mat.pointer.name, icon='MATERIAL')
                 op.mat_name = mat.pointer.name
+                op.action = 'NAME'
 
             box = pie.box()
             box.prop(scene, "more_materials", text='More', icon='MATERIAL')
@@ -276,6 +298,7 @@ class VIEW3D_MT_select_material(Menu):
             for mat in materials:
                 op = pie.operator("mesh.wow_assign_material", text=mat.pointer.name, icon='MATERIAL')
                 op.mat_name = mat.pointer.name
+                op.action = 'NAME'
 
 
 class ImagePointerPropertyGroup(bpy.types.PropertyGroup):
