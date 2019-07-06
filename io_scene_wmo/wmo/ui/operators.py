@@ -6,10 +6,16 @@ import subprocess
 import traceback
 
 import bpy
+import bmesh
 import mathutils
+
+
+from mathutils import Vector
+from math import cos, sin, tan, radians
 
 from .enums import *
 from .panels.toolbar import switch_doodad_set, get_doodad_sets
+from . import handlers
 from ..render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
 from ..utils.fogs import create_fog_object
 from ..utils.doodads import import_doodad_model, import_doodad
@@ -980,6 +986,162 @@ class WMO_OT_add_liquid_flag(bpy.types.Operator):
             self.report({'ERROR'}, "Selected object is not World of Warcraft liquid")
 
         return {'FINISHED'}
+
+
+
+def angled_vertex(origin: Vector, pos: Vector, angle: float, orientation: float) -> float:
+    return origin.z + ((pos.x - origin.x) * cos(orientation) + (pos.y - origin.y) * sin(orientation)) * tan(angle)
+
+def get_median_point(bm: bmesh.types.BMesh) -> Vector:
+
+    selected_vertices = [v for v in bm.verts if v.select]
+
+    f = 1 / len(selected_vertices)
+
+    median = Vector((0, 0, 0))
+
+    for vert in selected_vertices:
+        median += vert.co * f
+
+    return median
+
+def align_vertices(bm : bmesh.types.BMesh, mesh : bpy.types.Mesh, median : Vector, angle : float, orientation : float):
+    for vert in bm.verts:
+        if vert.select:
+            vert.co[2] = angled_vertex(median, vert.co, radians(angle), radians(orientation))
+
+    bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
+
+class WMO_OT_edit_liquid(bpy.types.Operator):
+    bl_idname = "wow.liquid_edit_mode"
+    bl_label = "Edit WoW Liquid"
+
+    def __init__(self):
+        self.init_loc = 0.0
+        self.move_initiated = False
+        self.rotation_initiated = False
+        self.bm = None
+        self.speed_modifier = 1.0
+
+        self.orientation = 0.0
+        self.angle = 0.0
+
+        self.median = Vector((0, 0, 0))
+        self.color_type = 'TEXTURE'
+
+    def __del__(self):
+        pass
+
+    def modal(self, context, event):
+
+        if context.object.mode != 'EDIT':
+            return {'PASS_THROUGH'}
+
+        mesh = context.object.data
+
+        if event.type == 'MIDDLEMOUSE':
+            return {'PASS_THROUGH'}
+
+        if event.type in {'C', 'B', 'A', 'RIGHTMOUSE'} \
+                and not self.move_initiated \
+                and not self.rotation_initiated:
+            return {'PASS_THROUGH'}
+
+
+        elif event.type == 'G' and not self.rotation_initiated:
+            self.move_initiated = True
+            self.init_loc = event.mouse_x
+
+
+        elif event.type == 'R' and not self.move_initiated:
+            self.rotation_initiated = True
+            self.median = get_median_point(self.bm)
+            self.orientation = 0.0
+            self.angle = 0.0
+
+
+        elif event.type == 'F' and event.shift:
+
+            median = get_median_point(self.bm)
+
+            for vert in self.bm.verts:
+                if vert.select:
+                    vert.co[2] = median[2]
+
+
+        elif event.type == 'MOUSEMOVE':
+
+            if self.move_initiated:
+                for vert in self.bm.verts:
+                    if vert.select:
+                        vert.co[2] = mesh.vertices[vert.index].co[2] + (event.mouse_x - self.init_loc) / 100
+
+                bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
+
+            return {'PASS_THROUGH'}
+
+        elif event.type == 'WHEELUPMOUSE':
+
+            if self.rotation_initiated:
+
+                if event.shift:
+                    self.angle = min(self.angle + 5, 89.9)
+                    align_vertices(self.bm, context.object.data, self.median, self.angle, self.orientation)
+
+                elif event.alt:
+                    self.orientation += 10
+
+                    if self.orientation > 360:
+                        self.orientation -= 360
+
+                    align_vertices(self.bm, context.object.data, self.median, self.angle, self.orientation)
+
+            else:
+                return {'PASS_THROUGH'}
+
+
+        elif event.type == 'WHEELDOWNMOUSE':
+
+            if self.rotation_initiated:
+                if event.shift:
+                    self.angle = max(self.angle - 5, -89.9)
+                    align_vertices(self.bm, context.object.data, self.median, self.angle, self.orientation)
+
+                elif event.alt:
+                    self.orientation -= 10
+
+                    if self.orientation < 0:
+                        self.orientation = 360 - self.orientation
+
+                    align_vertices(self.bm, context.object.data, self.median, self.angle, self.orientation)
+
+            else:
+                return {'PASS_THROUGH'}
+
+
+        elif event.type in {'LEFTMOUSE', 'RIGHTMOUSE'}:  # Confirm
+            self.move_initiated = False
+            self.rotation_initiated = False
+
+        elif event.type in {'ESC', 'TAB'}:  # Cancel
+            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.context.scene.display.shading.color_type = self.color_type
+            handlers.DEPSGRAPH_UPDATE_LOCK = False
+            return {'FINISHED'}
+
+        return {'RUNNING_MODAL'}
+
+    def invoke(self, context, event):
+        handlers.DEPSGRAPH_UPDATE_LOCK = True
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.wm.tool_set_by_id(name="builtin.select_box")         # force a benign select tool
+
+        # create a bmesh to operate on
+        self.bm = bmesh.from_edit_mesh(context.object.data)
+        self.bm.verts.ensure_lookup_table()
+
+        context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
 
 
 ###############################

@@ -121,7 +121,7 @@ class WMO_OT_import_texture_from_filepath(bpy.types.Operator):
         slot.pointer = mat
         mat.wow_wmo_material.enabled = True
 
-        global display_material_select_pie 
+        global display_material_select_pie
         display_material_select_pie = False
         context.scene.wow_cur_image = texture
         display_material_select_pie = True
@@ -285,7 +285,7 @@ def update_more_materials(self, context):
 
 
 class VIEW3D_MT_select_material(Menu):
-    bl_label = "Select materials"
+    bl_label = "Select material"
 
     def draw(self, context):
 

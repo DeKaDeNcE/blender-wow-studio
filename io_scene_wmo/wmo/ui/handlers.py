@@ -1,7 +1,18 @@
 import bpy
+
+from functools import partial
+
 from bpy.app.handlers import persistent
 from ...utils.misc import show_message_box
 
+class DepsgraphLock:
+    def __enter__(self):
+        global DEPSGRAPH_UPDATE_LOCK
+        DEPSGRAPH_UPDATE_LOCK = True
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        global DEPSGRAPH_UPDATE_LOCK
+        DEPSGRAPH_UPDATE_LOCK = False
 
 _obj_props = (
               ('wow_wmo_group', 'groups'),
@@ -85,6 +96,9 @@ def _add_col_items(scene):
                     slot = col.add()
                     slot.pointer = obj
 
+def _liquid_edit_mode_timer(context):
+    bpy.ops.wow.liquid_edit_mode(context, 'INVOKE_DEFAULT')
+
 DEPSGRAPH_UPDATE_LOCK = False
 
 banned_ops = (
@@ -95,6 +109,26 @@ banned_ops = (
     "OBJECT_OT_visual_transform_apply"
 )
 
+liquid_banned_ops_edit_mode = (
+    "TRANSFORM_OT_mirror",
+    "MESH_OT_delete",
+    "MESH_OT_duplicate_move",
+    "MESH_OT_extrude_region",
+    "MESH_OT_extrude_verts_indiv",
+    "MESH_OT_split",
+    "MESH_OT_symmetrize",
+    "MESH_OT_sort_elements",
+    "MESH_OT_delete_loose",
+    "MESH_OT_decimate",
+    "MESH_OT_dissolve_degenerate",
+    "MESH_OT_dissolve_limited",
+    "MESH_OT_face_make_planar",
+    "MESH_OT_face_make_planar",
+    "MESH_OT_vert_connect_nonplanar",
+    "MESH_OT_vert_connect_concave",
+    "MESH_OT_bevel",
+    "MESH_OT_merge"
+)
 
 @persistent
 def on_depsgraph_update(_):
@@ -108,41 +142,55 @@ def on_depsgraph_update(_):
     for update in bpy.context.view_layer.depsgraph.updates:
 
         try:
-            if isinstance(update.id, bpy.types.Object) and update.id.type == 'MESH' and update.id.wow_wmo_doodad.enabled:
-                obj = bpy.data.objects[update.id.name, update.id.library]
-                DEPSGRAPH_UPDATE_LOCK = True
+            if isinstance(update.id, bpy.types.Object) and update.id.type == 'MESH':
+                if update.id.wow_wmo_doodad.enabled:
+                    obj = bpy.data.objects[update.id.name, update.id.library]
+                    DEPSGRAPH_UPDATE_LOCK = True
 
-                # handle object copies
-                if obj.active_material.users > 1:
-                    for i, mat in enumerate(obj.data.materials):
-                        mat = mat.copy()
-                        obj.data.materials[i] = mat
-                        is_duplicated = True
+                    # handle object copies
+                    if obj.active_material.users > 1:
+                        for i, mat in enumerate(obj.data.materials):
+                            mat = mat.copy()
+                            obj.data.materials[i] = mat
+                            is_duplicated = True
 
-                if is_duplicated:
-                    continue
+                    if is_duplicated:
+                        continue
 
-                # enforce object mode
-                if obj.mode != 'OBJECT':
-                    bpy.ops.object.mode_set(mode='OBJECT')
+                    # enforce object mode
+                    if obj.mode != 'OBJECT':
+                        bpy.ops.object.mode_set(mode='OBJECT')
 
-                # remove modifiers
-                if len(obj.modifiers):
-                    obj.modifiers.clear()
+                    # remove modifiers
+                    if len(obj.modifiers):
+                        obj.modifiers.clear()
 
-                # delete if object was processed by a specific operator
-                if bpy.context.window_manager.operators[-1].bl_idname in banned_ops:
-                    delete = True
-                    bpy.data.objects.remove(obj, do_unlink=True)
+                    # delete if object was processed by a specific operator
+                    if bpy.context.window_manager.operators \
+                    and bpy.context.window_manager.operators[-1].bl_idname in banned_ops:
+                        delete = True
+                        bpy.data.objects.remove(obj, do_unlink=True)
 
-                if update.is_updated_transform:
-                    # check if object is scaled evenly
-                    max_scale = 0.0
-                    for j in range(3):
-                        if obj.scale[j] > max_scale:
-                            max_scale = obj.scale[j]
+                    if update.is_updated_transform:
+                        # check if object is scaled evenly
+                        max_scale = 0.0
+                        for j in range(3):
+                            if obj.scale[j] > max_scale:
+                                max_scale = obj.scale[j]
 
-                    obj.scale = (max_scale, max_scale, max_scale)
+                        obj.scale = (max_scale, max_scale, max_scale)
+
+                elif update.id.wow_wmo_liquid.enabled:
+                    obj = bpy.data.objects[update.id.name, update.id.library]
+
+                    with DepsgraphLock():
+                        # enforce object mode
+                        if obj.mode != 'OBJECT':
+                            bpy.ops.object.mode_set(mode='OBJECT')
+
+                        # remove modifiers
+                        if len(obj.modifiers):
+                            obj.modifiers.clear()
 
             elif isinstance(update.id, bpy.types.Scene):
                 n_objs = len(bpy.context.scene.objects)
@@ -177,10 +225,12 @@ def on_depsgraph_update(_):
 
 def register():
     bpy.wbs_n_scene_objects = 0
+    bpy.types.Object.wow_subject_to_removal = bpy.props.BoolProperty(default=False)
     bpy.app.handlers.depsgraph_update_post.append(on_depsgraph_update)
 
 
 def unregister():
     bpy.app.handlers.depsgraph_update_post.remove(on_depsgraph_update)
     del bpy.wbs_n_scene_objects
+    del bpy.types.Object.wow_subject_to_removal
 
