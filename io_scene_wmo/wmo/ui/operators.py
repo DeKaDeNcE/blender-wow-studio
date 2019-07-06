@@ -1068,6 +1068,8 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
                 if vert.select:
                     vert.co[2] = median[2]
 
+            bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
+
 
         elif event.type == 'MOUSEMOVE':
 

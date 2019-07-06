@@ -184,9 +184,18 @@ def on_depsgraph_update(_):
                     obj = bpy.data.objects[update.id.name, update.id.library]
 
                     with DepsgraphLock():
-                        # enforce object mode
-                        if obj.mode != 'OBJECT':
+                        # enforce object mode or sculpt mode
+                        if obj.mode not in ('OBJECT', 'SCULPT'):
                             bpy.ops.object.mode_set(mode='OBJECT')
+
+                        # enforce Z plane for sculpting brushes
+                        if obj.mode == 'SCULPT':
+                            for brush in bpy.data.brushes:
+                                brush.sculpt_plane = 'Z'
+
+                        obj.scale = (1, 1, 1)
+                        obj.rotation_mode = 'XYZ'
+                        obj.rotation_euler = (0, 0, 0)
 
                         # remove modifiers
                         if len(obj.modifiers):
