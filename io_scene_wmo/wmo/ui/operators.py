@@ -1356,7 +1356,7 @@ class WMO_OT_add_water(bpy.types.Operator):
         with DepsgraphLock():
             bpy.ops.mesh.primitive_grid_add(x_subdivisions=self.x_planes + 1,
                                             y_subdivisions=self.y_planes + 1,
-                                            size=4.1666625 / 2
+                                            size=4.1666625
                                             )
             water = bpy.context.view_layer.objects.active
             bpy.ops.transform.resize(value=(self.x_planes, self.y_planes, 1.0))
