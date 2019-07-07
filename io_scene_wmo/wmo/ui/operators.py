@@ -17,6 +17,7 @@ from time import time
 from .enums import *
 from .panels.toolbar import switch_doodad_set, get_doodad_sets
 from . import handlers
+from .handlers import DepsgraphLock
 from ..render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
 from ..utils.fogs import create_fog_object
 from ..utils.doodads import import_doodad_model, import_doodad
@@ -1168,7 +1169,7 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
                 if face.select:
                     for loop in face.loops:
                         loop[layer] = color
-                        
+
             bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
             self.report({'INFO'}, "Flag set" if event.shift else "Flag unset")
 
@@ -1332,19 +1333,19 @@ class WMO_OT_add_scale(bpy.types.Operator):
 
 
 class WMO_OT_add_water(bpy.types.Operator):
-    bl_idname = 'scene.wow_add_water'
-    bl_label = 'Add water'
-    bl_description = 'Add a WoW water plane'
+    bl_idname = 'scene.wow_add_liquid'
+    bl_label = 'Add liquid'
+    bl_description = 'Add a WoW liquid plane'
     bl_options = {'REGISTER', 'UNDO'}
 
-    xPlanes:  bpy.props.IntProperty(
+    x_planes:  bpy.props.IntProperty(
         name="X subdivisions:",
         description="Amount of WoW liquid planes in a row. One plane is 4.1666625 in its radius.",
         default=10,
         min=1
     )
 
-    yPlanes:  bpy.props.IntProperty(
+    y_planes:  bpy.props.IntProperty(
         name="Y subdivisions:",
         description="Amount of WoW liquid planes in a column. One plane is 4.1666625 in its radius.",
         default=10,
@@ -1352,27 +1353,31 @@ class WMO_OT_add_water(bpy.types.Operator):
     )
 
     def execute(self, context):
-        bpy.ops.mesh.primitive_grid_add(x_subdivisions=self.xPlanes + 1,
-                                        y_subdivisions=self.yPlanes + 1,
-                                        radius=4.1666625 / 2
-                                        )
-        water = bpy.context.view_layer.objects.active
-        bpy.ops.transform.resize(value=(self.xPlanes, self.yPlanes, 1.0))
+        with DepsgraphLock():
+            bpy.ops.mesh.primitive_grid_add(x_subdivisions=self.x_planes + 1,
+                                            y_subdivisions=self.y_planes + 1,
+                                            size=4.1666625 / 2
+                                            )
+            water = bpy.context.view_layer.objects.active
+            bpy.ops.transform.resize(value=(self.x_planes, self.y_planes, 1.0))
+            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
-        water.name += "_Liquid"
+            water.name += "_Liquid"
 
-        mesh = water.data
+            mesh = water.data
 
-        bit = 1
-        while bit <= 0x80:
-            mesh.vertex_colors.new("flag_" + hex(bit))
-            bit <<= 1
+            bit = 1
+            counter = 0
+            while bit <= 0x80:
+                mesh.vertex_colors.new(name="flag_{}".format(counter))
+                counter += 1
+                bit <<= 1
 
-        water.wow_wmo_liquid.enabled = True
+            water.wow_wmo_liquid.enabled = True
 
-        water.hide_viewport = False if "4" in bpy.context.scene.wow_visibility else True
+            water.hide_viewport = False if "4" in bpy.context.scene.wow_visibility else True
 
-        self.report({'INFO'}, "Successfully сreated WoW liquid: " + water.name)
+        self.report({'INFO'}, "Successfully сreated WoW liquid: {}".format(water.name))
         return {'FINISHED'}
 
 

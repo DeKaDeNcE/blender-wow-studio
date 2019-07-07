@@ -1,8 +1,6 @@
 import bpy
 from ..enums import *
 
-__reload_order_index__ = 0
-
 
 def update_wow_visibility(self, context):
     values = self.wow_visibility
@@ -43,22 +41,6 @@ def update_wow_visibility(self, context):
             obj.hide_viewport = '5' not in values
 
         obj['wow_hide'] = obj.hide_viewport
-
-
-def update_liquid_flags(self, context):
-    value = self.wow_liquid_flags
-
-    water = bpy.context.view_layer.objects.active
-    mesh = water.data
-    if water.wow_wmo_liquid.enabled:
-        layer = mesh.vertex_colors.get("flag_" + value)
-
-        if layer:
-            layer.active = True
-            mesh.use_paint_mask = True
-        else:
-            layer = mesh.vertex_colors.new("flag_" + value)
-            layer.active = True
 
 
 def get_doodad_sets(self, context):
@@ -145,7 +127,7 @@ class WMO_PT_tools_panel_object_mode_add_to_scene(bpy.types.Panel):
         box1_col = box1.column(align=True)
         box1_row1 = box1_col.row(align=True)
         box1_row1.operator("scene.wow_add_fog", text='Fog', icon_value=ui_icons['WOW_STUDIO_FOG_ADD'])
-        box1_row1.operator("scene.wow_add_water", text='Water', icon_value=ui_icons['WOW_STUDIO_WATER_ADD'])
+        box1_row1.operator("scene.wow_add_liquid", text='Water', icon_value=ui_icons['WOW_STUDIO_WATER_ADD'])
         box1_row2 = box1_col.row(align=True)
         box1_row3 = box1_col.row(align=True)
         if game_data_loaded:
@@ -255,7 +237,7 @@ class WMO_MT_mesh_wow_components_add(bpy.types.Menu):
         layout = self.layout
         col = layout.column()
         col.operator("scene.wow_add_fog", text='Fog', icon_value=ui_icons['WOW_STUDIO_FOG_ADD'])
-        col.operator("scene.wow_add_water", text='Water', icon_value=ui_icons['WOW_STUDIO_WATER_ADD'])
+        col.operator("scene.wow_add_liquid", text='Water', icon_value=ui_icons['WOW_STUDIO_WATER_ADD'])
         col.operator("scene.wow_add_scale_reference", text='Scale', icon_value=ui_icons['WOW_STUDIO_SCALE_ADD'])
 
         if hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files:
@@ -273,36 +255,6 @@ def wow_components_add_menu_item(self, context):
     self.layout.menu("WMO_MT_mesh_wow_components_add", icon_value=ui_icons['WOW_STUDIO_WOW_ADD'])
 
 
-class WMO_PT_tools_liquid_flags(bpy.types.Panel):
-    bl_label = 'Liquid Flags'
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_context = 'vertexpaint'
-    bl_category = 'WMO'
-
-    def draw(self, context):
-        layout = self.layout.split()
-
-        col = layout.column()
-
-        col.label(text="Flags")
-        col.prop(context.scene, "wow_liquid_flags", expand=True)
-
-        col.label(text="Actions")
-        col.operator("scene.wow_mliq_change_flags", text='Add flag', icon='MOD_SOFT').Action = "ADD"
-        col.operator("scene.wow_mliq_change_flags", text='Fill all', icon='OUTLINER_OB_LATTICE').Action = "ADD_ALL"
-        col.operator("scene.wow_mliq_change_flags", text='Clear flag', icon='LATTICE_DATA').Action = "CLEAR"
-        col.operator("scene.wow_mliq_change_flags", text='Clear all', icon='MOD_LATTICE').Action = "CLEAR_ALL"
-
-    @classmethod
-    def poll(cls, context):
-        return (context.scene is not None
-                and context.scene.wow_scene.type == 'WMO'
-                and context.object is not None
-                and context.object.data is not None
-                and isinstance(context.object.data, bpy.types.Mesh)
-                and context.object.wow_wmo_liquid.enabled
-                )
 
 
 def render_viewport_toggles_right(self, context):
@@ -330,19 +282,7 @@ def register():
         update=update_wow_visibility
     )
 
-    bpy.types.Scene.wow_liquid_flags = bpy.props.EnumProperty(
-        items=[
-            ('0x1', "Flag 0x01", "Switch to this flag", 'MOD_SOFT', 0),
-            ('0x2', "Flag 0x02", "Switch to this flag", 'MOD_SOFT', 1),
-            ('0x4', "Flag 0x04", "Switch to this flag", 'MOD_SOFT', 2),
-            ('0x8', "Invisible", "Switch to this flag", 'RESTRICT_VIEW_OFF', 3),
-            ('0x10', "Flag 0x10", "Switch to this flag", 'MOD_SOFT', 4),
-            ('0x20', "Flag 0x20", "Switch to this flag", 'MOD_SOFT', 5),
-            ('0x40', "Flag 0x40", "Switch to this flag", 'MOD_SOFT', 6),
-            ('0x80', "Flag 0x80", "Switch to this flag", 'MOD_SOFT', 7)],
-        default='0x1',
-        update=update_liquid_flags
-    )
+
 
     bpy.types.Scene.wow_doodad_visibility = bpy.props.EnumProperty(
         name="",

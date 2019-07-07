@@ -252,9 +252,9 @@ class WMOGroupFile:
 
         # load vertices
         vertices = []
-        for y in range(0, self.mliq.y_verts):
+        for y in range(self.mliq.y_verts):
             y_pos = self.mliq.position[1] + y * 4.1666625
-            for x in range(0 , self.mliq.x_verts):
+            for x in range(self.mliq.x_verts):
                 x_pos = self.mliq.position[0] + x * 4.1666625
                 vertices.append((x_pos, y_pos, self.mliq.vertex_map[y * self.mliq.x_verts + x].height[0]))
 
