@@ -136,7 +136,6 @@ class WMO_PT_tools_panel_object_mode_add_to_scene(bpy.types.Panel):
                                    icon_value=ui_icons['WOW_STUDIO_DOODADS_ADD'])
                 box1_row2.operator("scene.wow_import_last_wmo_from_wmv", text='WMO',
                                    icon_value=ui_icons['WOW_STUDIO_WMO_ADD'])
-            box1_row3.operator("scene.wow_import_adt_scene", text='ADT', icon_value=ui_icons['WOW_STUDIO_ADT_ADD'])
             box1_row3.operator("scene.wow_add_scale_reference", text='Scale',
                                icon_value=ui_icons['WOW_STUDIO_SCALE_ADD'])
 
@@ -244,7 +243,6 @@ class WMO_MT_mesh_wow_components_add(bpy.types.Menu):
             col.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2',
                          icon_value=ui_icons['WOW_STUDIO_DOODADS_ADD'])
             col.operator("scene.wow_import_last_wmo_from_wmv", text='WMO', icon_value=ui_icons['WOW_STUDIO_WMO_ADD'])
-            col.operator("scene.wow_import_adt_scene", text='ADT', icon_value=ui_icons['WOW_STUDIO_ADT_ADD'])
 
     @classmethod
     def poll(cls, context):
