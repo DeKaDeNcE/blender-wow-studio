@@ -1,5 +1,6 @@
 import bpy
-from .. import handlers
+from ....utils.callbacks import on_release
+from ..handlers import DepsgraphLock
 
 
 class WMO_PT_doodad(bpy.types.Panel):
@@ -29,14 +30,15 @@ class WMO_PT_doodad(bpy.types.Panel):
         )
 
 
+@on_release()
 def update_doodad_color(self, context):
-    mesh = context.object.data
+    mesh = self.self_pointer.data
 
-    handlers.DEPSGRAPH_UPDATE_LOCK = True
-    for mat in mesh.materials:
-        mat.node_tree.nodes['DoodadColor'].outputs[0].default_value = self.color
+    with DepsgraphLock():
+        for mat in mesh.materials:
+            mat.node_tree.nodes['DoodadColor'].outputs[0].default_value = self.color
 
-    handlers.DEPSGRAPH_UPDATE_LOCK = False
+
 
 class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
 
@@ -63,6 +65,8 @@ class WoWDoodadPropertyGroup(bpy.types.PropertyGroup):
                ("8", "Unknown", "")],
         options={"ENUM_FLAG"}
     )
+
+    self_pointer: bpy.props.PointerProperty(type=bpy.types.Object)
 
 
 def register():

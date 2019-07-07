@@ -165,7 +165,7 @@ class BlenderWMOScene:
 
             mat = bpy.data.materials.new(texture1.split('\\')[-1][:-4] + '.png')
             mat.wow_wmo_material.self_pointer = mat
-            
+
             self.material_lookup[index] = mat
 
             try:
@@ -362,6 +362,7 @@ class BlenderWMOScene:
                 bpy.context.collection.objects.link(nobj)
                 bpy.context.view_layer.objects.active = nobj
 
+                nobj.wow_wmo_doodad.self_pointer = nobj
                 nobj.wow_wmo_doodad.color = (pow(doodad.color[2] / 255, 2.2),
                                              pow(doodad.color[1] / 255, 2.2),
                                              pow(doodad.color[0] / 255, 2.2),

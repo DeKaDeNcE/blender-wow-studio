@@ -1,6 +1,10 @@
 import bpy
+
+from collections import namedtuple
+
 from .... import ui_icons
 from .utils import update_current_object, update_doodad_pointer, WMO_UL_root_components_template_list
+from .doodad import WMO_PT_doodad
 
 
 class WMO_OT_doodad_set_components_change(bpy.types.Operator):
@@ -73,6 +77,18 @@ class WMO_PT_doodad_set(bpy.types.Panel):
 
         op = sub_col2.operator("scene.wow_wmo_doodad_set_components_change", text='', icon='REMOVE')
         op.action = 'REMOVE'
+
+        if len(d_set.doodads):
+            doodad = d_set.doodads[d_set.cur_doodad]
+
+            ctx_override = namedtuple('ctx_override', ('layout', 'object'))
+
+            if doodad:
+                layout.label(text='Doodad settings:')
+                box = layout.box()
+                col = box.column()
+                ctx = ctx_override(col, doodad.pointer)
+                WMO_PT_doodad.draw(ctx, ctx)
 
     @classmethod
     def poll(cls, context):

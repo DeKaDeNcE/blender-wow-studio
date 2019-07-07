@@ -314,7 +314,7 @@ def render_viewport_toggles_right(self, context):
         row = layout.row(align=True)
         row.popover(  panel="WMO_PT_tools_object_mode_display"
                     , text=''
-                    , icon_value=ui_icons['WOW_STUDIO_WMO']
+                    , icon='HIDE_OFF'
                    )
 
 
