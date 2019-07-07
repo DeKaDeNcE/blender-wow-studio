@@ -240,8 +240,10 @@ class BlenderWMOSceneGroup:
             real_liquid_type = self.from_wmo_liquid_type(group.mogp.liquid_type)
 
         obj.wow_wmo_liquid.color = self.wmo_scene.material_lookup[group.mliq.material_id].wow_wmo_material.diff_color
-        obj.wow_wmo_liquid.liquid_type = str(real_liquid_type)
-        obj.wow_wmo_liquid.wmo_group = bpy.context.scene.objects[group_name]
+
+        wmo_group_obj = bpy.context.scene.objects[group_name]
+        wmo_group_obj.wow_wmo_group.liquid_type = str(real_liquid_type)
+        wmo_group_obj.wow_wmo_group.liquid_mesh = obj
 
     # Return faces indices
     def get_bsp_node_indices(self, i_node, nodes, faces, indices):

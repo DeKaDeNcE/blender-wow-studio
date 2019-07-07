@@ -1,6 +1,9 @@
 import bpy
-from ..enums import *
 
+from collections import namedtuple
+
+from ..enums import *
+from .liquid import WMO_PT_liquid
 
 class WMO_PT_wmo_group(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
@@ -25,20 +28,28 @@ class WMO_PT_wmo_group(bpy.types.Panel):
         col.prop(context.object.wow_wmo_group, "description")
 
         col.separator()
-        col.label(text="Flags:")
         col.prop(context.object.wow_wmo_group, "place_type")
         col.prop(context.object.wow_wmo_group, "flags")
 
         col.separator()
-        col.label(text="Fogs:")
-        col.prop(context.object.wow_wmo_group, "fog1")
-        col.prop(context.object.wow_wmo_group, "fog2")
-        col.prop(context.object.wow_wmo_group, "fog3")
-        col.prop(context.object.wow_wmo_group, "fog4")
+        box = col.box()
+        box.prop(context.object.wow_wmo_group, "fog1")
+        box.prop(context.object.wow_wmo_group, "fog2")
+        box.prop(context.object.wow_wmo_group, "fog3")
+        box.prop(context.object.wow_wmo_group, "fog4")
 
         col.separator()
         col.prop(context.object.wow_wmo_group, "group_dbc_id")
         col.prop(context.object.wow_wmo_group, "liquid_type")
+
+        box = col.box()
+        box.prop(context.object.wow_wmo_group, "liquid_mesh")
+
+        if context.object.wow_wmo_group.liquid_mesh:
+            ctx_override = namedtuple('ctx_override', ('layout', 'object'))
+            ctx = ctx_override(box, context.object.wow_wmo_group.liquid_mesh)
+            WMO_PT_liquid.draw(ctx, ctx)
+
         col.prop(context.object.wow_wmo_group, "collision_mesh")
 
         self.layout.enabled = context.object.wow_wmo_group.enabled
@@ -135,6 +146,15 @@ def update_flags(self, context):
     else:
         obj.pass_index &= ~0x4
 
+def is_liquid_unused(obj):
+
+    root_components = bpy.context.scene.wow_wmo_root_components
+
+    for group in root_components.groups:
+        if group.pointer and group.pointer.wow_wmo_group.liquid_mesh == obj:
+            return False
+
+    return True
 
 class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
 
@@ -208,6 +228,13 @@ class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
         description='Invisible collision geometry of this group',
         poll=lambda self, obj: obj.type == 'MESH',
         update=collision_validator
+    )
+
+    liquid_mesh: bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name='Liquid',
+        description='Liquid plane linked to this group',
+        poll=lambda self, obj: obj.type == 'MESH' and obj.wow_wmo_liquid.enabled and is_liquid_unused(obj)
     )
 
     modr:  bpy.props.CollectionProperty(type=WowWMOMODRStore)

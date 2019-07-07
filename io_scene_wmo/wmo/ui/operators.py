@@ -1157,20 +1157,24 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
 
     def invoke(self, context, event):
 
-        handlers.DEPSGRAPH_UPDATE_LOCK = True
-        #bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_mode(bpy.context.copy(), type='VERT', action='ENABLE', use_extend=True)
-        bpy.ops.mesh.select_mode(bpy.context.copy(), type='EDGE', action='ENABLE', use_extend=True)
-        bpy.ops.mesh.select_mode(bpy.context.copy(), type='FACE', action='ENABLE', use_extend=True)
+        if context.object.mode == 'EDIT':
+            handlers.DEPSGRAPH_UPDATE_LOCK = True
+            #bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_mode(bpy.context.copy(), type='VERT', action='ENABLE', use_extend=True)
+            bpy.ops.mesh.select_mode(bpy.context.copy(), type='EDGE', action='ENABLE', use_extend=True)
+            bpy.ops.mesh.select_mode(bpy.context.copy(), type='FACE', action='ENABLE', use_extend=True)
 
-        bpy.ops.wm.tool_set_by_id(bpy.context.copy(), name="builtin.select_box")         # force a benign select tool
+            bpy.ops.wm.tool_set_by_id(bpy.context.copy(), name="builtin.select_box")         # force a benign select tool
 
-        # create a bmesh to operate on
-        self.bm = bmesh.from_edit_mesh(context.object.data)
-        self.bm.verts.ensure_lookup_table()
+            # create a bmesh to operate on
+            self.bm = bmesh.from_edit_mesh(context.object.data)
+            self.bm.verts.ensure_lookup_table()
 
-        context.window_manager.modal_handler_add(self)
-        return {'RUNNING_MODAL'}
+            context.window_manager.modal_handler_add(self)
+            return {'RUNNING_MODAL'}
+
+        else:
+            return {'CANCELLED'}
 
 
 ###############################

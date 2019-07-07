@@ -1,5 +1,4 @@
 import bpy
-from ..enums import *
 
 
 class WMO_PT_liquid(bpy.types.Panel):
@@ -12,9 +11,7 @@ class WMO_PT_liquid(bpy.types.Panel):
         layout = self.layout
         layout.use_property_split = True
 
-        layout.prop(context.object.wow_wmo_liquid, "liquid_type")
         layout.prop(context.object.wow_wmo_liquid, "color")
-        layout.prop(context.object.wow_wmo_liquid, "wmo_group")
 
     @classmethod
     def poll(cls, context):
@@ -25,22 +22,6 @@ class WMO_PT_liquid(bpy.types.Panel):
                 and context.object.type == 'MESH'
                 and context.object.wow_wmo_liquid.enabled
                 )
-
-
-def liquid_validator(self, context):
-    if self.wmo_group and not self.wmo_group.wow_wmo_group.enabled:
-        self.wmo_group = None
-
-
-def liquid_poll(self, obj):
-    if not obj.wow_wmo_group.enabled and obj.name in bpy.context.scene.objects:
-        return False
-
-    for ob in bpy.context.scene.objects:
-        if ob.wow_wmo_liquid.enabled and ob.wow_wmo_liquid.wmo_group is obj:
-            return False
-
-    return True
 
 
 class WowLiquidPropertyGroup(bpy.types.PropertyGroup):
@@ -56,18 +37,6 @@ class WowLiquidPropertyGroup(bpy.types.PropertyGroup):
         max=1.0
         )
 
-    liquid_type:  bpy.props.EnumProperty(
-        items=liquid_type_enum,
-        name="Liquid Type",
-        description="Type of the liquid present in this WMO group"
-        )
-
-    wmo_group:  bpy.props.PointerProperty(
-        type=bpy.types.Object,
-        name="WMO Group",
-        poll=liquid_poll,
-        update=liquid_validator
-    )
 
 
 def register():
