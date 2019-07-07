@@ -1082,8 +1082,9 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
         elif event.type == 'MOUSEMOVE':
 
             if self.move_initiated:
+                fac = 10 if event.shift else 30
                 for vert, height in self.selected_verts.items():
-                    vert.co[2] = height + (event.mouse_x - self.init_loc) / 50
+                    vert.co[2] = height + (event.mouse_x - self.init_loc) / fac
 
                 bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
 
@@ -1155,12 +1156,14 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
     def invoke(self, context, event):
+
         handlers.DEPSGRAPH_UPDATE_LOCK = True
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_mode(type='VERT', action='ENABLE', use_extend=True)
-        bpy.ops.mesh.select_mode(type='EDGE', action='ENABLE', use_extend=True)
-        bpy.ops.mesh.select_mode(type='FACE', action='ENABLE', use_extend=True)
-        bpy.ops.wm.tool_set_by_id(name="builtin.select_box")         # force a benign select tool
+        #bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_mode(bpy.context.copy(), type='VERT', action='ENABLE', use_extend=True)
+        bpy.ops.mesh.select_mode(bpy.context.copy(), type='EDGE', action='ENABLE', use_extend=True)
+        bpy.ops.mesh.select_mode(bpy.context.copy(), type='FACE', action='ENABLE', use_extend=True)
+
+        bpy.ops.wm.tool_set_by_id(bpy.context.copy(), name="builtin.select_box")         # force a benign select tool
 
         # create a bmesh to operate on
         self.bm = bmesh.from_edit_mesh(context.object.data)

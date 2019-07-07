@@ -195,9 +195,6 @@ class WMO_PT_tools_object_mode_actions(bpy.types.Panel):
             box_col.operator("scene.wow_bake_portal_relations", text='Bake portal rels.',
                              icon_value=ui_icons['WOW_STUDIO_APPLY_RELATIONS'])
 
-            if context.object and context.object.wow_wmo_liquid.enabled:
-                box_col.operator("wow.liquid_edit_mode", text='Edit liquid')
-
     @classmethod
     def poll(cls, context):
         return context.scene is not None and context.scene.wow_scene.type == 'WMO'

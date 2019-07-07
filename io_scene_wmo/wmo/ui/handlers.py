@@ -184,9 +184,29 @@ def on_depsgraph_update(_):
                     obj = bpy.data.objects[update.id.name, update.id.library]
 
                     with DepsgraphLock():
+                        if obj.mode == 'EDIT':
+                            win = bpy.context.window
+                            scr = win.screen
+                            areas3d = [area for area in scr.areas if area.type == 'VIEW_3D']
+                            region = [region for region in areas3d[0].regions if region.type == 'WINDOW']
+                            space = [space for space in areas3d[0].regions if space.type == 'VIEW_3D']
+
+                            override = {'window': win,
+                                        'screen': scr,
+                                        'area': areas3d[0],
+                                        'region': region,
+                                        'scene': bpy.context.scene,
+                                        'workspace': bpy.context.workspace,
+                                        'space_data': space
+                                        }
+
+                            # we need a timer here to prevent operator recognizing tab event as exit
+                            bpy.app.timers.register(partial(_liquid_edit_mode_timer, override), first_interval=0.1)
+
                         # enforce object mode or sculpt mode
-                        if obj.mode not in ('OBJECT', 'SCULPT'):
+                        elif obj.mode not in ('OBJECT', 'SCULPT'):
                             bpy.ops.object.mode_set(mode='OBJECT')
+
 
                         # enforce Z plane for sculpting brushes
                         if obj.mode == 'SCULPT':
