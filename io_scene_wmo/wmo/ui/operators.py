@@ -1029,6 +1029,8 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
         self.median = Vector((0, 0, 0))
         self.color_type = 'TEXTURE'
 
+        self.selected_verts = {}
+
     def __del__(self):
         pass
 
@@ -1039,7 +1041,7 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
 
         mesh = context.object.data
 
-        if event.type == 'MIDDLEMOUSE':
+        if event.type in {'MIDDLEMOUSE', 'NUMPAD_PERIOD'}:
             return {'PASS_THROUGH'}
 
         if event.type in {'C', 'B', 'A', 'RIGHTMOUSE'} \
@@ -1049,11 +1051,16 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
 
 
         elif event.type == 'G' and not self.rotation_initiated:
+            self.report({'INFO'}, "Changing height")
             self.move_initiated = True
             self.init_loc = event.mouse_x
 
+            self.selected_verts = {vert : vert.co[2] for vert in self.bm.verts if vert.select}
+
 
         elif event.type == 'R' and not self.move_initiated:
+            self.report({'INFO'}, "Rotating vertices. Shift + Scroll - tilt | Alt + Scroll - rotate")
+            self.selected_verts = {vert: vert.co[2] for vert in self.bm.verts if vert.select}
             self.rotation_initiated = True
             self.median = get_median_point(self.bm)
             self.orientation = 0.0
@@ -1069,14 +1076,14 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
                     vert.co[2] = median[2]
 
             bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
+            self.report({'INFO'}, "Equalized vertex height")
 
 
         elif event.type == 'MOUSEMOVE':
 
             if self.move_initiated:
-                for vert in self.bm.verts:
-                    if vert.select:
-                        vert.co[2] = mesh.vertices[vert.index].co[2] + (event.mouse_x - self.init_loc) / 100
+                for vert, height in self.selected_verts.items():
+                    vert.co[2] = height + (event.mouse_x - self.init_loc) / 50
 
                 bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
 
@@ -1121,9 +1128,23 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
                 return {'PASS_THROUGH'}
 
 
-        elif event.type in {'LEFTMOUSE', 'RIGHTMOUSE'}:  # Confirm
-            self.move_initiated = False
-            self.rotation_initiated = False
+        elif event.type in {'LEFTMOUSE'}:  # Confirm
+
+            if self.move_initiated or self.rotation_initiated:
+                self.report({'INFO'}, "Applied")
+                self.move_initiated = False
+                self.rotation_initiated = False
+
+        elif event.type in {'RIGHTMOUSE'}:
+            if self.move_initiated or self.rotation_initiated:
+                self.report({'INFO'}, "Cancelled")
+                self.move_initiated = False
+                self.rotation_initiated = False
+
+            for vert, height in self.selected_verts.items():
+                vert.co[2] = height
+
+                bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
 
         elif event.type in {'ESC', 'TAB'}:  # Cancel
             bpy.ops.object.mode_set(mode='OBJECT')
@@ -1136,6 +1157,9 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
     def invoke(self, context, event):
         handlers.DEPSGRAPH_UPDATE_LOCK = True
         bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_mode(type='VERT', action='ENABLE', use_extend=True)
+        bpy.ops.mesh.select_mode(type='EDGE', action='ENABLE', use_extend=True)
+        bpy.ops.mesh.select_mode(type='FACE', action='ENABLE', use_extend=True)
         bpy.ops.wm.tool_set_by_id(name="builtin.select_box")         # force a benign select tool
 
         # create a bmesh to operate on
