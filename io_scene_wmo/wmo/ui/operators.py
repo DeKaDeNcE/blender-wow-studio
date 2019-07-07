@@ -12,6 +12,7 @@ import mathutils
 
 from mathutils import Vector
 from math import cos, sin, tan, radians
+from time import time
 
 from .enums import *
 from .panels.toolbar import switch_doodad_set, get_doodad_sets
@@ -1012,6 +1013,24 @@ def align_vertices(bm : bmesh.types.BMesh, mesh : bpy.types.Mesh, median : Vecto
 
     bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
 
+event_keymap = {
+    'ONE' : 0,
+    'TWO' : 1,
+    'THREE': 2,
+    'FOUR': 3,
+    'FIVE': 4,
+    'SIX': 5,
+    'SEVEN': 6,
+    'EIGHT': 7,
+    'NUMPAD_1': 0,
+    'NUMPAD_2': 1,
+    'NUMPAD_3': 2,
+    'NUMPAD_4': 3,
+    'NUMPAD_5': 4,
+    'NUMPAD_6': 5,
+    'NUMPAD_7': 6,
+    'NUMPAD_8': 7,
+}
 class WMO_OT_edit_liquid(bpy.types.Operator):
     bl_idname = "wow.liquid_edit_mode"
     bl_label = "Edit WoW Liquid"
@@ -1030,6 +1049,8 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
         self.color_type = 'TEXTURE'
 
         self.selected_verts = {}
+        self.viewports = []
+        self.init_time = time()
 
     def __del__(self):
         pass
@@ -1051,6 +1072,7 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
 
 
         elif event.type == 'G' and not self.rotation_initiated:
+            bpy.context.window.cursor_modal_set('MOVE_X')
             self.report({'INFO'}, "Changing height")
             self.move_initiated = True
             self.init_loc = event.mouse_x
@@ -1059,6 +1081,7 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
 
 
         elif event.type == 'R' and not self.move_initiated:
+            bpy.context.window.cursor_modal_set('SCROLL_Y')
             self.report({'INFO'}, "Rotating vertices. Shift + Scroll - tilt | Alt + Scroll - rotate")
             self.selected_verts = {vert: vert.co[2] for vert in self.bm.verts if vert.select}
             self.rotation_initiated = True
@@ -1067,7 +1090,7 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
             self.angle = 0.0
 
 
-        elif event.type == 'F' and event.shift:
+        elif event.type == 'E' and event.shift:
 
             median = get_median_point(self.bm)
 
@@ -1128,8 +1151,30 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
             else:
                 return {'PASS_THROUGH'}
 
+        # handle flag editing
+
+        elif event.type in event_keymap.keys():
+
+            flag_number = event_keymap[event.type]
+            mesh = context.object.data
+            layer = mesh.vertex_colors.get("flag_{}".format(flag_number))
+            layer.active = True
+
+        elif event.type == 'F' and (event.shift or event.ctrl):
+            layer = self.bm.loops.layers.color.active
+            color = (0, 0, 255, 255) if event.shift else (255, 255, 255, 255)
+
+            for face in self.bm.faces:
+                if face.select:
+                    for loop in face.loops:
+                        loop[layer] = color
+                        
+            bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
+            self.report({'INFO'}, "Flag set" if event.shift else "Flag unset")
+
 
         elif event.type in {'LEFTMOUSE'}:  # Confirm
+            bpy.context.window.cursor_modal_restore()
 
             if self.move_initiated or self.rotation_initiated:
                 self.report({'INFO'}, "Applied")
@@ -1137,6 +1182,8 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
                 self.rotation_initiated = False
 
         elif event.type in {'RIGHTMOUSE'}:
+            bpy.context.window.cursor_set('DEFAULT')
+
             if self.move_initiated or self.rotation_initiated:
                 self.report({'INFO'}, "Cancelled")
                 self.move_initiated = False
@@ -1147,13 +1194,17 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
 
                 bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
 
-        elif event.type in {'ESC', 'TAB'}:  # Cancel
+        elif event.type in {'ESC', 'TAB'} and (time() - self.init_time) > 0.5:  # Cancel
             bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.context.scene.display.shading.color_type = self.color_type
+
+            for viewport in self.viewports:
+                viewport.spaces[0].shading.color_type = self.color_type
+
             handlers.DEPSGRAPH_UPDATE_LOCK = False
             return {'FINISHED'}
 
         return {'RUNNING_MODAL'}
+
 
     def invoke(self, context, event):
 
@@ -1170,7 +1221,15 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
             self.bm = bmesh.from_edit_mesh(context.object.data)
             self.bm.verts.ensure_lookup_table()
 
+            self.viewports = [a for a in context.screen.areas if a.type == 'VIEW_3D']
+
             context.window_manager.modal_handler_add(self)
+
+            for viewport in self.viewports:
+                self.color_type = viewport.spaces[0].shading.color_type
+                viewport.spaces[0].shading.color_type = 'VERTEX'
+
+
             return {'RUNNING_MODAL'}
 
         else:

@@ -207,8 +207,11 @@ class BlenderWMOSceneGroup:
 
         # setting flags in a hacky way using vertex colors
         bit = 1
+        counter = 0
         while bit <= 0x80:
-            vc_layer = mesh.vertex_colors.new(name="flag_" + hex(bit))
+            vc_layer = mesh.vertex_colors.new(name="flag_" + str(counter))
+            counter += 1
+
             for poly in mesh.polygons:
                 tile_flag = group.mliq.tile_flags[poly.index]
                 for loop in poly.loop_indices:
