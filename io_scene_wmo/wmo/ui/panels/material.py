@@ -50,88 +50,75 @@ class WMO_PT_material(bpy.types.Panel):
 
 
 def update_flags(self, context):
-    if hasattr(context, 'material'):
-        if '1' in self.flags:
-            context.material.pass_index |= 0x1  # BlenderWMOMaterialRenderFlags.Unlit
-        else:
-            context.material.pass_index &= ~0x1
+    material = self.self_pointer
 
-        if '16' in self.flags:
-            context.material.pass_index |= 0x2  # BlenderWMOMaterialRenderFlags.SIDN
-        else:
-            context.material.pass_index &= ~0x2
+    if '1' in self.flags:
+        material.pass_index |= 0x1  # BlenderWMOMaterialRenderFlags.Unlit
+    else:
+        material.pass_index &= ~0x1
+
+    if '16' in self.flags:
+        material.pass_index |= 0x2  # BlenderWMOMaterialRenderFlags.SIDN
+    else:
+        material.pass_index &= ~0x2
 
 
 def update_shader(self, context):
-    if hasattr(context, 'material'):
-        if int(self.shader) in (3, 5, 6, 7, 8, 9, 11, 12, 13, 15):
-            context.material.pass_index |= 0x4  # BlenderWMOMaterialRenderFlags.IsTwoLayered
-        else:
-            context.material.pass_index &= ~0x4
+    material = self.self_pointer
+
+    if int(self.shader) in (3, 5, 6, 7, 8, 9, 11, 12, 13, 15):
+        material.pass_index |= 0x4  # BlenderWMOMaterialRenderFlags.IsTwoLayered
+    else:
+        material.pass_index &= ~0x4
 
 def update_blending_mode(self, context):
-    if hasattr(context, 'material'):
-        blend_mode = int(self.blending_mode)
-        if blend_mode in (0, 8, 9):
-            context.material.pass_index |= 0x10 # BlenderWMOMaterialRenderFlags.IsOpaque
-        else:
-            context.material.pass_index &= ~0x10
+    material = self.self_pointer
 
-        if blend_mode in (0, 8, 9):
-            context.material.blend_method = 'OPAQUE'
-        elif blend_mode == 1:
-            context.material.blend_method = 'CLIP'
-            context.material.alpha_threshold = 0.9
-        elif blend_mode in (3, 7, 10):
-            context.material.blend_method = 'ADD'
-        elif blend_mode in (4, 5):
-            context.material.blend_method = 'MULTIPLY'
-        else:
-            context.material.blend_method = 'BLEND'
+    blend_mode = int(self.blending_mode)
+    if blend_mode in (0, 8, 9):
+        material.pass_index |= 0x10 # BlenderWMOMaterialRenderFlags.IsOpaque
+    else:
+        material.pass_index &= ~0x10
+
+    if blend_mode in (0, 8, 9):
+        material.blend_method = 'OPAQUE'
+    elif blend_mode == 1:
+        material.blend_method = 'CLIP'
+        material.alpha_threshold = 0.9
+    elif blend_mode in (3, 7, 10):
+        material.blend_method = 'ADD'
+    elif blend_mode in (4, 5):
+        material.blend_method = 'MULTIPLY'
+    else:
+        material.blend_method = 'BLEND'
 
 def update_diff_texture_1(self, context):
-    if not hasattr(context, 'material') \
-            or not context.material.use_nodes \
-            or ('DiffuseTexture1' not in context.material.node_tree.nodes):
+    if not self.self_pointer.use_nodes or ('DiffuseTexture1' not in self.self_pointer.node_tree.nodes):
         return
 
     if bpy.context.scene.render.engine in ('CYCLES', 'BLENDER_EEVEE') and self.diff_texture_1:
-        context.material.node_tree.nodes['DiffuseTexture1'].image = self.diff_texture_1
+        self.self_pointer.node_tree.nodes['DiffuseTexture1'].image = self.diff_texture_1
 
 
 def update_diff_texture_2(self, context):
-    if not hasattr(context, 'material') \
-            or not context.material.use_nodes \
-            or ('DiffuseTexture2' not in context.material.node_tree.nodes):
+    if not self.self_pointer.use_nodes or ('DiffuseTexture2' not in self.self_pointer.node_tree.nodes):
         return
 
     if bpy.context.scene.render.engine in ('CYCLES', 'BLENDER_EEVEE') and self.diff_texture_2:
-        context.material.node_tree.nodes['DiffuseTexture2'].image = self.diff_texture_2
+        self.self_pointer.node_tree.nodes['DiffuseTexture2'].image = self.diff_texture_2
 
 @on_release()
 def update_emissive_color(self, context):
-    if not hasattr(context, 'material') \
-            or not context.material.use_nodes \
-            or ('EmissiveColor' not in context.material.node_tree.nodes):
+    if not self.self_pointer.use_nodes or ('EmissiveColor' not in self.self_pointer.node_tree.nodes):
         return
 
-    context.material.node_tree.nodes['EmissiveColor'].outputs[0].default_value = self.emissive_color
+    self.self_pointer.node_tree.nodes['EmissiveColor'].outputs[0].default_value = self.emissive_color
 
 
 def update_wmo_material_enabled(self, context):
-    if not hasattr(context, 'material') or not context.material:
-        return
 
     if self.enabled:
-        update_wmo_mat_node_tree(context.material)
-
-    elif context.materials.use_nodes:
-        tree = context.material.node_tree
-
-        for n in tree.nodes:
-            tree.nodes.remove(n)
-
-        context.material.use_nodes = False
+        update_wmo_mat_node_tree(self.self_pointer)
 
 
 class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
@@ -196,6 +183,10 @@ class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
         name='Texture 2',
         update=update_diff_texture_2
     )
+
+    # internal
+
+    self_pointer: bpy.props.PointerProperty(type=bpy.types.Material)
 
 
 def register():

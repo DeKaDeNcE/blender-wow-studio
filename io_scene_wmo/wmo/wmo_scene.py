@@ -164,6 +164,8 @@ class BlenderWMOScene:
             texture2 = self.wmo.motx.get_string(wmo_material.texture2_ofs)
 
             mat = bpy.data.materials.new(texture1.split('\\')[-1][:-4] + '.png')
+            mat.wow_wmo_material.self_pointer = mat
+            
             self.material_lookup[index] = mat
 
             try:
@@ -191,7 +193,6 @@ class BlenderWMOScene:
                 try:
                     tex = load_texture(textures, texture1, texture_dir)
                     mat.wow_wmo_material.diff_texture_1 = tex
-                    mat.use_textures[0] = False
                 except:
                     pass
 
@@ -200,7 +201,6 @@ class BlenderWMOScene:
                 try:
                     tex = load_texture(textures, texture2, texture_dir)
                     mat.wow_wmo_material.diff_texture_2 = tex
-                    mat.use_textures[1] = False
                 except:
                     pass
 

@@ -35,7 +35,7 @@ def update_wmo_mat_node_tree_cycles(bl_mat):
 
     diffuse_tex2 = tree_builder.add_node('ShaderNodeTexImage', 'DiffuseTexture2', 1, 2)
     if img_2:
-        diffuse_tex1.image = img_2
+        diffuse_tex2.image = img_2
 
     shader = tree_builder.add_node('ShaderNodeGroup', 'WMO Shader', 2, 1)
     shader.node_tree = ng_wmo_shader

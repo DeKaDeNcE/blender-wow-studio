@@ -543,6 +543,7 @@ def update_material_pointer(self, context):
             return
 
         self.pointer.wow_wmo_material.enabled = True
+        self.pointer.wow_wmo_material.self_pointer = self.pointer
         self.pointer_old = self.pointer
         self.name = self.pointer.name
 
