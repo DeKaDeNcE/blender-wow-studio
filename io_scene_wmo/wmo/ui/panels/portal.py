@@ -76,7 +76,7 @@ class WowPortalPlanePropertyGroup(bpy.types.PropertyGroup):
 
     algorithm:  bpy.props.EnumProperty(
         items=portal_dir_alg_enum,
-        name="Algorithm"
+        name="Algorithm",
         default="0"
         )
 
