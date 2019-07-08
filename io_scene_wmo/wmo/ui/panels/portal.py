@@ -28,7 +28,6 @@ class WMO_PT_portal(bpy.types.Panel):
         col = layout.column()
 
         col.separator()
-        col.label(text="Relation direction:")
         col.prop(context.object.wow_wmo_portal, "algorithm", expand=True)
 
         layout.enabled = context.object.wow_wmo_portal.enabled
@@ -77,6 +76,7 @@ class WowPortalPlanePropertyGroup(bpy.types.PropertyGroup):
 
     algorithm:  bpy.props.EnumProperty(
         items=portal_dir_alg_enum,
+        name="Algorithm"
         default="0"
         )
 
