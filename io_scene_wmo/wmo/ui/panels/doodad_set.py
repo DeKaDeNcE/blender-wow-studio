@@ -84,9 +84,9 @@ class WMO_PT_doodad_set(bpy.types.Panel):
             ctx_override = namedtuple('ctx_override', ('layout', 'object'))
 
             if doodad:
-                layout.label(text='Doodad settings:')
-                box = layout.box()
+                box = sub_col1.box()
                 col = box.column()
+                col.label(text='Doodad Properties', icon='PREFERENCES')
                 ctx = ctx_override(col, doodad.pointer)
                 WMO_PT_doodad.draw(ctx, ctx)
 

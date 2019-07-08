@@ -17,7 +17,7 @@ from .... import ui_icons
 ###### UI Lists ######
 ######################
 
-class WMO_UL_root_components_doodadset_list(WMO_UL_root_components_template_list):
+class WMO_UL_root_components_doodadset_list(WMO_UL_root_components_template_list, bpy.types.UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
 
@@ -36,12 +36,12 @@ class WMO_UL_root_components_doodadset_list(WMO_UL_root_components_template_list
             pass
 
 
-class WMO_UL_root_components_groups_list(WMO_UL_root_components_template_list):
+class WMO_UL_root_components_groups_list(WMO_UL_root_components_template_list, bpy.types.UIList):
 
     icon = ui_icons['WOW_STUDIO_WMO']
 
 
-class WMO_UL_root_components_fogs_list(WMO_UL_root_components_template_list):
+class WMO_UL_root_components_fogs_list(WMO_UL_root_components_template_list, bpy.types.UIList):
 
     icon = ui_icons['WOW_STUDIO_FOG']
 
@@ -68,16 +68,16 @@ class WMO_UL_root_components_fogs_list(WMO_UL_root_components_template_list):
             pass
 
 
-class WMO_UL_root_components_portal_list(WMO_UL_root_components_template_list):
+class WMO_UL_root_components_portal_list(WMO_UL_root_components_template_list, bpy.types.UIList):
 
     icon = ui_icons['WOW_STUDIO_CONVERT_PORTAL']
 
 
-class WMO_UL_root_components_materials_list(WMO_UL_root_components_template_list):
+class WMO_UL_root_components_materials_list(WMO_UL_root_components_template_list, bpy.types.UIList):
 
     icon = 'MATERIAL_DATA'
 
-class WMO_UL_root_components_lights_list(WMO_UL_root_components_template_list):
+class WMO_UL_root_components_lights_list(WMO_UL_root_components_template_list, bpy.types.UIList):
 
     icon = 'LIGHT'
 
@@ -264,15 +264,13 @@ class WMO_OT_root_components_components_change(bpy.types.Operator):
 #####################
 
 wmo_widget_items = (
-                    ("GROUPS", "", "WMO Groups", ui_icons['WOW_STUDIO_WMO'], 0),
-                    ("FOGS", "", "WMO Fogs", ui_icons['WOW_STUDIO_FOG'], 1),
-                    ("MATERIALS", "", "WMO Materials", 'MATERIAL', 2),
-                    ("PORTALS", "", "WMO Portals", ui_icons['WOW_STUDIO_CONVERT_PORTAL'], 3),
-                    ("LIGHTS", "", "WMO Lights",'LIGHT', 4),
-                    ("DOODADS", "", "WMO Doodad Sets", ui_icons['WOW_STUDIO_M2'], 5)
+                    ("GROUPS", "Groups", "WMO Groups", ui_icons['WOW_STUDIO_WMO'], 0),
+                    ("FOGS", "Fogs", "WMO Fogs", ui_icons['WOW_STUDIO_FOG'], 1),
+                    ("MATERIALS", "Materials", "WMO Materials", 'MATERIAL', 2),
+                    ("PORTALS", "Portals", "WMO Portals", ui_icons['WOW_STUDIO_CONVERT_PORTAL'], 3),
+                    ("LIGHTS", "Lights", "WMO Lights",'LIGHT', 4),
+                    ("DOODADS", "Doodads", "WMO Doodad Sets", ui_icons['WOW_STUDIO_M2'], 5)
                    )
-
-wmo_widget_labels = {item[0] : item[2] for item in wmo_widget_items}
 
 class WMO_PT_root_components(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
@@ -290,7 +288,6 @@ class WMO_PT_root_components(bpy.types.Panel):
         layout = self.layout
         row = layout.row(align=True)
         row.prop(context.scene.wow_wmo_root_components, 'cur_widget', expand=True)
-        row.label(text=wmo_widget_labels[context.scene.wow_wmo_root_components.cur_widget])
         col = layout.column()
 
         cur_widget = context.scene.wow_wmo_root_components.cur_widget
@@ -312,7 +309,7 @@ class WMO_PT_root_components(bpy.types.Panel):
 
 
 def draw_wmo_groups_panel(layout, context):
-    draw_list(context, layout, 'cur_group', 'groups')
+    layout = draw_list(context, layout, 'cur_group', 'groups')
 
     root_comps = context.scene.wow_wmo_root_components
     groups = root_comps.groups
@@ -323,18 +320,17 @@ def draw_wmo_groups_panel(layout, context):
     if len(groups) > cur_group:
         obj = groups[cur_group].pointer
         if obj:
-            spoiler = draw_spoiler(layout, root_comps, 'is_group_props_expanded',
-                                   'Properties', icon='PREFERENCES')
-            if spoiler:
-                ctx = ctx_override(obj, context.scene, spoiler)
-                WMO_PT_wmo_group.draw(ctx, ctx)
-                spoiler.enabled = True
+            box = layout.box()
+            box.label(text='Properties', icon='PREFERENCES')
+
+            ctx = ctx_override(obj, context.scene, box)
+            WMO_PT_wmo_group.draw(ctx, ctx)
 
     layout.prop(root_comps, 'is_update_critical')  # temporary
 
 
 def draw_wmo_fogs_panel(layout, context):
-    draw_list(context, layout, 'cur_fog', 'fogs')
+    layout = draw_list(context, layout, 'cur_fog', 'fogs')
 
     root_comps = context.scene.wow_wmo_root_components
     fogs = root_comps.fogs
@@ -345,16 +341,15 @@ def draw_wmo_fogs_panel(layout, context):
     if len(fogs) > cur_fog:
         obj = fogs[cur_fog].pointer
         if obj:
-            spoiler = draw_spoiler(layout, root_comps, 'is_fog_props_expanded',
-                                   'Properties', icon='PREFERENCES')
-            if spoiler:
-                ctx = ctx_override(obj, context.scene, spoiler)
-                WMO_PT_fog.draw(ctx, ctx)
-                spoiler.enabled = True
+            box = layout.box()
+            box.label(text='Properties', icon='PREFERENCES')
+
+            ctx = ctx_override(obj, context.scene, box)
+            WMO_PT_fog.draw(ctx, ctx)
 
 
 def draw_wmo_portals_panel(layout, context):
-    draw_list(context, layout, 'cur_portal', 'portals')
+    layout = draw_list(context, layout, 'cur_portal', 'portals')
 
     root_comps = context.scene.wow_wmo_root_components
     portals = root_comps.portals
@@ -365,16 +360,15 @@ def draw_wmo_portals_panel(layout, context):
     if len(portals) > cur_portal:
         obj = portals[cur_portal].pointer
         if obj:
-            spoiler = draw_spoiler(layout, root_comps, 'is_portal_props_expanded',
-                                   'Properties', icon='PREFERENCES')
-            if spoiler:
-                ctx = ctx_override(obj, context.scene, spoiler)
-                WMO_PT_portal.draw(ctx, ctx)
-                spoiler.enabled = True
+            box = layout.box()
+            box.label(text='Properties', icon='PREFERENCES')
+
+            ctx = ctx_override(obj, context.scene, box)
+            WMO_PT_portal.draw(ctx, ctx)
 
 
 def draw_wmo_lights_panel(layout, context):
-    draw_list(context, layout, 'cur_light', 'lights')
+    layout = draw_list(context, layout, 'cur_light', 'lights')
 
     root_comps = context.scene.wow_wmo_root_components
     portals = root_comps.lights
@@ -385,17 +379,16 @@ def draw_wmo_lights_panel(layout, context):
     if len(portals) > cur_portal:
         obj = portals[cur_portal].pointer
         if obj:
-            spoiler = draw_spoiler(layout, root_comps, 'is_light_props_expanded',
-                                   'Properties', icon='PREFERENCES')
-            if spoiler:
-                ctx = ctx_override(obj, context.scene, spoiler)
-                WMO_PT_light.draw(ctx, ctx)
-                spoiler.enabled = True
+            box = layout.box()
+            box.label(text='Properties', icon='PREFERENCES')
+
+            ctx = ctx_override(obj, context.scene, box)
+            WMO_PT_light.draw(ctx, ctx)
 
 
 
 def draw_wmo_materials_panel(layout, context):
-    draw_list(context, layout, 'cur_material', 'materials')
+    layout = draw_list(context, layout, 'cur_material', 'materials')
 
     root_comps = context.scene.wow_wmo_root_components
     materials = root_comps.materials
@@ -406,16 +399,15 @@ def draw_wmo_materials_panel(layout, context):
     if len(materials) > cur_material:
         mat = materials[cur_material].pointer
         if mat:
-            spoiler = draw_spoiler(layout, root_comps, 'is_material_props_expanded',
-                                   'Properties', icon='PREFERENCES')
-            if spoiler:
-                ctx = ctx_override(mat, context.scene, spoiler)
-                WMO_PT_material.draw(ctx, ctx)
-                spoiler.enabled = True
+            box = layout.box()
+            box.label(text='Properties', icon='PREFERENCES')
+
+            ctx = ctx_override(mat, context.scene, box)
+            WMO_PT_material.draw(ctx, ctx)
 
 
 def draw_wmo_doodad_sets_panel(layout, context):
-    draw_list(context, layout, 'cur_doodad_set', 'doodad_sets')
+    layout = draw_list(context, layout, 'cur_doodad_set', 'doodad_sets')
 
     root_comps = context.scene.wow_wmo_root_components
     doodad_sets = root_comps.doodad_sets
@@ -423,15 +415,13 @@ def draw_wmo_doodad_sets_panel(layout, context):
 
     if len(doodad_sets) > cur_set:
         doodad_set = doodad_sets[cur_set]
-        spoiler = draw_spoiler(layout, root_comps, 'is_doodad_set_props_expanded', 'Doodads', icon='PREFERENCES')
+        ctx_override = namedtuple('ctx_override', ('object', 'scene', 'layout'))
 
-        if spoiler:
-            spoiler.enabled = True
+        box = layout.box()
+        box.label(text='Properties', icon='PREFERENCES')
 
-            ctx_override = namedtuple('ctx_override', ('object', 'scene', 'layout'))
-
-            ctx = ctx_override(doodad_set.pointer, context.scene, spoiler)
-            WMO_PT_doodad_set.draw(ctx, ctx)
+        ctx = ctx_override(doodad_set.pointer, context.scene, box)
+        WMO_PT_doodad_set.draw(ctx, ctx)
 
 
 def draw_list(context, col, cur_idx_name, col_name):
@@ -454,6 +444,8 @@ def draw_list(context, col, cur_idx_name, col_name):
 
     op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='REMOVE')
     op.action, op.col_name, op.cur_idx_name = 'REMOVE', col_name, cur_idx_name
+
+    return sub_col1
 
 
 ###########################
@@ -663,13 +655,8 @@ class WoWWMO_RootComponents(bpy.types.PropertyGroup):
 def register():
     bpy.types.Scene.wow_wmo_root_components = bpy.props.PointerProperty(type=WoWWMO_RootComponents)
 
-    for cls in _ui_lists_classes:
-        bpy.utils.register_class(cls)
-
 
 def unregister():
     del bpy.types.Scene.wow_wmo_root_components
 
-    for cls in _ui_lists_classes:
-        bpy.utils.unregister_class(cls)
 

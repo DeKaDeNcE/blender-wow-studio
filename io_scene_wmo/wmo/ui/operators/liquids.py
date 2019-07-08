@@ -2,10 +2,12 @@ import bpy
 import bmesh
 
 from math import cos, sin, tan, radians
+from time import time
 
 from mathutils import Vector
 
 from ..handlers import DepsgraphLock
+from .. import handlers
 
 
 def angled_vertex(origin: Vector, pos: Vector, angle: float, orientation: float) -> float:
