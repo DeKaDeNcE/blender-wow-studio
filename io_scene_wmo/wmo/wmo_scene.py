@@ -1,13 +1,10 @@
 import hashlib
-import os
-import traceback
-
 import bpy
 
 from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies
 from .utils.fogs import create_fog_object
 from .utils.materials import load_texture, add_ghost_material
-from .utils.doodads import import_doodad_model
+from .utils.doodads import import_doodad
 from .wmo_scene_group import BlenderWMOSceneGroup
 from ..ui import get_addon_prefs
 from ..utils.misc import find_nearest_object, ProgressReport
@@ -349,7 +346,7 @@ class BlenderWMOScene:
                 proto_obj = doodad_prototypes.get(path_hash)
 
                 if not proto_obj:
-                    nobj = import_doodad_model(cache_path, doodad_path)
+                    nobj = import_doodad(doodad_path, cache_path)
                     doodad_prototypes[path_hash] = nobj
                 else:
                     nobj = proto_obj.copy()

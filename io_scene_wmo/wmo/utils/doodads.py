@@ -296,17 +296,14 @@ def import_doodad_model(asset_dir : str, filepath : str) -> bpy.types.Object:
 
 def import_doodad(m2_path : str, cache_path : str) -> bpy.types.Object:
 
-    doodad_path_noext = os.path.splitext(m2_path)[0]
-    doodad_path = doodad_path_noext + ".m2"
-    doodad_basename = os.path.basename(doodad_path_noext)
-
     try:
-        obj = import_doodad_model(cache_path, doodad_path)
+        obj = import_doodad_model(cache_path, m2_path)
     except:
         obj = import_doodad_model(cache_path, 'Spells\\Errorcube.m2')
-        obj.name = doodad_basename
         traceback.print_exc()
-        print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(doodad_path))
+        print("\nFailed to import model: <<{}>>. Placeholder is imported instead.".format(m2_path))
+
+    obj.name = os.path.splitext(m2_path.split('\\')[-1])[0]
 
     return obj
 
