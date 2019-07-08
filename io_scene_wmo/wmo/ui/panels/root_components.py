@@ -73,7 +73,7 @@ class WMO_UL_root_components_portal_list(WMO_UL_root_components_template_list, b
 
 class WMO_UL_root_components_materials_list(WMO_UL_root_components_template_list, bpy.types.UIList):
 
-    icon = 'MATERIAL_DATA'
+    icon = 'MATERIAL_DYNAMIC'
 
 class WMO_UL_root_components_lights_list(WMO_UL_root_components_template_list, bpy.types.UIList):
 
@@ -263,6 +263,7 @@ wmo_widget_items = (
 
 wmo_widget_labels = {item[0] : item[2] for item in wmo_widget_items}
 
+
 class WMO_PT_root_components(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -381,6 +382,12 @@ def draw_wmo_lights_panel(layout, context):
 
 def draw_wmo_materials_panel(layout, context):
     layout = draw_list(context, layout, 'cur_material', 'materials')
+
+    if bpy.context.view_layer.objects.active and bpy.context.view_layer.objects.active.mode == 'EDIT':
+        row = layout.row(align=True)
+        row.operator("object.material_slot_assign", text="Assign")
+        row.operator("object.material_slot_select", text="Select")
+        row.operator("object.material_slot_deselect", text="Deselect")
 
     root_comps = context.scene.wow_wmo_root_components
     materials = root_comps.materials
@@ -603,6 +610,15 @@ def update_current_doodad_set(self, context):
                 child.hide_viewport = True
 
 
+def update_current_material(self, context):
+
+    mat = self.materials[self.cur_material].pointer
+    obj = bpy.context.view_layer.objects.active
+
+    if mat and obj and obj.type == 'MESH' and mat.name in obj.data.materials:
+        obj.active_material_index = obj.data.materials.find(mat.name)
+
+
 class DoodadProtoPointerPropertyGroup(bpy.types.PropertyGroup):
 
     pointer:  bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
@@ -621,27 +637,21 @@ class WoWWMO_RootComponents(bpy.types.PropertyGroup):
 
     groups:  bpy.props.CollectionProperty(type=GroupPointerPropertyGroup)
     cur_group:  bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'groups', 'cur_group'))
-    is_group_props_expanded:  bpy.props.BoolProperty()
 
     fogs:  bpy.props.CollectionProperty(type=FogPointerPropertyGroup)
     cur_fog:  bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'fogs', 'cur_fog'))
-    is_fog_props_expanded:  bpy.props.BoolProperty()
 
     portals:  bpy.props.CollectionProperty(type=PortalPointerPropertyGroup)
     cur_portal:  bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'portals', 'cur_portal'))
-    is_portal_props_expanded:  bpy.props.BoolProperty()
 
     lights:  bpy.props.CollectionProperty(type=LightPointerPropertyGroup)
     cur_light:  bpy.props.IntProperty(update=lambda self, ctx: update_current_object(self, ctx, 'lights', 'cur_light'))
-    is_light_props_expanded:  bpy.props.BoolProperty()
 
     doodad_sets:  bpy.props.CollectionProperty(type=WoWWMODoodadSetProperptyGroup)
     cur_doodad_set:  bpy.props.IntProperty(update=update_current_doodad_set)
-    is_doodad_set_props_expanded:  bpy.props.BoolProperty()
 
     materials:  bpy.props.CollectionProperty(type=MaterialPointerPropertyGroup)
-    cur_material:  bpy.props.IntProperty()
-    is_material_props_expanded:  bpy.props.BoolProperty()
+    cur_material:  bpy.props.IntProperty(update=update_current_material)
 
 
 def register():

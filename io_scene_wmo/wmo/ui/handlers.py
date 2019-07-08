@@ -222,6 +222,38 @@ def on_depsgraph_update(_):
                             obj.modifiers.clear()
 
             elif isinstance(update.id, bpy.types.Scene):
+
+                # sync collection active items
+                act_obj = bpy.context.view_layer.objects.active
+
+                root_comps = bpy.context.scene.wow_wmo_root_components
+                if act_obj:
+                    if act_obj.wow_wmo_group.enabled:
+                        slot_idx = root_comps.groups.find(act_obj.name)
+                        root_comps.cur_group = slot_idx
+
+                    elif act_obj.wow_wmo_fog.enabled:
+                        slot_idx = root_comps.fogs.find(act_obj.name)
+                        root_comps.cur_fog = slot_idx
+
+                    elif act_obj.wow_wmo_light.enabled:
+                        slot_idx = root_comps.lights.find(act_obj.name)
+                        root_comps.cur_light = slot_idx
+
+                    elif act_obj.wow_wmo_portal.enabled:
+                        slot_idx = root_comps.portals.find(act_obj.name)
+                        root_comps.cur_portal = slot_idx
+
+                    elif act_obj.wow_wmo_doodad.enabled:
+                        d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
+
+                        if d_set.pointer:
+                            slot_idx = d_set.doodads.find(act_obj.name)
+
+                            if slot_idx >= 0:
+                                d_set.cur_doodad = slot_idx
+
+                # fill collections
                 n_objs = len(bpy.context.scene.objects)
 
                 if n_objs == bpy.wbs_n_scene_objects:
@@ -240,6 +272,7 @@ def on_depsgraph_update(_):
                 else:
                     bpy.wbs_n_scene_objects = n_objs
                     _add_col_items(bpy.context.scene)
+
 
         finally:
             DEPSGRAPH_UPDATE_LOCK = False

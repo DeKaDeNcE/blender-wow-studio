@@ -16,6 +16,9 @@ def update_current_object(self, context, col_name, cur_item_name):
 
     slot = col[cur_idx]
 
+    if bpy.context.view_layer.objects.active == slot.pointer:
+        return
+
     bpy.ops.object.select_all(action='DESELECT')
 
     if slot.pointer and not slot.pointer.hide_viewport:
@@ -30,6 +33,11 @@ class WMO_UL_root_components_template_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
 
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
+
+            # handle material icons
+            if self.icon == 'MATERIAL_DYNAMIC':
+                texture = item.pointer.wow_wmo_material.diff_texture_1
+                self.icon = layout.icon(texture) if texture else 'MATERIAL'
 
             row = layout.row()
             col = row.column()
