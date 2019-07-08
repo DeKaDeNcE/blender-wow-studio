@@ -44,12 +44,12 @@ class WMO_UL_doodad_set_doodad_list(WMO_UL_root_components_template_list):
 
             row = layout.row(align=True)
             sub_col = row.column()
-            sub_col.scale_x = 0.5
+            sub_col.scale_x = 0.3
 
-            s_row = sub_col.row(align=True)
+            sub_col.label(text="#{}".format(index), icon='WORLD' if item.pointer.name == '$SetDefaultGlobal' else 'GROUP')
 
-            s_row.label(text="#{}".format(index), icon='WORLD' if item.pointer.name == '$SetDefaultGlobal' else 'GROUP')
-            s_row.prop(item.pointer, 'name', emboss=False)
+            sub_col = row.column()
+            sub_col.prop(item.pointer, 'name', emboss=False, text='')
 
         elif self.layout_type in {'GRID'}:
             pass

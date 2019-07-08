@@ -23,14 +23,14 @@ class WMO_UL_root_components_doodadset_list(WMO_UL_root_components_template_list
 
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
 
-            row = layout.row(align=True)
+            row = layout.row()
             sub_col = row.column()
-            sub_col.scale_x = 0.5
+            sub_col.scale_x = 0.3
 
-            s_row = sub_col.row(align=True)
+            sub_col.label(text="#{}".format(index), icon='WORLD' if item.pointer.name == '$SetDefaultGlobal' else 'GROUP')
 
-            s_row.label(text="#{}".format(index), icon='WORLD' if item.pointer.name == '$SetDefaultGlobal' else 'GROUP')
-            s_row.prop(item.pointer, 'name', emboss=False)
+            sub_col = row.column()
+            sub_col.prop(item.pointer, 'name', emboss=False, text='')
 
         elif self.layout_type in {'GRID'}:
             pass
@@ -49,20 +49,18 @@ class WMO_UL_root_components_fogs_list(WMO_UL_root_components_template_list, bpy
 
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
 
-            row = layout.row(align=True)
+            row = layout.row()
             sub_col = row.column()
-            sub_col.scale_x = 0.5
-
-            s_row = sub_col.row(align=True)
+            sub_col.scale_x = 0.3
 
             if isinstance(self.icon, int):
-                s_row.label(text="#{} ".format(index), icon_value=self.icon)
+                sub_col.label(text="#{} ".format(index), icon_value=self.icon)
 
             elif isinstance(self.icon, str):
-                s_row.label(text="#{} ".format(index), icon=self.icon)
+                sub_col.label(text="#{} ".format(index), icon=self.icon)
 
-            if item.pointer:
-                s_row.label(text=item.pointer.name)
+            sub_col = row.column()
+            sub_col.prop(item.pointer, 'name', emboss=False, text='')
 
         elif self.layout_type in {'GRID'}:
             pass
@@ -90,15 +88,6 @@ _ui_lists = {
     'lights': 'WMO_UL_root_components_lights_list',
     'doodad_sets': 'WMO_UL_root_components_doodadset_list'
 }
-
-_ui_lists_classes = (
-    WMO_UL_root_components_groups_list,
-    WMO_UL_root_components_fogs_list,
-    WMO_UL_root_components_portal_list,
-    WMO_UL_root_components_materials_list,
-    WMO_UL_root_components_lights_list,
-    WMO_UL_root_components_doodadset_list
-)
 
 _obj_props = ['wow_wmo_portal',
               'wow_wmo_fog',
@@ -264,13 +253,15 @@ class WMO_OT_root_components_components_change(bpy.types.Operator):
 #####################
 
 wmo_widget_items = (
-                    ("GROUPS", "Groups", "WMO Groups", ui_icons['WOW_STUDIO_WMO'], 0),
-                    ("FOGS", "Fogs", "WMO Fogs", ui_icons['WOW_STUDIO_FOG'], 1),
-                    ("MATERIALS", "Materials", "WMO Materials", 'MATERIAL', 2),
-                    ("PORTALS", "Portals", "WMO Portals", ui_icons['WOW_STUDIO_CONVERT_PORTAL'], 3),
-                    ("LIGHTS", "Lights", "WMO Lights",'LIGHT', 4),
-                    ("DOODADS", "Doodads", "WMO Doodad Sets", ui_icons['WOW_STUDIO_M2'], 5)
+                    ("GROUPS", "", "WMO Groups", ui_icons['WOW_STUDIO_WMO'], 0),
+                    ("FOGS", "", "WMO Fogs", ui_icons['WOW_STUDIO_FOG'], 1),
+                    ("MATERIALS", "", "WMO Materials", 'MATERIAL', 2),
+                    ("PORTALS", "", "WMO Portals", ui_icons['WOW_STUDIO_CONVERT_PORTAL'], 3),
+                    ("LIGHTS", "", "WMO Lights",'LIGHT', 4),
+                    ("DOODADS", "", "WMO Doodad Sets", ui_icons['WOW_STUDIO_M2'], 5)
                    )
+
+wmo_widget_labels = {item[0] : item[2] for item in wmo_widget_items}
 
 class WMO_PT_root_components(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
@@ -288,6 +279,7 @@ class WMO_PT_root_components(bpy.types.Panel):
         layout = self.layout
         row = layout.row(align=True)
         row.prop(context.scene.wow_wmo_root_components, 'cur_widget', expand=True)
+        row.label(text=wmo_widget_labels[context.scene.wow_wmo_root_components.cur_widget])
         col = layout.column()
 
         cur_widget = context.scene.wow_wmo_root_components.cur_widget
@@ -418,7 +410,7 @@ def draw_wmo_doodad_sets_panel(layout, context):
         ctx_override = namedtuple('ctx_override', ('object', 'scene', 'layout'))
 
         box = layout.box()
-        box.label(text='Properties', icon='PREFERENCES')
+        box.label(text='Doodads', icon_value=ui_icons['WOW_STUDIO_M2'])
 
         ctx = ctx_override(doodad_set.pointer, context.scene, box)
         WMO_PT_doodad_set.draw(ctx, ctx)

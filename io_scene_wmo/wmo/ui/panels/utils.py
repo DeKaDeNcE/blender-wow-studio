@@ -31,18 +31,18 @@ class WMO_UL_root_components_template_list(bpy.types.UIList):
 
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
 
-            row = layout.row(align=True)
-            sub_col = row.column()
-            sub_col.scale_x = 0.5
-
-            s_row = sub_col.row(align=True)
+            row = layout.row()
+            col = row.column()
+            col.scale_x = 0.5
 
             if isinstance(self.icon, int):
-                s_row.label(text="#{} ".format(index), icon_value=self.icon)
+                col.label(text="#{} ".format(index), icon_value=self.icon)
 
             elif isinstance(self.icon, str):
-                s_row.label(text="#{} ".format(index), icon=self.icon)
+                col.label(text="#{} ".format(index), icon=self.icon)
 
+            col = row.column()
+            s_row = col.row(align=True)
             s_row.prop(item, 'pointer', emboss=True, text='')
 
             if not active_data.is_update_critical and active_propname == 'cur_group':
