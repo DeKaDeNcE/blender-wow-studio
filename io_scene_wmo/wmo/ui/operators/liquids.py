@@ -67,6 +67,7 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
 
         self.median = Vector((0, 0, 0))
         self.color_type = 'TEXTURE'
+        self.shading_type = 'SOLID'
 
         self.selected_verts = {}
         self.viewports = []
@@ -218,6 +219,7 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
             bpy.ops.object.mode_set(mode='OBJECT')
 
             for viewport in self.viewports:
+                viewport.spaces[0].shading.type = self.shading_type
                 viewport.spaces[0].shading.color_type = self.color_type
 
             handlers.DEPSGRAPH_UPDATE_LOCK = False
@@ -247,8 +249,9 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
 
             for viewport in self.viewports:
                 self.color_type = viewport.spaces[0].shading.color_type
+                self.shading_type = viewport.spaces[0].shading.type
+                viewport.spaces[0].shading.type = 'SOLID'
                 viewport.spaces[0].shading.color_type = 'VERTEX'
-
 
             return {'RUNNING_MODAL'}
 

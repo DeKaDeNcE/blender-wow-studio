@@ -35,7 +35,7 @@ class WMO_OT_doodad_set_components_change(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WMO_UL_doodad_set_doodad_list(WMO_UL_root_components_template_list):
+class WMO_UL_doodad_set_doodad_list(WMO_UL_root_components_template_list, bpy.types.UIList):
     icon = ui_icons['WOW_STUDIO_M2']
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
@@ -122,10 +122,8 @@ class WoWWMODoodadSetProperptyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.utils.register_class(WMO_UL_doodad_set_doodad_list)
     bpy.types.Object.wow_wmo_doodad_set = bpy.props.PointerProperty(type=WoWWMODoodadSetProperptyGroup)
 
 
 def unregister():
-    bpy.utils.unregister_class(WMO_UL_doodad_set_doodad_list)
     del bpy.types.Object.wow_wmo_doodad_set
