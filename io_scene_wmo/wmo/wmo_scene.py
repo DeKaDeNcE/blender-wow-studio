@@ -35,7 +35,7 @@ class BlenderWMOScene:
     def build_references(self, export_selected, export_method):
         """ Build WMO references in Blender scene """
 
-        root_comps = bpy.context.scene.wow_wmo_root_components
+        root_comps = bpy.context.scene.wow_wmo_root_elements
 
         # process groups
         for i, slot in enumerate(root_comps.groups):
@@ -233,7 +233,7 @@ class BlenderWMOScene:
 
             mat.pass_index = pass_index
 
-            slot = bpy.context.scene.wow_wmo_root_components.materials.add()
+            slot = bpy.context.scene.wow_wmo_root_elements.materials.add()
             slot.pointer = mat
 
     def load_lights(self):
@@ -326,7 +326,7 @@ class BlenderWMOScene:
             anchor.empty_display_type = 'SPHERE'
 
             anchor.wow_wmo_doodad_set.enabled = True
-            slot = scene.wow_wmo_root_components.doodad_sets.add()
+            slot = scene.wow_wmo_root_elements.doodad_sets.add()
             slot.pointer = anchor
 
             bpy.context.collection.objects.link(anchor)
@@ -385,7 +385,7 @@ class BlenderWMOScene:
                                             doodad.rotation[1],
                                             doodad.rotation[2])
                 nobj.hide_viewport = True
-                slot = scene.wow_wmo_root_components.doodad_sets[-1].doodads.add()
+                slot = scene.wow_wmo_root_elements.doodad_sets[-1].doodads.add()
                 slot.pointer = nobj
 
                 progress.progress_step()

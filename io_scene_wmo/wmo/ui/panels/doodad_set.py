@@ -3,7 +3,7 @@ import bpy
 from collections import namedtuple
 
 from .... import ui_icons
-from .utils import update_current_object, update_doodad_pointer, WMO_UL_root_components_template_list
+from .utils import update_current_object, update_doodad_pointer, WMO_UL_root_elements_template_list
 from .doodad import WMO_PT_doodad
 
 
@@ -17,7 +17,7 @@ class WMO_OT_doodad_set_components_change(bpy.types.Operator):
 
     def execute(self, context):
 
-        root_comps = context.scene.wow_wmo_root_components
+        root_comps = context.scene.wow_wmo_root_elements
 
         if self.action == 'ADD':
             bpy.ops.scene.wow_wmo_import_doodad_from_wmv()
@@ -35,7 +35,7 @@ class WMO_OT_doodad_set_components_change(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WMO_UL_doodad_set_doodad_list(WMO_UL_root_components_template_list, bpy.types.UIList):
+class WMO_UL_doodad_set_doodad_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
     icon = ui_icons['WOW_STUDIO_M2']
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
@@ -64,7 +64,7 @@ class WMO_PT_doodad_set(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        root_comps = context.scene.wow_wmo_root_components
+        root_comps = context.scene.wow_wmo_root_elements
         d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
         row = layout.row()
         sub_col1 = row.column()

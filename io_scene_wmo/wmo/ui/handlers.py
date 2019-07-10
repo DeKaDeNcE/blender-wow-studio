@@ -25,7 +25,7 @@ _obj_props = (
 
 
 def _remove_col_items(scene, col_name):
-    col = getattr(scene.wow_wmo_root_components, col_name)
+    col = getattr(scene.wow_wmo_root_elements, col_name)
     for i, obj in enumerate(col):
         if obj.pointer and obj.pointer.name not in scene.objects:
             col.remove(i)
@@ -37,7 +37,7 @@ def _remove_col_items(scene, col_name):
 
 
 def _remove_col_items_doodads(scene):
-    col = scene.wow_wmo_root_components.doodad_sets
+    col = scene.wow_wmo_root_elements.doodad_sets
 
     # prevent infinite recursion
     if not len(col):
@@ -64,7 +64,7 @@ def _add_col_items(scene):
                 if prop_group.enabled:
 
                     # identify if doodad is not in any doodad set
-                    for d_set in scene.wow_wmo_root_components.doodad_sets:
+                    for d_set in scene.wow_wmo_root_elements.doodad_sets:
                         index = d_set.doodads.find(obj.name)
 
                         if index >= 0:
@@ -75,9 +75,9 @@ def _add_col_items(scene):
 
                     else:
                         # attempt adding to active doodad set
-                        if len(scene.wow_wmo_root_components.doodad_sets):
-                            cur_set_index = scene.wow_wmo_root_components.cur_doodad_set
-                            act_set = scene.wow_wmo_root_components.doodad_sets[cur_set_index]
+                        if len(scene.wow_wmo_root_elements.doodad_sets):
+                            cur_set_index = scene.wow_wmo_root_elements.cur_doodad_set
+                            act_set = scene.wow_wmo_root_elements.doodad_sets[cur_set_index]
                             slot = act_set.doodads.add()
                             slot.pointer = obj
 
@@ -89,7 +89,7 @@ def _add_col_items(scene):
 
             elif prop_group.enabled:
 
-                col = getattr(scene.wow_wmo_root_components, col_name)
+                col = getattr(scene.wow_wmo_root_elements, col_name)
 
                 if col.find(obj.name) < 0:
                     prop_group.enabled = False
@@ -237,7 +237,7 @@ def on_depsgraph_update(_):
                 # sync collection active items
                 act_obj = bpy.context.view_layer.objects.active
 
-                root_comps = bpy.context.scene.wow_wmo_root_components
+                root_comps = bpy.context.scene.wow_wmo_root_elements
                 if act_obj:
                     if act_obj.wow_wmo_group.enabled:
                         slot_idx = root_comps.groups.find(act_obj.name)

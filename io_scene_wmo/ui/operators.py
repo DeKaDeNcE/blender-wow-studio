@@ -164,7 +164,7 @@ class WBS_OT_wmo_export(bpy.types.Operator, ExportHelper):
     def execute(self, context):
         if context.scene and context.scene.wow_scene.type == 'WMO':
 
-            if self.export_method == 'PARTIAL' and context.scene.wow_wmo_root_components.is_update_critical:
+            if self.export_method == 'PARTIAL' and context.scene.wow_wmo_root_elements.is_update_critical:
                 self.report({'ERROR'}, 'Partial export is not available. The changes are critical.')
                 return {'CANCELLED'}
 

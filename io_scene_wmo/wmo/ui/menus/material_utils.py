@@ -47,7 +47,7 @@ class WMO_OT_assign_material(bpy.types.Operator):
                 load_wmo_shader_dependencies()
                 update_wmo_mat_node_tree(mat)
 
-                slot = context.scene.wow_wmo_root_components.materials.add()
+                slot = context.scene.wow_wmo_root_elements.materials.add()
                 slot.pointer = mat
                 mat.wow_wmo_material.enabled = True
 
@@ -117,7 +117,7 @@ class WMO_OT_import_texture_from_filepath(bpy.types.Operator):
         load_wmo_shader_dependencies()
         update_wmo_mat_node_tree(mat)
 
-        slot = context.scene.wow_wmo_root_components.materials.add()
+        slot = context.scene.wow_wmo_root_elements.materials.add()
         slot.pointer = mat
         mat.wow_wmo_material.enabled = True
 
@@ -165,7 +165,7 @@ class WMO_OT_import_texture_from_wmv(bpy.types.Operator):
         load_wmo_shader_dependencies()
         update_wmo_mat_node_tree(mat)
 
-        slot = context.scene.wow_wmo_root_components.materials.add()
+        slot = context.scene.wow_wmo_root_elements.materials.add()
         slot.pointer = mat
         mat.wow_wmo_material.enabled = True
 
@@ -271,7 +271,7 @@ def set_image(self, value):
 
 def get_more_materials_list(self, context):
     scene = bpy.context.scene
-    materials = list([mat for mat in scene.wow_wmo_root_components.materials
+    materials = list([mat for mat in scene.wow_wmo_root_elements.materials
                       if mat.pointer
                       and mat.pointer.wow_wmo_material.diff_texture_1 == scene.wow_last_selected_images[-1].pointer])
 
@@ -296,7 +296,7 @@ class VIEW3D_MT_select_material(Menu):
         op = pie.operator("mesh.wow_assign_material", text='New material', icon='ADD')
         op.action = 'NEW'
 
-        materials = list([mat for mat in scene.wow_wmo_root_components.materials
+        materials = list([mat for mat in scene.wow_wmo_root_elements.materials
                           if mat.pointer
                           and mat.pointer.wow_wmo_material.diff_texture_1 == scene.wow_last_selected_images[-1].pointer])
 

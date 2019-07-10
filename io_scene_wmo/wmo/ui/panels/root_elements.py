@@ -9,7 +9,7 @@ from .group import WMO_PT_wmo_group
 from .light import WMO_PT_light
 from .material import WMO_PT_material, update_flags, update_shader
 from .portal import WMO_PT_portal
-from .utils import WMO_UL_root_components_template_list, update_current_object, update_doodad_pointer
+from .utils import WMO_UL_root_elements_template_list, update_current_object, update_doodad_pointer
 from .... import ui_icons
 
 
@@ -17,7 +17,7 @@ from .... import ui_icons
 ###### UI Lists ######
 ######################
 
-class WMO_UL_root_components_doodadset_list(WMO_UL_root_components_template_list, bpy.types.UIList):
+class WMO_UL_root_elements_doodadset_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
 
@@ -36,12 +36,12 @@ class WMO_UL_root_components_doodadset_list(WMO_UL_root_components_template_list
             pass
 
 
-class WMO_UL_root_components_groups_list(WMO_UL_root_components_template_list, bpy.types.UIList):
+class WMO_UL_root_elements_groups_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
 
     icon = ui_icons['WOW_STUDIO_WMO']
 
 
-class WMO_UL_root_components_fogs_list(WMO_UL_root_components_template_list, bpy.types.UIList):
+class WMO_UL_root_elements_fogs_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
 
     icon = ui_icons['WOW_STUDIO_FOG']
 
@@ -66,27 +66,27 @@ class WMO_UL_root_components_fogs_list(WMO_UL_root_components_template_list, bpy
             pass
 
 
-class WMO_UL_root_components_portal_list(WMO_UL_root_components_template_list, bpy.types.UIList):
+class WMO_UL_root_elements_portal_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
 
     icon = ui_icons['WOW_STUDIO_CONVERT_PORTAL']
 
 
-class WMO_UL_root_components_materials_list(WMO_UL_root_components_template_list, bpy.types.UIList):
+class WMO_UL_root_elements_materials_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
 
     icon = 'MATERIAL_DYNAMIC'
 
-class WMO_UL_root_components_lights_list(WMO_UL_root_components_template_list, bpy.types.UIList):
+class WMO_UL_root_elements_lights_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
 
     icon = 'LIGHT'
 
 
 _ui_lists = {
-    'groups': 'WMO_UL_root_components_groups_list',
-    'fogs': 'WMO_UL_root_components_fogs_list',
-    'portals': 'WMO_UL_root_components_portal_list',
-    'materials': 'WMO_UL_root_components_materials_list',
-    'lights': 'WMO_UL_root_components_lights_list',
-    'doodad_sets': 'WMO_UL_root_components_doodadset_list'
+    'groups': 'WMO_UL_root_elements_groups_list',
+    'fogs': 'WMO_UL_root_elements_fogs_list',
+    'portals': 'WMO_UL_root_elements_portal_list',
+    'materials': 'WMO_UL_root_elements_materials_list',
+    'lights': 'WMO_UL_root_elements_lights_list',
+    'doodad_sets': 'WMO_UL_root_elements_doodadset_list'
 }
 
 _obj_props = ['wow_wmo_portal',
@@ -105,149 +105,6 @@ def is_obj_unused(obj):
 
     return True
 
-
-#####################
-##### Operators #####
-#####################
-
-class WMO_OT_root_components_components_change(bpy.types.Operator):
-    bl_idname = 'scene.wow_wmo_root_components_change'
-    bl_label = 'Add / Remove'
-    bl_description = 'Add / Remove'
-    bl_options = {'REGISTER', 'INTERNAL', 'UNDO'}
-
-    col_name:  bpy.props.StringProperty(options={'HIDDEN'})
-    cur_idx_name:  bpy.props.StringProperty(options={'HIDDEN'})
-    action:  bpy.props.StringProperty(default='ADD', options={'HIDDEN'})
-    add_action:  bpy.props.EnumProperty(
-        items=[('EMPTY', 'Empty', ''),
-               ('NEW', 'New', '')],
-        default='EMPTY',
-        options={'HIDDEN'}
-    )
-
-    def execute(self, context):
-        if self.action == 'ADD':
-            if self.col_name == 'groups':
-
-                obj = bpy.context.view_layer.objects.active
-
-                if obj and obj.select_get():
-
-                    if obj.type != 'MESH':
-                        self.report({'ERROR'}, "Object must be a mesh")
-                        return {'CANCELLED'}
-
-                    if not is_obj_unused(obj):
-
-                        if not obj.wow_wmo_group.enabled:
-                            self.report({'ERROR'}, "Object is already used")
-                            return {'CANCELLED'}
-
-                        else:
-                            win = bpy.context.window
-                            scr = win.screen
-                            areas3d = [area for area in scr.areas if area.type == 'VIEW_3D']
-                            region = [region for region in areas3d[0].regions if region.type == 'WINDOW']
-
-                            override = {'window': win,
-                                        'screen': scr,
-                                        'area': areas3d[0],
-                                        'region': region[0],
-                                        'scene': bpy.context.scene,
-                                        'object': obj
-                                        }
-
-                            bpy.ops.scene.wow_wmo_destroy_wow_property(override, prop_group='wow_wmo_group')
-                            self.report({'INFO'}, "Group was overriden")
-
-                    slot = bpy.context.scene.wow_wmo_root_components.groups.add()
-                    slot.pointer = obj
-
-                else:
-                    bpy.context.scene.wow_wmo_root_components.groups.add()
-
-            elif self.col_name in 'portals':
-                bpy.context.scene.wow_wmo_root_components.portals.add()
-
-            elif self.col_name == 'lights':
-                slot = bpy.context.scene.wow_wmo_root_components.lights.add()
-
-                if self.add_action == 'NEW':
-                    light = bpy.data.objects.new(name='LIGHT', object_data=bpy.data.lights.new('LIGHT', type='POINT'))
-                    bpy.context.collection.objects.link(light)
-                    light.location = bpy.context.scene.cursor.location
-                    slot.pointer = light
-
-            elif self.col_name == 'fogs':
-                bpy.ops.scene.wow_add_fog()
-
-            elif self.col_name == 'materials':
-
-                slot = bpy.context.scene.wow_wmo_root_components.materials.add()
-
-                if self.add_action == 'NEW':
-                    new_mat = bpy.data.materials.new('Material')
-                    slot.pointer = new_mat
-
-            elif self.col_name == 'doodad_sets':
-                act_obj = bpy.context.view_layer.objects.active
-                bpy.ops.object.empty_add(type='ARROWS', location=(0, 0,0))
-
-                d_set = bpy.context.view_layer.objects.active
-                bpy.context.view_layer.objects.active = act_obj
-
-                d_set.hide_select = True
-                d_set.hide_viewport = True
-                d_set.wow_wmo_doodad_set.enabled = True
-
-                if not len(bpy.context.scene.wow_wmo_root_components.doodad_sets):
-                    d_set.name = '$SetDefaultGlobal'
-                else:
-                    d_set.name = 'Doodad_Set'
-
-                slot = bpy.context.scene.wow_wmo_root_components.doodad_sets.add()
-                slot.pointer = d_set
-
-        elif self.action == 'REMOVE':
-
-            col = getattr(context.scene.wow_wmo_root_components, self.col_name)
-            cur_idx = getattr(context.scene.wow_wmo_root_components, self.cur_idx_name)
-
-            if len(col) <= cur_idx:
-                return {'FINISHED'}
-
-            item = col[cur_idx].pointer
-
-            if item:
-                if self.col_name == 'groups':
-                    item.wow_wmo_group.enabled = False
-
-                elif self.col_name == 'portals':
-                    item.wow_wmo_portal.enabled = False
-
-                elif self.col_name == 'fogs':
-                    item.wow_wmo_fog.enabled = False
-
-                elif self.col_name == 'lights':
-                    item.wow_wmo_light.enabled = False
-
-                elif self.col_name == 'materials':
-                    item.wow_wmo_material.enabled = False
-
-                elif self.col_name == 'doodad_sets':
-                    item.wow_wmo_doodad_set.enabled = False
-
-            col.remove(cur_idx)
-            context.scene.wow_wmo_root_components.is_update_critical = True
-
-        else:
-            self.report({'ERROR'}, 'Unsupported token')
-            return {'CANCELLED'}
-
-        return {'FINISHED'}
-
-
 #####################
 ##### Panels #####
 #####################
@@ -264,7 +121,7 @@ wmo_widget_items = (
 wmo_widget_labels = {item[0] : item[2] for item in wmo_widget_items}
 
 
-class WMO_PT_root_components(bpy.types.Panel):
+class WMO_PT_root_elements(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -279,11 +136,11 @@ class WMO_PT_root_components(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         row = layout.row(align=True)
-        row.prop(context.scene.wow_wmo_root_components, 'cur_widget', expand=True)
-        row.label(text=wmo_widget_labels[context.scene.wow_wmo_root_components.cur_widget])
+        row.prop(context.scene.wow_wmo_root_elements, 'cur_widget', expand=True)
+        row.label(text=wmo_widget_labels[context.scene.wow_wmo_root_elements.cur_widget])
         col = layout.column()
 
-        cur_widget = context.scene.wow_wmo_root_components.cur_widget
+        cur_widget = context.scene.wow_wmo_root_elements.cur_widget
 
         if cur_widget == 'GROUPS':
             draw_wmo_groups_panel(col, context)
@@ -304,7 +161,7 @@ class WMO_PT_root_components(bpy.types.Panel):
 def draw_wmo_groups_panel(layout, context):
     layout = draw_list(context, layout, 'cur_group', 'groups')
 
-    root_comps = context.scene.wow_wmo_root_components
+    root_comps = context.scene.wow_wmo_root_elements
     groups = root_comps.groups
     cur_group = root_comps.cur_group
 
@@ -325,7 +182,7 @@ def draw_wmo_groups_panel(layout, context):
 def draw_wmo_fogs_panel(layout, context):
     layout = draw_list(context, layout, 'cur_fog', 'fogs')
 
-    root_comps = context.scene.wow_wmo_root_components
+    root_comps = context.scene.wow_wmo_root_elements
     fogs = root_comps.fogs
     cur_fog = root_comps.cur_fog
 
@@ -344,7 +201,7 @@ def draw_wmo_fogs_panel(layout, context):
 def draw_wmo_portals_panel(layout, context):
     layout = draw_list(context, layout, 'cur_portal', 'portals')
 
-    root_comps = context.scene.wow_wmo_root_components
+    root_comps = context.scene.wow_wmo_root_elements
     portals = root_comps.portals
     cur_portal = root_comps.cur_portal
 
@@ -363,7 +220,7 @@ def draw_wmo_portals_panel(layout, context):
 def draw_wmo_lights_panel(layout, context):
     layout = draw_list(context, layout, 'cur_light', 'lights')
 
-    root_comps = context.scene.wow_wmo_root_components
+    root_comps = context.scene.wow_wmo_root_elements
     portals = root_comps.lights
     cur_portal = root_comps.cur_light
 
@@ -389,7 +246,7 @@ def draw_wmo_materials_panel(layout, context):
         row.operator("object.material_slot_select", text="Select")
         row.operator("object.material_slot_deselect", text="Deselect")
 
-    root_comps = context.scene.wow_wmo_root_components
+    root_comps = context.scene.wow_wmo_root_elements
     materials = root_comps.materials
     cur_material = root_comps.cur_material
 
@@ -408,7 +265,7 @@ def draw_wmo_materials_panel(layout, context):
 def draw_wmo_doodad_sets_panel(layout, context):
     layout = draw_list(context, layout, 'cur_doodad_set', 'doodad_sets')
 
-    root_comps = context.scene.wow_wmo_root_components
+    root_comps = context.scene.wow_wmo_root_elements
     doodad_sets = root_comps.doodad_sets
     cur_set = root_comps.cur_doodad_set
 
@@ -428,20 +285,20 @@ def draw_list(context, col, cur_idx_name, col_name):
     row = col.row()
     sub_col1 = row.column()
     sub_col1.template_list(_ui_lists[col_name], "",
-                           context.scene.wow_wmo_root_components,
-                           col_name, context.scene.wow_wmo_root_components, cur_idx_name)
+                           context.scene.wow_wmo_root_elements,
+                           col_name, context.scene.wow_wmo_root_elements, cur_idx_name)
     sub_col_parent = row.column()
     sub_col2 = sub_col_parent.column(align=True)
 
     if col_name in ('materials', 'lights', 'doodad_sets'):
-        op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='ADD')
+        op = sub_col2.operator("scene.wow_wmo_root_elements_change", text='', icon='ADD')
         op.action, op.add_action, op.col_name, op.cur_idx_name = 'ADD', 'NEW', col_name, cur_idx_name
 
     if col_name not in ('doodad_sets', 'doodads'):
-        op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='COLLECTION_NEW')
+        op = sub_col2.operator("scene.wow_wmo_root_elements_change", text='', icon='COLLECTION_NEW')
         op.action, op.add_action, op.col_name, op.cur_idx_name = 'ADD', 'EMPTY', col_name, cur_idx_name
 
-    op = sub_col2.operator("scene.wow_wmo_root_components_change", text='', icon='REMOVE')
+    op = sub_col2.operator("scene.wow_wmo_root_elements_change", text='', icon='REMOVE')
     op.action, op.col_name, op.cur_idx_name = 'REMOVE', col_name, cur_idx_name
 
     return sub_col1
@@ -655,10 +512,10 @@ class WoWWMO_RootComponents(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Scene.wow_wmo_root_components = bpy.props.PointerProperty(type=WoWWMO_RootComponents)
+    bpy.types.Scene.wow_wmo_root_elements = bpy.props.PointerProperty(type=WoWWMO_RootComponents)
 
 
 def unregister():
-    del bpy.types.Scene.wow_wmo_root_components
+    del bpy.types.Scene.wow_wmo_root_elements
 
 

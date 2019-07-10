@@ -17,7 +17,7 @@ class WMO_PT_wmo_group(bpy.types.Panel):
         op = row.operator('scene.wow_wmo_destroy_wow_property', text='', icon='X', emboss=False)
         op.prop_group = 'wow_wmo_group'
 
-        if bpy.context.scene.wow_wmo_root_components.groups.find(context.object.name) < 0:
+        if bpy.context.scene.wow_wmo_root_elements.groups.find(context.object.name) < 0:
             row.label(text='', icon='ERROR')
             row.alert = True
 
@@ -148,9 +148,9 @@ def update_flags(self, context):
 
 def is_liquid_unused(obj):
 
-    root_components = bpy.context.scene.wow_wmo_root_components
+    root_elements = bpy.context.scene.wow_wmo_root_elements
 
-    for group in root_components.groups:
+    for group in root_elements.groups:
         if group.pointer and group.pointer.wow_wmo_group.liquid_mesh == obj:
             return False
 

@@ -26,7 +26,7 @@ def update_current_object(self, context, col_name, cur_item_name):
         slot.pointer.select_set(True)
 
 
-class WMO_UL_root_components_template_list(bpy.types.UIList):
+class WMO_UL_root_elements_template_list(bpy.types.UIList):
 
     icon = 'OBJECT_DATA'
 

@@ -17,7 +17,7 @@ class WMO_OT_wmv_import_doodad_from_wmv(bpy.types.Operator):
         m2_path = wmv_get_last_m2()
         cache_path = get_addon_prefs().cache_dir_path
 
-        root = context.scene.wow_wmo_root_components
+        root = context.scene.wow_wmo_root_elements
 
         if not len(root.doodad_sets) or len(root.doodad_sets) < root.cur_doodad_set:
             self.report({'ERROR'}, "Failed to import doodad. No active doodad set is selected.")

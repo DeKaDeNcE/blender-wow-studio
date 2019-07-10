@@ -14,7 +14,7 @@ class WMO_PT_light(bpy.types.Panel):
         op = row.operator('scene.wow_wmo_destroy_wow_property', text='', icon='X', emboss=False)
         op.prop_group = 'wow_wmo_light'
 
-        if bpy.context.scene.wow_wmo_root_components.lights.find(context.object.name) < 0:
+        if bpy.context.scene.wow_wmo_root_elements.lights.find(context.object.name) < 0:
             row.label(text='', icon='ERROR')
 
     def draw(self, context):
