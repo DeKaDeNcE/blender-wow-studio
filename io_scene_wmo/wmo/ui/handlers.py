@@ -205,6 +205,7 @@ def on_depsgraph_update(_):
 
                         # enforce object mode or sculpt mode
                         elif obj.mode not in ('OBJECT', 'SCULPT'):
+                            bpy.context.view_layer.objects.active = obj
                             bpy.ops.object.mode_set(mode='OBJECT')
 
 
@@ -224,9 +225,11 @@ def on_depsgraph_update(_):
                 elif update.id.wow_wmo_fog.enabled:
                     obj = bpy.data.objects[update.id.name, update.id.library]
 
-                    # enforce object mode
-                    if obj.mode == 'EDIT':
-                        bpy.ops.object.mode_set(mode='OBJECT')
+                    with DepsgraphLock():
+                        # enforce object mode
+                        if obj.mode != 'OBJECT':
+                            bpy.context.view_layer.objects.active = obj
+                            bpy.ops.object.mode_set(mode='OBJECT')
 
 
             elif isinstance(update.id, bpy.types.Scene):
