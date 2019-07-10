@@ -122,6 +122,16 @@ def import_doodad_model(asset_dir : str, filepath : str) -> bpy.types.Object:
         texture_paths.append(f.read(len_tex).decode('utf-8').rstrip('\0'))
         f.seek(pos)
 
+    # read blend mode overrides
+    if global_flags & 0x08:
+        f.seek(304)
+        n_blendmode_overrides = uint32.read(f)
+        f.seek(uint32.read(f))
+
+        blend_mode_overrides = []
+        for _ in range(n_blendmode_overrides):
+            blend_mode_overrides.append(uint16.read(f))
+
     ###### Skin ######
 
     f = skin_file
@@ -151,16 +161,6 @@ def import_doodad_model(asset_dir : str, filepath : str) -> bpy.types.Object:
     n_submeshes = uint32.read(f)
     f.seek(uint32.read(f))
     submeshes = [Submesh(f) for _ in range(n_submeshes)]
-
-    # read blend mode overrides
-    if global_flags & 0x08:
-        f.seek(304)
-        n_blendmode_overrides = uint32.read(f)
-        f.seek(uint32.read(f))
-
-        blend_mode_overrides = []
-        for _ in range(n_blendmode_overrides):
-            blend_mode_overrides.append(uint16.read(f))
 
     # texture units
     f.seek(36 - padding)
