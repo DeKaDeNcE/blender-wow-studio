@@ -2,7 +2,6 @@ from collections import namedtuple
 
 import bpy
 
-from ....utils.misc import draw_spoiler
 from .doodad_set import WMO_PT_doodad_set, WoWWMODoodadSetProperptyGroup
 from .fog import WMO_PT_fog
 from .group import WMO_PT_wmo_group

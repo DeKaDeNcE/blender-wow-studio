@@ -1,5 +1,5 @@
 import bpy
-
+from ..handlers import DepsgraphLock
 
 def update_doodad_pointer(self, context):
     if self.pointer and self.name != self.pointer.name:
@@ -19,11 +19,11 @@ def update_current_object(self, context, col_name, cur_item_name):
     if bpy.context.view_layer.objects.active == slot.pointer:
         return
 
-    bpy.ops.object.select_all(action='DESELECT')
-
     if slot.pointer and not slot.pointer.hide_viewport:
-        bpy.context.view_layer.objects.active = slot.pointer
-        slot.pointer.select_set(True)
+        with DepsgraphLock():
+            bpy.ops.object.select_all(action='DESELECT')
+            bpy.context.view_layer.objects.active = slot.pointer
+            slot.pointer.select_set(True)
 
 
 class WMO_UL_root_elements_template_list(bpy.types.UIList):
