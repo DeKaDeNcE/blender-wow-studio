@@ -965,13 +965,13 @@ def update_animation(self, context):
 
 
 def register():
-    bpy.types.Scene.wow_m2_animations:  bpy.props.CollectionProperty(
+    bpy.types.Scene.wow_m2_animations =  bpy.props.CollectionProperty(
         type=WowM2AnimationEditorPropertyGroup,
         name="Animations",
         description="WoW M2 animation sequences"
     )
 
-    bpy.types.Scene.wow_m2_cur_anim_index:  bpy.props.IntProperty(
+    bpy.types.Scene.wow_m2_cur_anim_index =  bpy.props.IntProperty(
         name='M2 Animation',
         description='Current WoW M2 animation',
         update=update_animation

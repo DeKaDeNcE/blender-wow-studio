@@ -26,7 +26,7 @@ class WowM2ParticlePropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.ParticleSettings.wow_m2_particle:  bpy.props.PointerProperty(type=WowM2ParticlePropertyGroup)
+    bpy.types.ParticleSettings.wow_m2_particle = bpy.props.PointerProperty(type=WowM2ParticlePropertyGroup)
 
 
 def unregister():

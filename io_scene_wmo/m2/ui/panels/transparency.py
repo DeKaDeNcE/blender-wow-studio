@@ -92,7 +92,7 @@ class WowM2TransprencyPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Scene.wow_m2_transparency:  bpy.props.CollectionProperty(
+    bpy.types.Scene.wow_m2_transparency = bpy.props.CollectionProperty(
         name='Transparency',
         type=WowM2TransprencyPropertyGroup
     )

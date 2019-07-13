@@ -68,7 +68,7 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Material.wow_m2_material:  bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
+    bpy.types.Material.wow_m2_material = bpy.props.PointerProperty(type=WowM2MaterialPropertyGroup)
 
 
 def unregister():

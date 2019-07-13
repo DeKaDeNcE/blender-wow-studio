@@ -94,12 +94,12 @@ class WowM2ColorPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Scene.wow_m2_colors:  bpy.props.CollectionProperty(
+    bpy.types.Scene.wow_m2_colors = bpy.props.CollectionProperty(
         name='Colors',
         type=WowM2ColorPropertyGroup
     )
 
-    bpy.types.Scene.wow_m2_cur_color_index:  bpy.props.IntProperty()
+    bpy.types.Scene.wow_m2_cur_color_index = bpy.props.IntProperty()
 
 
 def unregister():

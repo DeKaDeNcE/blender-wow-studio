@@ -38,7 +38,7 @@ class WowM2BonePropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.EditBone.wow_m2_bone:  bpy.props.PointerProperty(type=WowM2BonePropertyGroup)
+    bpy.types.EditBone.wow_m2_bone =  bpy.props.PointerProperty(type=WowM2BonePropertyGroup)
 
 
 def unregister():

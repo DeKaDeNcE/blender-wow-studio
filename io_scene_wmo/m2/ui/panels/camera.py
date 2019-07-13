@@ -528,7 +528,7 @@ class M2_OT_camera_curve_decompose(bpy.types.Operator):
 
 
 def register():
-    bpy.types.Object.wow_m2_camera:  bpy.props.PointerProperty(type=WowM2CameraPropertyGroup)
+    bpy.types.Object.wow_m2_camera = bpy.props.PointerProperty(type=WowM2CameraPropertyGroup)
 
 
 def unregister():

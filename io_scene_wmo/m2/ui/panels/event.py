@@ -67,7 +67,7 @@ class WowM2EventPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_m2_event:  bpy.props.PointerProperty(type=WowM2EventPropertyGroup)
+    bpy.types.Object.wow_m2_event = bpy.props.PointerProperty(type=WowM2EventPropertyGroup)
 
 
 def unregister():

@@ -62,7 +62,7 @@ class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.ImageTexture.wow_m2_texture:  bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)
+    bpy.types.ImageTexture.wow_m2_texture = bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)
 
 
 def unregister():

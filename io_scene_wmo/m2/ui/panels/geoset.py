@@ -103,7 +103,7 @@ class M2_OT_add_texture_transform(bpy.types.Operator):
 
 
 def register():
-    bpy.types.Object.wow_m2_geoset:  bpy.props.PointerProperty(type=WowM2GeosetPropertyGroup)
+    bpy.types.Object.wow_m2_geoset = bpy.props.PointerProperty(type=WowM2GeosetPropertyGroup)
 
 
 def unregister():

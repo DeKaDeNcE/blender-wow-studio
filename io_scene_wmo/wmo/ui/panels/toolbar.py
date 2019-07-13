@@ -253,10 +253,10 @@ def wow_components_add_menu_item(self, context):
     self.layout.menu("WMO_MT_mesh_wow_components_add", icon_value=ui_icons['WOW_STUDIO_WOW_ADD'])
 
 
-
-
 def render_viewport_toggles_right(self, context):
-    if context.scene.wow_scene.type == 'WMO':
+    if hasattr(context.scene, 'wow_scene') \
+    and hasattr(context.scene.wow_scene, 'type') \
+    and context.scene.wow_scene.type == 'WMO':
         layout = self.layout
         row = layout.row(align=True)
         row.popover(  panel="WMO_PT_tools_object_mode_display"

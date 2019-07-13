@@ -53,7 +53,7 @@ class WowM2AttachmentPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_m2_attachment:  bpy.props.PointerProperty(type=WowM2AttachmentPropertyGroup)
+    bpy.types.Object.wow_m2_attachment =  bpy.props.PointerProperty(type=WowM2AttachmentPropertyGroup)
 
 
 def unregister():

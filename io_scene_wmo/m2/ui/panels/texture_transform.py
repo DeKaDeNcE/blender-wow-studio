@@ -35,7 +35,7 @@ class WowM2TextureTransformControllerPropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.Object.wow_m2_uv_transform:  bpy.props.PointerProperty(type=WowM2TextureTransformControllerPropertyGroup)
+    bpy.types.Object.wow_m2_uv_transform = bpy.props.PointerProperty(type=WowM2TextureTransformControllerPropertyGroup)
 
 
 def unregister():

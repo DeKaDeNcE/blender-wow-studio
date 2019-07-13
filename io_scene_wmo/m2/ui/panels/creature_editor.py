@@ -463,7 +463,7 @@ class M2_OT_creature_editor_load_textures(bpy.types.Operator):
 
 
 def register():
-    bpy.types.Scene.wow_m2_creature:  bpy.props.PointerProperty(type=WowM2CreaturePropertyGroup)
+    bpy.types.Scene.wow_m2_creature = bpy.props.PointerProperty(type=WowM2CreaturePropertyGroup)
 
 
 def unregister():
