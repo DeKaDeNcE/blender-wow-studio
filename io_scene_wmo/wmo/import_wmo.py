@@ -1,3 +1,4 @@
+import bpy
 import time
 
 from ..utils.misc import load_game_data
@@ -34,6 +35,9 @@ def import_wmo_to_blender_scene(filepath, import_doodads, import_lights, import_
         wmo_scene.load_groups()
         wmo_scene.load_portals()
         wmo_scene.load_doodads(assets_dir=addon_prefs.cache_dir_path)
+
+    # update visibility
+    bpy.context.scene.wow_visibility = bpy.context.scene.wow_visibility
 
     print("\nDone importing WMO. \nTotal import time: ",
           time.strftime("%M minutes %S seconds.\a", time.gmtime(time.time() - start_time)))
