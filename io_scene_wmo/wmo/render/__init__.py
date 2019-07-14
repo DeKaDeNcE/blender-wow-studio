@@ -5,8 +5,19 @@ from pathlib import Path
 from .cycles import update_wmo_mat_node_tree_cycles
 
 
+class BlenderWMOObjectRenderFlags:
+    IsOutdoor = 0x1
+    IsIndoor = 0x2
+    NoLocalLight = 0x4
+    HasBatchB = 0x8
+    HasBatchA = 0x10
+    HasVertexColor = 0x20
+    HasBlendmap = 0x40
+    HasLightmap = 0x80
+
 node_groups = [
     'MO_ApplyLighting',
+    'MO_ApplyLightingTrans',
     'MO_ApplyLightingGeneric',
     'MO_Equal',
     'MO_IsFlagInBitmask',

@@ -3,6 +3,7 @@ import bpy
 from functools import partial
 
 from bpy.app.handlers import persistent
+from ..render import BlenderWMOObjectRenderFlags
 from ...utils.misc import show_message_box
 
 class DepsgraphLock:
@@ -130,6 +131,13 @@ liquid_banned_ops_edit_mode = (
     "MESH_OT_merge"
 )
 
+wmo_render_flag_map = {
+    'Lightmap': BlenderWMOObjectRenderFlags.HasLightmap,
+    'BatchmapInt': BlenderWMOObjectRenderFlags.HasBatchB,
+    'BatchmapTrans': BlenderWMOObjectRenderFlags.HasBatchA,
+    'Blendmap': BlenderWMOObjectRenderFlags.HasBlendmap
+}
+
 @persistent
 def on_depsgraph_update(_):
     global DEPSGRAPH_UPDATE_LOCK
@@ -230,6 +238,18 @@ def on_depsgraph_update(_):
                         if obj.mode != 'OBJECT':
                             bpy.context.view_layer.objects.active = obj
                             bpy.ops.object.mode_set(mode='OBJECT')
+
+                elif update.id.wow_wmo_group.enabled:
+                    obj = bpy.data.objects[update.id.name, update.id.library]
+                    mesh = obj.data
+
+                    for col_name, flag in wmo_render_flag_map.items():
+                        col = mesh.vertex_colors.get(col_name)
+
+                        if col:
+                            obj.pass_index |= flag
+                        else:
+                            obj.pass_index &= ~flag
 
 
             elif isinstance(update.id, bpy.types.Scene):

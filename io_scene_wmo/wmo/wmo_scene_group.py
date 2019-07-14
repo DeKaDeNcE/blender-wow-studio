@@ -2,17 +2,7 @@ import bpy
 import bmesh
 from ..pywowlib.file_formats.wmo_format_group import MOGPFlags
 from .bsp_tree import *
-
-
-class BlenderWMOObjectRenderFlags:
-    IsOutdoor = 0x1
-    IsIndoor = 0x2
-    NoLocalLight = 0x4
-    HasBatchB = 0x8
-    HasBatchA = 0x10
-    HasVertexColor = 0x20
-    HasBlendmap = 0x40
-    HasLightmap = 0x80
+from .render import BlenderWMOObjectRenderFlags
 
 
 class BlenderWMOSceneGroup:
@@ -336,7 +326,6 @@ class BlenderWMOSceneGroup:
         blendmap = None
         if group.mogp.flags & MOGPFlags.HasTwoMOCV:
             blendmap = mesh.vertex_colors.new(name="Blendmap")
-            nobj.wow_wmo_vertex_info.blendmap = blendmap.name
 
             pass_index |= BlenderWMOObjectRenderFlags.HasBlendmap
 
@@ -442,13 +431,9 @@ class BlenderWMOSceneGroup:
 
             if batch_map_a:
                 mesh.vertex_colors['BatchmapTrans'].data[i].color = (1, 1, 1, 1) if loop.vertex_index in batch_a_range else (0, 0, 0, 0)
-                pass_index |= 0x10
-                nobj.wow_wmo_vertex_info.has_batch_trans = True
 
             if batch_map_b:
                 mesh.vertex_colors['BatchmapInt'].data[i].color = (1, 1, 1, 1) if loop.vertex_index in batch_b_range else (0, 0, 0, 0)
-                pass_index |= 0x8
-                nobj.wow_wmo_vertex_info.has_batch_int = True
         '''
         # set faces material
         for i in range(len(mesh.polygons)):
