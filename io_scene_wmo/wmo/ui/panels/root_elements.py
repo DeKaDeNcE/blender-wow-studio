@@ -74,6 +74,8 @@ class WMO_UL_root_elements_materials_list(WMO_UL_root_elements_template_list, bp
 
     icon = 'MATERIAL_DYNAMIC'
 
+    
+
 class WMO_UL_root_elements_lights_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
 
     icon = 'LIGHT'
