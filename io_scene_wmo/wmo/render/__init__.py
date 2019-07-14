@@ -15,6 +15,12 @@ class BlenderWMOObjectRenderFlags:
     HasBlendmap = 0x40
     HasLightmap = 0x80
 
+class BlenderWMOMaterialRenderFlags:
+    Unlit = 0x1
+    SIDN = 0x2
+    IsTwoLayered = 0x4
+    IsOpaque = 0x10
+
 node_groups = [
     'MO_ApplyLighting',
     'MO_ApplyLightingTrans',

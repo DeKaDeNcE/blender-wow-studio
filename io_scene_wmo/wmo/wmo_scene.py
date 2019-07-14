@@ -1,20 +1,13 @@
 import hashlib
 import bpy
 
-from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies
+from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies, BlenderWMOMaterialRenderFlags
 from .utils.fogs import create_fog_object
 from .utils.materials import load_texture, add_ghost_material
 from .utils.doodads import import_doodad
 from .wmo_scene_group import BlenderWMOSceneGroup
 from ..ui import get_addon_prefs
 from ..utils.misc import find_nearest_object, ProgressReport
-
-
-class BlenderWMOMaterialRenderFlags:
-    Unlit = 0x1
-    SIDN = 0x2
-    IsTwoLayered = 0x4
-    IsOpaque = 0x10
 
 
 class BlenderWMOScene:
