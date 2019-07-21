@@ -6,6 +6,7 @@ from ...utils.doodads import import_doodad
 from ...utils.wmv import wmv_get_last_m2
 from ....ui import get_addon_prefs
 
+
 class WMO_OT_wmv_import_doodad_from_wmv(bpy.types.Operator):
     bl_idname = 'scene.wow_wmo_import_doodad_from_wmv'
     bl_label = 'Import last M2 from WMV'
@@ -30,11 +31,18 @@ class WMO_OT_wmv_import_doodad_from_wmv(bpy.types.Operator):
                                    "Make sure to use compatible WMV version or open an .m2 there.")
             return {'CANCELLED'}
 
+        location = context.view_layer.objects.active.location if context.view_layer.objects.active \
+                                                              else context.scene.cursor.location
+
         obj = import_doodad(m2_path, cache_path)
         obj.parent = doodad_set_obj
+        obj.location = location
+
         bpy.context.collection.objects.link(obj)
+        context.view_layer.objects.active = obj
 
         return {'FINISHED'}
+
 
 class WMO_OT_doodads_bake_color(bpy.types.Operator):
     bl_idname = "scene.wow_doodads_bake_color"

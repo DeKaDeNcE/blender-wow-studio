@@ -9,8 +9,6 @@ from ...utils.node_builder import NodeTreeBuilder
 from ...pywowlib.io_utils.types import *
 
 
-
-
 # This file is implementing basic M2 geometry parsing in prodedural style for the sake of performance.
 class Submesh:
     __slots__ = (
@@ -38,7 +36,7 @@ def skip(f, n_bytes):
     f.seek(f.tell() + n_bytes)
 
 
-def import_doodad_model(asset_dir : str, filepath : str) -> bpy.types.Object:
+def import_doodad_model(asset_dir: str, filepath: str) -> bpy.types.Object:
     """Import World of Warcraft M2 model to scene."""
 
     game_data = load_game_data()
@@ -181,11 +179,15 @@ def import_doodad_model(asset_dir : str, filepath : str) -> bpy.types.Object:
         submeshes[submesh_id].texture_id = uint16.read(f)
         skip(f, 6)
 
+        submeshes[submesh_id].blend_mode = blend_modes[render_flag_index]
+
+        '''
         # determine blending mode
         if global_flags & 0x08 and shader_id < len(blend_mode_overrides):
             submeshes[submesh_id].blend_mode = blend_mode_overrides[shader_id]
         else:
             submeshes[submesh_id].blend_mode = blend_modes[render_flag_index]
+        '''
 
 
     ###### Build blender object ######
@@ -299,7 +301,8 @@ def import_doodad_model(asset_dir : str, filepath : str) -> bpy.types.Object:
 
     return nobj
 
-def import_doodad(m2_path : str, cache_path : str) -> bpy.types.Object:
+
+def import_doodad(m2_path: str, cache_path: str) -> bpy.types.Object:
 
     try:
         obj = import_doodad_model(cache_path, m2_path)

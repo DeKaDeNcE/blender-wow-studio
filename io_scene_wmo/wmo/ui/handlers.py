@@ -196,7 +196,7 @@ def on_depsgraph_update(_):
                             win = bpy.context.window
                             scr = win.screen
                             areas3d = [area for area in scr.areas if area.type == 'VIEW_3D']
-                            region = [region for region in areas3d[0].regions if region.type == 'WINDOW']
+                            region = [region for region in areas3d[0].regions if region.type == 'WINDOW'][0]
                             space = [space for space in areas3d[0].regions if space.type == 'VIEW_3D']
 
                             override = {'window': win,
@@ -205,7 +205,8 @@ def on_depsgraph_update(_):
                                         'region': region,
                                         'scene': bpy.context.scene,
                                         'workspace': bpy.context.workspace,
-                                        'space_data': space
+                                        'space_data': space,
+                                        'region_data': region
                                         }
 
                             # we need a timer here to prevent operator recognizing tab event as exit
