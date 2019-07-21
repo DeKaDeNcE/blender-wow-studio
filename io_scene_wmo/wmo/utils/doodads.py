@@ -28,7 +28,7 @@ class Submesh:
         self.n_vertices = uint16.read(f)
         self.start_triangle = uint16.read(f)
         self.n_triangles = uint16.read(f)
-        self.texture_id = 0
+        self.texture_id = None
         self.blend_mode = 0
 
         skip(f, 36)
@@ -170,6 +170,11 @@ def import_doodad_model(asset_dir : str, filepath : str) -> bpy.types.Object:
         skip(f, 2)
         shader_id = uint16.read(f)
         submesh_id = uint16.read(f)
+
+        if submeshes[submesh_id].texture_id is not None:
+            skip(f, 18)
+            continue
+
         skip(f, 4)
         render_flag_index = uint16.read(f)
         skip(f, 4)
