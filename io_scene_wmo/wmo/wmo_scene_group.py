@@ -1,6 +1,10 @@
 import bpy
+import mathutils
 import bmesh
-from ..pywowlib.file_formats.wmo_format_group import MOGPFlags
+
+from math import pi
+
+from ..pywowlib.file_formats.wmo_format_group import MOGPFlags, LiquidVertex
 from .bsp_tree import *
 from .render import BlenderWMOObjectRenderFlags
 
@@ -110,14 +114,14 @@ class BlenderWMOSceneGroup:
                     continue
 
                 # check if face is located within the same batch
-                batch_type = WMOGroupFile.get_batch_type(link_face, batch_map_index, batch_map)
+                batch_type = BlenderWMOSceneGroup.get_batch_type(link_face, batch_map_index, batch_map)
 
                 if batch_type != face_batch_type:
                     continue
 
                 # call this function recursively on this face if all checks are passed
-                f_linked.extend(WMOGroupFile.get_linked_faces(link_face, batch_type, uv, uv2, batch_map,
-                                                              batch_map_index, stack=stack + 1))
+                f_linked.extend(BlenderWMOSceneGroup.get_linked_faces(link_face, batch_type, uv, uv2, batch_map,
+                                                                      batch_map_index, stack=stack + 1))
 
         return f_linked
 
@@ -563,7 +567,6 @@ class BlenderWMOSceneGroup:
             scn.collection.objects.link(c_obj)
             nobj.wow_wmo_group.collision_mesh = c_obj
 
-
     def get_portal_direction(self, portal_obj, group_obj):
         """ Get the direction of MOPR portal relation given a portal object and a target group """
 
@@ -620,7 +623,7 @@ class BlenderWMOSceneGroup:
         # check if this portal was already processed
         bound_relation_side = None
         bound_relation = None
-        for relation in self.root.mopr.relations:
+        for relation in self.wmo_scene.wmo.mopr.relations:
             if relation.portal_index == portal_obj.wow_wmo_portal.portal_id:
                 bound_relation_side = relation.side
                 bound_relation = relation
@@ -662,10 +665,10 @@ class BlenderWMOSceneGroup:
             return result
 
         if bound_relation_side is None:
-            print("\nFailed to calculate direction for portal <<{}>>. "
+            print("\nFailed to calculate direction for portal \"{}\". "
                   "Calculation from another side will be attempted.".format(portal_obj.name))
         else:
-            print("\nFailed to calculate direction from the opposite side for portal <<{}>> "
+            print("\nFailed to calculate direction from the opposite side for portal \"{}\" "
                   "You may consider setting up the direction manually.".format(portal_obj.name))
 
         return 0
@@ -719,7 +722,7 @@ class BlenderWMOSceneGroup:
         elif group.mogp.liquid_type in types_2:
             material.wow_wmo_material.texture1 = "DUNGEONS\\TEXTURES\\FLOOR\\JLO_UNDEADZIGG_SLIMEFLOOR.BLP"
 
-        self.mliq.material_id = self.wmo_scene.wmo.add_material(material)
+        group.mliq.material_id = self.wmo_scene.wmo.add_material(material)
 
         if group.mogp.liquid_type in types_1 or group.mogp.liquid_type in types_2:
 
@@ -733,7 +736,8 @@ class BlenderWMOSceneGroup:
                             uv_map[mesh.loops[loop_index].vertex_index] = mesh.uv_layers.active.data[loop_index].uv
 
                 for i in range(group.mliq.x_verts * group.mliq.y_verts):
-                    vertex = MagmaVertex()
+                    vertex = LiquidVertex()
+                    vertex.is_water = False
 
                     vertex.u = int(uv_map.get(mesh.vertices[i].index)[0])
                     vertex.v = int(uv_map.get(mesh.vertices[i].index)[1])
@@ -741,12 +745,12 @@ class BlenderWMOSceneGroup:
                     vertex.height = mesh.vertices[i].co[2]
                     group.mliq.vertex_map.append(vertex)
             else:
-                raise Exception("\nSlime and magma (lava) liquids require a UV map to be created.")
+                raise Exception("\nError saving WMO. Slime and magma (lava) liquids require a UV map to be created.")
 
         else:
 
             for j in range(group.mliq.x_verts * group.mliq.y_verts):
-                vertex = WaterVertex()
+                vertex = LiquidVertex()
 
                 vertex.height = mesh.vertices[j].co[2]
                 group.mliq.vertex_map.append(vertex)

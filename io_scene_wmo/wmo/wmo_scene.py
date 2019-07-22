@@ -576,7 +576,6 @@ class BlenderWMOScene:
             light.attenuation_end = mesh.wow_wmo_light.attenuation_end
             self.wmo.molt.lights.append(light)
 
-
     def save_portals(self):
 
         saved_portals_ids = []
@@ -674,7 +673,6 @@ class BlenderWMOScene:
                 fog.flags |= 0x10
 
             self.wmo.mfog.fogs.append(fog)
-
 
     def save_root_header(self):
 
