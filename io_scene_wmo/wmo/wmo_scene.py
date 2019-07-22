@@ -3,6 +3,7 @@ import bpy
 import os
 
 from mathutils import Vector
+from math import sqrt
 
 from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies, BlenderWMOMaterialRenderFlags
 from .utils.fogs import create_fog_object
@@ -12,8 +13,8 @@ from .wmo_scene_group import BlenderWMOSceneGroup
 from ..ui import get_addon_prefs
 from ..utils.misc import find_nearest_object, ProgressReport
 
-from ..pywowlib.file_formats.wmo_format_root import GroupInfo, WMOMaterial, Light, \
-    DoodadSet, DoodadDefinition, PortalInfo, PortalRelation
+from ..pywowlib.file_formats.wmo_format_root import GroupInfo, WMOMaterial, Light, DoodadSet, DoodadDefinition, \
+    PortalInfo, PortalRelation, Fog
 
 
 class BlenderWMOScene:
@@ -474,7 +475,6 @@ class BlenderWMOScene:
 
             self.wmo.momt.materials.append(wow_mat)
 
-
     def add_group_info(self, flags, bounding_box, name, desc):
         """ Add group info, then return offset of name and desc in a tuple """
         group_info = GroupInfo()
@@ -576,8 +576,6 @@ class BlenderWMOScene:
             light.attenuation_end = mesh.wow_wmo_light.attenuation_end
             self.wmo.molt.lights.append(light)
 
-        print("\nDone saving lights. "
-              "\nTotal saving time: ", time.strftime("%M minutes %S seconds", time.gmtime(time.time() - start_time)))
 
     def save_portals(self):
 
@@ -644,7 +642,6 @@ class BlenderWMOScene:
                 self.wmo.mopr.relations.append(relation)
 
             group.mogp.portal_count = len(self.wmo.mopr.relations) - group.mogp.portal_start
-
 
     def save_fogs(self):
 
