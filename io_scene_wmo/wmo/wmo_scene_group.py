@@ -773,6 +773,7 @@ class BlenderWMOSceneGroup:
         """ Save WoW WMO group data for future export """
 
         group = self.wmo_group
+        scene = bpy.context.scene
 
         bpy.context.view_layer.objects.active = obj
         mesh = obj.data
@@ -782,7 +783,7 @@ class BlenderWMOSceneGroup:
 
         # create bmesh
         bm = bmesh.new()
-        bm.from_object(obj, bpy.context.scene)
+        bm.from_object(obj, scene)
 
         # triangulate bmesh
         bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method=0, ngon_method=0)
@@ -848,7 +849,7 @@ class BlenderWMOSceneGroup:
                 batch.n_triangles = n_vertices
                 batch.start_vertex = start_vertex
                 batch.last_vertex = start_vertex + n_vertices - 1
-                batch.material_id = self.wmo_scene.wmo.add_material(mesh.materials[mat_index])
+                batch.material_id = scene.wow_wmo_root_elements.materials.find(mesh.materials[mat_index].name)
                 batch.bounding_box = [32767, 32767, 32767, -32768, -32768, -32768]
 
                 # increment start indices for the next batch
