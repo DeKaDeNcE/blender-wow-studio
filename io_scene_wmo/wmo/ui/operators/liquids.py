@@ -13,6 +13,7 @@ from .. import handlers
 def angled_vertex(origin: Vector, pos: Vector, angle: float, orientation: float) -> float:
     return origin.z + ((pos.x - origin.x) * cos(orientation) + (pos.y - origin.y) * sin(orientation)) * tan(angle)
 
+
 def get_median_point(bm: bmesh.types.BMesh) -> Vector:
 
     selected_vertices = [v for v in bm.verts if v.select]
@@ -26,12 +27,14 @@ def get_median_point(bm: bmesh.types.BMesh) -> Vector:
 
     return median
 
+
 def align_vertices(bm : bmesh.types.BMesh, mesh : bpy.types.Mesh, median : Vector, angle : float, orientation : float):
     for vert in bm.verts:
         if vert.select:
             vert.co[2] = angled_vertex(median, vert.co, radians(angle), radians(orientation))
 
     bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
+
 
 event_keymap = {
     'ONE' : 0,
@@ -51,6 +54,8 @@ event_keymap = {
     'NUMPAD_7': 6,
     'NUMPAD_8': 7,
 }
+
+
 class WMO_OT_edit_liquid(bpy.types.Operator):
     bl_idname = "wow.liquid_edit_mode"
     bl_label = "Edit WoW Liquid"
@@ -77,6 +82,7 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
         pass
 
     def modal(self, context, event):
+        context.area.tag_redraw()
 
         if context.object.mode != 'EDIT':
             return {'PASS_THROUGH'}
@@ -91,7 +97,6 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
                 and not self.rotation_initiated:
             return {'PASS_THROUGH'}
 
-
         elif event.type == 'G' and not self.rotation_initiated:
             bpy.context.window.cursor_modal_set('MOVE_X')
             self.report({'INFO'}, "Changing height")
@@ -99,7 +104,6 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
             self.init_loc = event.mouse_x
 
             self.selected_verts = {vert : vert.co[2] for vert in self.bm.verts if vert.select}
-
 
         elif event.type == 'R' and not self.move_initiated:
             bpy.context.window.cursor_modal_set('SCROLL_Y')
@@ -109,7 +113,6 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
             self.median = get_median_point(self.bm)
             self.orientation = 0.0
             self.angle = 0.0
-
 
         elif event.type == 'E' and event.shift:
 
@@ -121,7 +124,6 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
 
             bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
             self.report({'INFO'}, "Equalized vertex height")
-
 
         elif event.type == 'MOUSEMOVE':
 
@@ -152,7 +154,6 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
 
             else:
                 return {'PASS_THROUGH'}
-
 
         elif event.type == 'WHEELDOWNMOUSE':
 
@@ -193,7 +194,6 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
             bmesh.update_edit_mesh(mesh, loop_triangles=True, destructive=True)
             self.report({'INFO'}, "Flag set" if event.shift else "Flag unset")
 
-
         elif event.type in {'LEFTMOUSE'}:  # Confirm
             bpy.context.window.cursor_modal_restore()
 
@@ -227,12 +227,11 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
 
         return {'RUNNING_MODAL'}
 
-
     def invoke(self, context, event):
 
         if context.object.mode == 'EDIT':
             handlers.DEPSGRAPH_UPDATE_LOCK = True
-            #bpy.ops.object.mode_set(mode='EDIT')
+
             bpy.ops.mesh.select_mode(bpy.context.copy(), type='VERT', action='ENABLE', use_extend=True)
             bpy.ops.mesh.select_mode(bpy.context.copy(), type='EDGE', action='ENABLE', use_extend=True)
             bpy.ops.mesh.select_mode(bpy.context.copy(), type='FACE', action='ENABLE', use_extend=True)
@@ -257,6 +256,7 @@ class WMO_OT_edit_liquid(bpy.types.Operator):
 
         else:
             return {'CANCELLED'}
+
 
 class WMO_OT_add_liquid(bpy.types.Operator):
     bl_idname = 'scene.wow_add_liquid'

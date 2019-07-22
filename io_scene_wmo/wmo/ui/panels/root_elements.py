@@ -74,7 +74,7 @@ class WMO_UL_root_elements_materials_list(WMO_UL_root_elements_template_list, bp
 
     icon = 'MATERIAL_DYNAMIC'
 
-    
+
 
 class WMO_UL_root_elements_lights_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
 
@@ -131,8 +131,7 @@ class WMO_PT_root_elements(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         return (context.scene is not None
-                and context.scene.wow_scene.type == 'WMO'
-        )
+                and context.scene.wow_scene.type == 'WMO')
 
     def draw(self, context):
         layout = self.layout

@@ -1,5 +1,8 @@
 import hashlib
 import bpy
+import os
+
+from mathutils import Vector
 
 from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies, BlenderWMOMaterialRenderFlags
 from .utils.fogs import create_fog_object
@@ -9,6 +12,9 @@ from .wmo_scene_group import BlenderWMOSceneGroup
 from ..ui import get_addon_prefs
 from ..utils.misc import find_nearest_object, ProgressReport
 
+from ..pywowlib.file_formats.wmo_format_root import GroupInfo, WMOMaterial, Light, \
+    DoodadSet, DoodadDefinition, PortalInfo, PortalRelation
+
 
 class BlenderWMOScene:
     """ This class is used for assembling a Blender scene from a WNO file or saving the scene back to it."""
@@ -16,124 +22,17 @@ class BlenderWMOScene:
     def __init__(self, wmo, prefs):
         self.wmo = wmo
         self.settings = prefs
-        self.material_lookup = {}
 
+        self.bl_materials = {}
         self.bl_groups = []
         self.bl_portals = []
         self.bl_fogs = []
         self.bl_lights = []
         self.bl_liquids = []
-        self.bl_doodad_sets = []
+        self.bl_doodad_sets = {}
+        self.bl_textures = []
 
-    def build_references(self, export_selected, export_method):
-        """ Build WMO references in Blender scene """
-
-        root_comps = bpy.context.scene.wow_wmo_root_elements
-
-        # process groups
-        for i, slot in enumerate(root_comps.groups):
-
-            if export_method == 'PARTIAL':
-                if not slot.pointer.export:
-                    continue
-
-            elif (export_selected and not slot.pointer.select_get()) or slot.pointer.hide_viewport:
-                continue
-
-            slot.pointer.wow_wmo_group.group_id = i
-            self.bl_groups.append((i, slot.pointer))
-
-        # process portals
-        for i, slot in enumerate(root_comps.portals):
-            self.bl_portals.append((i, slot.pointer))
-            slot.pointer.wow_wmo_portal.portal_id = i
-
-        # process fogs
-        for i, slot in enumerate(root_comps.fogs):
-            self.bl_fogs.append((i, slot.pointer))
-            slot.pointer.wow_wmo_fog.fog_id = i
-
-        # process lights
-        self.bl_lights = [slot.pointer for slot in root_comps.lights]
-
-        empties = []
-        scene_objects = bpy.context.scene.objects if not export_selected else bpy.context.selected_objects
-
-        for obj in filter(lambda o: not obj.wow_wmo_doodad.enabled and not o.hide_viewport, scene_objects):
-
-            if obj.type == 'MESH':
-
-                if obj.wow_wmo_group.enabled:
-                    self.bl_groups.append(obj)
-                    obj.wow_wmo_group.group_id = len(self.bl_groups) - 1
-
-                elif obj.wow_wmo_portal.enabled:
-                    self.bl_portals.append(obj)
-                    obj.wow_wmo_portal.portal_id = len(self.bl_portals) - 1
-
-                    group_objects = (obj.wow_wmo_portal.first, obj.wow_wmo_portal.second)
-
-                    for group_obj in group_objects:
-                        if group_obj and group_obj.name in bpy.context.scene.objects:
-                            rel = group_obj.wow_wmo_group.relations.portals.add()
-                            rel.id = obj.name
-                        else:
-                            raise KeyError("Portal <<{}>> points to a non-existing object.".format(obj.name))
-
-                elif obj.wow_wmo_fog.enabled:
-                    self.bl_fogs.append(obj)
-                    obj.wow_wmo_fog.fog_id = len(self.bl_fogs) - 1
-
-                elif obj.wow_wmo_liquid.enabled:
-                    self.bl_liquids.append(obj)
-                    group = obj.wow_wmo_liquid.wmo_group
-
-                    if group:
-                        group.wow_wmo_group.relations.liquid = obj.name
-                    else:
-                        print("\nWARNING: liquid <<{}>> points to a non-existing object.".format(
-                            obj.wow_wmo_liquid.wmo_group))
-                        continue
-
-            elif obj.type == 'LIGHT' and obj.data.wow_wmo_light.enabled:
-                self.bl_lights.append(obj)
-
-            elif obj.type == 'EMPTY':
-                empties.append(obj)
-
-        # sorting doodads into sets
-        doodad_counter = 0
-        for empty in empties:
-
-            doodad_set = (empty.name, [])
-
-            for doodad in empty.children:
-                if doodad.wow_wmo_doodad.enabled:
-                    group = find_nearest_object(doodad, self.groups)
-
-                    if group:
-                        rel = group.wow_wmo_group.relations.doodads.add()
-                        rel.id = doodad_counter
-                        doodad_counter += 1
-
-                        doodad_set[1].append(doodad)
-
-            if doodad_set[1]:
-                self.bl_doodad_sets.append(doodad_set)
-
-        # setting light references
-        for index, light in enumerate(self.bl_lights):
-            group = find_nearest_object(light, self.groups)
-            if group:
-                rel = group.wow_wmo_group.relations.lights.add()
-                rel.id = index
-
-    def clear_references(self):
-        for group in self.groups:
-            group.wow_wmo_group.relations.doodads.clear()
-            group.wow_wmo_group.relations.lights.clear()
-            group.wow_wmo_group.relations.portals.clear()
-            group.wow_wmo_group.relations.liquid = ""
+        self._texture_lookup = {}
 
     def load_materials(self, texture_dir=None):
         """ Load materials from WoW WMO root file """
@@ -143,7 +42,7 @@ class BlenderWMOScene:
         if texture_dir is None:
             texture_dir = addon_prefs.cache_dir_path
 
-        self.material_lookup = { 0xFF : add_ghost_material() }
+        self.bl_materials = {0xFF : add_ghost_material()}
 
         load_wmo_shader_dependencies(reload_shader=True)
 
@@ -156,7 +55,7 @@ class BlenderWMOScene:
             mat = bpy.data.materials.new(texture1.split('\\')[-1][:-4] + '.png')
             mat.wow_wmo_material.self_pointer = mat
 
-            self.material_lookup[index] = mat
+            self.bl_materials[index] = mat
 
             try:
                 mat.wow_wmo_material.shader = str(wmo_material.shader)
@@ -305,7 +204,7 @@ class BlenderWMOScene:
 
             self.bl_fogs.append(fog_obj)
 
-    def load_doodads(self, assets_dir=None):
+    def load_doodads(self):
 
         cache_path = self.settings.cache_dir_path
         doodad_prototypes = {}
@@ -456,6 +355,378 @@ class BlenderWMOScene:
 
             if not bl_group.name == 'antiportal':
                 bl_group.load_object()
+
+    def build_references(self, export_selected, export_method):
+        """ Build WMO references in Blender scene """
+
+        root_elements = bpy.context.scene.wow_wmo_root_elements
+
+        # process materials
+        for i, slot in enumerate(root_elements.materials):
+            if not slot.pointer:
+                raise ReferenceError('\nError saving WMO. Material slot does not point to a valid material.')
+
+            self.bl_materials[i] = slot.pointer
+
+        # process groups
+        for i, slot in enumerate(root_elements.groups):
+
+            if export_method == 'PARTIAL':
+                if not slot.export:
+                    continue
+
+            elif (export_selected and not slot.pointer.select_get()) or slot.pointer.hide_viewport:
+                continue
+
+            slot.pointer.wow_wmo_group.group_id = i
+
+            slot.pointer.wow_wmo_group.relations.doodads.clear()
+            slot.pointer.wow_wmo_group.relations.lights.clear()
+            slot.pointer.wow_wmo_group.relations.portals.clear()
+
+            self.bl_groups.append(slot.pointer)
+
+        # process portals
+        for i, slot in enumerate(root_elements.portals):
+            self.bl_portals.append(slot.pointer)
+            slot.pointer.wow_wmo_portal.portal_id = i
+
+            if not slot.pointer.wow_wmo_portal.first or not slot.pointer.wow_wmo_portal.second:
+                raise ReferenceError('\nError saving WMO. '
+                                     'Portal \"{}\" points to a non-existing group.'.format(slot.pointer.name))
+
+            rel = slot.pointer.wow_wmo_portal.first.wow_wmo_group.relations.portals.add()
+            rel.id = slot.pointer.name  # TODO: store pointer instead?
+
+        # process fogs
+        for i, slot in enumerate(root_elements.fogs):
+            self.bl_fogs.append(slot.pointer)
+            slot.pointer.wow_wmo_fog.fog_id = i
+
+        # process lights
+        for i, slot in enumerate(root_elements.lights):
+            group = find_nearest_object(slot.pointer, self.bl_groups)
+            rel = group.wow_wmo_group.relations.lights.add()
+            rel.id = i
+
+            self.bl_lights.append(slot.pointer)
+
+        # process doodads
+        doodad_counter = 0
+        for i, slot in enumerate(root_elements.doodad_sets):
+
+            doodads = []
+            for doodad in slot.doodads:
+                group = find_nearest_object(doodad.pointer, self.bl_groups)
+                rel = group.wow_wmo_group.relations.doodads.add()
+                rel.id = doodad_counter
+                doodad_counter += 1
+
+                doodads.append(doodad.pointer)
+
+            self.bl_doodad_sets[slot.name] = doodads
+
+    def save_materials(self):
+        """ Add material if not already added, then return index in root file """
+
+        for i, mat_slot in ProgressReport( enumerate(bpy.context.scene.wow_wmo_root_elements.materials)
+                                         , msg='Saving materials'
+                                         ):
+
+            mat = mat_slot.pointer
+
+            wow_mat = WMOMaterial()
+
+            wow_mat.shader = int(mat.wow_wmo_material.shader)
+            wow_mat.blend_mode = int(mat.wow_wmo_material.blending_mode)
+            wow_mat.terrain_type = int(mat.wow_wmo_material.terrain_type)
+
+            if mat.wow_wmo_material.texture1:
+
+                if mat.wow_wmo_material.texture1.wow_wmo_texture.path not in self._texture_lookup:
+                    self._texture_lookup[mat.wow_wmo_material.texture1.wow_wmo_texture.path] = self.wmo.motx.add_string(
+                        mat.wow_wmo_material.texture1.wow_wmo_texture.path)
+
+                wow_mat.texture1_ofs = self._texture_lookup[mat.wow_wmo_material.texture1.wow_wmo_texture.path]
+
+            else:
+                raise ReferenceError('\nError saving WMO. Material \"{}\" must have a diffuse texture.'.format(mat.name))
+
+            if mat.wow_wmo_material.texture2:
+                if mat.wow_wmo_material.texture2.wow_wmo_texture.path not in self._texture_lookup:
+                    self._texture_lookup[mat.wow_wmo_material.texture2.wow_wmo_texture.path] = self.wmo.motx.add_string(
+                        mat.wow_wmo_material.texture2.wow_wmo_texture.path)
+
+                wow_mat.texture2_ofs = self._texture_lookup[mat.wow_wmo_material.texture2.wow_wmo_texture.path]
+
+            wow_mat.emissive_color = (int(mat.wow_wmo_material.emissive_color[0] * 255),
+                                      int(mat.wow_wmo_material.emissive_color[1] * 255),
+                                      int(mat.wow_wmo_material.emissive_color[2] * 255),
+                                      int(mat.wow_wmo_material.emissive_color[3] * 255))
+
+            wow_mat.diff_color = (int(mat.wow_wmo_material.diff_color[0] * 255),
+                                  int(mat.wow_wmo_material.diff_color[1] * 255),
+                                  int(mat.wow_wmo_material.diff_color[2] * 255),
+                                  int(mat.wow_wmo_material.diff_color[3] * 255))
+
+            for flag in mat.wow_wmo_material.flags:
+                wow_mat.flags |= int(flag)
+
+            self.wmo.momt.materials.append(wow_mat)
+
+
+    def add_group_info(self, flags, bounding_box, name, desc):
+        """ Add group info, then return offset of name and desc in a tuple """
+        group_info = GroupInfo()
+
+        group_info.flags = flags  # 8
+        group_info.bounding_box_corner1 = bounding_box[0].copy()
+        group_info.bounding_box_corner2 = bounding_box[1].copy()
+        group_info.name_ofs = self.mogn.add_string(name)  # 0xFFFFFFFF
+
+        desc_ofs = self.wmo.mogn.add_string(desc)
+
+        self.wmo.mogi.infos.append(group_info)
+
+        return group_info.name_ofs, desc_ofs
+
+    def save_doodad_sets(self):
+        """ Save doodads data from Blender scene to WMO root """
+
+        has_global = False
+
+        if len(self.bl_doodad_sets):
+            doodad_paths = {}
+
+            for set_name, doodads in ProgressReport(self.bl_doodad_sets.items(), msg='Saving doodad sets'):
+
+                doodad_set = DoodadSet()
+                doodad_set.name = set_name
+                doodad_set.start_doodad = len(self.wmo.modd.definitions)
+
+                for doodad in doodads:
+                    doodad_def = DoodadDefinition()
+
+                    path = os.path.splitext(doodad.wow_wmo_doodad.path)[0] + ".MDX"
+
+                    doodad_def.name_ofs = doodad_paths.get(path)
+                    if not doodad_def.name_ofs:
+                        doodad_def.name_ofs = self.wmo.modn.add_string(path)
+                        doodad_paths[path] = doodad_def.name_ofs
+
+                    doodad_def.position = doodad.matrix_world @ Vector((0, 0, 0))
+
+                    doodad.rotation_mode = 'QUATERNION'
+
+                    doodad_def.rotation = (doodad.rotation_quaternion[1],
+                                           doodad.rotation_quaternion[2],
+                                           doodad.rotation_quaternion[3],
+                                           doodad.rotation_quaternion[0])
+
+                    doodad_def.scale = doodad.scale[0]
+
+                    doodad_def.color = (int(doodad.wow_wmo_doodad.color[2] * 255),
+                                        int(doodad.wow_wmo_doodad.color[1] * 255),
+                                        int(doodad.wow_wmo_doodad.color[0] * 255),
+                                        int(doodad.wow_wmo_doodad.color[3] * 255))
+
+                    for flag in doodad.wow_wmo_doodad.flags:
+                        doodad_def.flags |= int(flag)
+
+                    self.wmo.modd.definitions.append(doodad_def)
+
+                doodad_set.n_doodads = len(self.wmo.modd.definitions) - doodad_set.start_doodad
+
+                if set_name == "Set_$DefaultGlobal":
+                    self.wmo.mods.sets.insert(0, doodad_set)
+                    has_global = True
+                else:
+                    self.wmo.mods.sets.append(doodad_set)
+
+        if not has_global:
+            doodad_set = DoodadSet()
+            doodad_set.name = "Set_$DefaultGlobal"
+            doodad_set.start_doodad = 0
+            doodad_set.n_doodads = 0
+            self.wmo.mods.sets.insert(0, doodad_set)
+
+    def save_lights(self):
+
+        for obj in self.bl_lights:
+            mesh = obj.data
+
+            light = Light()
+            light.light_type = int(mesh.wow_wmo_light.light_type)
+
+            if light.light_type in {0, 1}:
+                light.unknown4 = mesh.distance * 2
+
+            light.type = mesh.wow_wmo_light.type
+            light.use_attenuation = mesh.wow_wmo_light.use_attenuation
+            light.padding = mesh.wow_wmo_light.padding
+
+            light.color = (int(mesh.wow_wmo_light.color[2] * 255),
+                           int(mesh.wow_wmo_light.color[1] * 255),
+                           int(mesh.wow_wmo_light.color[0] * 255),
+                           int(mesh.wow_wmo_light.color_alpha * 255))
+
+            light.position = obj.location
+            light.intensity = mesh.wow_wmo_light.intensity
+            light.attenuation_start = mesh.wow_wmo_light.attenuation_start
+            light.attenuation_end = mesh.wow_wmo_light.attenuation_end
+            self.wmo.molt.lights.append(light)
+
+        print("\nDone saving lights. "
+              "\nTotal saving time: ", time.strftime("%M minutes %S seconds", time.gmtime(time.time() - start_time)))
+
+    def save_portals(self):
+
+        saved_portals_ids = []
+
+        self.wmo.mopt.infos = len(self.bl_portals) * [PortalInfo()]
+
+        for group_obj in self.bl_groups:
+
+            portal_relations = group_obj.wow_wmo_group.relations.portals
+            group_index = group_obj.wow_wmo_group.group_id
+            group = self.bl_groups[group_index]
+            group.mogp.portal_start = len(self.wmo.mopr.relations)
+
+            for relation in portal_relations:
+                portal_obj = bpy.context.scene.objects[relation.id]
+                portal_index = portal_obj.wow_wmo_portal.portal_id
+
+                if portal_index not in saved_portals_ids:
+
+                    portal_mesh = portal_obj.data
+                    portal_info = PortalInfo()
+                    portal_info.start_vertex = len(self.wmo.mopv.portal_vertices)
+                    v = []
+
+                    for poly in portal_mesh.polygons:
+                        for loop_index in poly.loop_indices:
+                            vertex_pos = portal_mesh.vertices[portal_mesh.loops[loop_index].vertex_index].co \
+                                         @ portal_obj.matrix_world
+                            self.wmo.mopv.portal_vertices.append(vertex_pos)
+                            v.append(vertex_pos)
+
+                    v_A = v[0][1] * v[1][2] - v[1][1] * v[0][2] - v[0][1] * v[2][2] + v[2][1] * v[0][2] + v[1][1] * \
+                          v[2][2] - \
+                          v[2][1] * v[1][2]
+                    v_B = -v[0][0] * v[1][2] + v[2][0] * v[1][2] + v[1][0] * v[0][2] - v[2][0] * v[0][2] - v[1][0] * \
+                          v[2][2] + \
+                          v[0][0] * v[2][2]
+                    v_C = v[2][0] * v[0][1] - v[1][0] * v[0][1] - v[0][0] * v[2][1] + v[1][0] * v[2][1] - v[2][0] * \
+                          v[1][1] + \
+                          v[0][0] * v[1][1]
+                    v_D = -v[0][0] * v[1][1] * v[2][2] + v[0][0] * v[2][1] * v[1][2] + v[1][0] * v[0][1] * v[2][2] - \
+                          v[1][0] * \
+                          v[2][1] * v[0][2] - v[2][0] * v[0][1] * v[1][2] + v[2][0] * v[1][1] * v[0][2]
+
+                    portal_info.unknown = v_D / sqrt(v_A * v_A + v_B * v_B + v_C * v_C)
+                    portal_info.n_vertices = len(self.wmo.mopv.portal_vertices) - portal_info.start_vertex
+                    portal_info.normal = tuple(portal_mesh.polygons[0].normal)
+
+                    self.wmo.mopt.infos[portal_index] = portal_info
+                    saved_portals_ids.append(portal_index)
+
+                first = self.bl_portals[portal_index].wow_wmo_portal.first
+                second = self.bl_portals[portal_index].wow_wmo_portal.second
+
+                # calculating portal relation
+                relation = PortalRelation()
+                relation.portal_index = portal_index
+                relation.group_index = second.wow_wmo_group.group_id if first.name == group_obj.name \
+                                                                     else first.wow_wmo_group.group_id
+
+                relation.side = group.get_portal_direction(portal_obj, group_obj)
+
+                self.wmo.mopr.relations.append(relation)
+
+            group.mogp.portal_count = len(self.wmo.mopr.relations) - group.mogp.portal_start
+
+
+    def save_fogs(self):
+
+        for fog_obj in ProgressReport(self.bl_fogs, msg='Saving fogs'):
+
+            fog = Fog()
+
+            fog.big_radius = fog_obj.dimensions[2] / 2
+            fog.small_radius = fog.big_radius * (fog_obj.wow_wmo_fog.inner_radius / 100)
+
+            fog.color1 = (int(fog_obj.wow_wmo_fog.color1[2] * 255),
+                          int(fog_obj.wow_wmo_fog.color1[1] * 255),
+                          int(fog_obj.wow_wmo_fog.color1[0] * 255),
+                          0xFF)
+
+            fog.color2 = (int(fog_obj.wow_wmo_fog.color2[2] * 255),
+                          int(fog_obj.wow_wmo_fog.color2[1] * 255),
+                          int(fog_obj.wow_wmo_fog.color2[0] * 255),
+                          0xFF)
+
+            fog.end_dist = fog_obj.wow_wmo_fog.end_dist
+            fog.end_dist2 = fog_obj.wow_wmo_fog.end_dist2
+            fog.position = fog_obj.location
+            fog.start_factor = fog_obj.wow_wmo_fog.start_factor
+            fog.StarFactor2 = fog_obj.wow_wmo_fog.start_factor2
+
+            if fog_obj.wow_wmo_fog.ignore_radius:
+                fog.flags |= 0x01
+            if fog_obj.wow_wmo_fog.unknown:
+                fog.flags |= 0x10
+
+            self.wmo.mfog.fogs.append(fog)
+
+
+    def save_root_header(self):
+
+        scene = bpy.context.scene
+
+        self.wmo.mver.version = 17
+
+        # setting up default fog with default blizzlike values.
+        if not len(self.wmo.mfog.fogs):
+            empty_fog = Fog()
+            empty_fog.color1 = (0xFF, 0xFF, 0xFF, 0xFF)
+            empty_fog.color2 = (0x00, 0x00, 0x00, 0xFF)
+            empty_fog.end_dist = 444.4445
+            empty_fog.end_dist2 = 222.2222
+            empty_fog.start_factor = 0.25
+            empty_fog.start_factor2 = -0.5
+            self.wmo.mfog.fogs.append(empty_fog)
+
+        bb = self.wmo.get_global_bounding_box()
+        self.wmo.mohd.bounding_box_corner1 = bb[0]
+        self.wmo.mohd.bounding_box_corner2 = bb[1]
+
+        # DBC foreign keys
+        self.wmo.mohd.id = scene.wow_wmo_root.wmo_id
+        self.wmo.mosb.skybox = scene.wow_wmo_root.skybox_path
+
+        self.wmo.mohd.ambient_color = [int(scene.wow_wmo_root.ambient_color[2] * 255),
+                                       int(scene.wow_wmo_root.ambient_color[1] * 255),
+                                       int(scene.wow_wmo_root.ambient_color[0] * 255),
+                                       int(scene.wow_wmo_root.ambient_color[3] * 255)]
+
+        self.wmo.mohd.n_materials = len(self.wmo.momt.materials)
+        self.wmo.mohd.n_groups = len(self.wmo.mogi.infos)
+        self.wmo.mohd.n_portals = len(self.wmo.mopt.infos)
+        self.wmo.mohd.n_models = self.wmo.modn.string_table.decode("ascii").count('.MDX')
+        self.wmo.mohd.n_lights = len(self.wmo.molt.lights)
+        self.wmo.mohd.n_doodads = len(self.wmo.modd.definitions)
+        self.wmo.mohd.n_sets = len(self.wmo.mods.sets)
+
+        flags = scene.wow_wmo_root.flags
+        if "0" in flags:
+            self.wmo.mohd.flags |= 0x01
+        if "2" in flags:
+            self.wmo.mohd.flags |= 0x02
+        if "1" in flags:
+            self.wmo.mohd.flags |= 0x08
+
+        self.wmo.mohd.flags |= 0x4
+
 
 
 

@@ -1,14 +1,11 @@
-import bpy
 import time
 
 from math import sqrt
-from mathutils import Vector
 
 from .wmo_group import *
 from ..pywowlib.file_formats.wmo_format_root import *
 from ..pywowlib.file_formats.wmo_format_group import *
 
-from ..ui import get_addon_prefs
 
 
 class WMOFile:
