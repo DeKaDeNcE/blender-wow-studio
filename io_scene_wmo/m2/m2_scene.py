@@ -1459,7 +1459,7 @@ class BlenderM2Scene:
         obj = bpy.data.objects.new('Collision', mesh)
         bpy.context.collection.objects.link(obj)
         obj.wow_m2_geoset.collision_mesh = True
-        obj.hide_viewport = True
+        obj.hide_set(True)
         # TODO: add transparent material
 
     def save_properties(self, filepath, selected_only):
@@ -1467,7 +1467,7 @@ class BlenderM2Scene:
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
         b_min, b_max = get_objs_boundbox_world(filter(lambda ob: not ob.wow_m2_geoset.collision_mesh
                                                                  and ob.type == 'MESH'
-                                                                 and not ob.hide_viewport, objects))
+                                                                 and not ob.hide_get(), objects))
 
         self.m2.root.bounding_box.min = b_min
         self.m2.root.bounding_box.max = b_max
@@ -1487,7 +1487,7 @@ class BlenderM2Scene:
 
             self.bone_ids[bl_bone.name] = self.m2.add_bone(pivot, key_bone_id, flags, parent_bone)
 
-        rigs = list(filter(lambda ob: ob.type == 'ARMATURE' and not ob.hide_viewport, bpy.context.scene.objects))
+        rigs = list(filter(lambda ob: ob.type == 'ARMATURE' and not ob.hide_get(), bpy.context.scene.objects))
 
         if len(rigs) > 1:
             raise Exception('Error: M2 exporter does not support more than one armature. Hide or remove the extra one.')
@@ -1582,7 +1582,7 @@ class BlenderM2Scene:
         bpy.ops.object.select_all(action='DESELECT')
 
         proxy_objects = []
-        for obj in filter(lambda ob: not ob.wow_m2_geoset.collision_mesh and ob.type == 'MESH' and not ob.hide_viewport, objects):
+        for obj in filter(lambda ob: not ob.wow_m2_geoset.collision_mesh and ob.type == 'MESH' and not ob.hide_get(), objects):
 
             new_obj = obj.copy()
             new_obj.data = obj.data.copy()
@@ -1717,7 +1717,7 @@ class BlenderM2Scene:
 
     def save_collision(self, selected_only):
         objects = bpy.context.selected_objects if selected_only else bpy.context.scene.objects
-        objects = list(filter(lambda ob: ob.wow_m2_geoset.collision_mesh and ob.type == 'MESH' and not ob.hide_viewport, objects))
+        objects = list(filter(lambda ob: ob.wow_m2_geoset.collision_mesh and ob.type == 'MESH' and not ob.hide_get(), objects))
 
         proxy_objects = []
 

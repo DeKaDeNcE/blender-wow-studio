@@ -7,40 +7,40 @@ def update_wow_visibility(self, context):
 
     for obj in self.objects:
         if 'wow_hide' not in obj:
-            obj['wow_hide'] = obj.hide_viewport
+            obj['wow_hide'] = obj.hide_get()
 
-        if obj['wow_hide'] != obj.hide_viewport:
+        if obj['wow_hide'] != obj.hide_get():
             continue
 
         if obj.type == "MESH":
             if obj.wow_wmo_group.enabled:
                 if obj.wow_wmo_group.place_type == '8':
-                    obj.hide_viewport = '0' not in values
+                    obj.hide_set('0' not in values)
                 else:
-                    obj.hide_viewport = '1' not in values
+                    obj.hide_set('1' not in values)
 
                 if obj.wow_wmo_group.collision_mesh:
                     col = obj.wow_wmo_group.collision_mesh
 
                     if 'wow_hide' not in col:
-                        col['wow_hide'] = col.hide_viewport
+                        col['wow_hide'] = col.hide_get()
 
-                    if col['wow_hide'] != col.hide_viewport:
+                    if col['wow_hide'] != col.hide_get():
                         continue
 
-                    col.hide_viewport = '6' not in values
-                    col['wow_hide'] = col.hide_viewport
+                    col.hide_set('6' not in values)
+                    col['wow_hide'] = col.hide_get()
 
             elif obj.wow_wmo_portal.enabled:
-                obj.hide_viewport = '2' not in values
+                obj.hide_set('2' not in values)
             elif obj.wow_wmo_fog.enabled:
-                obj.hide_viewport = '3' not in values
+                obj.hide_set('3' not in values)
             elif obj.wow_wmo_liquid.enabled:
-                obj.hide_viewport = '4' not in values
+                obj.hide_set('4' not in values)
         elif obj.type == "LAMP" and obj.data.wow_wmo_light.enabled:
-            obj.hide_viewport = '5' not in values
+            obj.hide_set('5' not in values)
 
-        obj['wow_hide'] = obj.hide_viewport
+        obj['wow_hide'] = obj.hide_get()
 
 
 def get_doodad_sets(self, context):
@@ -72,9 +72,9 @@ def switch_doodad_set(self, context):
         if obj.wow_wmo_doodad.enabled:
             if obj.parent:
                 name = obj.parent.name
-                obj.hide_viewport = set == "None" or name != set and name != "Set_$DefaultGlobal"
+                obj.hide_set(set == "None" or name != set and name != "Set_$DefaultGlobal")
             else:
-                obj.hide_viewport = True
+                obj.hide_set(True)
 
 
 class WMO_PT_tools_object_mode_display(bpy.types.Panel):

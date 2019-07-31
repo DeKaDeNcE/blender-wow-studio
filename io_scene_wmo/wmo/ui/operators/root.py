@@ -126,7 +126,7 @@ class WMO_OT_root_elements_components_change(bpy.types.Operator):
                 bpy.context.view_layer.objects.active = act_obj
 
                 d_set.hide_select = True
-                d_set.hide_viewport = True
+                d_set.hide_set(True)
                 d_set.wow_wmo_doodad_set.enabled = True
 
                 if not len(bpy.context.scene.wow_wmo_root_elements.doodad_sets):

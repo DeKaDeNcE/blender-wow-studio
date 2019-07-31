@@ -39,6 +39,6 @@ def create_fog_object(name='Fog', radius=1.0, location=None, color=(1.0, 1.0, 1.
     slot = bpy.context.scene.wow_wmo_root_elements.fogs.add()
     slot.pointer = fog
 
-    fog.hide_viewport = False if "3" in bpy.context.scene.wow_visibility else True
+    fog.hide_set(False if "3" in bpy.context.scene.wow_visibility else True)
 
     return fog

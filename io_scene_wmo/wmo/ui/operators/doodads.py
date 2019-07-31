@@ -216,7 +216,7 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
                 bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
                 obj = bpy.context.view_layer.objects.active
                 obj.name = self.Name
-                obj.hide_viewport = True
+                obj.hide_set(True)
                 obj.hide_select = True
                 obj.lock_location = (True, True, True)
                 obj.lock_rotation = (True, True, True)
@@ -235,7 +235,7 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
                 bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
                 obj = bpy.context.view_layer.objects.active
                 obj.name = "Set_$DefaultGlobal"
-                obj.hide_viewport = True
+                obj.hide_set(True)
                 obj.hide_select = True
                 obj.lock_location = (True, True, True)
                 obj.lock_rotation = (True, True, True)

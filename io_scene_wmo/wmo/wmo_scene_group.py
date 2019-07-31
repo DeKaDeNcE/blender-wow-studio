@@ -5,13 +5,14 @@ import bmesh
 from math import pi, ceil, floor
 
 from ..pywowlib.file_formats.wmo_format_group import MOGPFlags, LiquidVertex, TriangleMaterial, Batch
+from ..pywowlib.wmo_file import WMOGroupFile
 from .bsp_tree import *
 from .render import BlenderWMOObjectRenderFlags
 
 
 class BlenderWMOSceneGroup:
     def __init__(self, wmo_scene, wmo_group):
-        self.wmo_group = wmo_group
+        self.wmo_group : WMOGroupFile = wmo_group
         self.wmo_scene = wmo_scene
         self.name = wmo_scene.wmo.mogn.get_string(wmo_group.mogp.group_name_ofs)
 
@@ -39,33 +40,31 @@ class BlenderWMOSceneGroup:
         return True
 
     @staticmethod
-    def get_batch_type(b_face, vg_batch_map_index, vg_batch_map):
+    def get_batch_type(b_face, batch_map_trans, batch_map_int):
         """ Find which MOBA batch type a passed bmesh face belongs two """
 
-        # assume batch C if no batch map provided
-        if vg_batch_map is None:
+        if not batch_map_trans and not batch_map_int:
             return 2
 
-        count_a = 0
-        count_b = 0
+        trans_count = 0
+        int_count = 0
 
-        for vertex in b_face.verts:
-            dvert = vertex[vg_batch_map]
+        n_verts = len(b_face.loops)
 
-            if vg_batch_map_index in dvert:
-                weight = dvert[vg_batch_map_index]
+        for loop in b_face.loops:
+            if loop[batch_map_trans] != (0, 0, 0, 0):
+                trans_count += 1
 
-                if weight != 0:
-                    count_a += 1
-                else:
-                    count_b += 1
+            if loop[batch_map_int] != (0, 0, 0, 0):
+                int_count += 1
 
-        if count_a == 3:
+        if trans_count == n_verts:
             return 0
-        elif count_b == 3:
+        elif int_count == n_verts:
             return 1
         else:
             return 2
+
 
     @staticmethod
     def get_material_viewport_image(material):
@@ -75,7 +74,7 @@ class BlenderWMOSceneGroup:
             return material.wow_wmo_material.diff_texture_1
 
     @staticmethod
-    def get_linked_faces(b_face, face_batch_type, uv, uv2, batch_map, batch_map_index, stack=0):
+    def get_linked_faces(b_face, face_batch_type, uv, uv2, batch_map_trans, batch_map_int, stack=0):
         # check if face was already processed
         if b_face.tag:
             return []
@@ -114,14 +113,14 @@ class BlenderWMOSceneGroup:
                     continue
 
                 # check if face is located within the same batch
-                batch_type = BlenderWMOSceneGroup.get_batch_type(link_face, batch_map_index, batch_map)
+                batch_type = BlenderWMOSceneGroup.get_batch_type(link_face, batch_map_trans, batch_map_int)
 
                 if batch_type != face_batch_type:
                     continue
 
                 # call this function recursively on this face if all checks are passed
-                f_linked.extend(BlenderWMOSceneGroup.get_linked_faces(link_face, batch_type, uv, uv2, batch_map,
-                                                                      batch_map_index, stack=stack + 1))
+                f_linked.extend(BlenderWMOSceneGroup.get_linked_faces(link_face, batch_type, uv, uv2, batch_map_trans,
+                                                                      batch_map_int, stack=stack + 1))
 
         return f_linked
 
@@ -236,7 +235,7 @@ class BlenderWMOSceneGroup:
         else:
             real_liquid_type = self.from_wmo_liquid_type(group.mogp.liquid_type)
 
-        obj.wow_wmo_liquid.color = self.wmo_scene.material_lookup[group.mliq.material_id].wow_wmo_material.diff_color
+        obj.wow_wmo_liquid.color = self.wmo_scene.bl_materials[group.mliq.material_id].wow_wmo_material.diff_color
 
         wmo_group_obj = bpy.context.scene.objects[group_name]
         wmo_group_obj.wow_wmo_group.liquid_type = str(real_liquid_type)
@@ -379,7 +378,7 @@ class BlenderWMOSceneGroup:
         # add materials
         for i, batch in enumerate(group.moba.batches):
 
-            material = self.wmo_scene.material_lookup[group.moba.batches[i].material_id]
+            material = self.wmo_scene.bl_materials[group.moba.batches[i].material_id]
 
             mat_index_local = material_indices.get(batch.material_id)
 
@@ -403,7 +402,7 @@ class BlenderWMOSceneGroup:
         for i in group.mopy.triangle_materials:
             if i.material_id == 0xFF:
                 mat_ghost__id = len(mesh.materials)
-                mesh.materials.append(self.wmo_scene.material_lookup[0xFF])
+                mesh.materials.append(self.wmo_scene.bl_materials[0xFF])
                 material_viewport_textures[mat_ghost__id] = None
                 material_indices[0xFF] = mat_ghost__id
                 break
@@ -769,7 +768,7 @@ class BlenderWMOSceneGroup:
 
             group.mliq.tile_flags.append(tile_flag)
 
-    def save(self, original_obj, obj, autofill_textures):
+    def save(self, obj):
         """ Save WoW WMO group data for future export """
 
         group = self.wmo_group
@@ -804,16 +803,19 @@ class BlenderWMOSceneGroup:
         uv = bm.loops.layers.uv.active
         uv2 = bm.loops.layers.uv.get(obj.wow_wmo_vertex_info.second_uv)
 
-        obj_blend_map = obj.vertex_groups.get(obj.wow_wmo_vertex_info.blendmap)
-        vg_blend_map_index = obj_blend_map.index if obj_blend_map else 0
+        obj_collision_vg = None
+        vg_collision_index = 0
 
-        obj_collision_vg = obj.vertex_groups.get(obj.wow_wmo_vertex_info.vertex_group)
-        vg_collision_index = obj_collision_vg.index if obj_collision_vg else 0
+        if obj.wow_wmo_vertex_info.vertex_group:
+            obj_collision_vg = obj.vertex_groups.get(obj.wow_wmo_vertex_info.vertex_group)
+            vg_collision_index = obj_collision_vg.index
 
-        obj_batch_map = obj.vertex_groups.get(obj.wow_wmo_vertex_info.batch_map)
-        vg_batch_map_index = obj_batch_map.index if obj_batch_map else 0
+        obj_blend_map = bm.loops.layers.color.get('Blendmap')
+        obj_batch_map_trans = bm.loops.layers.color.get('BatchmapTrans')
+        obj_batch_map_int = bm.loops.layers.color.get('BatchmapInt')
+        obj_light_map = bm.loops.layers.color.get('Lightmap')
+        vertex_colors = bm.loops.layers.color.get('Col')
 
-        vertex_colors = bm.loops.layers.color.active
         use_vertex_color = '0' in obj.wow_wmo_group.flags \
                            or (obj.wow_wmo_group.place_type == '8192' and '1' not in obj.wow_wmo_group.flags)
 
@@ -825,8 +827,11 @@ class BlenderWMOSceneGroup:
 
         while faces_set:
             face = next(iter(faces_set))
-            batch_type = BlenderWMOSceneGroup.get_batch_type(face, vg_batch_map_index, deform)
-            linked_faces = BlenderWMOSceneGroup.get_linked_faces(face, batch_type, uv, uv2, deform, vg_batch_map_index)
+            batch_type = BlenderWMOSceneGroup.get_batch_type(face, obj_batch_map_trans, obj_batch_map_int)
+
+            linked_faces = BlenderWMOSceneGroup.get_linked_faces(face, batch_type, uv, uv2,
+                                                                 obj_batch_map_trans, obj_batch_map_int)
+
             batches.setdefault((face.material_index, batch_type), []).append(linked_faces)
             faces_set -= set(linked_faces)
 
@@ -911,9 +916,7 @@ class BlenderWMOSceneGroup:
                                     for k in range(3):
                                         vertex_color[k] = round(vcol[3 - k - 1] * 255)
 
-                                    # in batch A it is guaranteed that blendmap exists
-                                    if batch_type == 0:
-                                        attenuation = round(dvert[vg_batch_map_index] * 255)
+                                        attenuation = round(face.loops[j][obj_light_map][0] * 255) if obj_light_map else 0
 
                                         if attenuation > 0:
                                             tri_mat.flags |= 0x1  # TODO: actually check what this does
@@ -927,11 +930,8 @@ class BlenderWMOSceneGroup:
                                                                  if batch_type == 2 else [0x7F, 0x7F, 0x7F, 0xFF])
 
                             if obj_blend_map:
-                                if vg_blend_map_index in dvert:
-                                    blend_factor = round(dvert[vg_blend_map_index] * 255)
-                                else:
-                                    blend_factor = 1
 
+                                blend_factor = round(face.loops[j][obj_blend_map][0] * 255) if obj_blend_map else 1
                                 group.mocv2.vert_colors.append((0, 0, 0, blend_factor))
 
                             group.movi.indices.append(v_index_local)
@@ -1006,7 +1006,7 @@ class BlenderWMOSceneGroup:
         group.mogp.group_id = int(obj.wow_wmo_group.group_dbc_id)
         group_info = self.wmo_scene.wmo.add_group_info(group.mogp.flags,
                                               [group.mogp.bounding_box_corner1, group.mogp.bounding_box_corner2],
-                                              original_obj.name,
+                                              obj.name,
                                               obj.wow_wmo_group.description)
 
         group.mogp.group_name_ofs = group_info[0]

@@ -460,11 +460,11 @@ def update_current_doodad_set(self, context):
     for d_set in self.doodad_sets:
         if d_set.name == self.doodad_sets[self.cur_doodad_set].name:
             for child in d_set.pointer.children:
-                child.hide_viewport = False
+                child.hide_set(False)
 
         else:
             for child in d_set.pointer.children:
-                child.hide_viewport = True
+                child.hide_set(True)
 
 
 def update_current_material(self, context):

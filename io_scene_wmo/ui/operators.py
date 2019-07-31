@@ -146,11 +146,6 @@ class WBS_OT_wmo_export(bpy.types.Operator, ExportHelper):
         default=False,
         )
 
-    autofill_textures: BoolProperty(
-        name="Fill texture paths",
-        description="Automatically assign texture paths based on texture filenames",
-        default=True,
-        )
 
     def draw(self, context):
         layout = self.layout
@@ -159,7 +154,6 @@ class WBS_OT_wmo_export(bpy.types.Operator, ExportHelper):
         if self.export_method == 'FULL':
             layout.prop(self, 'export_selected')
 
-        layout.prop(self, 'autofill_textures')
 
     def execute(self, context):
         if context.scene and context.scene.wow_scene.type == 'WMO':
@@ -168,7 +162,7 @@ class WBS_OT_wmo_export(bpy.types.Operator, ExportHelper):
                 self.report({'ERROR'}, 'Partial export is not available. The changes are critical.')
                 return {'CANCELLED'}
 
-            export_wmo_from_blender_scene(self.filepath, self.autofill_textures, self.export_selected, self.export_method)
+            export_wmo_from_blender_scene(self.filepath, self.export_selected, self.export_method)
             return {'FINISHED'}
 
         self.report({'ERROR'}, 'Invalid scene type.')

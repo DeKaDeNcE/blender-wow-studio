@@ -14,6 +14,7 @@ def find_nearest_object(obj_, objects):
 
     dist = sys.float_info.max
     result = None
+
     for obj in objects:
         obj_location_relative = obj.matrix_world.inverted() @ obj.location
         hit = obj_.closest_point_on_mesh(obj_location_relative)
@@ -228,7 +229,7 @@ def show_message_box(message = "", title = "Message Box", icon = 'INFO'):
     def draw(self, context):
         self.layout.label(text=message)
 
-    bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
+    bpy.context.window_manager.popup_menu(draw, title=title, icon=icon)
 
 
 class ProgressReport:

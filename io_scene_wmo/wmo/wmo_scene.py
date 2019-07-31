@@ -5,6 +5,8 @@ import os
 from mathutils import Vector
 from math import sqrt
 
+from typing import Dict, List
+
 from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies, BlenderWMOMaterialRenderFlags
 from .utils.fogs import create_fog_object
 from .utils.materials import load_texture, add_ghost_material
@@ -15,23 +17,23 @@ from ..utils.misc import find_nearest_object, ProgressReport
 
 from ..pywowlib.file_formats.wmo_format_root import GroupInfo, WMOMaterial, Light, DoodadSet, DoodadDefinition, \
     PortalInfo, PortalRelation, Fog
+from ..pywowlib.wmo_file import WMOFile
 
 
 class BlenderWMOScene:
     """ This class is used for assembling a Blender scene from a WNO file or saving the scene back to it."""
 
-    def __init__(self, wmo, prefs):
-        self.wmo = wmo
+    def __init__(self, wmo : WMOFile, prefs):
+        self.wmo : WMOFile = wmo
         self.settings = prefs
 
-        self.bl_materials = {}
-        self.bl_groups = []
-        self.bl_portals = []
-        self.bl_fogs = []
-        self.bl_lights = []
-        self.bl_liquids = []
-        self.bl_doodad_sets = {}
-        self.bl_textures = []
+        self.bl_materials   : Dict[int, bpy.types.Material]  = {}
+        self.bl_groups      : List[bpy.types.Object]         = []
+        self.bl_portals     : List[bpy.types.Object]         = []
+        self.bl_fogs        : List[bpy.types.Object]         = []
+        self.bl_lights      : List[bpy.types.Object]         = []
+        self.bl_liquids     : List[bpy.types.Object]         = []
+        self.bl_doodad_sets : Dict[str, bpy.types.Object]    = {}
 
         self._texture_lookup = {}
 
@@ -224,7 +226,7 @@ class BlenderWMOScene:
 
             bpy.context.collection.objects.link(anchor)
             anchor.name = doodad_set.name
-            anchor.hide_viewport = True
+            anchor.hide_set(True)
             anchor.hide_select = True
             anchor.lock_location = (True, True, True)
             anchor.lock_rotation = (True, True, True)
@@ -277,7 +279,7 @@ class BlenderWMOScene:
                                             doodad.rotation[0],
                                             doodad.rotation[1],
                                             doodad.rotation[2])
-                nobj.hide_viewport = True
+                nobj.hide_set(True)
                 slot = scene.wow_wmo_root_elements.doodad_sets[-1].doodads.add()
                 slot.pointer = nobj
 
@@ -376,7 +378,7 @@ class BlenderWMOScene:
                 if not slot.export:
                     continue
 
-            elif (export_selected and not slot.pointer.select_get()) or slot.pointer.hide_viewport:
+            elif (export_selected and not slot.pointer.select_get()) or slot.pointer.hide_get():
                 continue
 
             slot.pointer.wow_wmo_group.group_id = i
@@ -385,6 +387,7 @@ class BlenderWMOScene:
             slot.pointer.wow_wmo_group.relations.lights.clear()
             slot.pointer.wow_wmo_group.relations.portals.clear()
 
+            self.wmo.add_group()
             self.bl_groups.append(slot.pointer)
 
         # process portals
@@ -641,6 +644,13 @@ class BlenderWMOScene:
                 self.wmo.mopr.relations.append(relation)
 
             group.mogp.portal_count = len(self.wmo.mopr.relations) - group.mogp.portal_start
+
+    def save_groups(self):
+
+        for group_obj, wmo_group in ProgressReport(zip(self.bl_groups, self.wmo.groups), msg='Saving groups'):
+            group_scene = BlenderWMOSceneGroup(self, wmo_group)
+            group_scene.save(group_obj)
+
 
     def save_fogs(self):
 

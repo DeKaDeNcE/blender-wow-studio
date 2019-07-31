@@ -301,7 +301,7 @@ class WMO_OT_add_liquid(bpy.types.Operator):
 
             water.wow_wmo_liquid.enabled = True
 
-            water.hide_viewport = False if "4" in bpy.context.scene.wow_visibility else True
+            water.hide_set(False if "4" in bpy.context.scene.wow_visibility else True)
 
         self.report({'INFO'}, "Successfully сreated WoW liquid: {}".format(water.name))
         return {'FINISHED'}

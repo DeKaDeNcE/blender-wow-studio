@@ -30,7 +30,7 @@ class WMO_OT_bake_portal_relations(bpy.types.Operator):
 
         success = False
 
-        groups = tuple(x for x in bpy.context.scene.objects if x.wow_wmo_group.enabled and not x.hide_viewport)
+        groups = tuple(x for x in bpy.context.scene.objects if x.wow_wmo_group.enabled and not x.hide_get())
 
         for obj in bpy.context.selected_objects:
             if obj.wow_wmo_portal.enabled:

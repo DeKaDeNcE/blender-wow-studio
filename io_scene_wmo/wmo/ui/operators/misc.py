@@ -160,9 +160,9 @@ class WMO_OT_to_group(bpy.types.Operator):
 
                 if self.place_type == "8" and "0" in scene.wow_visibility \
                         or self.place_type == "8192" and "1" in scene.wow_visibility:
-                    ob.hide_viewport = False
+                    ob.hide_set(False)
                 else:
-                    ob.hide_viewport = True
+                    ob.hide_set(True)
                 success = True
 
         if success:
@@ -291,7 +291,7 @@ class WMO_OT_to_wmo_portal(bpy.types.Operator):
                 ob.wow_wmo_fog.enabled = False
                 ob.wow_wmo_portal.enabled = True
 
-                ob.hide_viewport = False if "2" in bpy.context.scene.wow_visibility else True
+                ob.hide_set(False if "2" in bpy.context.scene.wow_visibility else True)
                 success = True
 
         if success:
@@ -326,7 +326,7 @@ class WMO_OT_select_entity(bpy.types.Operator):
     def execute(self, context):
 
         for obj in bpy.context.scene.objects:
-            if obj.hide_viewport:
+            if obj.hide_get():
                 continue
 
             if obj.type == 'MESH':
