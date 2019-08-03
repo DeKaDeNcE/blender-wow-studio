@@ -1,7 +1,7 @@
 import bpy
 import time
 
-from ..pywowlib.wmo_file import WMOFile, WMOGroupFile
+from ..pywowlib.wmo_file import WMOFile
 from ..pywowlib import CLIENT_VERSION
 
 from .wmo_scene import BlenderWMOScene

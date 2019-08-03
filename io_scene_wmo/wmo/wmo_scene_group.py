@@ -11,9 +11,10 @@ from .render import BlenderWMOObjectRenderFlags
 
 
 class BlenderWMOSceneGroup:
-    def __init__(self, wmo_scene, wmo_group):
+    def __init__(self, wmo_scene, wmo_group, obj=None):
         self.wmo_group : WMOGroupFile = wmo_group
         self.wmo_scene = wmo_scene
+        self.bl_object : bpy.types.Object = obj
         self.name = wmo_scene.wmo.mogn.get_string(wmo_group.mogp.group_name_ofs)
 
     @staticmethod
@@ -601,7 +602,7 @@ class BlenderWMOSceneGroup:
                     if angle is None or angle >= pi * 0.5:
                         continue
 
-                    ray_cast_result = bpy.context.scene.ray_cast(g_center, direction)
+                    ray_cast_result = bpy.context.scene.ray_cast(bpy.context.view_layer, g_center, direction)
 
                     if not ray_cast_result[0] \
                             or ray_cast_result[4].name == portal_obj.name \
@@ -768,8 +769,10 @@ class BlenderWMOSceneGroup:
 
             group.mliq.tile_flags.append(tile_flag)
 
-    def save(self, obj):
+    def save(self):
         """ Save WoW WMO group data for future export """
+
+        obj = self.bl_object
 
         group = self.wmo_group
         scene = bpy.context.scene
@@ -782,10 +785,10 @@ class BlenderWMOSceneGroup:
 
         # create bmesh
         bm = bmesh.new()
-        bm.from_object(obj, scene)
+        bm.from_object(obj, bpy.context.evaluated_depsgraph_get())
 
         # triangulate bmesh
-        bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method=0, ngon_method=0)
+        bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method='BEAUTY', ngon_method='BEAUTY')
 
         vertices = bm.verts
         edges = bm.edges
@@ -801,7 +804,7 @@ class BlenderWMOSceneGroup:
 
         deform = bm.verts.layers.deform.active
         uv = bm.loops.layers.uv.active
-        uv2 = bm.loops.layers.uv.get(obj.wow_wmo_vertex_info.second_uv)
+        uv2 = bm.loops.layers.uv.get('UVMap.001')
 
         obj_collision_vg = None
         vg_collision_index = 0
@@ -1004,10 +1007,10 @@ class BlenderWMOSceneGroup:
                 group.molr.LightRefs.append(lamp.id)
 
         group.mogp.group_id = int(obj.wow_wmo_group.group_dbc_id)
-        group_info = self.wmo_scene.wmo.add_group_info(group.mogp.flags,
-                                              [group.mogp.bounding_box_corner1, group.mogp.bounding_box_corner2],
-                                              obj.name,
-                                              obj.wow_wmo_group.description)
+        group_info = self.wmo_scene.add_group_info(group.mogp.flags,
+                                                  [group.mogp.bounding_box_corner1, group.mogp.bounding_box_corner2],
+                                                  obj.name,
+                                                  obj.wow_wmo_group.description)
 
         group.mogp.group_name_ofs = group_info[0]
         group.mogp.desc_group_name_ofs = group_info[1]

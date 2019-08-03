@@ -13,11 +13,13 @@ from .utils.materials import load_texture, add_ghost_material
 from .utils.doodads import import_doodad
 from .wmo_scene_group import BlenderWMOSceneGroup
 from ..ui import get_addon_prefs
-from ..utils.misc import find_nearest_object, ProgressReport
+from ..utils.misc import find_nearest_object
 
 from ..pywowlib.file_formats.wmo_format_root import GroupInfo, WMOMaterial, Light, DoodadSet, DoodadDefinition, \
     PortalInfo, PortalRelation, Fog
 from ..pywowlib.wmo_file import WMOFile
+
+from ..third_party.tqdm import tqdm
 
 
 class BlenderWMOScene:
@@ -28,7 +30,7 @@ class BlenderWMOScene:
         self.settings = prefs
 
         self.bl_materials   : Dict[int, bpy.types.Material]  = {}
-        self.bl_groups      : List[bpy.types.Object]         = []
+        self.bl_groups      : List[BlenderWMOSceneGroup]     = []
         self.bl_portals     : List[bpy.types.Object]         = []
         self.bl_fogs        : List[bpy.types.Object]         = []
         self.bl_lights      : List[bpy.types.Object]         = []
@@ -51,7 +53,7 @@ class BlenderWMOScene:
 
         textures = {}
 
-        for index, wmo_material in ProgressReport(list(enumerate(self.wmo.momt.materials)), msg='Importing materials'):
+        for index, wmo_material in tqdm(list(enumerate(self.wmo.momt.materials)), desc='Importing materials'):
             texture1 = self.wmo.motx.get_string(wmo_material.texture1_ofs)
             texture2 = self.wmo.motx.get_string(wmo_material.texture2_ofs)
 
@@ -134,7 +136,7 @@ class BlenderWMOScene:
     def load_lights(self):
         """ Load WoW WMO MOLT lights """
 
-        for i, wmo_light in ProgressReport(list(enumerate(self.wmo.molt.lights)), msg='Importing lights'):
+        for i, wmo_light in tqdm(list(enumerate(self.wmo.molt.lights)), desc='Importing lights'):
 
             bl_light_types = ['POINT', 'SPOT', 'SUN', 'POINT']
 
@@ -175,7 +177,7 @@ class BlenderWMOScene:
     def load_fogs(self):
         """ Load fogs from WMO Root File"""
 
-        for i, wmo_fog in ProgressReport(list(enumerate(self.wmo.mfog.fogs)), msg='Importing fogs'):
+        for i, wmo_fog in tqdm(list(enumerate(self.wmo.mfog.fogs)), desc='Importing fogs'):
 
             fog_obj = create_fog_object(  name="{}_Fog_{}".format(self.wmo.display_name, str(i).zfill(2))
                                         , location=wmo_fog.position
@@ -214,84 +216,82 @@ class BlenderWMOScene:
 
         scene = bpy.context.scene
 
-        progress = ProgressReport(self.wmo.modd.definitions, msg='Importing doodads')
-        for doodad_set in self.wmo.mods.sets:
+        with tqdm(self.wmo.modd.definitions, desc='Importing doodads') as progress:
+            for doodad_set in self.wmo.mods.sets:
 
-            anchor = bpy.data.objects.new(doodad_set.name, None)
-            anchor.empty_display_type = 'SPHERE'
+                anchor = bpy.data.objects.new(doodad_set.name, None)
+                anchor.empty_display_type = 'SPHERE'
 
-            anchor.wow_wmo_doodad_set.enabled = True
-            slot = scene.wow_wmo_root_elements.doodad_sets.add()
-            slot.pointer = anchor
+                anchor.wow_wmo_doodad_set.enabled = True
+                slot = scene.wow_wmo_root_elements.doodad_sets.add()
+                slot.pointer = anchor
 
-            bpy.context.collection.objects.link(anchor)
-            anchor.name = doodad_set.name
-            anchor.hide_set(True)
-            anchor.hide_select = True
-            anchor.lock_location = (True, True, True)
-            anchor.lock_rotation = (True, True, True)
-            anchor.lock_scale = (True, True, True)
+                bpy.context.collection.objects.link(anchor)
+                anchor.name = doodad_set.name
+                anchor.hide_set(True)
+                anchor.hide_select = True
+                anchor.lock_location = (True, True, True)
+                anchor.lock_rotation = (True, True, True)
+                anchor.lock_scale = (True, True, True)
 
-            for i in range(doodad_set.start_doodad, doodad_set.start_doodad + doodad_set.n_doodads):
-                doodad = self.wmo.modd.definitions[i]
+                for i in range(doodad_set.start_doodad, doodad_set.start_doodad + doodad_set.n_doodads):
+                    doodad = self.wmo.modd.definitions[i]
 
-                doodad_path = self.wmo.modn.get_string(doodad.name_ofs)
-                path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
+                    doodad_path = self.wmo.modn.get_string(doodad.name_ofs)
+                    path_hash = str(hashlib.md5(doodad_path.encode('utf-8')).hexdigest())
 
-                proto_obj = doodad_prototypes.get(path_hash)
+                    proto_obj = doodad_prototypes.get(path_hash)
 
-                if not proto_obj:
-                    nobj = import_doodad(doodad_path, cache_path)
-                    doodad_prototypes[path_hash] = nobj
-                else:
-                    nobj = proto_obj.copy()
-                    nobj.data = nobj.data.copy()
+                    if not proto_obj:
+                        nobj = import_doodad(doodad_path, cache_path)
+                        doodad_prototypes[path_hash] = nobj
+                    else:
+                        nobj = proto_obj.copy()
+                        nobj.data = nobj.data.copy()
 
-                    for j, mat in enumerate(nobj.data.materials):
-                        nobj.data.materials[j] = mat.copy()
+                        for j, mat in enumerate(nobj.data.materials):
+                            nobj.data.materials[j] = mat.copy()
 
-                nobj.parent = anchor
-                bpy.context.collection.objects.link(nobj)
-                bpy.context.view_layer.objects.active = nobj
+                    nobj.parent = anchor
+                    bpy.context.collection.objects.link(nobj)
+                    bpy.context.view_layer.objects.active = nobj
 
-                nobj.wow_wmo_doodad.self_pointer = nobj
-                nobj.wow_wmo_doodad.color = (pow(doodad.color[2] / 255, 2.2),
-                                             pow(doodad.color[1] / 255, 2.2),
-                                             pow(doodad.color[0] / 255, 2.2),
-                                             pow(doodad.color[3] / 255, 2.2)
-                                            )
+                    nobj.wow_wmo_doodad.self_pointer = nobj
+                    nobj.wow_wmo_doodad.color = (pow(doodad.color[2] / 255, 2.2),
+                                                 pow(doodad.color[1] / 255, 2.2),
+                                                 pow(doodad.color[0] / 255, 2.2),
+                                                 pow(doodad.color[3] / 255, 2.2)
+                                                )
 
-                flags = []
-                bit = 1
-                while bit <= 0x8:
-                    if doodad.flags & bit:
-                        flags.append(str(bit))
-                    bit <<= 1
+                    flags = []
+                    bit = 1
+                    while bit <= 0x8:
+                        if doodad.flags & bit:
+                            flags.append(str(bit))
+                        bit <<= 1
 
-                nobj.wow_wmo_doodad.flags = set(flags)
+                    nobj.wow_wmo_doodad.flags = set(flags)
 
-                # place the object correctly on the scene
-                nobj.location = doodad.position
-                nobj.scale = (doodad.scale, doodad.scale, doodad.scale)
+                    # place the object correctly on the scene
+                    nobj.location = doodad.position
+                    nobj.scale = (doodad.scale, doodad.scale, doodad.scale)
 
-                nobj.rotation_mode = 'QUATERNION'
-                nobj.rotation_quaternion = (doodad.rotation[3],
-                                            doodad.rotation[0],
-                                            doodad.rotation[1],
-                                            doodad.rotation[2])
-                nobj.hide_set(True)
-                slot = scene.wow_wmo_root_elements.doodad_sets[-1].doodads.add()
-                slot.pointer = nobj
+                    nobj.rotation_mode = 'QUATERNION'
+                    nobj.rotation_quaternion = (doodad.rotation[3],
+                                                doodad.rotation[0],
+                                                doodad.rotation[1],
+                                                doodad.rotation[2])
+                    nobj.hide_set(True)
+                    slot = scene.wow_wmo_root_elements.doodad_sets[-1].doodads.add()
+                    slot.pointer = nobj
 
-                progress.progress_step()
-
-        progress.progress_end()
+                    progress.update(1)
 
     def load_portals(self):
         """ Load WoW WMO portal planes """
 
         vert_count = 0
-        for index, portal in ProgressReport(list(enumerate(self.wmo.mopt.infos)), msg='Importing portals'):
+        for index, portal in tqdm(list(enumerate(self.wmo.mopt.infos)), desc='Importing portals'):
             portal_name = "{}_Portal_{}".format(self.wmo.display_name, str(index).zfill(3))
 
             verts = []
@@ -352,7 +352,7 @@ class BlenderWMOScene:
 
     def load_groups(self):
 
-        for group in ProgressReport(self.wmo.groups, msg='Importing groups'):
+        for group in tqdm(self.wmo.groups, desc='Importing groups'):
             bl_group = BlenderWMOSceneGroup(self, group)
             self.bl_groups.append(bl_group)
 
@@ -372,6 +372,7 @@ class BlenderWMOScene:
             self.bl_materials[i] = slot.pointer
 
         # process groups
+        group_objects = []
         for i, slot in enumerate(root_elements.groups):
 
             if export_method == 'PARTIAL':
@@ -387,8 +388,9 @@ class BlenderWMOScene:
             slot.pointer.wow_wmo_group.relations.lights.clear()
             slot.pointer.wow_wmo_group.relations.portals.clear()
 
-            self.wmo.add_group()
-            self.bl_groups.append(slot.pointer)
+            group = self.wmo.add_group()
+            self.bl_groups.append(BlenderWMOSceneGroup(self, group, obj=slot.pointer))
+            group_objects.append(slot.pointer)
 
         # process portals
         for i, slot in enumerate(root_elements.portals):
@@ -409,7 +411,7 @@ class BlenderWMOScene:
 
         # process lights
         for i, slot in enumerate(root_elements.lights):
-            group = find_nearest_object(slot.pointer, self.bl_groups)
+            group = find_nearest_object(slot.pointer, group_objects)
             rel = group.wow_wmo_group.relations.lights.add()
             rel.id = i
 
@@ -421,7 +423,7 @@ class BlenderWMOScene:
 
             doodads = []
             for doodad in slot.doodads:
-                group = find_nearest_object(doodad.pointer, self.bl_groups)
+                group = find_nearest_object(doodad.pointer, group_objects)
                 rel = group.wow_wmo_group.relations.doodads.add()
                 rel.id = doodad_counter
                 doodad_counter += 1
@@ -433,8 +435,8 @@ class BlenderWMOScene:
     def save_materials(self):
         """ Add material if not already added, then return index in root file """
 
-        for i, mat_slot in ProgressReport( enumerate(bpy.context.scene.wow_wmo_root_elements.materials)
-                                         , msg='Saving materials'
+        for i, mat_slot in tqdm( enumerate(bpy.context.scene.wow_wmo_root_elements.materials)
+                                         , desc='Saving materials'
                                          ):
 
             mat = mat_slot.pointer
@@ -485,7 +487,7 @@ class BlenderWMOScene:
         group_info.flags = flags  # 8
         group_info.bounding_box_corner1 = bounding_box[0].copy()
         group_info.bounding_box_corner2 = bounding_box[1].copy()
-        group_info.name_ofs = self.mogn.add_string(name)  # 0xFFFFFFFF
+        group_info.name_ofs = self.wmo.mogn.add_string(name)  # 0xFFFFFFFF
 
         desc_ofs = self.wmo.mogn.add_string(desc)
 
@@ -501,7 +503,7 @@ class BlenderWMOScene:
         if len(self.bl_doodad_sets):
             doodad_paths = {}
 
-            for set_name, doodads in ProgressReport(self.bl_doodad_sets.items(), msg='Saving doodad sets'):
+            for set_name, doodads in tqdm(self.bl_doodad_sets.items(), desc='Saving doodad sets'):
 
                 doodad_set = DoodadSet()
                 doodad_set.name = set_name
@@ -517,7 +519,7 @@ class BlenderWMOScene:
                         doodad_def.name_ofs = self.wmo.modn.add_string(path)
                         doodad_paths[path] = doodad_def.name_ofs
 
-                    doodad_def.position = doodad.matrix_world @ Vector((0, 0, 0))
+                    doodad_def.position = (doodad.matrix_world @ Vector((0, 0, 0))).to_tuple()
 
                     doodad.rotation_mode = 'QUATERNION'
 
@@ -585,12 +587,11 @@ class BlenderWMOScene:
 
         self.wmo.mopt.infos = len(self.bl_portals) * [PortalInfo()]
 
-        for group_obj in self.bl_groups:
+        for bl_group in self.bl_groups:
 
+            group_obj = bl_group.bl_object
             portal_relations = group_obj.wow_wmo_group.relations.portals
-            group_index = group_obj.wow_wmo_group.group_id
-            group = self.bl_groups[group_index]
-            group.mogp.portal_start = len(self.wmo.mopr.relations)
+            bl_group.wmo_group.mogp.portal_start = len(self.wmo.mopr.relations)
 
             for relation in portal_relations:
                 portal_obj = bpy.context.scene.objects[relation.id]
@@ -607,7 +608,7 @@ class BlenderWMOScene:
                         for loop_index in poly.loop_indices:
                             vertex_pos = portal_mesh.vertices[portal_mesh.loops[loop_index].vertex_index].co \
                                          @ portal_obj.matrix_world
-                            self.wmo.mopv.portal_vertices.append(vertex_pos)
+                            self.wmo.mopv.portal_vertices.append(vertex_pos.to_tuple())
                             v.append(vertex_pos)
 
                     v_A = v[0][1] * v[1][2] - v[1][1] * v[0][2] - v[0][1] * v[2][2] + v[2][1] * v[0][2] + v[1][1] * \
@@ -639,22 +640,20 @@ class BlenderWMOScene:
                 relation.group_index = second.wow_wmo_group.group_id if first.name == group_obj.name \
                                                                      else first.wow_wmo_group.group_id
 
-                relation.side = group.get_portal_direction(portal_obj, group_obj)
+                relation.side = bl_group.get_portal_direction(portal_obj, group_obj)
 
                 self.wmo.mopr.relations.append(relation)
 
-            group.mogp.portal_count = len(self.wmo.mopr.relations) - group.mogp.portal_start
+            bl_group.wmo_group.mogp.portal_count = len(self.wmo.mopr.relations) - bl_group.wmo_group.mogp.portal_start
 
     def save_groups(self):
 
-        for group_obj, wmo_group in ProgressReport(zip(self.bl_groups, self.wmo.groups), msg='Saving groups'):
-            group_scene = BlenderWMOSceneGroup(self, wmo_group)
-            group_scene.save(group_obj)
-
+        for wmo_group in tqdm(self.bl_groups, desc='Saving groups'):
+            wmo_group.save()
 
     def save_fogs(self):
 
-        for fog_obj in ProgressReport(self.bl_fogs, msg='Saving fogs'):
+        for fog_obj in tqdm(self.bl_fogs, desc='Saving fogs'):
 
             fog = Fog()
 
@@ -673,7 +672,7 @@ class BlenderWMOScene:
 
             fog.end_dist = fog_obj.wow_wmo_fog.end_dist
             fog.end_dist2 = fog_obj.wow_wmo_fog.end_dist2
-            fog.position = fog_obj.location
+            fog.position = fog_obj.location.to_tuple()
             fog.start_factor = fog_obj.wow_wmo_fog.start_factor
             fog.StarFactor2 = fog_obj.wow_wmo_fog.start_factor2
 
