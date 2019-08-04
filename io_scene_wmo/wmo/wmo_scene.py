@@ -404,6 +404,9 @@ class BlenderWMOScene:
             rel = slot.pointer.wow_wmo_portal.first.wow_wmo_group.relations.portals.add()
             rel.id = slot.pointer.name  # TODO: store pointer instead?
 
+            rel = slot.pointer.wow_wmo_portal.second.wow_wmo_group.relations.portals.add()
+            rel.id = slot.pointer.name  # TODO: store pointer instead?
+
         # process fogs
         for i, slot in enumerate(root_elements.fogs):
             self.bl_fogs.append(slot.pointer)
@@ -447,23 +450,23 @@ class BlenderWMOScene:
             wow_mat.blend_mode = int(mat.wow_wmo_material.blending_mode)
             wow_mat.terrain_type = int(mat.wow_wmo_material.terrain_type)
 
-            if mat.wow_wmo_material.texture1:
+            if mat.wow_wmo_material.diff_texture_1:
 
-                if mat.wow_wmo_material.texture1.wow_wmo_texture.path not in self._texture_lookup:
-                    self._texture_lookup[mat.wow_wmo_material.texture1.wow_wmo_texture.path] = self.wmo.motx.add_string(
-                        mat.wow_wmo_material.texture1.wow_wmo_texture.path)
+                if mat.wow_wmo_material.diff_texture_1.wow_wmo_texture.path not in self._texture_lookup:
+                    self._texture_lookup[mat.wow_wmo_material.diff_texture_1.wow_wmo_texture.path] = self.wmo.motx.add_string(
+                        mat.wow_wmo_material.diff_texture_1.wow_wmo_texture.path)
 
-                wow_mat.texture1_ofs = self._texture_lookup[mat.wow_wmo_material.texture1.wow_wmo_texture.path]
+                wow_mat.texture1_ofs = self._texture_lookup[mat.wow_wmo_material.diff_texture_1.wow_wmo_texture.path]
 
             else:
                 raise ReferenceError('\nError saving WMO. Material \"{}\" must have a diffuse texture.'.format(mat.name))
 
-            if mat.wow_wmo_material.texture2:
-                if mat.wow_wmo_material.texture2.wow_wmo_texture.path not in self._texture_lookup:
-                    self._texture_lookup[mat.wow_wmo_material.texture2.wow_wmo_texture.path] = self.wmo.motx.add_string(
-                        mat.wow_wmo_material.texture2.wow_wmo_texture.path)
+            if mat.wow_wmo_material.diff_texture_2:
+                if mat.wow_wmo_material.diff_texture_2.wow_wmo_texture.path not in self._texture_lookup:
+                    self._texture_lookup[mat.wow_wmo_material.diff_texture_2.wow_wmo_texture.path] = self.wmo.motx.add_string(
+                        mat.wow_wmo_material.diff_texture_2.wow_wmo_texture.path)
 
-                wow_mat.texture2_ofs = self._texture_lookup[mat.wow_wmo_material.texture2.wow_wmo_texture.path]
+                wow_mat.texture2_ofs = self._texture_lookup[mat.wow_wmo_material.diff_texture_2.wow_wmo_texture.path]
 
             wow_mat.emissive_color = (int(mat.wow_wmo_material.emissive_color[0] * 255),
                                       int(mat.wow_wmo_material.emissive_color[1] * 255),

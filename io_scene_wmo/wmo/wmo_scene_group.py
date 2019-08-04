@@ -825,6 +825,14 @@ class BlenderWMOSceneGroup:
         if obj_blend_map:
             self.wmo_scene.wmo.mohd.flags |= 0x2
 
+        if obj.wow_wmo_group.collision_mesh:
+            col_mesh = obj.wow_wmo_group.collision_mesh.data.copy()
+
+            for poly in col_mesh.polygons:
+                poly.material_index = 0xFF
+
+            bm.from_mesh(col_mesh)
+
         faces_set = set(faces)
         batches = {}
 
@@ -835,7 +843,10 @@ class BlenderWMOSceneGroup:
             linked_faces = BlenderWMOSceneGroup.get_linked_faces(face, batch_type, uv, uv2,
                                                                  obj_batch_map_trans, obj_batch_map_int)
 
-            batches.setdefault((face.material_index, batch_type), []).append(linked_faces)
+            is_batch = face.material_index < len(mesh.materials)
+            print(is_batch)
+
+            batches.setdefault((face.material_index if is_batch else 0xFF, batch_type), []).append(linked_faces)
             faces_set -= set(linked_faces)
 
         batches = sorted(batches.items(), key=lambda x: (x[0][1], x[0][0]))
@@ -851,13 +862,15 @@ class BlenderWMOSceneGroup:
             for batch_group in batch_groups:
                 n_faces = len(batch_group)
                 n_vertices = n_faces * 3
+                mat_id = scene.wow_wmo_root_elements.materials.find(
+                    mesh.materials[mat_index].name) if mat_index != 0xFF else mat_index
 
                 batch = Batch()
                 batch.start_triangle = start_triangle
                 batch.n_triangles = n_vertices
                 batch.start_vertex = start_vertex
                 batch.last_vertex = start_vertex + n_vertices - 1
-                batch.material_id = scene.wow_wmo_root_elements.materials.find(mesh.materials[mat_index].name)
+                batch.material_id = mat_id
                 batch.bounding_box = [32767, 32767, 32767, -32768, -32768, -32768]
 
                 # increment start indices for the next batch
@@ -885,12 +898,13 @@ class BlenderWMOSceneGroup:
                     collision_counter = 0
                     for j, vertex in enumerate(face.verts):
                         vert_info = vertex_map.get(vertex.index)
-                        dvert = vertex[deform]
+
+                        dvert = vertex[deform] if deform else None
 
                         if vert_info is None:
 
                             # determine if vertex is collideable
-                            is_collideable = obj_collision_vg and (vg_collision_index in dvert)
+                            is_collideable = (obj_collision_vg and (vg_collision_index in dvert)) or tri_mat.material_id == 0xFF
 
                             if is_collideable:
                                 collision_counter += 1

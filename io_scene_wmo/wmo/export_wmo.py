@@ -19,6 +19,7 @@ def export_wmo_from_blender_scene(filepath, export_selected, export_method):
 
     bl_scene.build_references(export_selected, export_method)
 
+    bl_scene.save_materials()
     bl_scene.save_doodad_sets()
     bl_scene.save_lights()
     bl_scene.save_fogs()
