@@ -844,7 +844,6 @@ class BlenderWMOSceneGroup:
                                                                  obj_batch_map_trans, obj_batch_map_int)
 
             is_batch = face.material_index < len(mesh.materials)
-            print(is_batch)
 
             batches.setdefault((face.material_index if is_batch else 0xFF, batch_type), []).append(linked_faces)
             faces_set -= set(linked_faces)

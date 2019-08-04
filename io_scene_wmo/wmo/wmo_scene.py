@@ -3,7 +3,7 @@ import bpy
 import os
 
 from mathutils import Vector
-from math import sqrt
+from math import sqrt, log
 
 from typing import Dict, List
 
@@ -533,10 +533,9 @@ class BlenderWMOScene:
 
                     doodad_def.scale = doodad.scale[0]
 
-                    doodad_def.color = (int(doodad.wow_wmo_doodad.color[2] * 255),
-                                        int(doodad.wow_wmo_doodad.color[1] * 255),
-                                        int(doodad.wow_wmo_doodad.color[0] * 255),
-                                        int(doodad.wow_wmo_doodad.color[3] * 255))
+                    doodad_color = [int(pow(channel, 10 / 22) * 255) for channel in doodad.wow_wmo_doodad.color]
+
+                    doodad_def.color = (doodad_color[2], doodad_color[1], doodad_color[0], doodad_color[3])
 
                     for flag in doodad.wow_wmo_doodad.flags:
                         doodad_def.flags |= int(flag)
