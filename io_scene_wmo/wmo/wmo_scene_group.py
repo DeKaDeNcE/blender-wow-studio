@@ -618,6 +618,8 @@ class BlenderWMOSceneGroup:
 
             return 0
 
+        bpy.ops.object.select_all(action='DESELECT')
+
         bpy.context.view_layer.objects.active = portal_obj
 
         # check if this portal was already processed
@@ -913,7 +915,7 @@ class BlenderWMOSceneGroup:
                             next_v_index_local += 1
 
                             # handle basic geometry elements
-                            group.movt.vertices.append(vertex.co.to_tuple())
+                            group.movt.vertices.append((obj.matrix_world @ vertex.co).to_tuple())
                             group.monr.normals.append(vertex.normal.to_tuple())
                             group.motv.tex_coords.append((face.loops[j][uv].uv[0],
                                                          1.0 - face.loops[j][uv].uv[1]))
@@ -932,12 +934,12 @@ class BlenderWMOSceneGroup:
                                     for k in range(3):
                                         vertex_color[k] = round(vcol[3 - k - 1] * 255)
 
-                                        attenuation = round(face.loops[j][obj_light_map][0] * 255) if obj_light_map else 0
+                                    attenuation = round(face.loops[j][obj_light_map][0] * 255) if obj_light_map else 0
 
-                                        if attenuation > 0:
-                                            tri_mat.flags |= 0x1  # TODO: actually check what this does
+                                    if attenuation > 0:
+                                        tri_mat.flags |= 0x1  # TODO: actually check what this does
 
-                                        vertex_color[3] = attenuation
+                                    vertex_color[3] = attenuation
 
                                     group.mocv.vert_colors.append(vertex_color)
                                 else:
