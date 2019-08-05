@@ -35,10 +35,18 @@ class BlenderWMOSceneGroup:
     def comp_colors(color1, color2):
         """ Compare two colors """
 
-        for i in range(0, 3):
+        for i in range(len(color1)):
             if color1[i] != color2[i]:
                 return False
         return True
+
+    @staticmethod
+    def comp_colors_key(color1):
+        for i in range(len(color1)):
+            if color1[i] > 0:
+                return True
+        return False
+
 
     @staticmethod
     def get_batch_type(b_face, batch_map_trans, batch_map_int):
@@ -53,10 +61,10 @@ class BlenderWMOSceneGroup:
         n_verts = len(b_face.loops)
 
         for loop in b_face.loops:
-            if loop[batch_map_trans] != (0, 0, 0, 0):
+            if batch_map_trans and BlenderWMOSceneGroup.comp_colors_key(loop[batch_map_trans]):
                 trans_count += 1
 
-            if loop[batch_map_int] != (0, 0, 0, 0):
+            if batch_map_int and BlenderWMOSceneGroup.comp_colors_key(loop[batch_map_int]):
                 int_count += 1
 
         if trans_count == n_verts:
@@ -854,6 +862,8 @@ class BlenderWMOSceneGroup:
 
         group.mver.version = 17
 
+        print('test')
+
         start_triangle = 0
         start_vertex = 0
         next_v_index_local = 0
@@ -881,6 +891,8 @@ class BlenderWMOSceneGroup:
                 # do not write collision only batches as actual batches, because they are not
                 if batch.material_id != 0xFF:
                     group.moba.batches.append(batch)
+
+                print(batch_type)
 
                 if batch_type == 0:
                     group.mogp.n_batches_a += 1
