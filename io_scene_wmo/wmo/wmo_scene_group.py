@@ -35,7 +35,7 @@ class BlenderWMOSceneGroup:
     def comp_colors(color1, color2):
         """ Compare two colors """
 
-        for i in range(len(color1)):
+        for i in range(3):
             if color1[i] != color2[i]:
                 return False
         return True
@@ -692,9 +692,9 @@ class BlenderWMOSceneGroup:
         # apply mesh transformations
         active = bpy.context.view_layer.objects.active
         bpy.context.view_layer.objects.active = ob
-        ob.set_selected(True)
+        ob.select_set(True)
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-        ob.set_selected(False)
+        ob.select_set(False)
         bpy.context.view_layer.objects.active = active
 
         start_vertex = 0
@@ -710,29 +710,28 @@ class BlenderWMOSceneGroup:
         group.mliq.y_tiles = round(ob.dimensions[1] / 4.1666625)
         group.mliq.x_verts = group.mliq.x_tiles + 1
         group.mliq.y_verts = group.mliq.y_tiles + 1
-        group.mliq.position = mesh.vertices[start_vertex].co
+        group.mliq.position = mesh.vertices[start_vertex].co.to_tuple()
 
         group.mogp.flags |= 0x1000  # do we really need that?
-        group.mogp.liquid_type = int(ob.wow_wmo_liquid.liquid_type)
-
-        # creating liquid material
-
-        material = bpy.data.materials.new(ob.name)
-        material.wow_wmo_material.enabled = True
-        material.wow_wmo_material.diff_color = ob.wow_wmo_liquid.color
 
         types_1 = {3, 7, 11}
         types_2 = {4, 8, 12}
 
-        material.wow_wmo_material.texture1 = "DUNGEONS\\TEXTURES\\STORMWIND\\GRAY12.BLP"
+        texture1 = "DUNGEONS\\TEXTURES\\STORMWIND\\GRAY12.BLP"
 
         if group.mogp.liquid_type in types_1:
-            material.wow_wmo_material.texture1 = "DUNGEONS\\TEXTURES\\METAL\\BM_BRSPIRE_CATWALK01.BLP"
+            texture1 = "DUNGEONS\\TEXTURES\\METAL\\BM_BRSPIRE_CATWALK01.BLP"
 
         elif group.mogp.liquid_type in types_2:
-            material.wow_wmo_material.texture1 = "DUNGEONS\\TEXTURES\\FLOOR\\JLO_UNDEADZIGG_SLIMEFLOOR.BLP"
+            texture1 = "DUNGEONS\\TEXTURES\\FLOOR\\JLO_UNDEADZIGG_SLIMEFLOOR.BLP"
 
-        group.mliq.material_id = self.wmo_scene.wmo.add_material(material)
+        diff_color = (int(ob.wow_wmo_liquid.color[0] * 255),
+                      int(ob.wow_wmo_liquid.color[1] * 255),
+                      int(ob.wow_wmo_liquid.color[2] * 255),
+                      int(ob.wow_wmo_liquid.color[3] * 255)
+                     )
+
+        group.mliq.material_id = self.wmo_scene.wmo.add_material(texture1, diff_color=diff_color)
 
         if group.mogp.liquid_type in types_1 or group.mogp.liquid_type in types_2:
 
@@ -769,13 +768,16 @@ class BlenderWMOSceneGroup:
             tile_flag = 0
             blue = [0.0, 0.0, 1.0]
 
+            counter = 0
             bit = 1
             while bit <= 0x80:
-                vc_layer = mesh.vertex_colors["flag_" + hex(bit)]
+                vc_layer = mesh.vertex_colors["flag_{}".format(counter)]
 
-                if group.comp_colors(vc_layer.data[poly.loop_indices[0]].color, blue):
+                if self.comp_colors(vc_layer.data[poly.loop_indices[0]].color, blue):
                     tile_flag |= bit
                 bit <<= 1
+
+                counter += 1
 
             group.mliq.tile_flags.append(tile_flag)
 
@@ -864,8 +866,6 @@ class BlenderWMOSceneGroup:
 
         group.mver.version = 17
 
-        print('test')
-
         start_triangle = 0
         start_vertex = 0
         next_v_index_local = 0
@@ -953,8 +953,6 @@ class BlenderWMOSceneGroup:
                                             tri_mat.flags |= 0x1  # TODO: actually check what this does
 
                                         vertex_color[3] = attenuation
-
-                                        print(attenuation)
 
                                     group.mocv.vert_colors.append(vertex_color)
                                 else:
@@ -1071,11 +1069,14 @@ class BlenderWMOSceneGroup:
             else:
                 group.mocv = None
 
-        if not group.mogp.flags & MOGPFlags.HasWater:
+        if obj.wow_wmo_group.liquid_mesh:
+            self.save_liquid(obj.wow_wmo_group.liquid_mesh)
+        else:
             group.mliq = None
             group.mogp.flags |= MOGPFlags.IsNotOcean  # check if this is necessary
             group.root.mohd.flags |= 0x4
-            group.mogp.liquid_type = int(obj.wow_wmo_group.liquid_type)
+
+        group.mogp.liquid_type = int(obj.wow_wmo_group.liquid_type)
 
         if not has_lights:
             group.molr = None
@@ -1088,4 +1089,6 @@ class BlenderWMOSceneGroup:
 
         if obj_blend_map is None:
             group.mocv2 = None
+
+
 

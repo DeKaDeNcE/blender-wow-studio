@@ -37,7 +37,6 @@ class BlenderWMOScene:
         self.bl_liquids     : List[bpy.types.Object]         = []
         self.bl_doodad_sets : Dict[str, bpy.types.Object]    = {}
 
-        self._texture_lookup = {}
 
     def load_materials(self, texture_dir=None):
         """ Load materials from WoW WMO root file """
@@ -444,44 +443,35 @@ class BlenderWMOScene:
 
             mat = mat_slot.pointer
 
-            wow_mat = WMOMaterial()
-
-            wow_mat.shader = int(mat.wow_wmo_material.shader)
-            wow_mat.blend_mode = int(mat.wow_wmo_material.blending_mode)
-            wow_mat.terrain_type = int(mat.wow_wmo_material.terrain_type)
-
-            if mat.wow_wmo_material.diff_texture_1:
-
-                if mat.wow_wmo_material.diff_texture_1.wow_wmo_texture.path not in self._texture_lookup:
-                    self._texture_lookup[mat.wow_wmo_material.diff_texture_1.wow_wmo_texture.path] = self.wmo.motx.add_string(
-                        mat.wow_wmo_material.diff_texture_1.wow_wmo_texture.path)
-
-                wow_mat.texture1_ofs = self._texture_lookup[mat.wow_wmo_material.diff_texture_1.wow_wmo_texture.path]
-
-            else:
+            if not mat.wow_wmo_material.diff_texture_1:
                 raise ReferenceError('\nError saving WMO. Material \"{}\" must have a diffuse texture.'.format(mat.name))
 
-            if mat.wow_wmo_material.diff_texture_2:
-                if mat.wow_wmo_material.diff_texture_2.wow_wmo_texture.path not in self._texture_lookup:
-                    self._texture_lookup[mat.wow_wmo_material.diff_texture_2.wow_wmo_texture.path] = self.wmo.motx.add_string(
-                        mat.wow_wmo_material.diff_texture_2.wow_wmo_texture.path)
+            diff_texture_1 = mat.wow_wmo_material.diff_texture_1.wow_wmo_texture.path
 
-                wow_mat.texture2_ofs = self._texture_lookup[mat.wow_wmo_material.diff_texture_2.wow_wmo_texture.path]
+            diff_texture_2 = mat.wow_wmo_material.diff_texture_2.wow_wmo_texture.path if mat.wow_wmo_material.diff_texture_2 else ""
 
-            wow_mat.emissive_color = (int(mat.wow_wmo_material.emissive_color[0] * 255),
-                                      int(mat.wow_wmo_material.emissive_color[1] * 255),
-                                      int(mat.wow_wmo_material.emissive_color[2] * 255),
-                                      int(mat.wow_wmo_material.emissive_color[3] * 255))
-
-            wow_mat.diff_color = (int(mat.wow_wmo_material.diff_color[0] * 255),
-                                  int(mat.wow_wmo_material.diff_color[1] * 255),
-                                  int(mat.wow_wmo_material.diff_color[2] * 255),
-                                  int(mat.wow_wmo_material.diff_color[3] * 255))
+            flags = 0
 
             for flag in mat.wow_wmo_material.flags:
-                wow_mat.flags |= int(flag)
+                flags |= int(flag)
 
-            self.wmo.momt.materials.append(wow_mat)
+            self.wmo.add_material(  diff_texture_1
+                                  , diff_texture_2
+                                  , int(mat.wow_wmo_material.shader)
+                                  , int(mat.wow_wmo_material.blending_mode)
+                                  , int(mat.wow_wmo_material.terrain_type)
+                                  , flags
+                                  , ( int(mat.wow_wmo_material.emissive_color[0] * 255),
+                                      int(mat.wow_wmo_material.emissive_color[1] * 255),
+                                      int(mat.wow_wmo_material.emissive_color[2] * 255),
+                                      int(mat.wow_wmo_material.emissive_color[3] * 255)
+                                    )
+                                  , ( int(mat.wow_wmo_material.diff_color[0] * 255),
+                                      int(mat.wow_wmo_material.diff_color[1] * 255),
+                                      int(mat.wow_wmo_material.diff_color[2] * 255),
+                                      int(mat.wow_wmo_material.diff_color[3] * 255)
+                                    )
+                                 )
 
     def add_group_info(self, flags, bounding_box, name, desc):
         """ Add group info, then return offset of name and desc in a tuple """
