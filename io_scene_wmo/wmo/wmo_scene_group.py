@@ -842,6 +842,8 @@ class BlenderWMOSceneGroup:
                 poly.material_index = 0xFF
 
             bm.from_mesh(col_mesh)
+            bm.verts.ensure_lookup_table()
+            bm.faces.ensure_lookup_table()
 
         faces_set = set(faces)
         batches = {}
@@ -892,14 +894,12 @@ class BlenderWMOSceneGroup:
                 if batch.material_id != 0xFF:
                     group.moba.batches.append(batch)
 
-                print(batch_type)
-
-                if batch_type == 0:
-                    group.mogp.n_batches_a += 1
-                elif batch_type == 1:
-                    group.mogp.n_batches_b += 1
-                elif batch_type == 2:
-                    group.mogp.n_batches_c += 1
+                    if batch_type == 0:
+                        group.mogp.n_batches_a += 1
+                    elif batch_type == 1:
+                        group.mogp.n_batches_b += 1
+                    elif batch_type == 2:
+                        group.mogp.n_batches_c += 1
 
                 # actually save geometry
                 vertex_map = {}
@@ -937,27 +937,29 @@ class BlenderWMOSceneGroup:
                                 group.motv2.tex_coords.append((face.loops[j][uv].uv[0],
                                                               1.0 - face.loops[j][uv2].uv[1]))
 
-                            # handler vertex color
+                            # handle vertex color
                             if use_vertex_color:
-                                if vertex_colors:
+                                if vertex_colors and batch.material_id != 0xFF:
                                     vertex_color = [0x7F, 0x7F, 0x7F, 0x00]
                                     vcol = face.loops[j][vertex_colors]
 
                                     for k in range(3):
                                         vertex_color[k] = round(vcol[3 - k - 1] * 255)
 
-                                    attenuation = round(face.loops[j][obj_light_map][0] * 255) if obj_light_map else 0
+                                    if obj_light_map:
+                                        attenuation = round(face.loops[j][obj_light_map][0] * 255) if obj_light_map else 0
 
-                                    if attenuation > 0:
-                                        tri_mat.flags |= 0x1  # TODO: actually check what this does
+                                        if attenuation > 0:
+                                            tri_mat.flags |= 0x1  # TODO: actually check what this does
 
-                                    vertex_color[3] = attenuation
+                                        vertex_color[3] = attenuation
+
+                                        print(attenuation)
 
                                     group.mocv.vert_colors.append(vertex_color)
                                 else:
                                     # set correct default values for vertex
-                                    group.mocv.vert_colors.append([0x7F, 0x7F, 0x7F, 0x00]
-                                                                 if batch_type == 2 else [0x7F, 0x7F, 0x7F, 0xFF])
+                                    group.mocv.vert_colors.append([0x7F, 0x7F, 0x7F, 0x00])
 
                             if obj_blend_map:
 
