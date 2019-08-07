@@ -494,84 +494,65 @@ class BlenderWMOScene:
         has_global = False
 
         if len(self.bl_doodad_sets):
-            doodad_paths = {}
 
             for set_name, doodads in tqdm(self.bl_doodad_sets.items(), desc='Saving doodad sets'):
 
-                doodad_set = DoodadSet()
-                doodad_set.name = set_name
-                doodad_set.start_doodad = len(self.wmo.modd.definitions)
+                self.wmo.add_doodad_set(set_name, len(doodads))
 
                 for doodad in doodads:
-                    doodad_def = DoodadDefinition()
 
-                    path = os.path.splitext(doodad.wow_wmo_doodad.path)[0] + ".MDX"
+                    path = doodad.wow_wmo_doodad.path
 
-                    doodad_def.name_ofs = doodad_paths.get(path)
-                    if not doodad_def.name_ofs:
-                        doodad_def.name_ofs = self.wmo.modn.add_string(path)
-                        doodad_paths[path] = doodad_def.name_ofs
-
-                    doodad_def.position = (doodad.matrix_world @ Vector((0, 0, 0))).to_tuple()
+                    position = (doodad.matrix_world @ Vector((0, 0, 0))).to_tuple()
 
                     doodad.rotation_mode = 'QUATERNION'
+                    rotation = (doodad.rotation_quaternion[1],
+                                doodad.rotation_quaternion[2],
+                                doodad.rotation_quaternion[3],
+                                doodad.rotation_quaternion[0])
 
-                    doodad_def.rotation = (doodad.rotation_quaternion[1],
-                                           doodad.rotation_quaternion[2],
-                                           doodad.rotation_quaternion[3],
-                                           doodad.rotation_quaternion[0])
-
-                    doodad_def.scale = doodad.scale[0]
+                    scale = doodad.scale[0]
 
                     doodad_color = [int(pow(channel, 10 / 22) * 255) for channel in doodad.wow_wmo_doodad.color]
+                    doodad_color = (doodad_color[2], doodad_color[1], doodad_color[0], doodad_color[3])
 
-                    doodad_def.color = (doodad_color[2], doodad_color[1], doodad_color[0], doodad_color[3])
-
+                    flags = 0
                     for flag in doodad.wow_wmo_doodad.flags:
-                        doodad_def.flags |= int(flag)
+                        flags |= int(flag)
 
-                    self.wmo.modd.definitions.append(doodad_def)
+                    self.wmo.add_doodad(path, position, rotation, scale, doodad_color, flags)
 
-                doodad_set.n_doodads = len(self.wmo.modd.definitions) - doodad_set.start_doodad
-
-                if set_name == "Set_$DefaultGlobal":
-                    self.wmo.mods.sets.insert(0, doodad_set)
-                    has_global = True
-                else:
-                    self.wmo.mods.sets.append(doodad_set)
+            if set_name == "Set_$DefaultGlobal":
+                has_global = True
 
         if not has_global:
-            doodad_set = DoodadSet()
-            doodad_set.name = "Set_$DefaultGlobal"
-            doodad_set.start_doodad = 0
-            doodad_set.n_doodads = 0
-            self.wmo.mods.sets.insert(0, doodad_set)
+            self.wmo.add_doodad_set("Set_$DefaultGlobal", 0)
 
     def save_lights(self):
 
-        for obj in self.bl_lights:
+        for obj in tqdm(self.bl_lights, desc='Saving lights'):
             mesh = obj.data
 
-            light = Light()
-            light.light_type = int(mesh.wow_wmo_light.light_type)
+            light_type = int(mesh.wow_wmo_light.light_type)
 
-            if light.light_type in {0, 1}:
-                light.unknown4 = mesh.distance * 2
+            unk1 = mesh.distance * 2
 
-            light.type = mesh.wow_wmo_light.type
-            light.use_attenuation = mesh.wow_wmo_light.use_attenuation
-            light.padding = mesh.wow_wmo_light.padding
+            unk2 = mesh.wow_wmo_light.type
+            use_attenuation = mesh.wow_wmo_light.use_attenuation
+            padding = mesh.wow_wmo_light.padding
 
-            light.color = (int(mesh.wow_wmo_light.color[2] * 255),
-                           int(mesh.wow_wmo_light.color[1] * 255),
-                           int(mesh.wow_wmo_light.color[0] * 255),
-                           int(mesh.wow_wmo_light.color_alpha * 255))
+            color = (int(mesh.wow_wmo_light.color[2] * 255),
+                     int(mesh.wow_wmo_light.color[1] * 255),
+                     int(mesh.wow_wmo_light.color[0] * 255),
+                     int(mesh.wow_wmo_light.color_alpha * 255))
 
-            light.position = obj.location
-            light.intensity = mesh.wow_wmo_light.intensity
-            light.attenuation_start = mesh.wow_wmo_light.attenuation_start
-            light.attenuation_end = mesh.wow_wmo_light.attenuation_end
-            self.wmo.molt.lights.append(light)
+            position = obj.location.to_tuple()
+            intensity = mesh.wow_wmo_light.intensity
+            attenuation_start = mesh.wow_wmo_light.attenuation_start
+            attenuation_end = mesh.wow_wmo_light.attenuation_end
+
+            self.wmo.add_light(light_type, unk1, unk2, use_attenuation, padding, color,
+                               position, intensity, attenuation_start, attenuation_end)
 
     def save_portals(self):
 
@@ -579,7 +560,7 @@ class BlenderWMOScene:
 
         self.wmo.mopt.infos = len(self.bl_portals) * [PortalInfo()]
 
-        for bl_group in self.bl_groups:
+        for bl_group in tqdm(self.bl_groups, desc='Saving portals'):
 
             group_obj = bl_group.bl_object
             portal_relations = group_obj.wow_wmo_group.relations.portals
