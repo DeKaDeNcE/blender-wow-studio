@@ -71,6 +71,7 @@ def update_shader(self, context):
     else:
         material.pass_index &= ~0x4
 
+
 def update_blending_mode(self, context):
     material = self.self_pointer
 
@@ -91,6 +92,7 @@ def update_blending_mode(self, context):
         material.blend_method = 'MULTIPLY'
     else:
         material.blend_method = 'BLEND'
+
 
 def update_diff_texture_1(self, context):
     if not self.self_pointer.use_nodes or ('DiffuseTexture1' not in self.self_pointer.node_tree.nodes):
@@ -119,6 +121,8 @@ def update_wmo_material_enabled(self, context):
 
     if self.enabled:
         update_wmo_mat_node_tree(self.self_pointer)
+
+
 
 
 class WowMaterialPropertyGroup(bpy.types.PropertyGroup):

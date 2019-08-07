@@ -112,6 +112,7 @@ class WMO_OT_import_texture_from_filepath(bpy.types.Operator):
         texture.name = os.path.basename(self.filepath)
 
         mat = bpy.data.materials.new(name=texture.name)
+        mat.wow_wmo_material.self_pointer = mat
         mat.wow_wmo_material.diff_texture_1 = texture
 
         load_wmo_shader_dependencies()
@@ -119,6 +120,7 @@ class WMO_OT_import_texture_from_filepath(bpy.types.Operator):
 
         slot = context.scene.wow_wmo_root_elements.materials.add()
         slot.pointer = mat
+        mat.wow_wmo_material.self_pointer = mat
         mat.wow_wmo_material.enabled = True
 
         global display_material_select_pie
@@ -160,6 +162,7 @@ class WMO_OT_import_texture_from_wmv(bpy.types.Operator):
         texture = load_texture({}, path, addon_prefs.cache_dir_path)
 
         mat = bpy.data.materials.new(name=path.split('\\')[-1][:-4] + '.PNG')
+        mat.wow_wmo_material.self_pointer = mat
         mat.wow_wmo_material.diff_texture_1 = texture
 
         load_wmo_shader_dependencies()

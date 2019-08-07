@@ -15,8 +15,7 @@ from .wmo_scene_group import BlenderWMOSceneGroup
 from ..ui import get_addon_prefs
 from ..utils.misc import find_nearest_object
 
-from ..pywowlib.file_formats.wmo_format_root import GroupInfo, WMOMaterial, Light, DoodadSet, DoodadDefinition, \
-    PortalInfo, PortalRelation, Fog
+from ..pywowlib.file_formats.wmo_format_root import GroupInfo, PortalInfo, PortalRelation, Fog
 from ..pywowlib.wmo_file import WMOFile
 
 from ..third_party.tqdm import tqdm
