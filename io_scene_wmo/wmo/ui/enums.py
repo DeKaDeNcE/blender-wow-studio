@@ -65,9 +65,9 @@ portal_dir_alg_enum = [
 ]
 
 root_flags_enum = [
-    ("0", "Auto Attenuation", "Attenuate light on vertices based on distance from portal", 'MOD_MIRROR', 0x1),
-    ("1", "Lighten Indoor", "Lighten up all indoor groups automatically", 'LAMP_SUN', 0x2),
-    ("2", "Use Ambient", "Use ambient lighting inside indoor groups", 'PMARKER_ACT', 0x4)
+    ("0", "No Auto Attenuation", "Do not attenuate light on vertices based on distance from portal", 'MOD_MIRROR', 0x1),
+    ("1", "Do Not Use Lightmap", "", 'LAMP_SUN', 0x2),
+    ("2", "Unified rendering", "Use ambient lighting inside indoor groups", 'PMARKER_ACT', 0x4)
 ]
 
 light_type_enum = [

@@ -98,10 +98,9 @@ class WMO_PT_tools_object_mode_display(bpy.types.Panel):
         col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').entity = 'wow_wmo_light'
         col_col.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').entity = 'Collision'
 
-        if not bpy.context.scene.wow_wmo_root.mods_sets:
-            box2_row2 = col.row()
-            box2_row2.prop(context.scene, "wow_doodad_visibility", expand=False)
-            box2_row2.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').entity = 'wow_wmo_doodad'
+        box2_row2 = col.row()
+        box2_row2.prop(context.scene, "wow_doodad_visibility", expand=False)
+        box2_row2.operator("scene.wow_wmo_select_entity", text='', icon='VIEWZOOM').entity = 'wow_wmo_doodad'
 
     @classmethod
     def poll(cls, context):
@@ -118,7 +117,6 @@ class WMO_PT_tools_panel_object_mode_add_to_scene(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout.split()
 
-        has_sets = True if bpy.context.scene.wow_wmo_root.mods_sets else False
         game_data_loaded = hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files
 
         col = layout.column(align=True)
@@ -131,11 +129,11 @@ class WMO_PT_tools_panel_object_mode_add_to_scene(bpy.types.Panel):
         box1_row2 = box1_col.row(align=True)
         box1_row3 = box1_col.row(align=True)
         if game_data_loaded:
-            if not has_sets:
-                box1_row2.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2',
-                                   icon_value=ui_icons['WOW_STUDIO_DOODADS_ADD'])
-                box1_row2.operator("scene.wow_import_last_wmo_from_wmv", text='WMO',
-                                   icon_value=ui_icons['WOW_STUDIO_WMO_ADD'])
+
+            box1_row2.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2',
+                               icon_value=ui_icons['WOW_STUDIO_DOODADS_ADD'])
+            box1_row2.operator("scene.wow_import_last_wmo_from_wmv", text='WMO',
+                               icon_value=ui_icons['WOW_STUDIO_WMO_ADD'])
             box1_row3.operator("scene.wow_add_scale_reference", text='Scale',
                                icon_value=ui_icons['WOW_STUDIO_SCALE_ADD'])
 

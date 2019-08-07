@@ -40,29 +40,6 @@ class WMO_PT_root(bpy.types.Panel):
         return context.scene is not None and context.scene.wow_scene.type == 'WMO'
 
 
-class MODS_Set(bpy.types.PropertyGroup):
-    name:  bpy.props.StringProperty()
-    start_doodad:  bpy.props.IntProperty()
-    n_doodads:  bpy.props.IntProperty()
-    padding:  bpy.props.IntProperty()
-
-
-class MODN_String(bpy.types.PropertyGroup):
-    ofs:  bpy.props.IntProperty()
-    string:  bpy.props.StringProperty()
-
-
-class MODD_Definition(bpy.types.PropertyGroup):
-    name_ofs:  bpy.props.IntProperty()
-    flags:  bpy.props.IntProperty()
-    position:  bpy.props.FloatVectorProperty()
-    rotation:  bpy.props.FloatVectorProperty()
-    tilt:  bpy.props.FloatProperty()
-    scale:  bpy.props.FloatProperty()
-    color:  bpy.props.FloatVectorProperty()
-    color_alpha:  bpy.props.FloatProperty()
-
-
 @on_release()
 def update_flags(self, context):
     properties = bpy.data.node_groups.get('MO_Properties')
@@ -108,9 +85,6 @@ def update_sun_direction(self, context):
 
 class WowRootPropertyGroup(bpy.types.PropertyGroup):
 
-    mods_sets:  bpy.props.CollectionProperty(type=MODS_Set)
-    modn_string_table:  bpy.props.CollectionProperty(type=MODN_String)
-    modd_definitions:  bpy.props.CollectionProperty(type=MODD_Definition)
 
     flags:  bpy.props.EnumProperty(
         name="Root flags",

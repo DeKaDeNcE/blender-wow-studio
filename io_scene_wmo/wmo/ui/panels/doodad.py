@@ -30,7 +30,6 @@ class WMO_PT_doodad(bpy.types.Panel):
         )
 
 
-@on_release()
 def update_doodad_color(self, context):
     mesh = self.self_pointer.data
 
