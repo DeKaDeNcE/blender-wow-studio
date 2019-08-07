@@ -627,33 +627,33 @@ class BlenderWMOScene:
 
         for fog_obj in tqdm(self.bl_fogs, desc='Saving fogs'):
 
-            fog = Fog()
+            big_radius = fog_obj.dimensions[2] / 2
+            small_radius = big_radius * (fog_obj.wow_wmo_fog.inner_radius / 100)
 
-            fog.big_radius = fog_obj.dimensions[2] / 2
-            fog.small_radius = fog.big_radius * (fog_obj.wow_wmo_fog.inner_radius / 100)
-
-            fog.color1 = (int(fog_obj.wow_wmo_fog.color1[2] * 255),
+            color1 = (int(fog_obj.wow_wmo_fog.color1[2] * 255),
                           int(fog_obj.wow_wmo_fog.color1[1] * 255),
                           int(fog_obj.wow_wmo_fog.color1[0] * 255),
                           0xFF)
 
-            fog.color2 = (int(fog_obj.wow_wmo_fog.color2[2] * 255),
+            color2 = (int(fog_obj.wow_wmo_fog.color2[2] * 255),
                           int(fog_obj.wow_wmo_fog.color2[1] * 255),
                           int(fog_obj.wow_wmo_fog.color2[0] * 255),
                           0xFF)
 
-            fog.end_dist = fog_obj.wow_wmo_fog.end_dist
-            fog.end_dist2 = fog_obj.wow_wmo_fog.end_dist2
-            fog.position = fog_obj.location.to_tuple()
-            fog.start_factor = fog_obj.wow_wmo_fog.start_factor
-            fog.StarFactor2 = fog_obj.wow_wmo_fog.start_factor2
+            end_dist = fog_obj.wow_wmo_fog.end_dist
+            end_dist2 = fog_obj.wow_wmo_fog.end_dist2
+            position = fog_obj.location.to_tuple()
+            start_factor = fog_obj.wow_wmo_fog.start_factor
+            start_factor2 = fog_obj.wow_wmo_fog.start_factor2
 
+            flags = 0
             if fog_obj.wow_wmo_fog.ignore_radius:
-                fog.flags |= 0x01
+                flags |= 0x01
             if fog_obj.wow_wmo_fog.unknown:
-                fog.flags |= 0x10
+                flags |= 0x10
 
-            self.wmo.mfog.fogs.append(fog)
+            self.wmo.add_fog(big_radius, small_radius, color1, color2, end_dist, end_dist2, position,
+                             start_factor, start_factor2, flags)
 
     def save_root_header(self):
 
