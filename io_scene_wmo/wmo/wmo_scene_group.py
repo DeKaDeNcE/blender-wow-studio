@@ -866,40 +866,24 @@ class BlenderWMOSceneGroup:
 
         group.mver.version = 17
 
-        start_triangle = 0
-        start_vertex = 0
         next_v_index_local = 0
         for batch_info, batch_groups in batches:
             mat_index, batch_type = batch_info
 
+            mat_id = scene.wow_wmo_root_elements.materials.find(
+                mesh.materials[mat_index].name) if mat_index != 0xFF else mat_index
+
+            batch = Batch()
+            batch.start_triangle = len(group.movi.indices)
+            batch.start_vertex = len(group.movt.vertices)
+            batch.material_id = mat_id
+            batch.bounding_box = [32767, 32767, 32767, -32768, -32768, -32768]
+
             for batch_group in batch_groups:
                 n_faces = len(batch_group)
                 n_vertices = n_faces * 3
-                mat_id = scene.wow_wmo_root_elements.materials.find(
-                    mesh.materials[mat_index].name) if mat_index != 0xFF else mat_index
 
-                batch = Batch()
-                batch.start_triangle = start_triangle
-                batch.n_triangles = n_vertices
-                batch.start_vertex = start_vertex
-                batch.last_vertex = start_vertex + n_vertices - 1
-                batch.material_id = mat_id
-                batch.bounding_box = [32767, 32767, 32767, -32768, -32768, -32768]
-
-                # increment start indices for the next batch
-                start_triangle = start_triangle + batch.n_triangles
-                start_vertex = batch.last_vertex + 1
-
-                # do not write collision only batches as actual batches, because they are not
-                if batch.material_id != 0xFF:
-                    group.moba.batches.append(batch)
-
-                    if batch_type == 0:
-                        group.mogp.n_batches_a += 1
-                    elif batch_type == 1:
-                        group.mogp.n_batches_b += 1
-                    elif batch_type == 2:
-                        group.mogp.n_batches_c += 1
+                batch.n_triangles += n_vertices
 
                 # actually save geometry
                 vertex_map = {}
@@ -986,6 +970,19 @@ class BlenderWMOSceneGroup:
                     tri_mat.flags |= 0x40 if collision_counter == 3 else 0x4 | 0x8
 
                     group.mopy.triangle_materials.append(tri_mat)
+
+            batch.last_vertex = len(group.movt.vertices) - 1
+
+            # do not write collision only batches as actual batches, because they are not
+            if batch.material_id != 0xFF:
+                group.moba.batches.append(batch)
+
+                if batch_type == 0:
+                    group.mogp.n_batches_a += 1
+                elif batch_type == 1:
+                    group.mogp.n_batches_b += 1
+                elif batch_type == 2:
+                    group.mogp.n_batches_c += 1
 
         # free bmesh
         bm.free()
