@@ -5,6 +5,8 @@ from ..panels.toolbar import switch_doodad_set, get_doodad_sets
 from ...utils.doodads import import_doodad
 from ...utils.wmv import wmv_get_last_m2
 from ....ui import get_addon_prefs
+from ....utils.misc import find_nearest_object
+from ....third_party.tqdm import tqdm
 
 
 class WMO_OT_wmv_import_doodad_from_wmv(bpy.types.Operator):
@@ -50,27 +52,7 @@ class WMO_OT_doodads_bake_color(bpy.types.Operator):
     bl_description = "Bake doodads colors from nearby vertex color values"
     bl_options = {'UNDO', 'REGISTER'}
 
-    @classmethod
-    def poll(cls, context):
-        return True
-
     tree_map = {}
-
-    @staticmethod
-    def find_nearest_object(obj_, objects):
-        """Get closest object to another object"""
-
-        dist = 32767
-        result = None
-        for obj in objects:
-            obj_location_relative = obj.matrix_world.inverted() @ obj_.location
-            hit = obj.closest_point_on_mesh(obj_location_relative)
-            hit_dist = (obj_location_relative - hit[1]).length
-            if hit_dist < dist:
-                dist = hit_dist
-                result = obj
-
-        return result
 
     @staticmethod
     def get_object_radius(obj):
@@ -90,7 +72,7 @@ class WMO_OT_doodads_bake_color(bpy.types.Operator):
 
         mesh = group.data
 
-        if not mesh.vertex_colors:
+        if 'Col' not in mesh.vertex_colors:
             return 0.5, 0.5, 0.5, 1.0
 
         radius = self.get_object_radius(obj)
@@ -113,34 +95,40 @@ class WMO_OT_doodads_bake_color(bpy.types.Operator):
 
         for poly in polygons:
             for loop_index in mesh.polygons[poly[1]].loop_indices:
-                colors.append(mesh.vertex_colors[mesh.vertex_colors.active_index].data[loop_index].color)
+                colors.append(mesh.vertex_colors['Col'].data[loop_index].color)
 
         if not colors:
             return 0.5, 0.5, 0.5, 1.0
 
-        final_color = mathutils.Vector((0x00, 0x00, 0x00))
+        final_color = mathutils.Vector((0, 0, 0, 0))
+
         for color in colors:
             final_color += mathutils.Vector(color)
 
-        return tuple(final_color / len(colors)) + (1.0,)
+        final_color = final_color / len(colors)
+
+        flags = bpy.context.scene.wow_wmo_root.flags
+
+        if "2" in flags and group.wow_wmo_group.place_type == '8192':
+            final_color += mathutils.Vector(tuple([c / 2 for c in bpy.context.scene.wow_wmo_root.ambient_color]))
+
+        return final_color
 
     def execute(self, context):
 
-        window_manager = context.window_manager
         doodad_counter = 0
-        len_objects = len(bpy.context.selected_objects)
 
         groups = [obj for obj in bpy.context.scene.objects if obj.wow_wmo_group.enabled]
 
-        window_manager.progress_begin(0, 100)
-        for index, obj in enumerate(bpy.context.selected_objects):
+        for index, obj in enumerate(tqdm(bpy.context.selected_objects, desc='Baking doodad colors')):
             if obj.wow_wmo_doodad.enabled:
-                obj.color = self.gen_doodad_color(obj, self.find_nearest_object(obj, groups))
-                print("\nBaking color to doodad instance <<{}>>".format(obj.name))
-                doodad_counter += 1
-                window_manager.progress_update(int(index / len_objects * 100))
 
-        window_manager.progress_end()
+                vertex_color = self.gen_doodad_color(obj, find_nearest_object(obj, groups))
+
+                color = [pow(x, 2.2) for x in vertex_color]
+                obj.wow_wmo_doodad.color = color
+
+                doodad_counter += 1
 
         if doodad_counter:
             self.report({'INFO'}, "Done baking colors to {} doodad instances.".format(doodad_counter))
@@ -151,13 +139,14 @@ class WMO_OT_doodads_bake_color(bpy.types.Operator):
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
 
+
 class WMO_OT_doodadset_add(bpy.types.Operator):
     bl_idname = 'scene.wow_doodad_set_add'
     bl_label = 'Add doodad set'
     bl_description = 'Add models to doodadset'
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
-    Action:  bpy.props.EnumProperty(
+    action:  bpy.props.EnumProperty(
         name="Operator action",
         description="Choose operator action",
         items=[
@@ -167,14 +156,14 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
         ]
     )
 
-    Set:  bpy.props.EnumProperty(
+    set:  bpy.props.EnumProperty(
         name="",
         description="Select doodad set",
         items=get_doodad_sets,
         update=switch_doodad_set
     )
 
-    Name:  bpy.props.StringProperty(
+    name:  bpy.props.StringProperty(
         name=""
     )
 
@@ -183,16 +172,16 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
         col = layout.column()
 
         col.label(text="Action")
-        col.prop(self, "Action", expand=True)
+        col.prop(self, "action", expand=True)
 
-        if self.Action == "ADD":
+        if self.action == "ADD":
             text = "Select set:"
             col.label(text=text)
-            col.prop(self, "Set")
-        elif self.Action == "CUSTOM":
+            col.prop(self, "set")
+        elif self.action == "CUSTOM":
             text = "Enter set name:"
             col.label(text=text)
-            col.prop(self, "Name")
+            col.prop(self, "name")
 
     def execute(self, context):
 
@@ -201,21 +190,21 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
             if obj.select_get() and obj.wow_wmo_doodad.enabled:
                 selected_objs.append(obj)
 
-        if self.Action == "ADD":
-            if self.Set != "None":
+        if self.action == "ADD":
+            if self.set != "None":
                 for obj in selected_objs:
-                    obj.parent = bpy.context.scene.objects[self.Set]
+                    obj.parent = bpy.context.scene.objects[self.set]
 
                 self.report({'INFO'}, "Successfully added doodads to doodad set")
 
             else:
                 self.report({'WARNING'}, "Select a doodad set to link objects to first")
 
-        elif self.Action == "CUSTOM":
-            if self.Name:
+        elif self.action == "CUSTOM":
+            if self.name:
                 bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
                 obj = bpy.context.view_layer.objects.active
-                obj.name = self.Name
+                obj.name = self.name
                 obj.hide_set(True)
                 obj.hide_select = True
                 obj.lock_location = (True, True, True)
@@ -230,7 +219,7 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
             else:
                 self.report({'WARNING'}, "Enter name of the doodadset")
 
-        elif self.Action == "GLOBAL":
+        elif self.action == "GLOBAL":
             if not bpy.context.scene.objects.get("Set_$DefaultGlobal"):
                 bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
                 obj = bpy.context.view_layer.objects.active
@@ -253,13 +242,14 @@ class WMO_OT_doodadset_add(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
 class WMO_OT_doodadset_color(bpy.types.Operator):
     bl_idname = 'scene.wow_doodad_set_color'
     bl_label = 'Set Doodad Color'
     bl_description = "Set color to selected doodads"
     bl_options = {'REGISTER', 'UNDO'}
 
-    Color:  bpy.props.FloatVectorProperty(
+    color:  bpy.props.FloatVectorProperty(
         name='Color',
         description='Color applied to doodads',
         subtype='COLOR',
@@ -267,7 +257,7 @@ class WMO_OT_doodadset_color(bpy.types.Operator):
     )
 
     def draw(self, context):
-        self.layout.column().prop(self, "Color")
+        self.layout.column().prop(self, "color")
 
     def execute(self, context):
 
@@ -278,7 +268,7 @@ class WMO_OT_doodadset_color(bpy.types.Operator):
         success = False
         for obj in bpy.context.selected_objects:
             if obj.wow_wmo_doodad.enabled:
-                obj.wow_wmo_doodad.color = self.Color
+                obj.wow_wmo_doodad.color = self.color
                 success = True
 
         if success:
@@ -288,13 +278,14 @@ class WMO_OT_doodadset_color(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
 class WMO_OT_doodadset_template_action(bpy.types.Operator):
     bl_idname = 'scene.wow_doodad_set_template_action'
     bl_label = 'Template action'
     bl_description = 'Apply an action to all instances of selected object on the scene'
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
-    Action:  bpy.props.EnumProperty(
+    action:  bpy.props.EnumProperty(
         items=[
             ('SELECT', "Select", "Rotate all instances of selected doodads", 'PMARKER_ACT', 0),
             ('REPLACE', "Replace", "Replace all instances of selected doodads with last M2 from WMV", 'FILE_REFRESH', 1),
@@ -304,7 +295,7 @@ class WMO_OT_doodadset_template_action(bpy.types.Operator):
         default='SELECT'
     )
 
-    Scale:  bpy.props.FloatProperty(
+    scale:  bpy.props.FloatProperty(
         name="Scale",
         description="Scale applied to doodads",
         min=0.01,
@@ -312,7 +303,7 @@ class WMO_OT_doodadset_template_action(bpy.types.Operator):
         default=1
     )
 
-    Rotation:  bpy.props.FloatVectorProperty(
+    rotation:  bpy.props.FloatVectorProperty(
         name="Rotation",
         default=(0, 0, 0, 0),
         size=4
@@ -325,12 +316,12 @@ class WMO_OT_doodadset_template_action(bpy.types.Operator):
     def draw(self, context):
         col = self.layout.column()
 
-        col.prop(self, "Action", expand=True)
+        col.prop(self, "action", expand=True)
 
-        if self.Action == 'RESIZE':
-            col.prop(self, "Scale")
-        elif self.Action == 'ROTATE':
-            col.prop(self, "Rotation")
+        if self.action == 'RESIZE':
+            col.prop(self, "scale")
+        elif self.action == 'ROTATE':
+            col.prop(self, "rotation")
 
     def execute(self, context):
 
@@ -356,7 +347,7 @@ class WMO_OT_doodadset_template_action(bpy.types.Operator):
 
             new_obj = None
 
-            if self.Action == 'REPLACE':
+            if self.action == 'REPLACE':
                 if not bpy.data.is_saved:
                     self.report({'ERROR'}, "Saved your blendfile first.")
                     return {'FINISHED'}
@@ -373,7 +364,7 @@ class WMO_OT_doodadset_template_action(bpy.types.Operator):
 
                 if obj.wow_wmo_doodad.path == target and is_selected:
 
-                    if self.Action == 'REPLACE':
+                    if self.action == 'REPLACE':
 
                         location = obj.location
                         rotation = obj.rotation_quaternion
@@ -397,21 +388,21 @@ class WMO_OT_doodadset_template_action(bpy.types.Operator):
                         obj.wow_wmo_doodad.flags = flags
                         objects_to_select.append(obj)
 
-                    elif self.Action == 'RESIZE':
+                    elif self.action == 'RESIZE':
 
-                        obj.scale *= self.Scale
+                        obj.scale *= self.scale
                         obj.select_set(True)
 
-                    elif self.Action == 'DELETE':
+                    elif self.action == 'DELETE':
 
                         bpy.data.objects.remove(obj, do_unlink=True)
 
-                    elif self.Action == 'ROTATE':
+                    elif self.action == 'ROTATE':
                         obj.rotation_mode = 'QUATERNION'
-                        for i, _ in enumerate(self.Rotation):
-                            obj.rotation_quaternion[i] += self.Rotation[i]
+                        for i, _ in enumerate(self.rotation):
+                            obj.rotation_quaternion[i] += self.rotation[i]
 
-                    elif self.Action == 'SELECT':
+                    elif self.action == 'SELECT':
                         obj.select_set(True)
 
                     success = True
