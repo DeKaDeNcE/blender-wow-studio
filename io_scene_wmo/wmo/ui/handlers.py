@@ -252,40 +252,40 @@ def on_depsgraph_update(_):
                         else:
                             obj.pass_index &= ~flag
 
+            elif isinstance(update.id, bpy.types.Scene):
 
-            elif isinstance(update.id, bpy.types.Scene) \
-            and bpy.context.view_layer.objects.active \
-            and bpy.context.view_layer.objects.active.select_get():
+                if bpy.context.view_layer.objects.active \
+                and bpy.context.view_layer.objects.active.select_get():
 
-                # sync collection active items
-                act_obj = bpy.context.view_layer.objects.active
+                    # sync collection active items
+                    act_obj = bpy.context.view_layer.objects.active
 
-                root_comps = bpy.context.scene.wow_wmo_root_elements
-                if act_obj:
-                    if act_obj.wow_wmo_group.enabled:
-                        slot_idx = root_comps.groups.find(act_obj.name)
-                        root_comps.cur_group = slot_idx
+                    root_comps = bpy.context.scene.wow_wmo_root_elements
+                    if act_obj:
+                        if act_obj.wow_wmo_group.enabled:
+                            slot_idx = root_comps.groups.find(act_obj.name)
+                            root_comps.cur_group = slot_idx
 
-                    elif act_obj.wow_wmo_fog.enabled:
-                        slot_idx = root_comps.fogs.find(act_obj.name)
-                        root_comps.cur_fog = slot_idx
+                        elif act_obj.wow_wmo_fog.enabled:
+                            slot_idx = root_comps.fogs.find(act_obj.name)
+                            root_comps.cur_fog = slot_idx
 
-                    elif act_obj.wow_wmo_light.enabled:
-                        slot_idx = root_comps.lights.find(act_obj.name)
-                        root_comps.cur_light = slot_idx
+                        elif act_obj.wow_wmo_light.enabled:
+                            slot_idx = root_comps.lights.find(act_obj.name)
+                            root_comps.cur_light = slot_idx
 
-                    elif act_obj.wow_wmo_portal.enabled:
-                        slot_idx = root_comps.portals.find(act_obj.name)
-                        root_comps.cur_portal = slot_idx
+                        elif act_obj.wow_wmo_portal.enabled:
+                            slot_idx = root_comps.portals.find(act_obj.name)
+                            root_comps.cur_portal = slot_idx
 
-                    elif act_obj.wow_wmo_doodad.enabled:
-                        d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
+                        elif act_obj.wow_wmo_doodad.enabled:
+                            d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
 
-                        if d_set.pointer:
-                            slot_idx = d_set.doodads.find(act_obj.name)
+                            if d_set.pointer:
+                                slot_idx = d_set.doodads.find(act_obj.name)
 
-                            if slot_idx >= 0:
-                                d_set.cur_doodad = slot_idx
+                                if slot_idx >= 0:
+                                    d_set.cur_doodad = slot_idx
 
                 # fill collections
                 n_objs = len(bpy.context.scene.objects)
