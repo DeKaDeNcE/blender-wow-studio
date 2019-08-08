@@ -1028,7 +1028,7 @@ class BlenderWMOSceneGroup:
         if lamps:
             has_lights = True
             for lamp in lamps:
-                group.molr.LightRefs.append(lamp.id)
+                group.molr.light_refs.append(lamp.id)
 
         group.mogp.group_id = int(obj.wow_wmo_group.group_dbc_id)
         group_info = self.wmo_scene.add_group_info(group.mogp.flags,

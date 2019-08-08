@@ -530,25 +530,24 @@ class BlenderWMOScene:
     def save_lights(self):
 
         for obj in tqdm(self.bl_lights, desc='Saving lights'):
-            mesh = obj.data
 
-            light_type = int(mesh.wow_wmo_light.light_type)
+            light_type = int(obj.wow_wmo_light.light_type)
 
-            unk1 = mesh.distance * 2
+            unk1 = obj.data.distance * 2
 
-            unk2 = mesh.wow_wmo_light.type
-            use_attenuation = mesh.wow_wmo_light.use_attenuation
-            padding = mesh.wow_wmo_light.padding
+            unk2 = obj.wow_wmo_light.type
+            use_attenuation = obj.wow_wmo_light.use_attenuation
+            padding = obj.wow_wmo_light.padding
 
-            color = (int(mesh.wow_wmo_light.color[2] * 255),
-                     int(mesh.wow_wmo_light.color[1] * 255),
-                     int(mesh.wow_wmo_light.color[0] * 255),
-                     int(mesh.wow_wmo_light.color_alpha * 255))
+            color = (int(obj.wow_wmo_light.color[2] * 255),
+                     int(obj.wow_wmo_light.color[1] * 255),
+                     int(obj.wow_wmo_light.color[0] * 255),
+                     int(obj.wow_wmo_light.color_alpha * 255))
 
             position = obj.location.to_tuple()
-            intensity = mesh.wow_wmo_light.intensity
-            attenuation_start = mesh.wow_wmo_light.attenuation_start
-            attenuation_end = mesh.wow_wmo_light.attenuation_end
+            intensity = obj.wow_wmo_light.intensity
+            attenuation_start = obj.wow_wmo_light.attenuation_start
+            attenuation_end = obj.wow_wmo_light.attenuation_end
 
             self.wmo.add_light(light_type, unk1, unk2, use_attenuation, padding, color,
                                position, intensity, attenuation_start, attenuation_end)
