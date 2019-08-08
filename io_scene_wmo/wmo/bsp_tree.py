@@ -119,13 +119,13 @@ class BSPTree:
 
         return i_node
 
-    def GenerateBSP(self, vertices, indices, max_face_count):
+    def generate_bsp(self, vertices, indices, max_face_count):
         resurs_limit = sys.getrecursionlimit()
         sys.setrecursionlimit(100000)
 
         faces = []
-        for iFace in range(len(indices) // 3):
-            faces.append(iFace)
+        for face in range(len(indices) // 3):
+            faces.append(face)
 
         box = calculate_bounding_box(vertices)
         self.add_node(box, faces, vertices, indices, max_face_count)

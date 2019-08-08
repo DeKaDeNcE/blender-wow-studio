@@ -253,7 +253,9 @@ def on_depsgraph_update(_):
                             obj.pass_index &= ~flag
 
 
-            elif isinstance(update.id, bpy.types.Scene):
+            elif isinstance(update.id, bpy.types.Scene) \
+            and bpy.context.view_layer.objects.active \
+            and bpy.context.view_layer.objects.active.select_get():
 
                 # sync collection active items
                 act_obj = bpy.context.view_layer.objects.active

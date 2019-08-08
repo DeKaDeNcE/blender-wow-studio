@@ -1051,7 +1051,7 @@ class BlenderWMOSceneGroup:
             group.modr = None
 
         bsp_tree = BSPTree()
-        bsp_tree.GenerateBSP(group.movt.vertices, group.movi.indices, obj.wow_wmo_vertex_info.node_size)
+        bsp_tree.generate_bsp(group.movt.vertices, group.movi.indices, obj.wow_wmo_vertex_info.node_size)
 
         group.mobn.nodes = bsp_tree.Nodes
         group.mobr.faces = bsp_tree.Faces

@@ -236,7 +236,6 @@ def draw_wmo_lights_panel(layout, context):
             WMO_PT_light.draw(ctx, ctx)
 
 
-
 def draw_wmo_materials_panel(layout, context):
     layout = draw_list(context, layout, 'cur_material', 'materials')
 

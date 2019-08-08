@@ -17,6 +17,11 @@ class WMO_OT_doodad_set_components_change(bpy.types.Operator):
 
     def execute(self, context):
 
+        if bpy.context.view_layer.objects.active \
+        and bpy.context.view_layer.objects.active.mode != 'OBJECT':
+            self.report({'ERROR'}, "Object mode must be active")
+            return {'CANCELLED'}
+
         root_comps = context.scene.wow_wmo_root_elements
 
         if self.action == 'ADD':

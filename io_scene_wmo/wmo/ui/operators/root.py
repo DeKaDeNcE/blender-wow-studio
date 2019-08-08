@@ -55,7 +55,15 @@ class WMO_OT_root_elements_components_change(bpy.types.Operator):
     )
 
     def execute(self, context):
+
         if self.action == 'ADD':
+
+            if self.col_name != 'materials' \
+            and bpy.context.view_layer.objects.active \
+            and bpy.context.view_layer.objects.active.mode != 'OBJECT':
+                self.report({'ERROR'}, "Object mode must be active.")
+                return {'CANCELLED'}
+
             if self.col_name == 'groups':
 
                 obj = bpy.context.view_layer.objects.active

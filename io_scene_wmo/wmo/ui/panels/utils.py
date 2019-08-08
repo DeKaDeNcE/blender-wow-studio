@@ -1,6 +1,7 @@
 import bpy
 from ..handlers import DepsgraphLock
 
+
 def update_doodad_pointer(self, context):
     if self.pointer and self.name != self.pointer.name:
         self.name = self.pointer.name
@@ -11,7 +12,7 @@ def update_current_object(self, context, col_name, cur_item_name):
     col = getattr(self, col_name)
     cur_idx = getattr(self, cur_item_name)
 
-    if len(col) < cur_idx:
+    if len(col) <= cur_idx or cur_idx < 0:
         return
 
     slot = col[cur_idx]
@@ -36,7 +37,7 @@ class WMO_UL_root_elements_template_list(bpy.types.UIList):
 
             # handle material icons
             if self.icon == 'MATERIAL_DYNAMIC':
-                texture = item.pointer.wow_wmo_material.diff_texture_1
+                texture = item.pointer.wow_wmo_material.diff_texture_1 if item.pointer else None
                 self.icon = layout.icon(texture) if texture else 'MATERIAL'
 
             row = layout.row()
