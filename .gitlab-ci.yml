@@ -26,7 +26,6 @@ before_script:
 
 
 package:
-  stage: package
   script: python3 build.py | gzip > packaged.gz
   artifacts:
     paths:
