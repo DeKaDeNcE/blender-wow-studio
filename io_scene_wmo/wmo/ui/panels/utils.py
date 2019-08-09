@@ -9,6 +9,9 @@ def update_doodad_pointer(self, context):
 
 def update_current_object(self, context, col_name, cur_item_name):
 
+    if bpy.context.view_layer.objects.active and bpy.context.view_layer.objects.active.mode != 'OBJECT':
+        return
+
     col = getattr(self, col_name)
     cur_idx = getattr(self, cur_item_name)
 
