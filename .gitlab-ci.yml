@@ -26,8 +26,9 @@ before_script:
 
 
 package:
-  script: pip install Cython
-  script: python3 io_scene_wmo/build.py | gzip > packaged.gz
+  script: 
+  - pip install Cython
+  - python3 io_scene_wmo/build.py | gzip > packaged.gz
   artifacts:
     paths:
     - packaged.gz
