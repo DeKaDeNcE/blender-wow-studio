@@ -1,4 +1,5 @@
 import bpy
+import bmesh
 
 from ...render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
 from ....utils.misc import resolve_texture_path
@@ -40,11 +41,97 @@ class WMO_OT_generate_materials(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class WMO_OT_material_assign(bpy.types.Operator):
+    bl_idname = "object.wow_wmo_material_assign"
+    bl_label = "Assign WMO Material"
+    bl_description = "Assign WMO material to selected faces."
+    bl_options = {'UNDO', 'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+
+        mesh = context.view_layer.objects.active.data
+        bm = bmesh.from_edit_mesh(mesh)
+        mat = context.scene.wow_wmo_root_elements.materials[context.scene.wow_wmo_root_elements.cur_material]
+
+        if not mat.pointer:
+            self.report({'ERROR'}, "Cannot assign an empty material")
+            return {'CANCELLED'}
+
+        mat_index = mesh.materials.find(mat.pointer.name)
+
+        if mat_index < 0:
+            mat_index = len(mesh.materials)
+            mesh.materials.append(mat.pointer)
+
+        for face in bm.faces:
+            if not face.select:
+                continue
+
+            face.material_index = mat_index
+
+        bmesh.update_edit_mesh(mesh)
+
+        return {'FINISHED'}
+
+
+class WMO_OT_material_select(bpy.types.Operator):
+    bl_idname = "object.wow_wmo_material_select"
+    bl_label = "Select WMO Material"
+    bl_description = "Select WMO material to selected faces."
+    bl_options = {'UNDO', 'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+
+        mesh = context.view_layer.objects.active.data
+        bm = bmesh.from_edit_mesh(mesh)
+        mat = context.scene.wow_wmo_root_elements.materials[context.scene.wow_wmo_root_elements.cur_material]
+
+        if not mat.pointer:
+            self.report({'ERROR'}, "Cannot select an empty material")
+            return {'CANCELLED'}
+
+        mat_index = mesh.materials.find(mat.pointer.name)
+
+        for face in bm.faces:
+            if face.material_index == mat_index:
+                face.select = True
+
+        bmesh.update_edit_mesh(mesh)
+
+        return {'FINISHED'}
+
+
+class WMO_OT_material_deselect(bpy.types.Operator):
+    bl_idname = "object.wow_wmo_material_deselect"
+    bl_label = "Deselect WMO Material"
+    bl_description = "Deselect WMO material to selected faces."
+    bl_options = {'UNDO', 'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+
+        mesh = context.view_layer.objects.active.data
+        bm = bmesh.from_edit_mesh(mesh)
+        mat = context.scene.wow_wmo_root_elements.materials[context.scene.wow_wmo_root_elements.cur_material]
+
+        if not mat.pointer:
+            self.report({'ERROR'}, "Cannot deselect an empty material")
+            return {'CANCELLED'}
+
+        mat_index = mesh.materials.find(mat.pointer.name)
+
+        for face in bm.faces:
+            if face.material_index == mat_index:
+                face.select = False
+
+        bmesh.update_edit_mesh(mesh)
+
+        return {'FINISHED'}
+
 
 class WMO_OT_fill_textures(bpy.types.Operator):
     bl_idname = 'scene.wow_fill_textures'
     bl_label = 'Fill textures'
-    bl_description = """Fill Texture 1 field of WoW materials with paths from applied image. """
+    bl_description = "Fill Texture 1 field of WoW materials with paths from applied image"
     bl_options = {'REGISTER'}
 
     def execute(self, context):
