@@ -41,6 +41,7 @@ class WMO_OT_assign_material(bpy.types.Operator):
 
             if self.action == 'NEW':
                 texture = context.scene.wow_last_selected_images[-1].pointer
+                mat.wow_wmo_material.self_pointer = mat
                 mat.wow_wmo_material.path = texture.wow_wmo_texture.path
                 mat.wow_wmo_material.diff_texture_1 = texture
 
@@ -201,7 +202,7 @@ class WMO_OT_select_texture_from_recent(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class VIEW3D_MT_select_texture(Menu):
+class VIEW3D_MT_wmo_select_texture(Menu):
     bl_label = "Select texture"
 
     @classmethod
@@ -234,7 +235,7 @@ class VIEW3D_MT_select_texture(Menu):
 
 
 def timer(override):
-    bpy.ops.wm.call_menu_pie(override, name="VIEW3D_MT_select_material")
+    bpy.ops.wm.call_menu_pie(override, name="VIEW3D_MT_wmo_select_material")
 
 
 def handle_last_selected_images(scene):
@@ -287,7 +288,7 @@ def update_more_materials(self, context):
         bpy.ops.mesh.wow_assign_material(mat_name=self.more_materials, action='NAME')
 
 
-class VIEW3D_MT_select_material(Menu):
+class VIEW3D_MT_wmo_select_material(Menu):
     bl_label = "Select material"
 
     def draw(self, context):
@@ -323,7 +324,7 @@ class ImagePointerPropertyGroup(bpy.types.PropertyGroup):
 
     pointer: bpy.props.PointerProperty(type=bpy.types.Image)
 
-addon_keymaps = []
+
 def register():
     bpy.types.Scene.wow_cur_image = bpy.props.PointerProperty(type=bpy.types.Image, update=set_image)
     bpy.types.Scene.wow_last_selected_images = bpy.props.CollectionProperty(type=ImagePointerPropertyGroup)
@@ -333,19 +334,11 @@ def register():
                                                             , update=update_more_materials
                                                            )
 
-    # handle the keymap
-    wm = bpy.context.window_manager
-    km = wm.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D', region_type='WINDOW')
-    kmi = km.keymap_items.new("wm.call_menu_pie", type='Q', value='PRESS', shift=True)
-    kmi.properties.name = "VIEW3D_MT_select_texture"
-    addon_keymaps.append((km, kmi))
 
 def unregister():
     del bpy.types.Scene.more_materials
     del bpy.types.Scene.wow_last_selected_images
     del bpy.types.Scene.wow_cur_image
 
-    for km, kmi in addon_keymaps:
-        km.keymap_items.remove(kmi)
-    addon_keymaps.clear()
+
 

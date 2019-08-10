@@ -15,6 +15,7 @@ def wmv_get_last_wmo() -> Union[None, str]:
             if 'Loading WMO' in line:
                 return line[22:].rstrip("\n")
 
+
 def wmv_get_last_m2() -> Union[None, str]:
     """Get the path of last M2 model from WoWModelViewer or similar log."""
 

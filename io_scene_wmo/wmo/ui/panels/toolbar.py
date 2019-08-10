@@ -157,18 +157,13 @@ class WMO_PT_tools_object_mode_actions(bpy.types.Panel):
         layout = self.layout.split()
         col = layout.column(align=True)
 
-        col.label(text="Global:")
-        col.operator("scene.wow_fix_material_duplicates", text='Fix material duplicates', icon='ASSET_MANAGER')
-        col.operator("scene.wow_wmo_generate_materials", text='Generate materials', icon='MATERIAL')
-
         if bpy.context.selected_objects:
             box = col.box()
             box.label(text="Selected:")
-            box.menu("WMO_MT_convert_operators", text="Convert selected")
-            box.label(text="Apply:")
             box_col = box.column(align=True)
-            box_col.operator("scene.wow_quick_collision", text='Quick collision', icon='STYLUS_PRESSURE')
+            box_col.operator("scene.wow_wmo_generate_materials", text='Generate materials', icon='MATERIAL')
             box_col.operator("scene.wow_fill_textures", text='Fill texture paths', icon='FILE_IMAGE')
+            box_col.operator("scene.wow_quick_collision", text='Quick collision', icon='STYLUS_PRESSURE')
             box_col.operator("scene.wow_set_portal_dir_alg", text='Set portal dir.',
                              icon_value=ui_icons['WOW_STUDIO_APPLY_DIRECTION'])
             box_col.operator("scene.wow_bake_portal_relations", text='Bake portal rels.',
@@ -200,28 +195,9 @@ class WMO_PT_tools_object_mode_doodads(bpy.types.Panel):
         box = col.box()
         box_col2 = box.column(align=True)
 
-        box_col2.operator("scene.wow_doodad_set_add", text='Add to doodadset', icon='ADD')
         box_col2.operator("scene.wow_doodads_bake_color", text='Bake color', icon='GROUP_VCOL')
         box_col2.operator("scene.wow_doodad_set_color", text='Set color', icon='COLOR')
         box_col2.operator("scene.wow_doodad_set_template_action", text='Template action', icon='FORCE_MAGNETIC')
-
-
-
-class WMO_MT_convert_operators(bpy.types.Menu):
-    bl_label = "Convert"
-    bl_options = {'REGISTER'}
-
-    def draw(self, context):
-        layout = self.layout
-        col = layout.column()
-        col.operator("scene.wow_selected_objects_to_group", text='To WMO group', icon='OBJECT_DATA')
-        col.operator("scene.wow_selected_objects_to_wow_material", text='To WMO material', icon='SMOOTH')
-        col.operator("scene.wow_selected_objects_to_portals", text='To WMO portal', icon='MOD_MIRROR')
-        col.operator("scene.wow_texface_to_material", text='Texface to material', icon='TEXTURE_DATA')
-
-    @classmethod
-    def poll(cls, context):
-        return context.scene is not None and context.scene.wow_scene.type == 'WMO'
 
 
 class WMO_MT_mesh_wow_components_add(bpy.types.Menu):

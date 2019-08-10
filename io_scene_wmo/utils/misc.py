@@ -71,9 +71,9 @@ def load_game_data():
     return bpy.wow_game_data
 
 
-def resolve_texture_path(filepath):
+def resolve_texture_path(filepath: str) -> str:
     filepath = os.path.splitext(bpy.path.abspath(filepath))[0] + ".blp"
-    prefs = bpy.context.preferences.addons[__package__].preferences
+    prefs = bpy.context.preferences.addons[PACKAGE_NAME].preferences
 
     # TODO: project folder
     rel_path = os.path.relpath(filepath, start=prefs.cache_dir_path)
@@ -90,7 +90,7 @@ def resolve_texture_path(filepath):
         path = os.path.split(path[0])
 
         if not path[1]:
-            print("\nTexture <<{}>> not found.".format(path))
+            print("\nTexture \"{}\" not found.".format(path))
             break
 
         rest_path = os.path.join(path[1], rest_path)
