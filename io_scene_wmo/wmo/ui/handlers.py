@@ -1,4 +1,5 @@
 import bpy
+import bmesh
 
 from functools import partial
 
@@ -251,6 +252,20 @@ def on_depsgraph_update(_):
                             obj.pass_index |= flag
                         else:
                             obj.pass_index &= ~flag
+
+                    if obj.mode == 'EDIT':
+                        bm = bmesh.from_edit_mesh(mesh)
+
+                        if bm.faces.active:
+
+                            root_elements = bpy.context.scene.wow_wmo_root_elements
+                            mat_index = bm.faces.active.material_index
+
+                            if mesh.materials:
+                                mat_index = root_elements.materials.find(mesh.materials[mat_index].name)
+
+                                if mat_index >= 0:
+                                    root_elements.cur_material = mat_index
 
             elif isinstance(update.id, bpy.types.Scene):
 
