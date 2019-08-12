@@ -128,6 +128,7 @@ class WMO_PT_tools_panel_object_mode_add_to_scene(bpy.types.Panel):
         box1_row1.operator("scene.wow_add_liquid", text='Water', icon_value=ui_icons['WOW_STUDIO_WATER_ADD'])
         box1_row2 = box1_col.row(align=True)
         box1_row3 = box1_col.row(align=True)
+
         if game_data_loaded:
 
             box1_row2.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2',

@@ -29,5 +29,10 @@ def export_wmo_from_blender_scene(filepath, export_selected, export_method):
 
     wmo.write()
 
+    bpy.context.scene.wow_wmo_root_elements.is_update_critical = False
+
+    for group in bpy.context.scene.wow_wmo_root_elements.groups:
+        group.export = False
+
     print("\nExport finished successfully. "
           "\nTotal export time: ", time.strftime("%M minutes %S seconds\a", time.gmtime(time.time() - start_time)))

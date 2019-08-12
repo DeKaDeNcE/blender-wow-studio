@@ -30,6 +30,7 @@ def _remove_col_items(scene, col_name):
     col = getattr(scene.wow_wmo_root_elements, col_name)
     for i, obj in enumerate(col):
         if obj.pointer and obj.pointer.name not in scene.objects:
+            scene.wow_wmo_root_elements.is_update_critical = True
             col.remove(i)
             break
     else:
@@ -48,6 +49,7 @@ def _remove_col_items_doodads(scene):
     for d_set in col:
         for i, doodad in enumerate(d_set.doodads):
             if doodad.pointer and doodad.pointer.name not in scene.objects:
+                scene.wow_wmo_root_elements.is_update_critical = True
                 d_set.doodads.remove(i)
                 break
 
@@ -55,6 +57,7 @@ def _remove_col_items_doodads(scene):
             return
 
     _remove_col_items_doodads(scene)
+
 
 def _add_col_items(scene):
     for i, obj in enumerate(scene.objects):
@@ -86,6 +89,8 @@ def _add_col_items(scene):
                         else:
                             bpy.data.objects.remove(obj, do_unlink=True)
 
+                    scene.wow_wmo_root_elements.is_update_critical = True
+
                 else:
                     continue
 
@@ -94,9 +99,11 @@ def _add_col_items(scene):
                 col = getattr(scene.wow_wmo_root_elements, col_name)
 
                 if col.find(obj.name) < 0:
+                    scene.wow_wmo_root_elements.is_update_critical = True
                     prop_group.enabled = False
                     slot = col.add()
                     slot.pointer = obj
+
 
 def _liquid_edit_mode_timer(context):
     bpy.ops.wow.liquid_edit_mode(context, 'INVOKE_DEFAULT')
@@ -266,6 +273,12 @@ def on_depsgraph_update(_):
 
                                 if mat_index >= 0:
                                     root_elements.cur_material = mat_index
+
+
+                    if update.is_updated_geometry:
+                        bpy.context.scene.wow_wmo_root_elements.groups.get(obj.name).export = True
+
+
 
             elif isinstance(update.id, bpy.types.Scene):
 

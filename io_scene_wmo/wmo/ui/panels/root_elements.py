@@ -331,6 +331,8 @@ def update_object_pointer(self, context, prop, obj_type):
         self.pointer_old = None
         self.name = ""
 
+    context.scene.wow_wmo_root_elements.is_update_critical = True
+
 
 def update_group_pointer(self, context):
     update_object_pointer(self, context, 'wow_wmo_group', 'MESH')
@@ -344,6 +346,8 @@ def update_group_pointer(self, context):
         self.pointer.wow_wmo_group.place_type = self.pointer.wow_wmo_group.place_type
 
         context.view_layer.objects.active = act_obj
+
+    context.scene.wow_wmo_root_elements.is_update_critical = True
 
 
 def update_material_pointer(self, context):
@@ -377,6 +381,8 @@ def update_material_pointer(self, context):
         self.pointer_old.wow_wmo_material.enabled = False
         self.pointer_old = None
         self.name = ""
+
+    context.scene.wow_wmo_root_elements.is_update_critical = True
 
 
 class GroupPointerPropertyGroup(bpy.types.PropertyGroup):
@@ -473,13 +479,6 @@ def update_current_material(self, context):
 
     if mat and obj and obj.type == 'MESH' and mat.name in obj.data.materials:
         obj.active_material_index = obj.data.materials.find(mat.name)
-
-
-class DoodadProtoPointerPropertyGroup(bpy.types.PropertyGroup):
-
-    pointer:  bpy.props.PointerProperty(type=bpy.types.Object, update=update_doodad_pointer)
-
-    name:  bpy.props.StringProperty()
 
 
 class WoWWMO_RootComponents(bpy.types.PropertyGroup):
