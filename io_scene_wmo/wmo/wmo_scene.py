@@ -373,11 +373,7 @@ class BlenderWMOScene:
         group_objects = []
         for i, slot in enumerate(root_elements.groups):
 
-            if export_method == 'PARTIAL':
-                if not slot.export:
-                    continue
-
-            elif (export_selected and not slot.pointer.select_get()) or slot.pointer.hide_get():
+            if (export_selected and not slot.pointer.select_get()) or slot.pointer.hide_get():
                 continue
 
             slot.pointer.wow_wmo_group.group_id = i
@@ -389,6 +385,8 @@ class BlenderWMOScene:
             group = self.wmo.add_group()
             self.bl_groups.append(BlenderWMOSceneGroup(self, group, obj=slot.pointer))
             group_objects.append(slot.pointer)
+
+            group.export = not (export_method == 'PARTIAL' and not slot.export)
 
         # process portals
         for i, slot in enumerate(root_elements.portals):
@@ -619,8 +617,10 @@ class BlenderWMOScene:
 
     def save_groups(self):
 
-        for wmo_group in tqdm(self.bl_groups, desc='Saving groups'):
-            wmo_group.save()
+        for bl_group in tqdm(self.bl_groups, desc='Saving groups'):
+
+            if bl_group.wmo_group.export:
+                bl_group.save()
 
     def save_fogs(self):
 

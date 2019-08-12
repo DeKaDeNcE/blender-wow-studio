@@ -15,6 +15,7 @@ def export_wmo_from_blender_scene(filepath, export_selected, export_method):
     start_time = time.time()
 
     wmo = WMOFile(CLIENT_VERSION, filepath)
+    wmo.export = export_method != 'PARTIAL'
     bl_scene = BlenderWMOScene(wmo, get_addon_prefs())
 
     bl_scene.build_references(export_selected, export_method)
