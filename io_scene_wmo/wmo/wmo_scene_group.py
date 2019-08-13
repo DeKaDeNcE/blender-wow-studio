@@ -1,6 +1,7 @@
 import bpy
 import mathutils
 import bmesh
+import sys
 
 from math import pi, ceil, floor
 
@@ -847,6 +848,8 @@ class BlenderWMOSceneGroup:
             bm.verts.ensure_lookup_table()
             bm.faces.ensure_lookup_table()
 
+        sys.setrecursionlimit(20000)
+
         faces_set = set(faces)
         batches = {}
 
@@ -861,6 +864,8 @@ class BlenderWMOSceneGroup:
 
             batches.setdefault((face.material_index if is_batch else 0xFF, batch_type), []).append(linked_faces)
             faces_set -= set(linked_faces)
+
+        sys.setrecursionlimit(1000)
 
         batches = sorted(batches.items(), key=lambda x: (x[0][1], x[0][0]))
 
