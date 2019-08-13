@@ -135,8 +135,8 @@ class WBS_OT_wmo_export(bpy.types.Operator, ExportHelper):
     export_method: EnumProperty(
         name='Export Method',
         description='Partial export if the scene was exported before and was not critically modified',
-        items=[('FULL', 'Full', ''),
-               ('PARTIAL', 'Partial', '')
+        items=[('FULL', 'Full', 'Full'),
+               ('PARTIAL', 'Partial', 'Partial')
                ]
     )
 
@@ -146,14 +146,12 @@ class WBS_OT_wmo_export(bpy.types.Operator, ExportHelper):
         default=False,
         )
 
-
     def draw(self, context):
         layout = self.layout
-        layout.prop(self, 'export_method', text='', expand=True)
+        layout.prop(self, 'export_method', expand=True)
 
         if self.export_method == 'FULL':
             layout.prop(self, 'export_selected')
-
 
     def execute(self, context):
         if context.scene and context.scene.wow_scene.type == 'WMO':

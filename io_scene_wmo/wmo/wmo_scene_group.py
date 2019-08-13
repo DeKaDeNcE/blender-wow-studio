@@ -2,6 +2,7 @@ import bpy
 import mathutils
 import bmesh
 import sys
+import inspect
 
 from math import pi, ceil, floor
 
@@ -75,7 +76,6 @@ class BlenderWMOSceneGroup:
         else:
             return 2
 
-
     @staticmethod
     def get_material_viewport_image(material):
         """ Get viewport image assigned to a material """
@@ -84,7 +84,7 @@ class BlenderWMOSceneGroup:
             return material.wow_wmo_material.diff_texture_1
 
     @staticmethod
-    def get_linked_faces(b_face, face_batch_type, uv, uv2, batch_map_trans, batch_map_int, stack=0):
+    def get_linked_faces(b_face, face_batch_type, uv, uv2, batch_map_trans, batch_map_int, stack=len(inspect.stack())):
         # check if face was already processed
         if b_face.tag:
             return []
@@ -100,7 +100,7 @@ class BlenderWMOSceneGroup:
                 continue
 
             # prevent recursion stack overflow
-            if stack >= sys.getrecursionlimit() - 50:
+            if stack >= sys.getrecursionlimit() - 1:
                 break
 
             for link_face in link_edge.link_faces:
