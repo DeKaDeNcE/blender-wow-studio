@@ -99,7 +99,7 @@ class BlenderWMOSceneGroup:
                 continue
 
             # prevent recursion stack overflow
-            if stack > sys.getrecursionlimit() - 1:
+            if stack >= sys.getrecursionlimit() - 1:
                 break
 
             for link_face in link_edge.link_faces:
