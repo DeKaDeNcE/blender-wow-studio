@@ -863,7 +863,6 @@ class BlenderWMOSceneGroup:
             batches.setdefault((face.material_index if is_batch else 0xFF, batch_type), []).append(linked_faces)
             faces_set -= set(linked_faces)
 
-
         batches = sorted(batches.items(), key=lambda x: (x[0][1], x[0][0]))
 
         group.mver.version = 17
@@ -1012,6 +1011,10 @@ class BlenderWMOSceneGroup:
 
         group.mogp.flags |= int(obj.wow_wmo_group.place_type)
 
+        if obj_blend_map and uv2:
+            group.mogp.flags |= MOGPFlags.HasTwoMOCV
+            group.mogp.flags |= MOGPFlags.HasTwoMOTV
+
         has_lights = False
 
         fogs = (obj.wow_wmo_group.fog1,
@@ -1023,9 +1026,9 @@ class BlenderWMOSceneGroup:
 
         # set fog references
         group.mogp.fog_indices = (fogs[0].wow_wmo_fog.fog_id if fogs[0] else 0,
-                                 fogs[1].wow_wmo_fog.fog_id if fogs[0] else 0,
-                                 fogs[2].wow_wmo_fog.fog_id if fogs[0] else 0,
-                                 fogs[3].wow_wmo_fog.fog_id if fogs[0] else 0)
+                                  fogs[1].wow_wmo_fog.fog_id if fogs[0] else 0,
+                                  fogs[2].wow_wmo_fog.fog_id if fogs[0] else 0,
+                                  fogs[3].wow_wmo_fog.fog_id if fogs[0] else 0)
         # save lamps
         if lamps:
             has_lights = True
