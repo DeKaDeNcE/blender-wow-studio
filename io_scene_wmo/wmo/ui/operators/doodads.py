@@ -123,7 +123,12 @@ class WMO_OT_doodads_bake_color(bpy.types.Operator):
         for index, obj in enumerate(tqdm(bpy.context.selected_objects, desc='Baking doodad colors')):
             if obj.wow_wmo_doodad.enabled:
 
-                vertex_color = self.gen_doodad_color(obj, find_nearest_object(obj, groups))
+                group = find_nearest_object(obj, groups)
+
+                if group.wow_wmo_group.place_type != '8192':
+                    continue
+
+                vertex_color = self.gen_doodad_color(obj, group)
 
                 color = [pow(x, 2.2) for x in vertex_color]
                 obj.wow_wmo_doodad.color = color
