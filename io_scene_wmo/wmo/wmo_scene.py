@@ -36,7 +36,6 @@ class BlenderWMOScene:
         self.bl_liquids     : List[bpy.types.Object]         = []
         self.bl_doodad_sets : Dict[str, bpy.types.Object]    = {}
 
-
     def load_materials(self, texture_dir=None):
         """ Load materials from WoW WMO root file """
 
@@ -47,7 +46,8 @@ class BlenderWMOScene:
 
         self.bl_materials = {0xFF : add_ghost_material()}
 
-        load_wmo_shader_dependencies(reload_shader=True)
+        if 'MO_WMOShader' not in bpy.data.node_groups:
+            load_wmo_shader_dependencies(reload_shader=True)
 
         textures = {}
 
