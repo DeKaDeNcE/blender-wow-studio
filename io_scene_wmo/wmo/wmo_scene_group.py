@@ -919,7 +919,7 @@ class BlenderWMOSceneGroup:
 
                             # handle second UV map layer
                             if uv2:
-                                group.motv2.tex_coords.append((face.loops[j][uv].uv[0],
+                                group.motv2.tex_coords.append((face.loops[j][uv2].uv[0],
                                                               1.0 - face.loops[j][uv2].uv[1]))
 
                             # handle vertex color

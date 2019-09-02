@@ -125,7 +125,7 @@ class WMO_OT_doodads_bake_color(bpy.types.Operator):
 
                 group = find_nearest_object(obj, groups)
 
-                if group.wow_wmo_group.place_type != '8192':
+                if '0' not in group.wow_wmo_group.flags or not group.data.vertex_colors.get('Col'):
                     continue
 
                 vertex_color = self.gen_doodad_color(obj, group)
