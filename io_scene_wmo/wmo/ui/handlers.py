@@ -201,7 +201,16 @@ def on_depsgraph_update(_):
 
                     with DepsgraphLock():
                         if obj.mode == 'EDIT':
+
                             win = bpy.context.window
+
+                            # avoid focusing settings window if left open
+                            if win.screen.name == 'temp':
+
+                                for win_ in bpy.context.window_manager.windows:
+                                    if win_.screen.name != 'temp':
+                                        win = win_
+
                             scr = win.screen
                             areas3d = [area for area in scr.areas if area.type == 'VIEW_3D']
                             region = [region for region in areas3d[0].regions if region.type == 'WINDOW'][0]
@@ -224,7 +233,6 @@ def on_depsgraph_update(_):
                         elif obj.mode not in ('OBJECT', 'SCULPT'):
                             bpy.context.view_layer.objects.active = obj
                             bpy.ops.object.mode_set(mode='OBJECT')
-
 
                         # enforce Z plane for sculpting brushes
                         if obj.mode == 'SCULPT':
@@ -334,7 +342,6 @@ def on_depsgraph_update(_):
                 else:
                     bpy.wbs_n_scene_objects = n_objs
                     _add_col_items(bpy.context.scene)
-
 
         finally:
             DEPSGRAPH_UPDATE_LOCK = False

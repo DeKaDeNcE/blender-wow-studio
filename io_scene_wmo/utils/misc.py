@@ -5,6 +5,7 @@ import time
 
 from mathutils import Vector
 
+from ..pywowlib import WoWVersionManager
 from ..pywowlib.archives.wow_filesystem import WoWFileData
 from .. import PACKAGE_NAME
 
@@ -60,6 +61,9 @@ def get_material_viewport_image(material):
 
 
 def load_game_data():
+
+    WoWVersionManager().set_client_version(int(bpy.context.scene.wow_scene.version))
+
     if not hasattr(bpy, 'wow_game_data'):
 
         addon_preferences = bpy.context.preferences.addons[PACKAGE_NAME].preferences

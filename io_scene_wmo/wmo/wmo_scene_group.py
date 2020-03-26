@@ -816,7 +816,11 @@ class BlenderWMOSceneGroup:
             face.tag = False
 
         deform = bm.verts.layers.deform.active
-        uv = bm.loops.layers.uv.active
+        uv = bm.loops.layers.uv.get('UVMap')
+
+        if not uv:
+            raise Exception('\nThe group \"{}\" must have a UV map layer.'.format(obj.name))
+
         uv2 = bm.loops.layers.uv.get('UVMap.001')
 
         obj_collision_vg = None

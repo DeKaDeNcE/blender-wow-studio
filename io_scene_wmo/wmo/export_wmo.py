@@ -1,20 +1,22 @@
 import bpy
 import time
 
+from ..pywowlib import WoWVersionManager
 from ..pywowlib.wmo_file import WMOFile
-from ..pywowlib import CLIENT_VERSION
 
 from .wmo_scene import BlenderWMOScene
 
 from ..ui import get_addon_prefs
 
 
-def export_wmo_from_blender_scene(filepath, export_selected, export_method):
+def export_wmo_from_blender_scene(filepath, client_version, export_selected, export_method):
     """ Export WoW WMO object from Blender scene to files """
 
     start_time = time.time()
 
-    wmo = WMOFile(CLIENT_VERSION, filepath)
+    WoWVersionManager().set_client_version(client_version)
+
+    wmo = WMOFile(client_version, filepath)
     wmo.export = export_method != 'PARTIAL'
     bl_scene = BlenderWMOScene(wmo, get_addon_prefs())
 

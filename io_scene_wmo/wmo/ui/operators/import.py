@@ -53,7 +53,7 @@ class WMO_OT_import_last_wmo_from_wmv(bpy.types.Operator):
 
             game_data.extract_files(cache_dir, group_paths)
 
-            import_wmo.import_wmo_to_blender_scene(root_path, True, True, True, True)
+            import_wmo.import_wmo_to_blender_scene(root_path, True)
 
             # clean up unnecessary files and directories
             os.remove(root_path)

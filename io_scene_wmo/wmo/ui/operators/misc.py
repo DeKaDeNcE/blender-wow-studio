@@ -1,5 +1,7 @@
 import bpy
 
+from ....third_party.tqdm import tqdm
+
 
 class WMO_OT_add_scale(bpy.types.Operator):
     bl_idname = 'scene.wow_add_scale_reference'
@@ -70,8 +72,12 @@ class WMO_OT_quick_collision(bpy.types.Operator):
     def execute(self, context):
 
         success = False
-        for ob in bpy.context.selected_objects:
+        selected_objects = bpy.context.selected_objects[:]
+        bpy.ops.object.select_all(action='DESELECT')
+        for ob in tqdm(selected_objects, desc='Generating collision'):
+
             if ob.wow_wmo_group.enabled:
+
                 bpy.context.view_layer.objects.active = ob
 
                 if self.clean_up:
