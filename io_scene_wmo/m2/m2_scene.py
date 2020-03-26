@@ -4,6 +4,7 @@ from math import sqrt
 import bpy
 from mathutils import Vector
 
+from .render import update_m2_mat_node_tree
 from ..utils.misc import parse_bitfield, construct_bitfield, load_game_data
 from ..utils.misc import resolve_texture_path, get_origin_position, get_objs_boundbox_world, get_obj_boundbox_center, \
     get_obj_radius
@@ -220,16 +221,7 @@ class BlenderM2Scene:
 
             # creating material
             blender_mat = bpy.data.materials.new(os.path.basename(tex_path_png))
-            blender_mat.use_shadeless = True
-            blender_mat.use_transparency = True
-            blender_mat.alpha = 0
             blender_mat.wow_m2_material.live_update = True
-
-            tex1_slot = blender_mat.texture_slots.create(0)
-            tex1_slot.use_map_alpha = True
-            tex1_slot.alpha_factor = 1.0
-            tex1_slot.uv_layer = "UVMap"
-            tex1_slot.texture_coords = 'UV'
 
             tex1_name = blender_mat.name + "_Tex_02"
             tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
@@ -237,7 +229,7 @@ class BlenderM2Scene:
             tex1.wow_m2_texture.texture_type = str(texture.type)
             tex1.wow_m2_texture.path = texture.filename.value
 
-            tex1_slot.texture = tex1
+            blender_mat.wow_m2_material.texture = tex1
 
             # loading images
             if os.name != 'nt': tex_path_png = tex_path_png.replace('\\', '/')  # reverse slahes for unix
@@ -246,9 +238,12 @@ class BlenderM2Scene:
                 tex1_img = bpy.data.images.load(os.path.join(texture_dir, tex_path_png))
                 tex1_img.use_alpha = True
                 tex1.image = tex1_img
-                blender_mat.active_texture = tex1
             except RuntimeError:
                 pass
+
+            update_m2_mat_node_tree(blender_mat)
+
+            '''
 
             # setup node render node tree
             blender_mat.use_nodes = True
@@ -260,7 +255,7 @@ class BlenderM2Scene:
                 tree.nodes.remove(n)
 
             # create input materail node
-            mat_node = tree.nodes.new('ShaderNodeExtendedMaterial')
+            mat_node = tree.nodes.new('ShaderNodeDiffuseBSDF')
             mat_node.location = 530, 1039
             mat_node.material = blender_mat
 
@@ -347,6 +342,10 @@ class BlenderM2Scene:
             if tex_unit.color_index >= 0:
                 color = bpy.context.scene.wow_m2_colors[tex_unit.color_index]
                 tex1.wow_m2_texture.color = color.name
+                
+            '''
+
+
 
             # bind transparency to texture
             real_tw_index = self.m2.root.transparency_lookup_table[tex_unit.texture_weight_combo_index]
@@ -361,6 +360,7 @@ class BlenderM2Scene:
             blender_mat.wow_m2_material.shader = str(tex_unit.shader_id)
 
             # TODO: other settings
+
 
             self.materials[tex_unit.skin_section_index] = blender_mat, tex_unit
 
@@ -689,7 +689,7 @@ class BlenderM2Scene:
                 vertex.normal = normals[index]
 
             # set uv
-            uv1 = mesh.uv_layers.new("UVMap")
+            uv1 = mesh.uv_layers.new(name="UVMap")
             uv_layer1 = mesh.uv_layers[0]
             for i in range(len(uv_layer1.data)):
                 uv = tex_coords[mesh.loops[i].vertex_index]
@@ -732,7 +732,7 @@ class BlenderM2Scene:
 
                 for name in vgroups.keys():
                     if len(vgroups[name]) > 0:
-                        grp = obj.vertex_groups.new(name)
+                        grp = obj.vertex_groups.new(name=name)
                         for (v, w) in vgroups[name]:
                             grp.add([v], w, 'REPLACE')
 
@@ -868,7 +868,7 @@ class BlenderM2Scene:
                     c_obj.wow_m2_uv_transform.enabled = True
                     c_obj = bpy.context.view_layer.objects.active
                     c_obj.rotation_mode = 'QUATERNION'
-                    c_obj.empty_draw_size = 0.5
+                    c_obj.empty_display_size = 0.5
                     c_obj.animation_data_create()
                     c_obj.animation_data.action_blend_type = 'ADD'
 
@@ -965,7 +965,7 @@ class BlenderM2Scene:
             bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
             obj = bpy.context.view_layer.objects.active
             obj.scale = (0.094431, 0.094431, 0.094431)
-            obj.empty_draw_size = 0.07
+            obj.empty_display_size = 0.07
             bpy.ops.object.constraint_add(type='COPY_TRANSFORMS')
             constraint = obj.constraints[-1]
             constraint.target = self.rig
@@ -1340,7 +1340,7 @@ class BlenderM2Scene:
 
             t_obj.location = camera.target_position_base
             t_obj.wow_m2_camera.enabled = True
-            t_obj.empty_draw_size = 0.07
+            t_obj.empty_display_size = 0.07
             t_obj.empty_display_type = 'CONE'
             t_obj.rotation_mode = 'AXIS_ANGLE'
             t_obj.rotation_axis_angle = (0, 1, 0, 0)

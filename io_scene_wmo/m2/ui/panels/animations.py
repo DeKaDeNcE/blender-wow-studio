@@ -10,7 +10,7 @@ class M2_PT_animations_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.template_list("AnimationEditor_AnimationList", "", context.scene, "wow_m2_animations", context.scene,
+        col.template_list("M2_UL_animation_editor_animation_list", "", context.scene, "wow_m2_animations", context.scene,
                           "wow_m2_cur_anim_index")
 
         try:

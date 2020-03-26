@@ -14,7 +14,7 @@ class M2_PT_colors_panel(bpy.types.Panel):
 
         row = col.row()
         sub_col1 = row.column()
-        sub_col1.template_list("WowM2Colors_ColorList", "", context.scene, "wow_m2_colors", context.scene,
+        sub_col1.template_list("M2_UL_color_list", "", context.scene, "wow_m2_colors", context.scene,
                                "wow_m2_cur_color_index")
 
         sub_col2 = row.column().column(align=True)

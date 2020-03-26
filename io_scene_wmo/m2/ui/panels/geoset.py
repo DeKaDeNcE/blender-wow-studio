@@ -92,7 +92,7 @@ class M2_OT_add_texture_transform(bpy.types.Operator):
         c_obj.wow_m2_uv_transform.enabled = True
         c_obj = bpy.context.view_layer.objects.active
         c_obj.rotation_mode = 'QUATERNION'
-        c_obj.empty_draw_size = 0.5
+        c_obj.empty_display_size = 0.5
         c_obj.animation_data_create()
         c_obj.animation_data.action_blend_type = 'ADD'
 

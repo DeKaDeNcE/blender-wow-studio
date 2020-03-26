@@ -14,7 +14,7 @@ class M2_PT_transparency_panel(bpy.types.Panel):
 
         row = col.row()
         sub_col1 = row.column()
-        sub_col1.template_list("WowM2Transparency_TransparencyList", "", context.scene, "wow_m2_transparency",
+        sub_col1.template_list("M2_UL_transparency_list", "", context.scene, "wow_m2_transparency",
                                context.scene, "wow_m2_cur_transparency_index")
 
         sub_col2 = row.column().column(align=True)
@@ -97,7 +97,7 @@ def register():
         type=WowM2TransprencyPropertyGroup
     )
 
-    bpy.types.Scene.wow_m2_cur_transparency_index:  bpy.props.IntProperty()
+    bpy.types.Scene.wow_m2_cur_transparency_index = bpy.props.IntProperty()
 
 
 def unregister():
