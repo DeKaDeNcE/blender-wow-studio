@@ -1,5 +1,5 @@
 '''
-Copyright (C) 2018 CG Cookie
+Copyright (C) 2020 CG Cookie
 
 https://github.com/CGCookie/retopoflow
 
@@ -159,7 +159,7 @@ class CookieCutter_Blender:
         # return self._space.show_gizmo
         spc = self._space
         settings = { k:getattr(spc, k) for k in dir(spc) if k.startswith('show_gizmo') }
-        print('manipulator_settings:', settings)
+        # print('manipulator_settings:', settings)
         return settings
     @blender_version_wrapper(">=", "2.80")
     def manipulator_set(self, v):

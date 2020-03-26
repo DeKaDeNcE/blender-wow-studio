@@ -1,5 +1,5 @@
 '''
-Copyright (C) 2019 CG Cookie
+Copyright (C) 2020 CG Cookie
 http://cgcookie.com
 hello@cgcookie.com
 
@@ -44,11 +44,12 @@ from .utils import kwargopts, iter_head
 from .ui_styling import UI_Styling
 
 from .boundvar import BoundVar
-from .globals import Globals
 from .decorators import blender_version_wrapper
-from .maths import Point2D, Vec2D, clamp, mid, Color, Box2D, Size2D
 from .drawing import Drawing, ScissorStack
 from .fontmanager import FontManager
+from .globals import Globals
+from .maths import Point2D, Vec2D, clamp, mid, Color, Box2D, Size2D
+from .markdown import Markdown
 
 from ..ext import png
 
@@ -254,14 +255,25 @@ def input_text(**kwargs):
             dx = ui_cursor._l - vl - 2
             ui_input.scrollLeft = ui_input.scrollLeft + dx
             ui_input._setup_ltwh()
+    def set_cursor(e):
+        data['idx'] = ui_input.get_text_index(e.mouse)
+        data['pos'] = None
+        ui_input.dirty_flow()
     def focus(e):
         if type(ui_input.value) is float:
             s = '%0.4f' % ui_input.value
         else:
             s = str(ui_input.value)
         data['orig'] = data['text'] = s
-        data['idx'] = 0 # len(data['text'])
-        data['pos'] = None
+        set_cursor(e)
+    def mousemove(e):
+        if data['text'] is None: return
+        if not e.button[0]: return
+        set_cursor(e)
+    def mousedown(e):
+        if data['text'] is None: return
+        if not e.button[0]: return
+        set_cursor(e)
     def blur(e):
         ui_input.value = data['text']
         data['text'] = None
@@ -308,6 +320,8 @@ def input_text(**kwargs):
     ui_input.add_eventListener('on_focus', focus)
     ui_input.add_eventListener('on_blur', blur)
     ui_input.add_eventListener('on_keypress', keypress)
+    ui_input.add_eventListener('on_mousemove', mousemove)
+    ui_input.add_eventListener('on_mousedown', mousedown)
 
     ui_proxy = UI_Proxy(ui_container)
     ui_proxy.map('value', ui_input)
@@ -355,67 +369,6 @@ def collapsible(label, **kwargs):
     return ui_proxy
 
 
-
-class Markdown:
-    # markdown line (first line only, ex: table)
-    line_tests = {
-        'h1':     re.compile(r'# +(?P<text>.+)'),
-        'h2':     re.compile(r'## +(?P<text>.+)'),
-        'h3':     re.compile(r'### +(?P<text>.+)'),
-        'ul':     re.compile(r'(?P<indent> *)- +(?P<text>.+)'),
-        'ol':     re.compile(r'(?P<indent> *)\d+\. +(?P<text>.+)'),
-        'img':    re.compile(r'!\[(?P<caption>[^\]]*)\]\((?P<filename>[^) ]+)(?P<style>[^)]*)\)'),
-        'table':  re.compile(r'\| +(([^|]*?) +\|)+'),
-    }
-
-    # markdown inline
-    inline_tests = {
-        'br':     re.compile(r'<br */?> *'),
-        'img':    re.compile(r'!\[(?P<caption>[^\]]*)\]\((?P<filename>[^) ]+)(?P<style>[^)]*)\)'),
-        'bold':   re.compile(r'\*(?P<text>.+?)\*'),
-        'code':   re.compile(r'`(?P<text>[^`]+)`'),
-        'link':   re.compile(r'\[(?P<text>.+?)\]\((?P<link>.+?)\)'),
-        'italic': re.compile(r'_(?P<text>.+?)_'),
-    }
-
-    # https://stackoverflow.com/questions/3809401/what-is-a-good-regular-expression-to-match-a-url
-    re_url    = re.compile(r'^((https?)|mailto)://([-a-zA-Z0-9@:%._\+~#=]+\.)*?[-a-zA-Z0-9@:%._+~#=]+\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$')
-
-    @staticmethod
-    def preprocess(txt):
-        # process message similarly to Markdown
-        txt = re.sub(r'^\n*', r'', txt)         # remove leading \n
-        txt = re.sub(r'\n*$', r'', txt)         # remove trailing \n
-        txt = re.sub(r'\n\n\n*', r'\n\n', txt)  # 2+ \n => \n\n
-        txt = re.sub(r'---', r'—', txt)         # em dash
-        txt = re.sub(r'--', r'–', txt)          # en dash
-        return txt
-
-    @staticmethod
-    def is_url(txt): return Markdown.re_url.match(txt) is not None
-
-    @staticmethod
-    def match_inline(line):
-        #line = line.lstrip()    # ignore leading spaces
-        for (t,r) in Markdown.inline_tests.items():
-            m = r.match(line)
-            if m: return (t, m)
-        return (None, None)
-
-    @staticmethod
-    def match_line(line):
-        line = line.rstrip()    # ignore trailing spaces
-        for (t,r) in Markdown.line_tests.items():
-            m = r.match(line)
-            if m: return (t, m)
-        return (None, None)
-
-    @staticmethod
-    def split_word(line):
-        if ' ' not in line:
-            return (line,'')
-        i = line.index(' ') + 1
-        return (line[:i],line[i:])
 
 
 def get_mdown_path(fn, ext=None, subfolders=None):
@@ -545,18 +498,17 @@ def set_markdown(ui_mdown, mdown=None, mdown_path=None):
                 tr_element = tr(parent=table_element)
                 for c in range(cols):
                     th(innerText=header[c], parent=tr_element)
-                    #t.set(0, c, process_para(header[c], shadowcolor=(0,0,0,0.5)))
             for r in range(rows):
                 tr_element = tr(parent=table_element)
                 for c in range(cols):
                     td_element = td(parent=tr_element)
                     process_para(td_element, data[r][c])
-                    #t.set(r+(1 if add_header else 0), c, process_para(data[r][c]))
             pass
 
         else:
             assert False, 'Unhandled markdown line type "%s" ("%s") with "%s"' % (str(t), str(m), para)
 
+    ui_mdown.scrollToTop()
     ui_mdown.defer_dirty_propagation = False
 
 
@@ -626,8 +578,9 @@ def markdown(mdown=None, mdown_path=None, **kwargs):
 
 
 
-def framed_dialog(label=None, resizable=None, resizable_x=True, resizable_y=False, closeable=True, moveable=True, hide_on_close=False, **kwargs):
+def framed_dialog(label=None, resizable=None, resizable_x=True, resizable_y=False, closeable=True, moveable=True, hide_on_close=False, close_callback=None, **kwargs):
     # TODO: always add header, and use UI_Proxy translate+map "label" to change header
+    kw_inside = helper_argsplitter({'children'}, kwargs)
     ui_document = Globals.ui_document
     kwargs['classes'] = 'framed %s %s' % (kwargs.get('classes', ''), 'moveable' if moveable else '')
     ui_dialog = UI_Element(tagName='dialog', **kwargs)
@@ -635,6 +588,7 @@ def framed_dialog(label=None, resizable=None, resizable_x=True, resizable_y=Fals
     ui_header = UI_Element(tagName='div', classes='dialog-header', parent=ui_dialog)
     if closeable:
         def close():
+            if close_callback: close_callback()
             if hide_on_close:
                 ui_dialog.is_visible = False
                 return
@@ -731,14 +685,14 @@ def framed_dialog(label=None, resizable=None, resizable_x=True, resizable_y=Fals
         ui_dialog.add_eventListener('on_mousedown', mousedown)
         ui_dialog.add_eventListener('on_mouseup', mouseup)
         ui_dialog.add_eventListener('on_mousemove', mousemove)
-    ui_inside = UI_Element(tagName='div', classes='inside', style='overflow-y:scroll', parent=ui_dialog)
+    ui_inside = UI_Element(tagName='div', classes='inside', style='overflow-y:scroll', parent=ui_dialog, **kw_inside)
 
     # ui_footer = UI_Element(tagName='div', classes='dialog-footer', parent=ui_dialog)
     # ui_footer_label = UI_Element(tagName='span', innerText='footer', parent=ui_footer)
 
     ui_proxy = UI_Proxy(ui_dialog)
     ui_proxy.translate_map('label', 'innerText', ui_label)
-    ui_proxy.map(['children','append_child','delete_child','clear_children','builder'], ui_inside)
+    ui_proxy.map(['children','append_child','delete_child','clear_children','builder', 'getElementById'], ui_inside)
     return ui_proxy
 
 

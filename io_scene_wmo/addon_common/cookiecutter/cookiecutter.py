@@ -1,5 +1,5 @@
 '''
-Copyright (C) 2018 CG Cookie
+Copyright (C) 2020 CG Cookie
 
 https://github.com/CGCookie/retopoflow
 
@@ -67,7 +67,7 @@ class CookieCutter(Operator, CookieCutter_UI, CookieCutter_FSM, CookieCutter_Ble
     def end_commit(self): pass
     def end_cancel(self): pass
     def end(self): pass
-    def should_pass_through(self, context, event): return False
+
     ############################################################################
 
     @classmethod
@@ -141,8 +141,6 @@ class CookieCutter(Operator, CookieCutter_UI, CookieCutter_FSM, CookieCutter_Ble
             elif self._nav:
                 self._nav = False
                 self._nav_time = time.time()
-                
-            
 
         try: self.update()
         except Exception as e: self._handle_exception(e, 'call update')
@@ -152,23 +150,19 @@ class CookieCutter(Operator, CookieCutter_UI, CookieCutter_FSM, CookieCutter_Ble
         if ret: return ret
 
         self._cc_fsm_update()
-        
-        #check this last
-        if self.should_pass_through(context, event):
-            return {'PASS_THROUGH'}
-                
         return {'RUNNING_MODAL'}
 
     def _cc_actions_init(self):
         self.actions = Actions(self.context, self.default_keymap)
-        self._timer = self.context.window_manager.event_timer_add(1.0 / 120, window=self.context.window)
+        self._timer = self.context.window_manager.event_timer_add(0.1, window=self.context.window)  # 1.0 / 120
 
     def _cc_actions_update(self):
-        self.actions.update(self.context, self.event, self._timer, print_actions=False)
+        self.actions.update(self.context, self.event, print_actions=False)
 
     def _cc_actions_end(self):
         self.context.window_manager.event_timer_remove(self._timer)
         del self._timer
+        pass
 
 
 

@@ -1,5 +1,5 @@
 '''
-Copyright (C) 2019 CG Cookie
+Copyright (C) 2020 CG Cookie
 https://github.com/CGCookie/retopoflow
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -47,5 +47,6 @@ class CookieCutter_Exceptions:
 
     def _cc_exception_init(self):
         self._exception_callbacks = [fn.__name__ for (_,fn) in find_fns(self, '_cc_exception_callback')]
-        self.fsm.add_exception_callback(self._callback_exception_callbacks)
+        self.fsm.add_exception_callback(self._callback_exception_callbacks, universal=True)
         CookieCutter_Exceptions._instance = self
+

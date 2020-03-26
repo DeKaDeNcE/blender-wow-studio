@@ -1,5 +1,5 @@
 '''
-Copyright (C) 2019 CG Cookie
+Copyright (C) 2020 CG Cookie
 http://cgcookie.com
 hello@cgcookie.com
 
@@ -21,10 +21,13 @@ Created by Jonathan Denning, Jonathan Williamson
 
 import os
 import re
+import math
 import time
 import random
-from inspect import signature
 import traceback
+import contextlib
+from math import floor, ceil
+from inspect import signature
 
 import bpy
 import bgl
@@ -37,16 +40,16 @@ from .fsm import FSM
 
 from .useractions import Actions, kmi_to_keycode
 
-from .debug import debugger
 from .boundvar import BoundVar
-from .globals import Globals
+from .debug import debugger, dprint
 from .decorators import debug_test_call, blender_version_wrapper
-from .maths import Vec2D, Color, mid, Box2D, Size1D, Size2D, Point2D, RelPoint2D, clamp, NumberUnit
-from .shaders import Shader
 from .fontmanager import FontManager
-from .utils import iter_head
-from .profiler import profiler
+from .globals import Globals
 from .hasher import Hasher
+from .maths import Vec2D, Color, mid, Box2D, Size1D, Size2D, Point2D, RelPoint2D, Index2D, clamp, NumberUnit
+from .profiler import profiler, time_it
+from .shaders import Shader
+from .utils import iter_head
 
 from ..ext import png
 
@@ -124,45 +127,56 @@ def get_image_path(fn, ext=None, subfolders=None):
     return iter_head(paths, None)
 
 
+def add_cache(start):
+    def wrapper(fn):
+        fn._cache = start
+        return fn
+    return wrapper
+
+@contextlib.contextmanager
+def temp_bglbuffer(*args):
+    buf = bgl.Buffer(*args)
+    yield buf
+    del buf
+
+
+@add_cache({})
 def load_image_png(fn):
-    if not hasattr(load_image_png, 'cache'): load_image_png.cache = {}
-    if fn not in load_image_png.cache:
+    # important: assuming all images have distinct names!
+    if fn not in load_image_png._cache:
         # have not seen this image before
         # note: assuming 4 channels (rgba) per pixel!
         path = get_image_path(fn)
-        print('Loading image "%s" (%s)' % (str(fn), str(path)))
-        # w,h,d,m = png.Reader(path).read()
+        dprint('Loading image "%s" (path=%s)' % (str(fn), str(path)))
         w,h,d,m = png.Reader(path).asRGBA()
-        load_image_png.cache[fn] = [[r[i:i+4] for i in range(0,w*4,4)] for r in d]
-    return load_image_png.cache[fn]
+        img = [[r[i:i+4] for i in range(0,w*4,4)] for r in d]
+        load_image_png._cache[fn] = img
+    return load_image_png._cache[fn]
 
-
+@add_cache({})
 def load_texture(fn_image, mag_filter=bgl.GL_NEAREST, min_filter=bgl.GL_LINEAR):
-    if not hasattr(load_texture, 'cache'): load_texture.cache = {}
-    if fn_image not in load_texture.cache:
+    if fn_image not in load_texture._cache:
         image = load_image_png(fn_image)
+        dprint('Buffering texture "%s"' % fn_image)
         height,width,depth = len(image),len(image[0]),len(image[0][0])
-        assert depth == 4
-        texbuffer = bgl.Buffer(bgl.GL_INT, [1])
-        bgl.glGenTextures(1, texbuffer)
-        texid = texbuffer[0]
+        assert depth == 4, 'Expected texture %s to have 4 channels per pixel (RGBA), not %d' % (fn_image, depth)
+        image_flat = [d for r in image for c in r for d in c]
+        with temp_bglbuffer(bgl.GL_INT, [1]) as buf:
+            bgl.glGenTextures(1, buf)
+            texid = buf[0]
         bgl.glBindTexture(bgl.GL_TEXTURE_2D, texid)
-        # bgl.glTexEnv(bgl.GL_TEXTURE_ENV, bgl.GL_TEXTURE_ENV_MODE, bgl.GL_MODULATE)
         bgl.glTexParameterf(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, mag_filter)
         bgl.glTexParameterf(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, min_filter)
-        # texbuffer = bgl.Buffer(bgl.GL_BYTE, [self.width,self.height,self.depth], image_data)
-        image_size = width * height * depth
-        texbuffer = bgl.Buffer(bgl.GL_BYTE, [image_size], [d for r in image for c in r for d in c])
-        bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_RGBA, width, height, 0, bgl.GL_RGBA, bgl.GL_UNSIGNED_BYTE, texbuffer)
-        del texbuffer
+        with temp_bglbuffer(bgl.GL_BYTE, [len(image_flat)], image_flat) as texbuffer:
+            bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_RGBA, width, height, 0, bgl.GL_RGBA, bgl.GL_UNSIGNED_BYTE, texbuffer)
         bgl.glBindTexture(bgl.GL_TEXTURE_2D, 0)
-        load_texture.cache[fn_image] = {
+        load_texture._cache[fn_image] = {
             'width': width,
             'height': height,
             'depth': depth,
             'texid': texid,
         }
-    return load_texture.cache[fn_image]
+    return load_texture._cache[fn_image]
 
 class UI_Draw:
     _initialized = False
@@ -460,12 +474,13 @@ class UI_Event:
         'bubbling',
     ]
 
-    def __init__(self, target=None, mouse=None, key=None):
+    def __init__(self, target=None, mouse=None, button=None, key=None):
         self._eventPhase = 'none'
         self._cancelBubble = False
         self._cancelCapture = False
         self._target = target
         self._mouse = mouse
+        self._button = button
         self._key = key
         self._defaultPrevented = False
 
@@ -504,6 +519,9 @@ class UI_Event:
     def mouse(self): return self._mouse
 
     @property
+    def button(self): return self._button
+
+    @property
     def key(self): return self._key
 
     @property
@@ -536,8 +554,9 @@ class UI_Element_Properties:
     def innerText(self, nText):
         if self._innerText == nText: return
         self._innerText = nText
-        self._dirty('changing innerText changes content', 'content')
-        self._dirty('changing innerText changes size', 'size')
+        self._dirty('changing innerText makes dirty', children=True)
+        #self._dirty('changing innerText changes content', 'content', children=True)
+        #self._dirty('changing innerText changes size', 'size', children=True)
         self._new_content = True
         self._dirty_flow()
 
@@ -574,7 +593,7 @@ class UI_Element_Properties:
     def getElementById(self, element_id):
         if element_id is None: return None
         if self._id == element_id: return self
-        for child in self._children_all:
+        for child in self.children: # self._children_all:
             e = child.getElementById(element_id)
             if e is not None: return e
         return None
@@ -582,19 +601,19 @@ class UI_Element_Properties:
     def getElementsByName(self, element_name):
         if element_name is None: return None
         ret = [self] if self._name == element_name else []
-        ret.extend(e for child in self._children for e in child.getElementsByName(element_name))
+        ret.extend(e for child in self.children for e in child.getElementsByName(element_name))
         return ret
 
     def getElementsByClassName(self, class_name):
         if class_name is None: return None
         ret = [self] if class_name in self._classes else []
-        ret.extend(e for child in self._children for e in child.getElementsByClassName(class_name))
+        ret.extend(e for child in self.children for e in child.getElementsByClassName(class_name))
         return ret
 
     def getElementsByTagName(self, tag_name):
         if tag_name is None: return None
         ret = [self] if tag_name == self._tagName else []
-        ret.extend(e for child in self._children for e in child.getElementsByTagName(tag_name))
+        ret.extend(e for child in self.children for e in child.getElementsByTagName(tag_name))
         return ret
 
 
@@ -797,6 +816,7 @@ class UI_Element_Properties:
     def del_pseudoclass(self, pseudo): self._del_pseudoclass(pseudo)
 
     def _has_pseudoclass(self, pseudo):
+        if pseudo == 'disabled' and self._disabled: return True
         return pseudo in self._pseudoclasses
     def has_pseudoclass(self, psuedo): return self._has_pseudoclass(pseudo)
 
@@ -813,6 +833,15 @@ class UI_Element_Properties:
         if self._checked_bound: return self._checked.disabled
         return False
         #return 'disabled' in self._pseudoclasses
+
+    @property
+    def disabled(self): return self.is_disabled
+    @disabled.setter
+    def disabled(self, v):
+        c = self.is_disabled
+        if c == v: return
+        if v: self._add_pseudoclass('disabled')
+        else: self._del_pseudoclass('disabled')
 
     def _blur(self):
         if 'focus' not in self._pseudoclasses: return
@@ -994,8 +1023,9 @@ class UI_Element_Properties:
         if l != 'auto':
             if type(l) is NumberUnit: l = l.val(base=rew)
         else:
+            dpi_mult = Globals.drawing.get_dpi_mult()
             r = self.style_right
-            w = self.width_pixels if self.width_pixels != 'auto' else 0
+            w = self.width_pixels*dpi_mult if self.width_pixels != 'auto' else 0
             # if r != 'auto': print(l,rew,r,w)
             if type(r) is NumberUnit: l = rew - (w + r.val(base=rew))
             elif r != 'auto':         l = rew - (w + r)
@@ -1010,9 +1040,10 @@ class UI_Element_Properties:
         if t != 'auto':
             if type(t) is NumberUnit: t = t.val(base=reh)
         else:
+            dpi_mult = Globals.drawing.get_dpi_mult()
             b = self.style_bottom
-            h = self.height_pixels if self.height_pixels != 'auto' else 0
-            if type(b) is NumberUnit: t = h + b.val(base=reh)
+            h = self.height_pixels*dpi_mult if self.height_pixels != 'auto' else 0
+            if type(b) is NumberUnit: t = h + b.val(base=reh) - reh
             elif b != 'auto':         t = h + b
         return t
     @property
@@ -1023,6 +1054,7 @@ class UI_Element_Properties:
             if   self._relative_element == self: rew = self._parent_size.width if self._parent_size else 0
             elif self._relative_element is None: rew = 0
             else:                                rew = self._relative_element.width_pixels
+            if rew == 'auto': rew = 0
             w = w.val(base=rew)
         return w
     @property
@@ -1033,6 +1065,7 @@ class UI_Element_Properties:
             if   self._relative_element == self: reh = self._parent_size.height if self._parent_size else 0
             elif self._relative_element is None: reh = 0
             else:                                reh = self._relative_element.height_pixels
+            if reh == 'auto': reh = 0
             h = h.val(base=reh)
         return h
 
@@ -1057,11 +1090,17 @@ class UI_Element_Properties:
     @scrollTop.setter
     def scrollTop(self, v):
         if not self._is_scrollable_y: v = 0
+        v = floor(v)
         v = min(v, self._dynamic_content_size.height - self._absolute_size.height + self._mbp_height)
         v = max(v, 0)
         if self._scroll_offset.y != v:
             self._scroll_offset.y = v
             tag_redraw_all("UI_Element scrollTop")
+
+    def scrollToTop(self):
+        if self._scroll_offset.y != 0:
+            self._scroll_offset.y = 0
+            tag_redraw_all("UI_Element scrollToTop")
 
     @property
     def scrollLeft(self):
@@ -1071,6 +1110,7 @@ class UI_Element_Properties:
     def scrollLeft(self, v):
         # TODO: clamp value?
         if not self._is_scrollable_x: v = 0
+        v = floor(v)
         v = min(v, self._dynamic_content_size.width - self._absolute_size.width + self._mbp_width)
         v = max(v, 0)
         v = -v
@@ -1094,6 +1134,14 @@ class UI_Element_Properties:
         self._dirty('changing visibility can affect everything', parent=True, children=True)
         #self._dirty_styling()
         #self._dirty_flow()
+
+    # self.get_is_visible() is same as self.is_visible() except it doesn't check parent
+    def get_is_visible(self):
+        if self._is_visible is None:
+            v = self._computed_styles.get('display', 'auto') != 'none'
+        else:
+            v = self._is_visible
+        return v
 
     @property
     def is_scrollable(self):
@@ -1409,6 +1457,9 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
         self._scroll_offset        = Vec2D((0,0))
         self._absolute_pos         = None       # abs pos of element from relative info; cached in draw
         self._absolute_size        = None       # viewing size of element; set by parent
+        self._tablecell_table      = None       # table that this cell belongs to
+        self._tablecell_pos        = None       # overriding position if table-cell
+        self._tablecell_size       = None       # overriding size if table-cell
 
         self._viewing_box = Box2D(topleft=(0,0), size=(-1,-1))  # topleft+size: set by parent element
         self._inside_box  = Box2D(topleft=(0,0), size=(-1,-1))  # inside area of viewing box (less margins, paddings, borders)
@@ -1901,19 +1952,48 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
     @profiler.function
     def get_text_pos(self, index):
         if self._innerText is None: return None
-        index = clamp(index, 0, len(self._text_map))
+        index = clamp(index, 0, len(self._text_map)-1)
         m = self._text_map[index]
         e = m['ui_element']
         idx = m['idx']
         offset = m['offset']
         pre = m['pre']
-        size_prev = Globals.drawing.set_font_size(self._fontsize, fontid=self._fontid) #, force=True)
-        tw = Globals.drawing.get_text_width(pre)
-        # th = Globals.drawing.get_line_height(pre)
-        Globals.drawing.set_font_size(size_prev, fontid=self._fontid) #, force=True)
-        #print(index, m, e._relative_pos, e._relative_offset, e._scroll_offset, tw)
+        tw = Globals.drawing.get_text_width(pre, fontsize=self._fontsize, fontid=self._fontid)
         e_pos = e._relative_pos + e._relative_offset + e._scroll_offset + RelPoint2D((tw, 0))
         return e_pos
+
+    def get_text_index(self, pos):
+        if self._innerText is None: return None
+        size_prev = Globals.drawing.set_font_size(self._fontsize, fontid=self._fontid)
+        get_text_width = Globals.drawing.get_text_width
+        get_line_height = Globals.drawing.get_line_height
+        self_pos = Point2D((self._l, self._t)) #+ RelPoint2D((self._mbp_left, -self._mbp_top))
+        offset = RelPoint2D(pos - self_pos)
+        # print('get_text_index')
+        # print('  pos:', pos)
+        # print('  self', self_pos)
+        # print('  off', offset)
+        best_dist = None
+        best_index = None
+        for index,m in enumerate(self._text_map):
+            e = m['ui_element']
+            pre = m['pre']
+            char = m['char']
+            pre_w = get_text_width(pre)
+            char_w = get_text_width(char)-1
+            char_h = get_line_height(char)
+            e_pos = Point2D(e._relative_pos + e._relative_offset + e._scroll_offset + RelPoint2D((pre_w, 0)))
+            cx = clamp(offset.x, e_pos.x, e_pos.x + char_w)
+            cy = clamp(offset.y, e_pos.y - char_h, e_pos.y)
+            dist = abs(offset.x - cx) + abs(offset.y - cy)
+            # print('  ', pre, char, e_pos, e_pos+RelPoint2D((char_w,-char_h)), (cx, cy), dist)
+            if best_dist is None or dist <= best_dist:
+                best_dist = dist
+                best_index = index
+                if offset.x - e_pos.x > char_w / 2:
+                    best_index += 1
+        Globals.drawing.set_font_size(size_prev, fontid=self._fontid)
+        return min(best_index, len(self._text_map)-1)
 
     @UI_Element_Utils.add_cleaning_callback('blocks', {'size'})
     @profiler.function
@@ -1943,7 +2023,7 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
             blocked_inlines = False
             for child in self._children_all:
                 d = child._computed_styles.get('display', 'inline')
-                if d == 'inline':
+                if d in {'inline', 'table-cell'}:
                     if not blocked_inlines:
                         blocked_inlines = True
                         self._blocks.append([child])
@@ -2003,8 +2083,8 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
                 if ts is None: tsx,tsy = 0,0
                 else: tsx,tsy,tsc = ts
                 self._static_content_size = Size2D()
-                self._static_content_size.set_all_widths(Globals.drawing.get_text_width(self._innerTextAsIs))
-                self._static_content_size.set_all_heights(Globals.drawing.get_line_height(self._innerTextAsIs))
+                self._static_content_size.set_all_widths(ceil(Globals.drawing.get_text_width(self._innerTextAsIs)))
+                self._static_content_size.set_all_heights(ceil(Globals.drawing.get_line_height(self._innerTextAsIs)))
                 Globals.drawing.set_font_size(size_prev, fontid=self._parent._fontid) #, force=True)
             pr.done()
 
@@ -2060,6 +2140,11 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
         parent_size    = kwargs['parent_size']      # size of inside of parent
         nonstatic_elem = kwargs['nonstatic_elem']   # last non-static element
         document_elem  = kwargs['document_elem']    # whole document element (root)
+        table_data     = kwargs['table_data']       # data structure for current table (could be empty)
+
+        table_elem     = table_data.get('element', None)    # parent table element
+        table_index2D  = table_data.get('index2D', None)    # current position in table (i=row,j=col)
+        table_cells    = table_data.get('cells', None)      # cells of table as tuples (element, size)
 
         styles       = self._computed_styles
         style_pos    = styles.get('position', 'static')
@@ -2070,6 +2155,9 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
         self._absolute_pos = None
         self._document_elem = document_elem
         self._nonstatic_elem = nonstatic_elem
+        self._tablecell_table = None
+        self._tablecell_pos = None
+        self._tablecell_size = None
 
         self._update_position()
 
@@ -2126,8 +2214,6 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
             # self has no children
             dw = self._static_content_size.width
             dh = self._static_content_size.height
-            #if self._src_str:
-            #    print(self._src_str, (dw, dh), (min_width, min_height), (width, height), (max_width, max_height))
 
         else:
             # self has no static content, so flow and size is determined from children
@@ -2146,7 +2232,12 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
             if self._innerText is not None and self._whitespace in {'nowrap', 'pre'}:
                 inside_size.min_width = inside_size.width = inside_size.max_width = float('inf')
 
-            lines = []
+            if display == 'table':
+                table_elem = self
+                table_index2D = Index2D(0, 0)
+                table_cells = {}
+                table_data = { 'elem': table_elem, 'index2D': table_index2D, 'cells': table_cells }
+
             accum_width  = 0    # max width for all lines
             accum_height = 0    # sum heights for all lines
             for block in self._blocks:
@@ -2182,7 +2273,8 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
                             fitting_pos=pos,
                             parent_size=inside_size,
                             nonstatic_elem=next_nonstatic_elem,
-                            document_elem=document_elem
+                            document_elem=document_elem,
+                            table_data=table_data,
                         )
                         w = element._dynamic_full_size.width
                         h = element._dynamic_full_size.height
@@ -2195,6 +2287,8 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
                             # clamp width and height only if scrolling (respectively)
                             if sx == 'scroll': w = remaining.clamp_width(w)
                             if sy == 'scroll': h = remaining.clamp_height(h)
+                            w = math.floor(w)
+                            h = math.floor(h)
                             sz = Size2D(width=w, height=h)
                             element._set_view_size(sz)
                             if position != 'fixed':
@@ -2203,14 +2297,12 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
                             processed = True
                         else:
                             # element does not fit!  finish of current line, then reprocess current element
-                            lines.append(cur_line)
                             accum_height += line_height
                             accum_width = max(accum_width, line_width)
                             new_line = True
                             element._dirty_flow(parent=False, children=True)
                             #element._dirtying_flow = True
                 if cur_line:
-                    lines.append(cur_line)
                     accum_height += line_height
                     accum_width = max(accum_width, line_width)
             dw = accum_width
@@ -2237,6 +2329,36 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
         self._dynamic_full_size = Size2D(width=dw, height=dh)
         # if self._tagName == 'body': print(self._dynamic_content_size, self._dynamic_full_size)
 
+        if display == 'table-row':
+            table_index2D.update(i=0, j_off=1)
+        elif display == 'table-cell':
+            idx = table_index2D.to_tuple()
+            table_cells[idx] = (self, self._dynamic_full_size)
+            table_index2D.update(i_off=1)
+        elif display == 'table':
+            inds = table_cells.keys()
+            ind_is = sorted({ i for (i,j) in inds })
+            ind_js = sorted({ j for (i,j) in inds })
+            ind_is_js = { i:sorted({ j for (_i,j) in inds if i==_i }) for i in ind_is }
+            ind_js_is = { j:sorted({ i for (i,_j) in inds if j==_j }) for j in ind_js }
+            ws = { i:max(table_cells[(i,j)][1].width  for j in ind_is_js[i]) for i in ind_is }
+            hs = { j:max(table_cells[(i,j)][1].height for i in ind_js_is[j]) for j in ind_js }
+            # override dynamic full size
+            px,py = mbp_left,mbp_top
+            for i in ind_is:
+                for j in ind_is_js[i]:
+                    element = table_cells[(i,j)][0]
+                    element._tablecell_table = self
+                    element._tablecell_pos = RelPoint2D((px, -py))
+                    element._tablecell_size = Size2D(width=ws[i], height=hs[j])
+                    py += hs[j]
+                px += ws[i]
+                py = mbp_top
+            fw = sum(ws.values())
+            fh = sum(hs.values())
+            self._dynamic_content_size = Size2D(width=fw, height=fh)
+            self._dynamic_full_size = Size2D(width=fw+mbp_width, height=fh+mbp_height)
+
         self._tmp_max_width = max_width
 
         self._dirtying_flow = False
@@ -2249,7 +2371,12 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
         pl,pt     = self.left_pixels,self.top_pixels
 
         # position element
-        if style_pos in {'fixed', 'absolute'}:
+        if self._tablecell_table:
+            self._relative_element = self._tablecell_table
+            self._relative_pos = RelPoint2D(self._tablecell_pos)
+            self._relative_offset = RelPoint2D((0, 0))
+
+        elif style_pos in {'fixed', 'absolute'}:
             # pt,pr,pb,pl = self.top,self.right,self.bottom,self.left
             # # TODO: ignoring units, which could be %!!
             self._relative_element = self._document_elem if style_pos == 'fixed' else self._nonstatic_elem
@@ -2274,6 +2401,7 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
                 pt = 0
             self._relative_pos = RelPoint2D((pl, pt)) # ((pl + mbp_left, pt - mbp_top))
             self._relative_offset = RelPoint2D((mbp_left, -mbp_top))
+
         elif style_pos == 'relative':
             if pl == 'auto':
                 pl = 0
@@ -2282,6 +2410,7 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
             self._relative_element = self._parent
             self._relative_pos = RelPoint2D(self._fitting_pos)
             self._relative_offset = RelPoint2D((pl, pt))
+
         else:
             self._relative_element = self._parent
             self._relative_pos = RelPoint2D(self._fitting_pos)
@@ -2374,16 +2503,24 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
     @profiler.function
     def _setup_ltwh(self):
         # parent_pos = self._parent.absolute_pos if self._parent else Point2D((0, self._parent_size.max_height-1))
-        parent_pos = self._relative_element.absolute_pos if self._relative_element and self._relative_element != self else Point2D((0, self._parent_size.max_height-1))
-        if not parent_pos: parent_pos = RelPoint2D.ZERO
-        rel_pos = self._relative_pos or RelPoint2D.ZERO
-        rel_offset = self._relative_offset or RelPoint2D.ZERO
-        abs_pos = parent_pos + rel_pos + rel_offset
+        if self._tablecell_table:
+            table_pos = self._tablecell_table.absolute_pos
+            # rel_pos = self._relative_pos or RelPoint2D.ZERO
+            # rel_offset = self._relative_offset or RelPoint2D.ZERO
+            abs_pos = table_pos + self._tablecell_pos
+            abs_size = self._tablecell_size
+        else:
+            parent_pos = self._relative_element.absolute_pos if self._relative_element and self._relative_element != self else Point2D((0, self._parent_size.max_height-1))
+            if not parent_pos: parent_pos = RelPoint2D.ZERO
+            rel_pos = self._relative_pos or RelPoint2D.ZERO
+            rel_offset = self._relative_offset or RelPoint2D.ZERO
+            abs_pos = parent_pos + rel_pos + rel_offset
+            abs_size = self._absolute_size
         self._absolute_pos = abs_pos + self._scroll_offset
-        self._l = int(abs_pos.x)
-        self._t = int(abs_pos.y)
-        self._w = int(self._absolute_size.width)
-        self._h = int(self._absolute_size.height)
+        self._l = floor(abs_pos.x)
+        self._t = ceil(abs_pos.y)
+        self._w = ceil(abs_size.width)
+        self._h = ceil(abs_size.height)
         self._r = self._l + (self._w - 1)
         self._b = self._t - (self._h - 1)
 
@@ -2393,91 +2530,84 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
             self._setup_ltwh()
             if not ScissorStack.is_box_visible(self._l, self._t, self._w, self._h): return
 
-            pr1 = profiler.start('drawing innerTextAsIs')
-            ox,oy = textshadowoffset if textshadowoffset is not None else (0,0)
-            Globals.drawing.text_draw2D_simple(self._innerTextAsIs, (self._l+ox, self._t-oy))
-            pr1.done()
+            with profiler.code('drawing innerTextAsIs'):
+                ox,oy = textshadowoffset if textshadowoffset is not None else (0,0)
+                Globals.drawing.text_draw2D_simple(self._innerTextAsIs, (self._l+ox, self._t-oy))
             return
 
         if not self.is_visible: return
 
-        pr1 = profiler.start('_draw initialization')
-        self._setup_ltwh()
-        if not ScissorStack.is_box_visible(self._l, self._t, self._w, self._h):
-            pr1.done()
-            return
+        with profiler.code('_draw initialization'):
+            self._setup_ltwh()
+            if not ScissorStack.is_box_visible(self._l, self._t, self._w, self._h):
+                return
 
-        if DEBUG_COLOR_CLEAN:
-            # style, content, size, layout, blocks
-            t_max = 2
-            t = max(0, t_max - (time.time() - self._clean_debugging.get('style', 0))) / t_max
-            background_override = Color((t, t/2, 0, 0.5))
-        else:
-            background_override = None
+            if DEBUG_COLOR_CLEAN:
+                # style, content, size, layout, blocks
+                t_max = 2
+                t = max(0, t_max - (time.time() - self._clean_debugging.get('style', 0))) / t_max
+                background_override = Color((t, t/2, 0, 0.5))
+            else:
+                background_override = None
 
-        bgl.glEnable(bgl.GL_BLEND)
+            bgl.glEnable(bgl.GL_BLEND)
 
-        dpi_mult = Globals.drawing.get_dpi_mult()
-        sc = self._style_cache
-        margin_top,  margin_right,  margin_bottom,  margin_left  = sc['margin-top'],  sc['margin-right'],  sc['margin-bottom'],  sc['margin-left']
-        padding_top, padding_right, padding_bottom, padding_left = sc['padding-top'], sc['padding-right'], sc['padding-bottom'], sc['padding-left']
-        border_width = sc['border-width']
-        pr1.done()
+            dpi_mult = Globals.drawing.get_dpi_mult()
+            sc = self._style_cache
+            margin_top,  margin_right,  margin_bottom,  margin_left  = sc['margin-top'],  sc['margin-right'],  sc['margin-bottom'],  sc['margin-left']
+            padding_top, padding_right, padding_bottom, padding_left = sc['padding-top'], sc['padding-right'], sc['padding-bottom'], sc['padding-left']
+            border_width = sc['border-width']
 
         with ScissorStack.wrap(self._l, self._t, self._w, self._h, msg=str(self)):
-            pr = profiler.start('drawing mbp')
-            texture_id = self._image_data['texid'] if self._src == 'image' else -1
-            texture_fit = self._computed_styles.get('object-fit', 'fill')
-            ui_draw.draw(self._l, self._t, self._w, self._h, dpi_mult, self._style_cache, texture_id, texture_fit, background_override=background_override)
-            pr.done()
+            with profiler.code('drawing mbp'):
+                texture_id = self._image_data['texid'] if self._src == 'image' else -1
+                texture_fit = self._computed_styles.get('object-fit', 'fill')
+                ui_draw.draw(self._l, self._t, self._w, self._h, dpi_mult, self._style_cache, texture_id, texture_fit, background_override=background_override)
 
-            pr1 = profiler.start('drawing children')
-            # compute inner scissor area
-            include_margin = True
-            include_padding = False
-            mt,mr,mb,ml = (margin_top, margin_right, margin_bottom, margin_left)  if include_margin  else (0,0,0,0)
-            pt,pr,pb,pl = (padding_top,padding_right,padding_bottom,padding_left) if include_padding else (0,0,0,0)
-            bw = border_width
-            il = round(self._l + (ml + bw + pl))
-            it = round(self._t - (mt + bw + pt))
-            iw = round(self._w - ((ml + bw + pl) + (pr + bw + mr)))
-            ih = round(self._h - ((mt + bw + pt) + (pb + bw + mb)))
+            with profiler.code('drawing children'):
+                # compute inner scissor area
+                include_margin = True
+                include_padding = False
+                mt,mr,mb,ml = (margin_top, margin_right, margin_bottom, margin_left)  if include_margin  else (0,0,0,0)
+                pt,pr,pb,pl = (padding_top,padding_right,padding_bottom,padding_left) if include_padding else (0,0,0,0)
+                bw = border_width
+                il = round(self._l + (ml + bw + pl))
+                it = round(self._t - (mt + bw + pt))
+                iw = round(self._w - ((ml + bw + pl) + (pr + bw + mr)))
+                ih = round(self._h - ((mt + bw + pt) + (pb + bw + mb)))
 
-            with ScissorStack.wrap(il, it, iw, ih, msg=('%s mbp' % str(self)), disabled=False):
-                if self._innerText is not None:
-                    pr2 = profiler.start('drawing innerText')
-                    size_prev = Globals.drawing.set_font_size(self._fontsize, fontid=self._fontid)
-                    bgl.glEnable(bgl.GL_BLEND)
-                    if self._textshadow is not None:
-                        tsx,tsy,tsc = self._textshadow
-                        Globals.drawing.set_font_color(self._fontid, tsc)
-                        for child in self._children_all_sorted:
-                            child._draw(depth + 1, textshadowoffset=(tsx,tsy))
-                    Globals.drawing.set_font_color(self._fontid, self._fontcolor)
-                    for child in self._children_all_sorted:
-                        child._draw(depth + 1)
-                    Globals.drawing.set_font_size(size_prev, fontid=self._fontid)
-                    pr2.done()
-                else:
-                    for child in self._children_all_sorted: child._draw(depth+1)
-            pr1.done()
+                with ScissorStack.wrap(il, it, iw, ih, msg=('%s mbp' % str(self)), disabled=False):
+                    if self._innerText is not None:
+                        with profiler.code('drawing innerText'):
+                            size_prev = Globals.drawing.set_font_size(self._fontsize, fontid=self._fontid)
+                            bgl.glEnable(bgl.GL_BLEND)
+                            if self._textshadow is not None:
+                                tsx,tsy,tsc = self._textshadow
+                                Globals.drawing.set_font_color(self._fontid, tsc)
+                                for child in self._children_all_sorted:
+                                    child._draw(depth + 1, textshadowoffset=(tsx,tsy))
+                            Globals.drawing.set_font_color(self._fontid, self._fontcolor)
+                            for child in self._children_all_sorted:
+                                child._draw(depth + 1)
+                            Globals.drawing.set_font_size(size_prev, fontid=self._fontid)
+                    else:
+                        for child in self._children_all_sorted: child._draw(depth+1)
 
             vscroll = max(0, self._dynamic_full_size.height - self._h)
-            if vscroll:
-                pr1 = profiler.start('drawing scrollbar')
-                bgl.glEnable(bgl.GL_BLEND)
-                w = 3
-                h = self._h - (mt+bw+pt) - (mb+bw+pb) - 6
-                px = self._l + self._w - (mr+bw+pr) - w/2 - 5
-                py0 = self._t - (mt+bw+pt) - 3
-                py1 = py0 - (h-1)
-                sh = h * self._h / self._dynamic_full_size.height
-                sy0 = py0 - (h-sh) * (self._scroll_offset.y / vscroll)
-                sy1 = sy0 - sh
-                if py0>sy0: Globals.drawing.draw2D_line(Point2D((px,py0)), Point2D((px,sy0+1)), Color((0,0,0,0.2)), width=w)
-                if sy1>py1: Globals.drawing.draw2D_line(Point2D((px,sy1-1)), Point2D((px,py1)), Color((0,0,0,0.2)), width=w)
-                Globals.drawing.draw2D_line(Point2D((px,sy0)), Point2D((px,sy1)), Color((1,1,1,0.2)), width=w)
-                pr1.done()
+            if vscroll >= 1:
+                with profiler.code('drawing scrollbar'):
+                    bgl.glEnable(bgl.GL_BLEND)
+                    w = 3
+                    h = self._h - (mt+bw+pt) - (mb+bw+pb) - 6
+                    px = self._l + self._w - (mr+bw+pr) - w/2 - 5
+                    py0 = self._t - (mt+bw+pt) - 3
+                    py1 = py0 - (h-1)
+                    sh = h * self._h / self._dynamic_full_size.height
+                    sy0 = py0 - (h-sh) * (self._scroll_offset.y / vscroll)
+                    sy1 = sy0 - sh
+                    if py0>sy0: Globals.drawing.draw2D_line(Point2D((px,py0)), Point2D((px,sy0+1)), Color((0,0,0,0.2)), width=w)
+                    if sy1>py1: Globals.drawing.draw2D_line(Point2D((px,sy1-1)), Point2D((px,py1)), Color((0,0,0,0.2)), width=w)
+                    Globals.drawing.draw2D_line(Point2D((px,sy0)), Point2D((px,sy1)), Color((1,1,1,0.2)), width=w)
 
     def draw(self, *args, **kwargs): return self._draw(*args, **kwargs)
 
@@ -2529,9 +2659,10 @@ class UI_Element(UI_Element_Utils, UI_Element_Properties, UI_Element_Dirtiness):
                 if not cap: cb(details)
 
     @profiler.function
-    def _dispatch_event(self, event, mouse=None, key=None, ui_event=None, stop_at=None):
+    def _dispatch_event(self, event, mouse=None, button=None, key=None, ui_event=None, stop_at=None):
         if mouse is None: mouse = ui_document.actions.mouse
-        if ui_event is None: ui_event = UI_Event(target=self, mouse=mouse, key=key)
+        if button is None: button = (ui_document._lmb, ui_document._mmb, ui_document._rmb)
+        if ui_event is None: ui_event = UI_Event(target=self, mouse=mouse, button=button, key=key)
         path = self.get_pathToRoot()[1:] # skipping first item, which is self
         if stop_at is not None and stop_at in path:
             path = path[:path.index(stop_at)]
@@ -2635,10 +2766,12 @@ class UI_Document(UI_Document_FSM):
             {'PERIOD', 'MINUS', 'SPACE', 'SEMI_COLON', 'COMMA', 'QUOTE', 'ACCENT_GRAVE', 'PLUS', 'SLASH', 'BACK_SLASH', 'EQUAL', 'LEFT_BRACKET', 'RIGHT_BRACKET'},
     }
 
-    doubleclick_time = 0.25
+    doubleclick_time = bpy.context.preferences.inputs.mouse_double_click_time / 1000 # 0.25
+    wheel_scroll_lines = bpy.context.preferences.inputs.wheel_scroll_lines
     allow_disabled_to_blur = False
-    key_repeat_delay = 0.1500 * 0.8
-    key_repeat_pause = 0.0700 * 0.2
+    key_repeat_delay = 0.25
+    key_repeat_pause = 0.10
+    show_tooltips = True
     tooltip_delay = 0.50
 
     def __init__(self):
@@ -2646,6 +2779,9 @@ class UI_Document(UI_Document_FSM):
         self._area = None
         self._exception_callbacks = []
         self._ui_scale = Globals.drawing.get_dpi_mult()
+        self._draw_count = 0
+        self._draw_time = 0
+        self._draw_fps = 0
 
     def add_exception_callback(self, fn):
         self._exception_callbacks += [fn]
@@ -2672,7 +2808,6 @@ class UI_Document(UI_Document_FSM):
         self._tooltip_wait = None
         self._tooltip_mouse = None
         self._reposition_tooltip_before_draw = False
-        self._timer = context.window_manager.event_timer_add(1.0 / 120, window=context.window)
         self.fsm.init(self, start='main')
 
         self.ignore_hover_change = False
@@ -2680,6 +2815,11 @@ class UI_Document(UI_Document_FSM):
         self._under_mouse = None
         self._under_down = None
         self._focus = None
+
+        self._mouse = Point2D((-1, -1))
+        self._lmb = False
+        self._mmb = False
+        self._rmb = False
 
         self._last_mx = -1
         self._last_my = -1
@@ -2723,7 +2863,7 @@ class UI_Document(UI_Document_FSM):
 
         if DEBUG_COLOR_CLEAN: tag_redraw_all("UI_Element DEBUG_COLOR_CLEAN")
 
-        self.actions.update(context, event, self._timer, print_actions=False)
+        self.actions.update(context, event, print_actions=False)
 
         self._mx,self._my = self.actions.mouse if self.actions.mouse else (-1,-1)
         self._mouse = Point2D((self._mx, self._my))
@@ -2743,7 +2883,7 @@ class UI_Document(UI_Document_FSM):
         if self._tooltip_message and time.time() > self._tooltip_wait:
             # TODO: markdown support??
             self._tooltip.innerText = self._tooltip_message
-            self._tooltip.is_visible = True
+            self._tooltip.is_visible = True and self.show_tooltips
             self._reposition_tooltip_before_draw = True
 
         self.fsm.update()
@@ -2830,7 +2970,8 @@ class UI_Document(UI_Document_FSM):
             if self.actions.event_type == 'TRACKPADPAN':
                 move = self.actions.mouse.y - self.actions.mouse_prev.y
             else:
-                move = Globals.drawing.scale(24) * (-1 if 'UP' in self.actions.event_type else 1)
+                d = self.wheel_scroll_lines * 8
+                move = Globals.drawing.scale(d) * (-1 if 'UP' in self.actions.event_type else 1)
             self.actions.unpress()
             if self._get_scrollable():
                 self._scroll_element.scrollTop = self._scroll_last.y + move
@@ -3032,6 +3173,8 @@ class UI_Document(UI_Document_FSM):
     def draw(self, context):
         if self._area != context.area: return
 
+        time_start = time.time()
+
         # print('UI_Document.draw', random.random())
 
         w,h = context.region.width, context.region.height
@@ -3052,16 +3195,24 @@ class UI_Document(UI_Document_FSM):
         bgl.glEnable(bgl.GL_BLEND)
         bgl.glDisable(bgl.GL_DEPTH_TEST)
         self._body._clean()
-        self._body._layout(first_on_line=True, fitting_size=sz, fitting_pos=Point2D((0,h-1)), parent_size=sz, nonstatic_elem=None, document_elem=self._body)
+        self._body._layout(first_on_line=True, fitting_size=sz, fitting_pos=Point2D((0,h-1)), parent_size=sz, nonstatic_elem=None, document_elem=self._body, table_data={})
         self._body._set_view_size(sz)
         self._body._call_postflow()
-        self._body._layout(first_on_line=True, fitting_size=sz, fitting_pos=Point2D((0,h-1)), parent_size=sz, nonstatic_elem=None, document_elem=self._body)
+        self._body._layout(first_on_line=True, fitting_size=sz, fitting_pos=Point2D((0,h-1)), parent_size=sz, nonstatic_elem=None, document_elem=self._body, table_data={})
         self._body._set_view_size(sz)
         if self._reposition_tooltip_before_draw:
             self._reposition_tooltip_before_draw = False
             self._reposition_tooltip()
         self._body._draw()
         ScissorStack.end()
+
+        self._draw_count += 1
+        self._draw_time += time.time() - time_start
+        if self._draw_count % 100 == 0:
+            self._draw_fps = self._draw_count / self._draw_time
+            print('~%f fps  (%f / %d = %f)' % (self._draw_fps, self._draw_time, self._draw_count, self._draw_time / self._draw_count))
+            self._draw_count = 0
+            self._draw_time = 0
 
 ui_document = Globals.set(UI_Document())
 

@@ -1,5 +1,5 @@
 '''
-Copyright (C) 2017 CG Cookie
+Copyright (C) 2020 CG Cookie
 http://cgcookie.com
 hello@cgcookie.com
 
@@ -19,6 +19,7 @@ Created by Jonathan Denning, Jonathan Williamson
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+import time
 from hashlib import md5
 
 import bpy

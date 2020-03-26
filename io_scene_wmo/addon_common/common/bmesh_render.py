@@ -1,5 +1,5 @@
 '''
-Copyright (C) 2016 CG Cookie
+Copyright (C) 2020 CG Cookie
 http://cgcookie.com
 hello@cgcookie.com
 
@@ -295,7 +295,7 @@ class BufferedRender_Batch:
     def is_quarantined(self, k):
         return k in self._quarantine[self.shader]
     def quarantine(self, k):
-        print('BufferedRender_Batch: quarantining %s for %s' % (str(k), str(self.shader)))
+        dprint('BufferedRender_Batch: quarantining %s for %s' % (str(k), str(self.shader)))
         self._quarantine[self.shader].add(k)
     def uniform_float(self, k, v):
         if self.is_quarantined(k): return
