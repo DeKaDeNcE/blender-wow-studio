@@ -236,7 +236,6 @@ class BlenderM2Scene:
 
             try:
                 tex1_img = bpy.data.images.load(os.path.join(texture_dir, tex_path_png))
-                tex1_img.use_alpha = True
                 tex1.image = tex1_img
             except RuntimeError:
                 pass
