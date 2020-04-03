@@ -268,7 +268,6 @@ def register():
 
 def unregister():
     del bpy.types.Scene.wow_visibility
-    del bpy.types.Scene.wow_liquid_flags
     del bpy.types.Scene.wow_doodad_visibility
 
     bpy.types.VIEW3D_MT_add.remove(wow_components_add_menu_item)

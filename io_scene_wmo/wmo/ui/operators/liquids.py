@@ -358,7 +358,7 @@ class WMO_OT_edit_liquid(CookieCutter, bpy.types.Operator):
 
             if self.actions.pressed(action):
                 self.update_bmesh()
-                self.active_tool = action
+                self.activate_tool(action)
                 return action
 
         return 'grab'
@@ -415,6 +415,14 @@ class WMO_OT_edit_liquid(CookieCutter, bpy.types.Operator):
             self.active_tool = 'select'
 
             return 'main'
+
+        # switch state
+        for action in self.default_keymap.keys():
+
+            if self.actions.pressed(action):
+                self.update_bmesh()
+                self.activate_tool(action)
+                return action
 
         return 'rotate'
 
