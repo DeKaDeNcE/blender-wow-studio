@@ -1,3 +1,4 @@
 *.pyc
 io_scene_wmo/.idea/
 io_scene_wmo/third_party/
+.idea/
