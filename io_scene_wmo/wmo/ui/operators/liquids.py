@@ -157,11 +157,11 @@ class WMO_OT_edit_liquid(CookieCutter, bpy.types.Operator):
         # setup UI variables
 
         self.tools = {
-            "select": ("Select", "", ""),
-            "grab": ("Raise / Lower (G)", "close.png", "Raise \ Lower"),
-            "rotate": ("Rotate (R)", "legion.png", ""),
-            "equalize": ("Equalize (E)", "", ""),
-            "flag": ("Edit flags (F)", "contours_32.png", ""),
+            "select": ("Select", "select.png", "Select liquid area"),
+            "grab": ("Raise / Lower (G)", "raise_lower.png", "Raise \ Lower liquid surface"),
+            "rotate": ("Rotate (R)", "rotate.png", "Rotate liquid area"),
+            "equalize": ("Equalize (E)", "equalize.png", "Equalize liquid level"),
+            "flag": ("Edit flags (F)", "flags.png", "Mark flags on the liquid grid"),
 
         }
 
