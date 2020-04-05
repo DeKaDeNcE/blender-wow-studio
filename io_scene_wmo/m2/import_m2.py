@@ -17,7 +17,7 @@ def import_m2(version, filepath):  # TODO: implement multiversioning
     except UserWarning:
         game_data = None
 
-    m2_file = M2File(version, filepath=filepath, gamedata=game_data)
+    m2_file = M2File(version, filepath=filepath)
     m2 = m2_file.root
     m2.filepath = filepath  # TODO: HACK
 
