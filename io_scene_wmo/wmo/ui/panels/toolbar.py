@@ -223,7 +223,7 @@ class WMO_MT_mesh_wow_components_add(bpy.types.Menu):
 
 
 def wow_components_add_menu_item(self, context):
-    self.layout.menu("WMO_MT_mesh_wow_components_add", icon_value=ui_icons['WOW_STUDIO_WOW_ADD'])
+    self.layout.menu("WMO_MT_mesh_wow_components_add", icon_value=ui_icons['WOW_STUDIO_WOW'])
 
 
 def render_viewport_toggles_right(self, context):
