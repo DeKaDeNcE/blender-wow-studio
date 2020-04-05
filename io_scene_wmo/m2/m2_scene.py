@@ -208,7 +208,7 @@ class BlenderM2Scene:
                 if m2_transparency.global_sequence < 0:
                     animate_transparency(anim_pair, m2_transparency, i, anim_index)
 
-    def load_materials(self, texture_dir):
+    def load_materials(self, cache_dir, local_dir):
 
         # TODO: multitexturing
         skin = self.m2.skins[0]  # assuming first skin is the most detailed one
@@ -234,11 +234,27 @@ class BlenderM2Scene:
             # loading images
             if os.name != 'nt': tex_path_png = tex_path_png.replace('\\', '/')  # reverse slahes for unix
 
-            try:
-                tex1_img = bpy.data.images.load(os.path.join(texture_dir, tex_path_png))
-                tex1.image = tex1_img
-            except RuntimeError:
-                pass
+            loaded = False
+
+            if local_dir:
+                try:
+                    tex1_img = bpy.data.images.load(os.path.join(local_dir, tex_path_png))
+                    tex1.image = tex1_img
+                except:
+                    pass
+                else:
+                    loaded = True
+
+            if cache_dir and not loaded:
+
+                try:
+                    tex1_img = bpy.data.images.load(os.path.join(cache_dir, tex_path_png))
+                    tex1.image = tex1_img
+                except:
+                    pass
+
+                else:
+                    raise FileNotFoundError("\nError loading texture \"{}\".".format(tex_path_png))
 
             update_m2_mat_node_tree(blender_mat)
 

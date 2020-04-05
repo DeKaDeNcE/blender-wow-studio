@@ -183,14 +183,9 @@ class WBS_OT_m2_import(bpy.types.Operator):
         options={'HIDDEN'}
         )
 
-    load_textures: BoolProperty(
-        name="Fetch textures",
-        description="Automatically fetch textures from game data",
-        default=True,
-        )
 
     def execute(self, context):
-        import_m2(int(context.scene.wow_scene.version), self.filepath, self.load_textures)
+        import_m2(int(context.scene.wow_scene.version), self.filepath)
         context.scene.wow_scene.type = 'M2'
         return {'FINISHED'}
 
