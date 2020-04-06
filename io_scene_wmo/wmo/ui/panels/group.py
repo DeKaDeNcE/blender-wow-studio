@@ -50,7 +50,7 @@ class WMO_PT_wmo_group(bpy.types.Panel):
             ctx = ctx_override(box, context.object.wow_wmo_group.liquid_mesh)
             WMO_PT_liquid.draw(ctx, ctx)
 
-        col.prop(context.object.wow_wmo_group, "collision_mesh")
+        box.prop(context.object.wow_wmo_group, "collision_mesh")
 
         self.layout.enabled = context.object.wow_wmo_group.enabled
 

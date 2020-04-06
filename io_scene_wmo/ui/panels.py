@@ -33,9 +33,8 @@ class WowScenePropertyGroup(bpy.types.PropertyGroup):
         name='Scene type',
         description='Sets up the UI to work with a specific WoW game format',
         items=[
-            ('M2', 'M2', 'M2 model',  ui_icons['WOW_STUDIO_M2'], 0),
-            ('WMO', 'WMO', 'World Map Object (WMO)', ui_icons['WOW_STUDIO_WMO'], 1)
-            ]
+            ('M2', 'M2', 'M2 model', 'FILE_VOLUME', 0),
+            ('WMO', 'WMO', 'World Map Object (WMO)', 'FILE_3D', 1)]
     )
 
     game_path:  bpy.props.StringProperty(
@@ -61,7 +60,7 @@ def render_top_bar(self, context):
     row.label(text='WoW Scene:')
     row.prop(context.scene.wow_scene, 'version', text='')
     row.prop(context.scene.wow_scene, 'type', text='')
-    row.operator("scene.reload_wow_filesystem", text="", icon_value=ui_icons['WOW_STUDIO_RELOAD'])
+    row.operator("scene.reload_wow_filesystem", text="", icon='FILE_REFRESH')
 
 
 def render_viewport_toggles_left(self, context):
