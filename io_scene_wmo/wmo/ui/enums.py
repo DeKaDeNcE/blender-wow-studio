@@ -26,21 +26,21 @@ blending_enum = [
 ]
 
 material_flag_enum = [
-    ("1", "Unlit", "Disable lighting", 'SNAP_VOLUME', 0x1),
-    ("2", "Unfogged", "Disable fog", ui_icons['MAT_UNFOGGED'], 0x2),
+    ("1", "Unlit", "Disable lighting", 'SHADING_SOLID', 0x1),
+    ("2", "Unfogged", "Disable fog", 'MOD_FLUID', 0x2),
     ("4", "Two-sided", "Render from both sides", 'MOD_UVPROJECT', 0x4),
-    ("8", "Exterior light", "Ignore local WMO lighting, use world lighting instead", ui_icons['MAT_EXT_LIGHT'], 0x8),
+    ("8", "Exterior light", "Ignore local WMO lighting, use world lighting instead", 'LIGHT_SUN', 0x8),
     ("16", "Night Glow", "Used for windows to glow at nighttime", ui_icons['MAT_NIGHT_GLOW'], 0x10),
     ("32", "Window", "Unknown, used for windows", ui_icons['MAT_WINDOW'], 0x20),
-    ("64", "Clamp_S", "Force texture to use clamp _s adressing", 'SPACE3', 0x40),
-    ("128", "Clamp_T", "Force texture to use clamp _t adressing", 'SPACE2', 0x80)
+    ("64", "Clamp_S", "Force texture to use clamp _s adressing", 'DISCLOSURE_TRI_DOWN', 0x40),
+    ("128", "Clamp_T", "Force texture to use clamp _t adressing", 'TRIA_DOWN', 0x80)
 ]
 
 group_flag_enum = [
-    ('0', "Vertex color", "Check if you need vertex color in this group", 'COLOR', 0x1),
-    ('1', "No local lighting", "Use world-defined lighting in a group", 'LAMP_HEMI', 0x2),
-    ('2', "Always draw", "Always draw the model. Disable portal-based geometry culling", 'BBOX', 0x4),
-    ('3', "Mounts allowed", "Allow mounts in this indoor group", ui_icons['WOW_STUDIO_MOUNT'], 0x8),
+    ('0', "Vertex color", "Check if you need vertex color in this group", 'SHADING_RENDERED', 0x1),
+    ('1', "No local lighting", "Use world-defined lighting in a group", 'LIGHT', 0x2),
+    ('2', "Always draw", "Always draw the model. Disable portal-based geometry culling", 'SHAPEKEY_DATA', 0x4),
+    ('3', "Mounts allowed", "Allow mounts in this indoor group", 'MESH_MONKEY', 0x8),
     ('4', "Use Skybox", "Display WMO skybox in this indoor group", 'SURFACE_NSPHERE', 0x10)
 ]
 
@@ -65,9 +65,9 @@ portal_dir_alg_enum = [
 ]
 
 root_flags_enum = [
-    ("0", "No Auto Attenuation", "Do not attenuate light on vertices based on distance from portal", 'MOD_MIRROR', 0x1),
-    ("1", "Do Not Use Lightmap", "", 'LAMP_SUN', 0x2),
-    ("2", "Unified rendering", "Use ambient lighting inside indoor groups", 'PMARKER_ACT', 0x4)
+    ("0", "No Auto Attenuation", "Do not attenuate light on vertices based on distance from portal", 'NODE_TEXTURE', 0x1),
+    ("1", "Do Not Use Lightmap", "", 'LIGHT_SUN', 0x2),
+    ("2", "Unified rendering", "Use ambient lighting inside indoor groups", 'OUTLINER_OB_LIGHT', 0x4)
 ]
 
 light_type_enum = [

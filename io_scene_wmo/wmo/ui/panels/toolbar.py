@@ -121,25 +121,26 @@ class WMO_PT_tools_panel_object_mode_add_to_scene(bpy.types.Panel):
 
         col = layout.column(align=True)
 
-        box1 = col.box().column(align=True)
-        box1_col = box1.column(align=True)
-        box1_row1 = box1_col.row(align=True)
-        box1_row1.operator("scene.wow_add_fog", text='Fog', icon_value=ui_icons['WOW_STUDIO_FOG_ADD'])
-        box1_row1.operator("scene.wow_add_liquid", text='Water', icon_value=ui_icons['WOW_STUDIO_WATER_ADD'])
-        box1_row2 = box1_col.row(align=True)
-        box1_row3 = box1_col.row(align=True)
+        col.separator()
+        col1_col = col.column(align=True)
+        col1_row1 = col1_col.row(align=True)
+        col1_row1.operator("scene.wow_add_fog", text='Fog', icon_value=ui_icons['WOW_STUDIO_FOG_ADD'])
+        col1_row1.operator("scene.wow_add_liquid", text='Water', icon_value=ui_icons['WOW_STUDIO_WATER_ADD'])
+        col1_row2 = col1_col.row(align=True)
+        col1_row3 = col1_col.row(align=True)
+        col.separator()
 
         if game_data_loaded:
 
-            box1_row2.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2',
+            col1_row2.operator("scene.wow_wmo_import_doodad_from_wmv", text='M2',
                                icon_value=ui_icons['WOW_STUDIO_DOODADS_ADD'])
-            box1_row2.operator("scene.wow_import_last_wmo_from_wmv", text='WMO',
+            col1_row2.operator("scene.wow_import_last_wmo_from_wmv", text='WMO',
                                icon_value=ui_icons['WOW_STUDIO_WMO_ADD'])
-            box1_row3.operator("scene.wow_add_scale_reference", text='Scale',
+            col1_row3.operator("scene.wow_add_scale_reference", text='Scale',
                                icon_value=ui_icons['WOW_STUDIO_SCALE_ADD'])
 
         else:
-            box1_col.operator("scene.wow_add_scale_reference", text='Scale',
+            col1_col.operator("scene.wow_add_scale_reference", text='Scale',
                               icon_value=ui_icons['WOW_STUDIO_SCALE_ADD'])
 
     @classmethod
@@ -159,16 +160,15 @@ class WMO_PT_tools_object_mode_actions(bpy.types.Panel):
         col = layout.column(align=True)
 
         if bpy.context.selected_objects:
-            box = col.box()
-            box.label(text="Selected:")
-            box_col = box.column(align=True)
+
+            col.separator()
+            box_col = col.column(align=True)
             box_col.operator("scene.wow_wmo_generate_materials", text='Generate materials', icon='MATERIAL')
-            box_col.operator("scene.wow_fill_textures", text='Fill texture paths', icon='FILE_IMAGE')
-            box_col.operator("scene.wow_quick_collision", text='Quick collision', icon='STYLUS_PRESSURE')
-            box_col.operator("scene.wow_set_portal_dir_alg", text='Set portal dir.',
-                             icon_value=ui_icons['WOW_STUDIO_APPLY_DIRECTION'])
-            box_col.operator("scene.wow_bake_portal_relations", text='Bake portal rels.',
-                             icon_value=ui_icons['WOW_STUDIO_APPLY_RELATIONS'])
+            box_col.operator("scene.wow_fill_textures", text='Fill texture paths', icon='SEQ_SPLITVIEW')
+            box_col.operator("scene.wow_quick_collision", text='Quick collision', icon='MOD_TRIANGULATE')
+            box_col.operator("scene.wow_set_portal_dir_alg", text='Set portal direction', icon='ORIENTATION_NORMAL')
+            box_col.operator("scene.wow_bake_portal_relations", text='Bake portal relations', icon='FULLSCREEN_EXIT')
+            col.separator()
 
     @classmethod
     def poll(cls, context):
@@ -193,13 +193,13 @@ class WMO_PT_tools_object_mode_doodads(bpy.types.Panel):
         layout = self.layout.split()
         col = layout.column(align=True)
 
-        box = col.box()
-        box_col2 = box.column(align=True)
+        col.separator()
+        box_col2 = col.column(align=True)
 
-        box_col2.operator("scene.wow_doodads_bake_color", text='Bake color', icon='GROUP_VCOL')
-        box_col2.operator("scene.wow_doodad_set_color", text='Set color', icon='COLOR')
-        box_col2.operator("scene.wow_doodad_set_template_action", text='Template action', icon='FORCE_MAGNETIC')
-
+        box_col2.operator("scene.wow_doodads_bake_color", text='Bake color', icon='SHADING_RENDERED')
+        box_col2.operator("scene.wow_doodad_set_color", text='Set color', icon='SHADING_SOLID')
+        box_col2.operator("scene.wow_doodad_set_template_action", text='Template action', icon='STICKY_UVS_LOC')
+        col.separator()
 
 class WMO_MT_mesh_wow_components_add(bpy.types.Menu):
     bl_label = "WoW"
@@ -241,13 +241,13 @@ def render_viewport_toggles_right(self, context):
 def register():
     bpy.types.Scene.wow_visibility = bpy.props.EnumProperty(
         items=[
-            ('0', "Outdoor", "Display outdoor groups", 'OBJECT_DATA', 0x1),
-            ('1', "Indoor", "Display indoor groups", 'MOD_SUBSURF', 0x2),
-            ('2', "Portals", "Display portals", ui_icons['WOW_STUDIO_CONVERT_PORTAL'], 0x4),
-            ('3', "Fogs", "Display fogs", ui_icons['WOW_STUDIO_FOG'], 0x8),
-            ('4', "Liquids", "Display liquids", 'MOD_WAVE', 0x10),
-            ('5', "Lights", "Display lights", 'OUTLINER_OB_LAMP', 0x20),
-            ('6', "Collision", "Display collision", 'STYLUS_PRESSURE', 0x40)],
+            ('0', "Outdoor", "Display outdoor groups", 'SELECT_SET', 0x1),
+            ('1', "Indoor", "Display indoor groups", 'OBJECT_HIDDEN', 0x2),
+            ('2', "Portals", "Display portals", 'FULLSCREEN_ENTER', 0x4),
+            ('3', "Fogs", "Display fogs", 'MOD_FLUID', 0x8),
+            ('4', "Liquids", "Display liquids", 'MOD_OCEAN', 0x10),
+            ('5', "Lights", "Display lights", 'LIGHT', 0x20),
+            ('6', "Collision", "Display collision", 'CON_SIZELIMIT', 0x40)],
         options={'ENUM_FLAG'},
         default={'0', '1', '2', '3', '4', '5', '6'},
         update=update_wow_visibility

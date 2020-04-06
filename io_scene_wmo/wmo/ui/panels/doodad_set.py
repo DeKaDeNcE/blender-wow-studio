@@ -41,7 +41,7 @@ class WMO_OT_doodad_set_components_change(bpy.types.Operator):
 
 
 class WMO_UL_doodad_set_doodad_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
-    icon = ui_icons['WOW_STUDIO_M2']
+    icon = 'FILE_VOLUME'
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
 

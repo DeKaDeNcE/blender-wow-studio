@@ -29,7 +29,7 @@ TEX_UNIT_FLAGS = [
 
 RENDER_FLAGS = [
     ("1", "Unlit", "Disable lighting", 'SNAP_VOLUME', 0x1),
-    ("2", "Unfogged", "Disable fog", ui_icons['MAT_UNFOGGED'], 0x2),
+    ("2", "Unfogged", "Disable fog", 'MOD_FLUID', 0x2),
     ("4", "Two-sided", "Render from both sides", 'MOD_UVPROJECT', 0x4),
     ("8", "Depth-Test", "Unknown", 'SPACE3', 0x8),
     ("16", "Depth-Write", "Unknown", 'SPACE2', 0x10),
@@ -250,7 +250,3 @@ def get_particle_flags(self, context):
 
 def get_event_names(self, context):
     return [(field.value, field.name, "") for field in M2EventTokens]
-
-
-
-

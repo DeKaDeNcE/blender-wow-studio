@@ -27,7 +27,6 @@ class WMO_PT_material(bpy.types.Panel):
         if context.material.wow_wmo_material.diff_texture_1:
             box.prop(context.material.wow_wmo_material.diff_texture_1.wow_wmo_texture, "path")
 
-        box = col.box()
         box.prop(context.material.wow_wmo_material, "diff_texture_2")
 
         if context.material.wow_wmo_material.diff_texture_2:

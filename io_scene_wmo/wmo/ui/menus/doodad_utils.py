@@ -9,8 +9,8 @@ class VIEW3D_MT_wmo_doodad_actions(Menu):
         layout = self.layout
         pie = layout.menu_pie()
 
-        pie.operator("scene.wow_doodads_bake_color", text='Bake Color', icon='GROUP_VCOL')
-        pie.operator("scene.wow_doodad_set_color", text='Set Color', icon='COLOR')
+        pie.operator("scene.wow_doodads_bake_color", text='Bake Color', icon='SHADING_RENDERED')
+        pie.operator("scene.wow_doodad_set_color", text='Set Color', icon='SHADING_SOLID')
 
         op = pie.operator("scene.wow_doodad_set_template_action", text='Template Select', icon='PMARKER_ACT')
         op.action = 'SELECT'
@@ -26,4 +26,3 @@ class VIEW3D_MT_wmo_doodad_actions(Menu):
 
         op = pie.operator("scene.wow_doodad_set_template_action", text='Template Resize', icon='FULLSCREEN_ENTER')
         op.action = 'RESIZE'
-

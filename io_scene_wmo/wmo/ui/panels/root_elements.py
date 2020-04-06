@@ -37,12 +37,12 @@ class WMO_UL_root_elements_doodadset_list(WMO_UL_root_elements_template_list, bp
 
 class WMO_UL_root_elements_groups_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
 
-    icon = ui_icons['WOW_STUDIO_WMO']
+    icon = 'FILE_3D'
 
 
 class WMO_UL_root_elements_fogs_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
 
-    icon = ui_icons['WOW_STUDIO_FOG']
+    icon = 'MOD_FLUID'
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
 
@@ -67,7 +67,7 @@ class WMO_UL_root_elements_fogs_list(WMO_UL_root_elements_template_list, bpy.typ
 
 class WMO_UL_root_elements_portal_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
 
-    icon = ui_icons['WOW_STUDIO_CONVERT_PORTAL']
+    icon = 'SELECT_SUBTRACT'
 
 
 class WMO_UL_root_elements_materials_list(WMO_UL_root_elements_template_list, bpy.types.UIList):
@@ -111,12 +111,12 @@ def is_obj_unused(obj):
 #####################
 
 wmo_widget_items = (
-                    ("GROUPS", "", "WMO Groups", ui_icons['WOW_STUDIO_WMO'], 0),
-                    ("FOGS", "", "WMO Fogs", ui_icons['WOW_STUDIO_FOG'], 1),
+                    ("GROUPS", "", "WMO Groups", 'FILE_3D', 0),
+                    ("FOGS", "", "WMO Fogs", 'MOD_FLUID', 1),
                     ("MATERIALS", "", "WMO Materials", 'MATERIAL', 2),
-                    ("PORTALS", "", "WMO Portals", ui_icons['WOW_STUDIO_CONVERT_PORTAL'], 3),
+                    ("PORTALS", "", "WMO Portals", 'FULLSCREEN_ENTER', 3),
                     ("LIGHTS", "", "WMO Lights",'LIGHT', 4),
-                    ("DOODADS", "", "WMO Doodad Sets", ui_icons['WOW_STUDIO_M2'], 5)
+                    ("DOODADS", "", "WMO Doodad Sets", 'FILE_VOLUME', 5)
                    )
 
 wmo_widget_labels = {item[0] : item[2] for item in wmo_widget_items}
@@ -273,7 +273,7 @@ def draw_wmo_doodad_sets_panel(layout, context):
         ctx_override = namedtuple('ctx_override', ('object', 'scene', 'layout'))
 
         box = layout.box()
-        box.label(text='Doodads', icon_value=ui_icons['WOW_STUDIO_M2'])
+        box.label(text='Doodads', icon_value='FILE_VOLUME')
 
         ctx = ctx_override(doodad_set.pointer, context.scene, box)
         WMO_PT_doodad_set.draw(ctx, ctx)
@@ -515,5 +515,3 @@ def register():
 
 def unregister():
     del bpy.types.Scene.wow_wmo_root_elements
-
-
