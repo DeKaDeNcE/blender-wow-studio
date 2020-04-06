@@ -74,7 +74,7 @@ class WMO_OT_quick_collision(bpy.types.Operator):
         success = False
         selected_objects = bpy.context.selected_objects[:]
         bpy.ops.object.select_all(action='DESELECT')
-        for ob in tqdm(selected_objects, desc='Generating collision'):
+        for ob in tqdm(selected_objects, desc='Generating collision', ascii=True):
 
             if ob.wow_wmo_group.enabled:
 

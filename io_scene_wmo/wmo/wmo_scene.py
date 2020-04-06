@@ -51,7 +51,7 @@ class BlenderWMOScene:
 
         textures = {}
 
-        for index, wmo_material in tqdm(list(enumerate(self.wmo.momt.materials)), desc='Importing materials'):
+        for index, wmo_material in tqdm(list(enumerate(self.wmo.momt.materials)), desc='Importing materials', ascii=True):
             texture1 = self.wmo.motx.get_string(wmo_material.texture1_ofs)
             texture2 = self.wmo.motx.get_string(wmo_material.texture2_ofs)
 
@@ -134,7 +134,7 @@ class BlenderWMOScene:
     def load_lights(self):
         """ Load WoW WMO MOLT lights """
 
-        for i, wmo_light in tqdm(list(enumerate(self.wmo.molt.lights)), desc='Importing lights'):
+        for i, wmo_light in tqdm(list(enumerate(self.wmo.molt.lights)), desc='Importing lights', ascii=True):
 
             bl_light_types = ['POINT', 'SPOT', 'SUN', 'POINT']
 
@@ -175,7 +175,7 @@ class BlenderWMOScene:
     def load_fogs(self):
         """ Load fogs from WMO Root File"""
 
-        for i, wmo_fog in tqdm(list(enumerate(self.wmo.mfog.fogs)), desc='Importing fogs'):
+        for i, wmo_fog in tqdm(list(enumerate(self.wmo.mfog.fogs)), desc='Importing fogs', ascii=True):
 
             fog_obj = create_fog_object(  name="{}_Fog_{}".format(self.wmo.display_name, str(i).zfill(2))
                                         , location=wmo_fog.position
@@ -214,7 +214,7 @@ class BlenderWMOScene:
 
         scene = bpy.context.scene
 
-        with tqdm(self.wmo.modd.definitions, desc='Importing doodads') as progress:
+        with tqdm(self.wmo.modd.definitions, desc='Importing doodads', ascii=True) as progress:
             for doodad_set in self.wmo.mods.sets:
 
                 anchor = bpy.data.objects.new(doodad_set.name, None)
@@ -289,7 +289,7 @@ class BlenderWMOScene:
         """ Load WoW WMO portal planes """
 
         vert_count = 0
-        for index, portal in tqdm(list(enumerate(self.wmo.mopt.infos)), desc='Importing portals'):
+        for index, portal in tqdm(list(enumerate(self.wmo.mopt.infos)), desc='Importing portals', ascii=True):
             portal_name = "{}_Portal_{}".format(self.wmo.display_name, str(index).zfill(3))
 
             verts = []
@@ -350,7 +350,7 @@ class BlenderWMOScene:
 
     def load_groups(self):
 
-        for group in tqdm(self.wmo.groups, desc='Importing groups'):
+        for group in tqdm(self.wmo.groups, desc='Importing groups', ascii=True):
             bl_group = BlenderWMOSceneGroup(self, group)
             self.bl_groups.append(bl_group)
 
@@ -436,6 +436,7 @@ class BlenderWMOScene:
 
         for i, mat_slot in tqdm( enumerate(bpy.context.scene.wow_wmo_root_elements.materials)
                                          , desc='Saving materials'
+                                         , ascii=True
                                          ):
 
             mat = mat_slot.pointer
@@ -492,7 +493,7 @@ class BlenderWMOScene:
 
         if len(self.bl_doodad_sets):
 
-            for set_name, doodads in tqdm(self.bl_doodad_sets.items(), desc='Saving doodad sets'):
+            for set_name, doodads in tqdm(self.bl_doodad_sets.items(), desc='Saving doodad sets', ascii=True):
 
                 self.wmo.add_doodad_set(set_name, len(doodads))
 
@@ -527,7 +528,7 @@ class BlenderWMOScene:
 
     def save_lights(self):
 
-        for obj in tqdm(self.bl_lights, desc='Saving lights'):
+        for obj in tqdm(self.bl_lights, desc='Saving lights', ascii=True):
 
             light_type = int(obj.wow_wmo_light.light_type)
 
@@ -556,7 +557,7 @@ class BlenderWMOScene:
 
         self.wmo.mopt.infos = len(self.bl_portals) * [PortalInfo()]
 
-        for bl_group in tqdm(self.bl_groups, desc='Saving portals'):
+        for bl_group in tqdm(self.bl_groups, desc='Saving portals', ascii=True):
 
             group_obj = bl_group.bl_object
             portal_relations = group_obj.wow_wmo_group.relations.portals
@@ -617,14 +618,14 @@ class BlenderWMOScene:
 
     def save_groups(self):
 
-        for bl_group in tqdm(self.bl_groups, desc='Saving groups'):
+        for bl_group in tqdm(self.bl_groups, desc='Saving groups', ascii=True):
 
             if bl_group.wmo_group.export:
                 bl_group.save()
 
     def save_fogs(self):
 
-        for fog_obj in tqdm(self.bl_fogs, desc='Saving fogs'):
+        for fog_obj in tqdm(self.bl_fogs, desc='Saving fogs', ascii=True):
 
             big_radius = fog_obj.dimensions[2] / 2
             small_radius = big_radius * (fog_obj.wow_wmo_fog.inner_radius / 100)

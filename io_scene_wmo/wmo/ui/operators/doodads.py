@@ -120,7 +120,7 @@ class WMO_OT_doodads_bake_color(bpy.types.Operator):
 
         groups = [obj for obj in bpy.context.scene.objects if obj.wow_wmo_group.enabled]
 
-        for index, obj in enumerate(tqdm(bpy.context.selected_objects, desc='Baking doodad colors')):
+        for index, obj in enumerate(tqdm(bpy.context.selected_objects, desc='Baking doodad colors', ascii=True)):
             if obj.wow_wmo_doodad.enabled:
 
                 group = find_nearest_object(obj, groups)
