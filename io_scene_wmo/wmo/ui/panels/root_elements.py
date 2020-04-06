@@ -273,7 +273,7 @@ def draw_wmo_doodad_sets_panel(layout, context):
         ctx_override = namedtuple('ctx_override', ('object', 'scene', 'layout'))
 
         box = layout.box()
-        box.label(text='Doodads', icon_value='FILE_VOLUME')
+        box.label(text='Doodads', icon='FILE_VOLUME')
 
         ctx = ctx_override(doodad_set.pointer, context.scene, box)
         WMO_PT_doodad_set.draw(ctx, ctx)
