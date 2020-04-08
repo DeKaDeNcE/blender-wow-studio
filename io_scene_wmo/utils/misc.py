@@ -60,7 +60,7 @@ def get_material_viewport_image(material):
     return None
 
 
-def load_game_data():
+def load_game_data() -> WoWFileData:
 
     WoWVersionManager().set_client_version(int(bpy.context.scene.wow_scene.version))
 
