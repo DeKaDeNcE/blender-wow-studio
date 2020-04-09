@@ -23,7 +23,6 @@ def import_m2(version, filepath):  # TODO: implement multiversioning
 
     if addon_preferences.cache_dir_path and game_data:
 
-        if version
         textures = [m2_texture.filename.value for m2_texture in m2.textures
                     if not m2_texture.type and m2_texture.filename.value]
         game_data.extract_textures_as_png(addon_preferences.cache_dir_path, textures)
