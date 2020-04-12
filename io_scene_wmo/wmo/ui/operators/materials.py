@@ -30,11 +30,23 @@ class WMO_OT_generate_materials(bpy.types.Operator):
                 materials.extend(obj.data.materials)
 
         for mat in materials:
+
             update_wmo_mat_node_tree(mat)
 
             if mat.name not in context.scene.wow_wmo_root_elements.materials:
                 mat.wow_wmo_material.self_pointer = mat
                 mat.wow_wmo_material.enabled = True
+
+                tex = None
+                if mat.use_nodes:
+
+                    for node in mat.node_tree.nodes:
+                        if node.bl_idname == 'ShaderNodeTexImage':
+                            tex = node.image
+                            break
+
+                mat.wow_wmo_material.diff_texture_1 = tex
+
                 slot = context.scene.wow_wmo_root_elements.materials.add()
                 slot.pointer = mat
 

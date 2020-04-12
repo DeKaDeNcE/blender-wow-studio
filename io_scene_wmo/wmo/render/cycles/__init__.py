@@ -8,6 +8,7 @@ def update_wmo_mat_node_tree_cycles(bl_mat):
     bl_mat.use_nodes = True
     tree = bl_mat.node_tree
     links = tree.links
+
     tree_builder = NodeTreeBuilder(tree)
 
     # get textures
