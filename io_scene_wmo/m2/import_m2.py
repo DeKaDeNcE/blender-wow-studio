@@ -2,11 +2,11 @@ import os
 
 from ..utils.misc import load_game_data
 from .m2_scene import BlenderM2Scene
-from ..pywowlib.m2_file import M2File
+from ..pywowlib.m2_file import M2File, M2Versions
 from ..ui import get_addon_prefs
 
 
-def import_m2(version, filepath):  # TODO: implement multiversioning
+def import_m2(version, filepath, local_path=""):  # TODO: implement multiversioning
 
     # get global variables
     addon_preferences = get_addon_prefs()
@@ -23,9 +23,16 @@ def import_m2(version, filepath):  # TODO: implement multiversioning
 
     if addon_preferences.cache_dir_path and game_data:
 
-        textures = [m2_texture.filename.value for m2_texture in m2.textures
-                    if not m2_texture.type and m2_texture.filename.value]
-        game_data.extract_textures_as_png(addon_preferences.cache_dir_path, textures)
+        dependencies = m2_file.find_model_dependencies()
+
+        t_paths = game_data.extract_textures_as_png(addon_preferences.cache_dir_path, dependencies.textures, local_path)
+        game_data.extract_files(addon_preferences.cache_dir_path, dependencies.anims, local_path, 'anim')
+        game_data.extract_files(addon_preferences.cache_dir_path, dependencies.skins, local_path, 'skin')
+
+        if version >= M2Versions.WOD:
+            game_data.extract_files(addon_preferences.cache_dir_path, dependencies.bones, local_path, 'bone')
+            game_data.extract_files(addon_preferences.cache_dir_path, dependencies.lod_skins, local_path, 'skin')
+            game_data.extract_files(addon_preferences.cache_dir_path, dependencies.skel, local_path, 'skel')
 
     print("\n\n### Importing M2 model ###")
 
