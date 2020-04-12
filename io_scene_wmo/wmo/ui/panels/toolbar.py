@@ -125,7 +125,7 @@ class WMO_PT_tools_panel_object_mode_add_to_scene(bpy.types.Panel):
         col1_col = col.column(align=True)
         col1_row1 = col1_col.row(align=True)
         col1_row1.operator("scene.wow_add_fog", text='Fog', icon_value=ui_icons['WOW_STUDIO_FOG_ADD'])
-        col1_row1.operator("scene.wow_add_liquid", text='Water', icon_value=ui_icons['WOW_STUDIO_WATER_ADD'])
+        col1_row1.operator("scene.wow_add_liquid", text='Liquid', icon_value=ui_icons['WOW_STUDIO_LIQUID_ADD'])
         col1_row2 = col1_col.row(align=True)
         col1_row3 = col1_col.row(align=True)
         col.separator()
@@ -209,7 +209,7 @@ class WMO_MT_mesh_wow_components_add(bpy.types.Menu):
         layout = self.layout
         col = layout.column()
         col.operator("scene.wow_add_fog", text='Fog', icon_value=ui_icons['WOW_STUDIO_FOG_ADD'])
-        col.operator("scene.wow_add_liquid", text='Water', icon_value=ui_icons['WOW_STUDIO_WATER_ADD'])
+        col.operator("scene.wow_add_liquid", text='Liquid', icon_value=ui_icons['WOW_STUDIO_LIQUID_ADD'])
         col.operator("scene.wow_add_scale_reference", text='Scale', icon_value=ui_icons['WOW_STUDIO_SCALE_ADD'])
 
         if hasattr(bpy, "wow_game_data") and bpy.wow_game_data.files:
