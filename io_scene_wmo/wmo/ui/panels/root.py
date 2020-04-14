@@ -120,7 +120,7 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
     ext_ambient_color:  bpy.props.FloatVectorProperty(
         name="Ext. Ambient Color",
         subtype='COLOR',
-        default=(0.138, 0.223, 0.323, 1),
+        default=(1, 1, 1, 1),
         size=4,
         min=0.0,
         max=1.0,
