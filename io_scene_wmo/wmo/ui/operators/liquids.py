@@ -130,7 +130,7 @@ class WMO_OT_edit_liquid(CookieCutter, bpy.types.Operator):
 
         self.active_tool = 'select'
 
-        handlers.DEPSGRAPH_UPDATE_LOCK = True
+        DepsgraphLock().DEPSGRAPH_UPDATE_LOCK = True
 
         bpy.ops.mesh.select_mode(bpy.context.copy(), type='VERT', action='ENABLE', use_extend=True)
         bpy.ops.mesh.select_mode(bpy.context.copy(), type='EDGE', action='ENABLE', use_extend=True)
@@ -311,7 +311,7 @@ class WMO_OT_edit_liquid(CookieCutter, bpy.types.Operator):
                 viewport.spaces[0].shading.type = self.shading_type
                 viewport.spaces[0].shading.color_type = self.color_type
 
-            handlers.DEPSGRAPH_UPDATE_LOCK = False
+            DepsgraphLock().DEPSGRAPH_UPDATE_LOCK = False
 
             self.done(cancel=False)
             return 'finished'

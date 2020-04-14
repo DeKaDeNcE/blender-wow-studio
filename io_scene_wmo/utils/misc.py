@@ -10,6 +10,16 @@ from ..pywowlib.archives.wow_filesystem import WoWFileData
 from .. import PACKAGE_NAME
 
 
+def singleton(class_):
+    instances = {}
+
+    def getinstance(*args, **kwargs):
+        if class_ not in instances:
+            instances[class_] = class_(*args, **kwargs)
+        return instances[class_]
+    return getinstance
+
+
 def find_nearest_object(obj_, objects):
     """Get closest object to another object"""
 

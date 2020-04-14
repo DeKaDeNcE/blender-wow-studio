@@ -5,16 +5,19 @@ from functools import partial
 
 from bpy.app.handlers import persistent
 from ..render import BlenderWMOObjectRenderFlags
-from ...utils.misc import show_message_box
+from ...utils.misc import show_message_box, singleton
 
+
+@singleton
 class DepsgraphLock:
+    DEPSGRAPH_UPDATE_LOCK = False
+
     def __enter__(self):
-        global DEPSGRAPH_UPDATE_LOCK
-        DEPSGRAPH_UPDATE_LOCK = True
+        self.DEPSGRAPH_UPDATE_LOCK = True
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        global DEPSGRAPH_UPDATE_LOCK
-        DEPSGRAPH_UPDATE_LOCK = False
+        self.DEPSGRAPH_UPDATE_LOCK = False
+
 
 _obj_props = (
               ('wow_wmo_group', 'groups'),
@@ -108,7 +111,6 @@ def _add_col_items(scene):
 def _liquid_edit_mode_timer(context):
     bpy.ops.wow.liquid_edit_mode(context, 'INVOKE_DEFAULT')
 
-DEPSGRAPH_UPDATE_LOCK = False
 
 banned_ops = (
     "OBJECT_OT_transform_apply",
@@ -148,8 +150,7 @@ wmo_render_flag_map = {
 
 @persistent
 def on_depsgraph_update(_):
-    global DEPSGRAPH_UPDATE_LOCK
-    if DEPSGRAPH_UPDATE_LOCK:
+    if DepsgraphLock().DEPSGRAPH_UPDATE_LOCK:
         return
 
     delete = False
@@ -274,19 +275,18 @@ def on_depsgraph_update(_):
                         if bm.faces.active:
 
                             root_elements = bpy.context.scene.wow_wmo_root_elements
-                            mat_index = bm.faces.active.material_index
+                            mat_index_active = bm.faces.active.material_index
 
                             if mesh.materials:
-                                mat_index = root_elements.materials.find(mesh.materials[mat_index].name)
+                                mat_index = root_elements.materials.find(mesh.materials[mat_index_active].name)
 
-                                if mat_index >= 0:
-                                    root_elements.cur_material = mat_index
+                                if mat_index >= 0 and root_elements.cur_material != mat_index:
 
+                                    with DepsgraphLock():
+                                        root_elements.cur_material = mat_index
 
                     if update.is_updated_geometry:
                         bpy.context.scene.wow_wmo_root_elements.groups.get(obj.name).export = True
-
-
 
             elif isinstance(update.id, bpy.types.Scene):
 
@@ -344,7 +344,7 @@ def on_depsgraph_update(_):
                     _add_col_items(bpy.context.scene)
 
         finally:
-            DEPSGRAPH_UPDATE_LOCK = False
+            DepsgraphLock().DEPSGRAPH_UPDATE_LOCK = False
 
 
 

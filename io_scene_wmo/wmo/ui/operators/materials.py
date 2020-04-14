@@ -3,6 +3,7 @@ import bmesh
 
 from ...render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
 from ....utils.misc import resolve_texture_path
+from ...ui.handlers import DepsgraphLock
 
 
 class WMO_OT_generate_materials(bpy.types.Operator):
@@ -31,24 +32,25 @@ class WMO_OT_generate_materials(bpy.types.Operator):
 
         for mat in materials:
 
+            tex = None
+            if mat.use_nodes:
+
+                for node in mat.node_tree.nodes:
+                    if node.bl_idname == 'ShaderNodeTexImage':
+                        tex = node.image
+                        break
+
             update_wmo_mat_node_tree(mat)
 
-            if mat.name not in context.scene.wow_wmo_root_elements.materials:
-                mat.wow_wmo_material.self_pointer = mat
-                mat.wow_wmo_material.enabled = True
+            with DepsgraphLock():
 
-                tex = None
-                if mat.use_nodes:
+                if mat.name not in context.scene.wow_wmo_root_elements.materials:
+                    mat.wow_wmo_material.self_pointer = mat
 
-                    for node in mat.node_tree.nodes:
-                        if node.bl_idname == 'ShaderNodeTexImage':
-                            tex = node.image
-                            break
+                    mat.wow_wmo_material.diff_texture_1 = tex
 
-                mat.wow_wmo_material.diff_texture_1 = tex
-
-                slot = context.scene.wow_wmo_root_elements.materials.add()
-                slot.pointer = mat
+                    slot = context.scene.wow_wmo_root_elements.materials.add()
+                    slot.pointer = mat
 
         return {'FINISHED'}
 

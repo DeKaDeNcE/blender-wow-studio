@@ -9,6 +9,7 @@ from .light import WMO_PT_light
 from .material import WMO_PT_material, update_flags, update_shader
 from .portal import WMO_PT_portal
 from .utils import WMO_UL_root_elements_template_list, update_current_object, update_doodad_pointer
+from ..handlers import DepsgraphLock
 from .... import ui_icons
 
 
@@ -472,15 +473,6 @@ def update_current_doodad_set(self, context):
                 child.hide_set(True)
 
 
-def update_current_material(self, context):
-
-    mat = self.materials[self.cur_material].pointer
-    obj = bpy.context.view_layer.objects.active
-
-    if mat and obj and obj.type == 'MESH' and mat.name in obj.data.materials:
-        obj.active_material_index = obj.data.materials.find(mat.name)
-
-
 class WoWWMO_RootComponents(bpy.types.PropertyGroup):
 
     is_update_critical:  bpy.props.BoolProperty(default=False)
@@ -506,7 +498,7 @@ class WoWWMO_RootComponents(bpy.types.PropertyGroup):
     cur_doodad_set:  bpy.props.IntProperty(update=update_current_doodad_set)
 
     materials:  bpy.props.CollectionProperty(type=MaterialPointerPropertyGroup)
-    cur_material:  bpy.props.IntProperty(update=update_current_material)
+    cur_material:  bpy.props.IntProperty()
 
 
 def register():
