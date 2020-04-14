@@ -183,7 +183,6 @@ class WBS_OT_m2_import(bpy.types.Operator):
         options={'HIDDEN'}
         )
 
-
     def execute(self, context):
         import_m2(int(context.scene.wow_scene.version), self.filepath)
         context.scene.wow_scene.type = 'M2'

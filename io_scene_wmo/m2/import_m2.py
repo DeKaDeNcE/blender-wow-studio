@@ -23,16 +23,31 @@ def import_m2(version, filepath, local_path=""):  # TODO: implement multiversion
 
     if addon_preferences.cache_dir_path and game_data:
 
+        os_dir = os.path.dirname(filepath)
+
+        # extract and read skel
+        skel_fdid = m2_file.find_main_skel()
+
+        while skel_fdid:
+            skel_path = game_data.extract_file(addon_preferences.cache_dir_path, skel_fdid, local_path, 'skel', os_dir)
+            skel_fdid = m2_file.read_skel(skel_path)
+
+        m2_file.process_skels()
+
         dependencies = m2_file.find_model_dependencies()
 
-        t_paths = game_data.extract_textures_as_png(addon_preferences.cache_dir_path, dependencies.textures, local_path)
-        game_data.extract_files(addon_preferences.cache_dir_path, dependencies.anims, local_path, 'anim')
-        game_data.extract_files(addon_preferences.cache_dir_path, dependencies.skins, local_path, 'skin')
+        m2_file.texture_path_map = game_data.extract_textures_as_png(addon_preferences.cache_dir_path,
+                                                                     dependencies.textures, local_path, os_dir)
+
+        game_data.extract_files(addon_preferences.cache_dir_path, dependencies.anims, local_path, 'anim', os_dir)
+        game_data.extract_files(addon_preferences.cache_dir_path, dependencies.skins, local_path, 'skin', os_dir)
 
         if version >= M2Versions.WOD:
-            game_data.extract_files(addon_preferences.cache_dir_path, dependencies.bones, local_path, 'bone')
-            game_data.extract_files(addon_preferences.cache_dir_path, dependencies.lod_skins, local_path, 'skin')
-            game_data.extract_files(addon_preferences.cache_dir_path, dependencies.skel, local_path, 'skel')
+            game_data.extract_files(addon_preferences.cache_dir_path, dependencies.bones, local_path, 'bone', os_dir)
+            game_data.extract_files(addon_preferences.cache_dir_path,
+                                    dependencies.lod_skins, local_path, 'skin', os_dir)
+
+    m2_file.read_additional_files()
 
     print("\n\n### Importing M2 model ###")
 

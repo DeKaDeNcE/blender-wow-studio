@@ -25,7 +25,7 @@ class WowScenePropertyGroup(bpy.types.PropertyGroup):
     version:  bpy.props.EnumProperty(
         name='Client version',
         items=[('2', 'WotLK', "", ui_icons['WOTLK'], 0),
-               ('7', 'Legion', "", ui_icons['LEGION'], 1)],
+               ('6', 'Legion', "", ui_icons['LEGION'], 1)],
         default='2'
     )
 

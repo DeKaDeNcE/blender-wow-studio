@@ -283,7 +283,7 @@ class M2_UL_animation_editor_animation_list(bpy.types.UIList):
                 if item.is_alias and len(data.wow_m2_animations) < item.alias_next:
                     row.label(text="", icon='ERROR')
                 row.prop(item, "is_primary_sequence", emboss=False, text="",
-                         icon='POSE_HLT' if item.is_primary_sequence else 'OUTLINER_DATA_POSE')
+                         icon='OUTLINER_OB_ARMATURE' if item.is_primary_sequence else 'ARMATURE_DATA')
                 row.prop(item, "is_alias", emboss=False, text="",
                          icon='GHOST_ENABLED' if item.is_alias else 'GHOST_DISABLED')
             else:

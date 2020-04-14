@@ -236,8 +236,7 @@ def get_keybone_ids(self, context):
 
 
 def get_anim_ids(self, context):
-    game_data = load_game_data()
-    return [(str(record.ID), record.Name, '') for record in game_data.db_files_client.AnimationData.records]
+    return [(str(seq_id), name, '') for seq_id, name in M2SequenceNames().items()]
 
 
 def get_attachment_types(self, context):

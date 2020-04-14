@@ -10,14 +10,15 @@ from ..utils.misc import resolve_texture_path, get_origin_position, get_objs_bou
     get_obj_radius
 from .ui.enums import mesh_part_id_menu
 from .ui.panels.camera import update_follow_path_constraints
-from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens
+from ..pywowlib.enums.m2_enums import M2SkinMeshPartID, M2AttachmentTypes, M2EventTokens, M2SequenceNames
 from ..pywowlib.file_formats.wow_common_types import M2Versions
+from ..pywowlib.m2_file import M2File
 
 
 class BlenderM2Scene:
     """ This class is used for assembling a Blender scene from an M2 file or saving the scene back to it."""
 
-    def __init__(self, m2, prefs):
+    def __init__(self, m2: M2File, prefs):
         self.m2 = m2
         self.materials = {}
         self.bone_ids = {}
@@ -215,46 +216,52 @@ class BlenderM2Scene:
 
         for tex_unit in skin.texture_units:
             texture = self.m2.root.textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index]]
-            tex_path_blp = texture.filename.value
-            tex_path_png = os.path.splitext(tex_path_blp)[0] + '.png'
+
+            tex_path_png = ""
+
+            if texture.filename.value and not texture.type:
+                tex_path_blp = self.m2.texture_path_map[texture.txid] if texture.txid else texture.filename.value
+                tex_path_png = os.path.splitext(tex_path_blp)[0] + '.png'
+
             m2_mat = self.m2.root.materials[tex_unit.material_index]
 
             # creating material
             blender_mat = bpy.data.materials.new(os.path.basename(tex_path_png))
             blender_mat.wow_m2_material.live_update = True
 
-            tex1_name = blender_mat.name + "_Tex_02"
-            tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
-            tex1.wow_m2_texture.flags = parse_bitfield(texture.flags, 0x2)
-            tex1.wow_m2_texture.texture_type = str(texture.type)
-            tex1.wow_m2_texture.path = texture.filename.value
+            if tex_path_png:
+                tex1_name = blender_mat.name + "_Tex_02"
+                tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
+                tex1.wow_m2_texture.flags = parse_bitfield(texture.flags, 0x2)
+                tex1.wow_m2_texture.texture_type = str(texture.type)
+                tex1.wow_m2_texture.path = texture.filename.value
 
-            blender_mat.wow_m2_material.texture = tex1
+                blender_mat.wow_m2_material.texture = tex1
 
-            # loading images
-            if os.name != 'nt': tex_path_png = tex_path_png.replace('\\', '/')  # reverse slahes for unix
+                # loading images
+                if os.name != 'nt': tex_path_png = tex_path_png.replace('\\', '/')  # reverse slahes for unix
 
-            loaded = False
+                loaded = False
 
-            if local_dir:
-                try:
-                    tex1_img = bpy.data.images.load(os.path.join(local_dir, tex_path_png))
-                    tex1.image = tex1_img
-                except:
-                    pass
-                else:
-                    loaded = True
+                if local_dir:
+                    try:
+                        tex1_img = bpy.data.images.load(os.path.join(local_dir, tex_path_png))
+                        tex1.image = tex1_img
+                    except:
+                        pass
+                    else:
+                        loaded = True
 
-            if cache_dir and not loaded:
+                if cache_dir and not loaded:
 
-                try:
-                    tex1_img = bpy.data.images.load(os.path.join(cache_dir, tex_path_png))
-                    tex1.image = tex1_img
-                except:
-                    pass
+                    try:
+                        tex1_img = bpy.data.images.load(os.path.join(cache_dir, tex_path_png))
+                        tex1.image = tex1_img
+                    except:
+                        pass
 
-                else:
-                    raise FileNotFoundError("\nError loading texture \"{}\".".format(tex_path_png))
+                    else:
+                        raise FileNotFoundError("\nError loading texture \"{}\".".format(tex_path_png))
 
             update_m2_mat_node_tree(blender_mat)
 
@@ -376,7 +383,6 @@ class BlenderM2Scene:
 
             # TODO: other settings
 
-
             self.materials[tex_unit.skin_section_index] = blender_mat, tex_unit
 
     def load_armature(self):
@@ -409,7 +415,11 @@ class BlenderM2Scene:
             bl_edit_bone.tail.z = bl_edit_bone.head.z
 
             bl_edit_bone.wow_m2_bone.flags = parse_bitfield(bone.flags)
-            bl_edit_bone.wow_m2_bone.key_bone_id = str(bone.key_bone_id)
+
+            try:
+                bl_edit_bone.wow_m2_bone.key_bone_id = str(bone.key_bone_id)
+            except TypeError:
+                print('\nFailed to set keybone ID \"{}\". Unknown keybone ID'.format(bone.key_bone_id))
 
         # link children to parents
         for i, bone in enumerate(self.m2.root.bones):
@@ -486,7 +496,13 @@ class BlenderM2Scene:
         rig.animation_data.action_blend_type = 'ADD'
         bpy.context.view_layer.objects.active = rig
 
-        anim_data_dbc = load_game_data().db_files_client.AnimationData
+
+        if self.m2.root.version == M2Versions.WOTLK:
+
+            anim_data_table = load_game_data().db_files_client.AnimationData
+
+        else:
+            anim_data_table = M2SequenceNames()
 
         # import global sequence animations
         for i, sequence in enumerate(self.m2.root.global_sequences):
@@ -522,7 +538,7 @@ class BlenderM2Scene:
 
             anim = scene.wow_m2_animations.add()
 
-            field_name = anim_data_dbc.get_field(sequence.id, 'Name')
+            field_name = anim_data_table.get_sequence_name(sequence.id)
             name = '{}_UnkAnim'.format(str(i).zfill(3)) if not field_name \
                 else "{}_{}_({})".format(str(i).zfill(3), field_name, sequence.variation_index)
 
