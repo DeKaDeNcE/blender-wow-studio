@@ -229,14 +229,15 @@ class BlenderM2Scene:
             blender_mat = bpy.data.materials.new(os.path.basename(tex_path_png))
             blender_mat.wow_m2_material.live_update = True
 
-            if tex_path_png:
-                tex1_name = blender_mat.name + "_Tex_02"
-                tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
-                tex1.wow_m2_texture.flags = parse_bitfield(texture.flags, 0x2)
-                tex1.wow_m2_texture.texture_type = str(texture.type)
-                tex1.wow_m2_texture.path = texture.filename.value
+            tex1_name = blender_mat.name + "_Tex_02"
+            tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
+            tex1.wow_m2_texture.flags = parse_bitfield(texture.flags, 0x2)
+            tex1.wow_m2_texture.texture_type = str(texture.type)
+            tex1.wow_m2_texture.path = texture.filename.value
 
-                blender_mat.wow_m2_material.texture = tex1
+            blender_mat.wow_m2_material.texture = tex1
+
+            if tex_path_png:
 
                 # loading images
                 if os.name != 'nt': tex_path_png = tex_path_png.replace('\\', '/')  # reverse slahes for unix
@@ -367,8 +368,6 @@ class BlenderM2Scene:
                 
             '''
 
-
-
             # bind transparency to texture
             real_tw_index = self.m2.root.transparency_lookup_table[tex_unit.texture_weight_combo_index]
             transparency = bpy.context.scene.wow_m2_transparency[real_tw_index]
@@ -379,7 +378,11 @@ class BlenderM2Scene:
             blender_mat.wow_m2_material.render_flags = parse_bitfield(m2_mat.flags, 0x800)  # render flags
 
             blender_mat.wow_m2_material.blending_mode = str(m2_mat.blending_mode)  # TODO: ? bitfield
-            blender_mat.wow_m2_material.shader = str(tex_unit.shader_id)
+
+            try:
+                blender_mat.wow_m2_material.shader = str(tex_unit.shader_id)
+            except TypeError:
+                print('\"Failed to set shader ID ({}) to material \"{}\".'.format(blender_mat.name, tex_unit.shader_id))
 
             # TODO: other settings
 
@@ -496,13 +499,7 @@ class BlenderM2Scene:
         rig.animation_data.action_blend_type = 'ADD'
         bpy.context.view_layer.objects.active = rig
 
-
-        if self.m2.root.version == M2Versions.WOTLK:
-
-            anim_data_table = load_game_data().db_files_client.AnimationData
-
-        else:
-            anim_data_table = M2SequenceNames()
+        anim_data_table = M2SequenceNames()
 
         # import global sequence animations
         for i, sequence in enumerate(self.m2.root.global_sequences):

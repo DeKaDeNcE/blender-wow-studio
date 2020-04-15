@@ -165,7 +165,7 @@ class M2_OT_animation_editor_dialog(bpy.types.Operator):
 
             row = layout.row()
             row.separator()
-            layout.row().label(text="Animation properties", icon='UI')
+            layout.row().label(text="Animation properties", icon='SETTINGS')
 
             split = layout.split(factor=0.5)
 

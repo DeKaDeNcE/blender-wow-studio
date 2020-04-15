@@ -9,7 +9,7 @@ __reload_order_index__ = -1
 ###############################
 
 SHADERS = [
-    ('0', "Diffuse", ""), ('1', "Specular", ""), ('2', "Metal", ""),
+    ('-1', "No shader", ""),('0', "Diffuse", ""), ('1', "Specular", ""), ('2', "Metal", ""),
     ('3', "Env", ""), ('4', "Opaque", ""), ('5', "EnvMetal", ""),
     ('6', "TwoLayerDiffuse", ""), ('7', "TwoLayerEnvMetal", ""), ('8', "TwoLayerTerrain", ""),
     ('9', "DiffuseEmissive", ""), ('10', "Tangent", ""), ('11', "MaskedEnvMetal", ""),
@@ -24,7 +24,8 @@ TEX_UNIT_FLAGS = [
     ("8", "Unknown", "", 'QUESTION', 0x8),
     ("16", "Batch Compatible", "", 'SETTINGS', 0x10),
     ("32", "Projected Texture 2", "", 'MOD_UVPROJECT', 0x20),
-    ("64", "Use Texture Weights", "", 'WPAINT_HLT', 0x40)
+    ("64", "Use Texture Weights", "", 'WPAINT_HLT', 0x40),
+    ("128", "Unknown", "", 'QUESTION', 0x80),
 ]
 
 RENDER_FLAGS = [
