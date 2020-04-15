@@ -1,5 +1,7 @@
 import os
-from math import sqrt
+from math import sqrt, isinf
+from collections import Iterable
+from functools import partial
 
 import bpy
 from mathutils import Vector
@@ -434,54 +436,61 @@ class BlenderM2Scene:
         bpy.context.view_layer.update()  # update scene.
         bpy.ops.object.mode_set(mode='OBJECT')  # return to object mode.
 
+    @staticmethod
+    def _populate_bl_fcurve(f_curves, frames, track, length, callback, interp_type):
+
+        # init keyframes on the curve
+        for f_curve in f_curves:
+            f_curve.keyframe_points.add(len(frames))
+
+        # set values for each channel
+        for j, timestamp in enumerate(frames):
+            value = callback(value=track[j])
+            frame = timestamp * 0.0266666
+
+            if length:
+                for k in range(len(value)):
+                    keyframe = f_curves[k].keyframe_points[j]
+                    keyframe.co = frame, value[k]
+                    keyframe.interpolation = interp_type
+
+            else:
+                keyframe = f_curves[0].keyframe_points[j]
+                keyframe.co = frame, value
+                keyframe.interpolation = interp_type
+
+    @staticmethod
+    def _create_fcurves(action, bone, callback, length, anim_index, data_path, anim_track):
+
+        if bone.translation.timestamps.n_elements:
+            frames = anim_track.timestamps[anim_index]
+            track = anim_track.values[anim_index]
+
+            if frames:
+                t_fcurves = [action.fcurves.new(data_path=data_path,index=k, action_group=bone.name)
+                             for k in range(length)]
+
+                BlenderM2Scene._populate_bl_fcurve(t_fcurves, frames, track, length, callback,
+                                                   'LINEAR' if anim_track.interpolation_type == 1 else 'CONSTANT')
+
     def load_animations(self):
 
         # TODO: pre-wotlk
 
-        def populate_fcurve_trans(f_curves, bone, frames, track):
-            # init translation keyframes on the curve
-            n_keys = len(frames)
-            for trans_fcurve in f_curves: trans_fcurve.keyframe_points.add(n_keys)
+        def bl_convert_trans_track(value=None, bl_bone=None, bone=None):
+            return bl_bone.bone.matrix_local.inverted() @ (Vector(bone.pivot) + Vector(value))
 
-            # set translation values for each channel
-            for j, timestamp in enumerate(frames):
-                trans_vec = bl_bone.bone.matrix_local.inverted() @ (Vector(bone.pivot)
-                                                                    + Vector(track[j]))
+        def bl_convert_rot_track(value=None, bl_bone=None, bone=None):
+            return value.to_quaternion()
 
-                frame = timestamp * 0.0266666
+        def bl_convert_scale_track(value=None):
 
-                for k in range(3):
-                    keyframe = f_curves[k].keyframe_points[j]
-                    keyframe.co = frame, trans_vec[k]
-                    keyframe.interpolation = 'LINEAR' if bone.translation.interpolation_type == 1 else 'CONSTANT'
+            for i, val in enumerate(value=None):
+                if isinf(val):
+                    print("\nWarning: Fixed infinite scale value!")  # TODO: figure out infinite values there
+                    value[i] = 1.0
 
-        def populate_fcurve_rot(f_curves, bone, frames, track):
-            # init rotation keyframes on the curve
-            n_keys = len(frames)
-            for rot_fcurve in f_curves: rot_fcurve.keyframe_points.add(n_keys)
-
-            # set rotation values for each channel
-            for j, timestamp in enumerate(frames):
-                rot_quat = track[j].to_quaternion()
-                frame = timestamp * 0.0266666
-
-                for k in range(4):
-                    keyframe = f_curves[k].keyframe_points[j]
-                    keyframe.co = frame, rot_quat[k]
-                    keyframe.interpolation = 'LINEAR' if bone.rotation.interpolation_type == 1 else 'CONSTANT'
-
-        def populate_fcurve_scale(f_curves, bone, frames, track):
-            # init scale keyframes on the curve
-            n_keys = len(frames)
-            for s_curve in f_curves: s_curve.keyframe_points.add(n_keys)
-
-            # set scale values for each channel
-            for j, timestamp in enumerate(frames):
-                frame = timestamp * 0.0266666
-                for k in range(3):
-                    keyframe = f_curves[k].keyframe_points[j]
-                    keyframe.co = frame, track[j][k]
-                    keyframe.interpolation = 'LINEAR' if bone.scale.interpolation_type == 1 else 'CONSTANT'
+            return value
 
         if not len(self.m2.root.sequences) and not len(self.m2.root.global_sequences):
             print("\nNo animation data found to import.")
@@ -598,14 +607,8 @@ class BlenderM2Scene:
                 if bone.name not in action.groups:
                     action.groups.new(name=bone.name)
 
-                if bone.translation.timestamps.n_elements:
-                    frames = bone.translation.timestamps[0]
-                    track = bone.translation.values[0]
-
-                    if frames:
-                        t_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].location'.format(bl_bone.name),
-                                                        index=k, action_group=bone.name) for k in range(3)]
-                        populate_fcurve_trans(t_fcurves, bone, frames, track)
+                self._create_fcurves(action, bone, partial(bl_convert_trans_track, bl_bone=bl_bone, bone=bone), 3, 0,
+                                     'pose.bones.["{}"].location'.format(bl_bone.name), bone.translation)
 
             if is_global_seq_rot:
 
@@ -615,14 +618,8 @@ class BlenderM2Scene:
                 if bone.name not in action.groups:
                     action.groups.new(name=bone.name)
 
-                if bone.rotation.timestamps.n_elements:
-                    frames = bone.rotation.timestamps[0]
-                    track = bone.rotation.values[0]
-
-                    if frames:
-                        r_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name),
-                                                        index=k, action_group=bone.name) for k in range(4)]
-                        populate_fcurve_rot(r_fcurves, bone, frames, track)
+                self._create_fcurves(action, bone, partial(bl_convert_rot_track, bl_bone=bl_bone, bone=bone), 4, 0,
+                                     'pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name), bone.rotation)
 
             if is_global_seq_scale:
                 action = scene.wow_m2_animations[self.global_sequences[bone.scale.global_sequence]].anim_pairs[1].action
@@ -631,14 +628,8 @@ class BlenderM2Scene:
                 if bone.name not in action.groups:
                     action.groups.new(name=bone.name)
 
-                if bone.scale.timestamps.n_elements:
-                    frames = bone.scale.timestamps[0]
-                    track = bone.scale.values[0]
-
-                    if frames:
-                        s_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].scale'.format(bl_bone.name),
-                                                        index=k, action_group=bone.name) for k in range(3)]
-                        populate_fcurve_scale(s_fcurves, bone, frames, track)
+                self._create_fcurves(action, bone, partial(bl_convert_scale_track, bl_bone=bl_bone, bone=bone), 3, 0,
+                                     'pose.bones.["{}"].scale'.format(bl_bone.name), bone.scale)
 
             # write regular animation fcurves
             n_global_sequences = len(self.m2.root.global_sequences)
@@ -652,33 +643,19 @@ class BlenderM2Scene:
 
                 # translate bones
                 if not is_global_seq_trans and bone.translation.timestamps.n_elements > anim_index:
-                    frames = bone.translation.timestamps[anim_index]
-                    track = bone.translation.values[anim_index]
-
-                    if frames:
-                        t_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].location'.format(bl_bone.name),
-                                                        index=k, action_group=bone.name) for k in range(3)]
-                        populate_fcurve_trans(t_fcurves, bone, frames, track)
+                    self._create_fcurves(action, bone, partial(bl_convert_trans_track, bl_bone=bl_bone, bone=bone), 3,
+                                         anim_index, 'pose.bones.["{}"].location'.format(bl_bone.name), bone.translation)
 
                 # rotate bones
                 if not is_global_seq_rot and bone.rotation.timestamps.n_elements > anim_index:
-                    frames = bone.rotation.timestamps[anim_index]
-                    track = bone.rotation.values[anim_index]
-
-                    if frames:
-                        r_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name),
-                                                        index=k, action_group=bone.name) for k in range(4)]
-                        populate_fcurve_rot(r_fcurves, bone, frames, track)
+                    self._create_fcurves(action, bone, partial(bl_convert_rot_track, bl_bone=bl_bone, bone=bone), 4,
+                                         anim_index,'pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name),
+                                         bone.rotation)
 
                 # scale bones
                 if not is_global_seq_scale and bone.scale.timestamps.n_elements > anim_index:
-                    frames = bone.scale.timestamps[anim_index]
-                    track = bone.scale.values[anim_index]
-
-                    if frames:
-                        s_fcurves = [action.fcurves.new(data_path='pose.bones.["{}"].scale'.format(bl_bone.name),
-                                                        index=k, action_group=bone.name) for k in range(3)]
-                        populate_fcurve_scale(s_fcurves, bone, frames, track)
+                    self._create_fcurves(action, bone, partial(bl_convert_scale_track, bl_bone=bl_bone, bone=bone), 3,
+                                         anim_index, 'pose.bones.["{}"].scale'.format(bl_bone.name), bone.scale)
 
     def load_geosets(self):
 
