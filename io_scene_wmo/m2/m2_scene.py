@@ -32,6 +32,8 @@ class BlenderM2Scene:
         self.collision_mesh = None
         self.settings = prefs
 
+        self.scene = bpy.context.scene
+
     def load_colors(self):
 
         def animate_color(anim_pair, color_track, color_index, anim_index):
@@ -473,98 +475,65 @@ class BlenderM2Scene:
                 BlenderM2Scene._populate_bl_fcurve(t_fcurves, frames, track, length, callback,
                                                    'LINEAR' if anim_track.interpolation_type == 1 else 'CONSTANT')
 
-    def load_animations(self):
+    def _bl_add_sequence(self, name: str = "Sequence", is_global: bool = False, is_alias: bool = False):
+        seq = self.scene.wow_m2_animations.add()
+        seq.is_global_sequence = is_global
 
-        # TODO: pre-wotlk
+        # register scene in the sequence
+        anim_pair_scene = seq.anim_pairs.add()
+        anim_pair_scene.type = 'SCENE'
+        anim_pair_scene.scene = bpy.context.scene
 
-        def bl_convert_trans_track(value=None, bl_bone=None, bone=None):
-            return bl_bone.bone.matrix_local.inverted() @ (Vector(bone.pivot) + Vector(value))
+        # register rig in the sequence
+        anim_pair = seq.anim_pairs.add()
+        anim_pair.type = 'OBJECT'
+        anim_pair.object = self.rig
 
-        def bl_convert_rot_track(value=None, bl_bone=None, bone=None):
-            return value.to_quaternion()
+        if not is_alias:
+            action = bpy.data.actions.new(name='SC_{}'.format(name))
+            action.use_fake_user = True
+            anim_pair_scene.action = action
 
-        def bl_convert_scale_track(value=None):
-
-            for i, val in enumerate(value=None):
-                if isinf(val):
-                    print("\nWarning: Fixed infinite scale value!")  # TODO: figure out infinite values there
-                    value[i] = 1.0
-
-            return value
-
-        if not len(self.m2.root.sequences) and not len(self.m2.root.global_sequences):
-            print("\nNo animation data found to import.")
-            return
-        else:
-            print("\nImporting animations.")
-
-        if not self.rig:
-            print("\nArmature is not present on the scene. Skipping animation import. M2 is most likely corrupted.")
-            return
-
-        scene = bpy.context.scene
-        rig = self.rig
-        rig.animation_data_create()
-        rig.animation_data.action_blend_type = 'ADD'
-        bpy.context.view_layer.objects.active = rig
-
-        anim_data_table = M2SequenceNames()
-
-        # import global sequence animations
-        for i, sequence in enumerate(self.m2.root.global_sequences):
-            seq_index = len(scene.wow_m2_animations)
-            seq = scene.wow_m2_animations.add()
-            seq.is_global_sequence = True
-
-            # register scene in the sequence
-            name = "SC_Global_Sequence_{}".format(str(i).zfill(3))
-            anim_pair = seq.anim_pairs.add()
-            anim_pair.type = 'SCENE'
-            anim_pair.scene = bpy.context.scene
             action = bpy.data.actions.new(name=name)
             action.use_fake_user = True
             anim_pair.action = action
 
-            # register rig in the sequence
-            anim_pair = seq.anim_pairs.add()
-            anim_pair.type = 'OBJECT'
-            anim_pair.object = rig
+        return seq
 
-            action = bpy.data.actions.new(name='Global_Sequence_{}'.format(str(i).zfill(3)))
-            action.use_fake_user = True
-            anim_pair.action = action
+    def _bl_load_sequences(self):
+        anim_data_table = M2SequenceNames()
 
-            self.global_sequences.append(seq_index)
+        # import global sequence animations
+        for i in range(len(self.m2.root.global_sequences)):
+            self._bl_add_sequence(name='Global_Sequence_{}'.format(str(i).zfill(3)), is_global=True)
+            self.global_sequences.append(len(self.scene.wow_m2_animations) - 1)
 
-        m2_sequences = sorted(enumerate(self.m2.root.sequences), key=lambda item: (item[0], item[1].id, item[1].variation_index))
+        m2_sequences = sorted(enumerate(self.m2.root.sequences),
+                              key=lambda item: (item[0], item[1].id, item[1].variation_index))
 
         # import animation sequence
         for i, pair in enumerate(m2_sequences):
             idx, sequence = pair
 
-            anim = scene.wow_m2_animations.add()
-
+            # create sequence
             field_name = anim_data_table.get_sequence_name(sequence.id)
-            name = '{}_UnkAnim'.format(str(i).zfill(3)) if not field_name \
-                else "{}_{}_({})".format(str(i).zfill(3), field_name, sequence.variation_index)
+            name = '{}_UnkAnim'.format(str(i).zfill(3)) \
+                if not field_name else "{}_{}_({})".format(str(i).zfill(3), field_name, sequence.variation_index)
 
-            # register scene in the sequence
-            anim_pair = anim.anim_pairs.add()
-            anim_pair.type = 'SCENE'
-            anim_pair.scene = bpy.context.scene
-            action = bpy.data.actions.new(name='SC_' + name)
-            action.use_fake_user = True
-            anim_pair.action = action
+            # check if sequence is an alias
+            is_alias = sequence.flags & 0x40
 
-            # register rig in the sequence
-            anim_pair = anim.anim_pairs.add()
-            anim_pair.type = 'OBJECT'
-            anim_pair.object = rig
+            # create sequence
+            anim = self._bl_add_sequence(name=name, is_global=False, is_alias=is_alias)
 
-            action = bpy.data.actions.new(name=name)
-            action.use_fake_user = True
+            # find real animation index
+            if is_alias:
+                anim.is_alias = True
 
-            anim_pair.action = action
+                for j, seq in m2_sequences:
+                    if j == sequence.alias_next:
+                        anim.alias_next = j + len(self.m2.root.global_sequences)
+                        break
 
             # add animation properties
             anim.animation_id = str(sequence.id)
@@ -581,15 +550,49 @@ class BlenderM2Scene:
             else:
                 anim.blend_time = sequence.blend_time
 
-            if '64' in anim.flags:  # check if sequence is an alias
-                anim.is_alias = True
-
-                for j, seq in m2_sequences:
-                    if j == sequence.alias_next:
-                        anim.alias_next = j + len(self.m2.root.global_sequences)
-                        break
-
             self.animations.append(idx)
+
+    def _bl_group_bone_channels(self, action, bone):
+        if bone.name not in action.groups:
+            action.groups.new(name=bone.name)
+
+    def load_animations(self):
+
+        # TODO: pre-wotlk
+
+        def bl_convert_trans_track(value=None, bl_bone=None, bone=None):
+            return bl_bone.bone.matrix_local.inverted() @ (Vector(bone.pivot) + Vector(value))
+
+        def bl_convert_rot_track(value=None):
+            return value.to_quaternion()
+
+        def bl_convert_scale_track(value=None):
+
+            for i, val in enumerate(value):
+                if isinf(val):
+                    print("\nWarning: Fixed infinite scale value!")  # TODO: figure out infinite values there
+                    value[i] = 1.0
+
+            return value
+
+        if not len(self.m2.root.sequences) and not len(self.m2.root.global_sequences):
+            print("\nNo animation data found to import.")
+            return
+        else:
+            print("\nImporting animations.")
+
+        if not self.rig:
+            print("\nArmature is not present on the scene. Skipping animation import. M2 is most likely corrupted.")
+            return
+
+        # create animation data for rig and set it as an active object
+        scene = self.scene
+        rig = self.rig
+        rig.animation_data_create()
+        rig.animation_data.action_blend_type = 'ADD'
+        bpy.context.view_layer.objects.active = rig
+
+        self._bl_load_sequences()
 
         # import fcurves
         for bone in self.m2.root.bones:
@@ -599,35 +602,24 @@ class BlenderM2Scene:
             is_global_seq_rot = bone.rotation.global_sequence >= 0
             is_global_seq_scale = bone.scale.global_sequence >= 0
 
+            glob_sequences = self.global_sequences
+
             # write global sequence fcurves
             if is_global_seq_trans:
-                action = scene.wow_m2_animations[self.global_sequences[bone.translation.global_sequence]].anim_pairs[1].action
-
-                # group channels
-                if bone.name not in action.groups:
-                    action.groups.new(name=bone.name)
-
+                action = scene.wow_m2_animations[glob_sequences[bone.translation.global_sequence]].anim_pairs[1].action
+                self._bl_group_bone_channels(action, bone)
                 self._create_fcurves(action, bone, partial(bl_convert_trans_track, bl_bone=bl_bone, bone=bone), 3, 0,
                                      'pose.bones.["{}"].location'.format(bl_bone.name), bone.translation)
 
             if is_global_seq_rot:
-
-                action = scene.wow_m2_animations[self.global_sequences[bone.rotation.global_sequence]].anim_pairs[1].action
-
-                # group channels
-                if bone.name not in action.groups:
-                    action.groups.new(name=bone.name)
-
-                self._create_fcurves(action, bone, partial(bl_convert_rot_track, bl_bone=bl_bone, bone=bone), 4, 0,
+                action = scene.wow_m2_animations[glob_sequences[bone.rotation.global_sequence]].anim_pairs[1].action
+                self._bl_group_bone_channels(action, bone)
+                self._create_fcurves(action, bone, partial(bl_convert_rot_track), 4, 0,
                                      'pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name), bone.rotation)
 
             if is_global_seq_scale:
-                action = scene.wow_m2_animations[self.global_sequences[bone.scale.global_sequence]].anim_pairs[1].action
-
-                # group channels
-                if bone.name not in action.groups:
-                    action.groups.new(name=bone.name)
-
+                action = scene.wow_m2_animations[glob_sequences[bone.scale.global_sequence]].anim_pairs[1].action
+                self._bl_group_bone_channels(action, bone)
                 self._create_fcurves(action, bone, partial(bl_convert_scale_track, bl_bone=bl_bone, bone=bone), 3, 0,
                                      'pose.bones.["{}"].scale'.format(bl_bone.name), bone.scale)
 
@@ -637,9 +629,10 @@ class BlenderM2Scene:
                 anim = scene.wow_m2_animations[i + n_global_sequences]
                 action = anim.anim_pairs[1].action
 
-                # group channels
-                if bone.name not in action.groups:
-                    action.groups.new(name=bone.name)
+                if not action:
+                    continue
+
+                self._bl_group_bone_channels(action, bone)
 
                 # translate bones
                 if not is_global_seq_trans and bone.translation.timestamps.n_elements > anim_index:
@@ -648,7 +641,7 @@ class BlenderM2Scene:
 
                 # rotate bones
                 if not is_global_seq_rot and bone.rotation.timestamps.n_elements > anim_index:
-                    self._create_fcurves(action, bone, partial(bl_convert_rot_track, bl_bone=bl_bone, bone=bone), 4,
+                    self._create_fcurves(action, bone, partial(bl_convert_rot_track), 4,
                                          anim_index,'pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name),
                                          bone.rotation)
 
