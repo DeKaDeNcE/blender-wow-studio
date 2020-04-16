@@ -574,12 +574,10 @@ class BlenderWMOScene:
                     portal_info.start_vertex = len(self.wmo.mopv.portal_vertices)
                     v = []
 
-                    for poly in portal_mesh.polygons:
-                        for loop_index in poly.loop_indices:
-                            vertex_pos = portal_mesh.vertices[portal_mesh.loops[loop_index].vertex_index].co \
-                                         @ portal_obj.matrix_world
-                            self.wmo.mopv.portal_vertices.append(vertex_pos.to_tuple())
-                            v.append(vertex_pos)
+                    for vertex in portal_mesh.vertices:
+                        vertex_pos = vertex.co @ portal_obj.matrix_world
+                        self.wmo.mopv.portal_vertices.append(vertex_pos.to_tuple())
+                        v.append(vertex_pos)
 
                     v_A = v[0][1] * v[1][2] - v[1][1] * v[0][2] - v[0][1] * v[2][2] + v[2][1] * v[0][2] + v[1][1] * \
                           v[2][2] - \
