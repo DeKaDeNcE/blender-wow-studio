@@ -621,7 +621,7 @@ class BlenderWMOSceneGroup:
                         result = 1 if dist > 0 else -1
 
                         if bound_relation_side == 0:
-                            bound_relation.Side = -result
+                            bound_relation.side = -result
 
                         return result
 
