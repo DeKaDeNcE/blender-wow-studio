@@ -329,6 +329,18 @@ class BlenderWMOScene:
 
             self.bl_portals.append(obj)
 
+            # assign portal material
+            portal_mat = bpy.data.materials.new("WowMaterial_ghost_Portal")
+            portal_mat.blend_method = 'BLEND'
+            portal_mat.use_nodes = True
+            portal_mat.node_tree.nodes.remove(portal_mat.node_tree.nodes.get('Principled BSDF'))
+            material_output = portal_mat.node_tree.nodes.get('Material Output')
+            transparent = portal_mat.node_tree.nodes.new('ShaderNodeBsdfTransparent')
+            portal_mat.node_tree.links.new(material_output.inputs[0], transparent.outputs[0])
+            portal_mat.node_tree.nodes["Transparent BSDF"].inputs[0].default_value = (1, 0, 0, 1)
+
+            obj.data.materials.append(portal_mat)
+
     def load_properties(self):
         """ Load global WoW WMO properties """
         properties = bpy.context.scene.wow_wmo_root

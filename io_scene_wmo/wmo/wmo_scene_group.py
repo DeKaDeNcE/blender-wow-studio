@@ -407,15 +407,6 @@ class BlenderWMOSceneGroup:
             batch_material_map[(batch.start_triangle // 3,
                                 (batch.start_triangle + group.moba.batches[i].n_triangles) // 3)] = batch.material_id
 
-        # add ghost material
-        for i in group.mopy.triangle_materials:
-            if i.material_id == 0xFF:
-                mat_ghost__id = len(mesh.materials)
-                mesh.materials.append(self.wmo_scene.bl_materials[0xFF])
-                material_viewport_textures[mat_ghost__id] = None
-                material_indices[0xFF] = mat_ghost__id
-                break
-
         # set layer data
         for i, loop in enumerate(mesh.loops):
 
@@ -575,6 +566,7 @@ class BlenderWMOSceneGroup:
             scn.collection.objects.link(c_obj)
             nobj.wow_wmo_group.collision_mesh = c_obj
 
+        # assign ghost material
         if nobj.wow_wmo_group.collision_mesh:
             mat = bpy.data.materials.get("WowMaterial_ghost")
             nobj.wow_wmo_group.collision_mesh.data.materials.append(mat)
