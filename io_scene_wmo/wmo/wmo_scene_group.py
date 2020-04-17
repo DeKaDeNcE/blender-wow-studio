@@ -751,7 +751,7 @@ class BlenderWMOSceneGroup:
                     vertex.u = int(uv_map.get(mesh.vertices[i].index)[0])
                     vertex.v = int(uv_map.get(mesh.vertices[i].index)[1])
 
-                    vertex.height = mesh.vertices[i].co[2]
+                    vertex.height = ob.matrix_world @ mesh.vertices[i].co[2]
                     group.mliq.vertex_map.append(vertex)
             else:
                 raise Exception("\nError saving WMO. Slime and magma (lava) liquids require a UV map to be created.")
@@ -959,8 +959,10 @@ class BlenderWMOSceneGroup:
                             for k in range(2):
                                 for l in range(3):
                                     idx = k * 3 + l
-                                    batch.bounding_box[idx] = min(batch.bounding_box[idx], int(floor(vertex.co[l]))) \
-                                        if k == 0 else max(batch.bounding_box[idx], int(ceil(vertex.co[l])))
+                                    batch.bounding_box[idx] = min(batch.bounding_box[idx],
+                                                                  int(floor((obj.matrix_world @ vertex.co)[l]))) \
+                                        if k == 0 else max(batch.bounding_box[idx],
+                                                           int(ceil((obj.matrix_world @ vertex.co)[l])))
 
                         else:
                             v_index_local, is_collideable = vert_info
