@@ -751,7 +751,7 @@ class BlenderWMOSceneGroup:
                     vertex.u = int(uv_map.get(mesh.vertices[i].index)[0])
                     vertex.v = int(uv_map.get(mesh.vertices[i].index)[1])
 
-                    vertex.height = ob.matrix_world @ mesh.vertices[i].co[2]
+                    vertex.height = (ob.matrix_world @ mesh.vertices[i].co)[2]
                     group.mliq.vertex_map.append(vertex)
             else:
                 raise Exception("\nError saving WMO. Slime and magma (lava) liquids require a UV map to be created.")
