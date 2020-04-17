@@ -575,6 +575,10 @@ class BlenderWMOSceneGroup:
             scn.collection.objects.link(c_obj)
             nobj.wow_wmo_group.collision_mesh = c_obj
 
+        if nobj.wow_wmo_group.collision_mesh:
+            mat = bpy.data.materials.get("WowMaterial_ghost")
+            nobj.wow_wmo_group.collision_mesh.data.materials.append(mat)
+
     def get_portal_direction(self, portal_obj, group_obj):
         """ Get the direction of MOPR portal relation given a portal object and a target group """
 

@@ -28,6 +28,12 @@ def add_ghost_material() -> bpy.types.Material:
     mat = bpy.data.materials.get("WowMaterial_ghost")
     if not mat:
         mat = bpy.data.materials.new("WowMaterial_ghost")
-        mat.diffuse_color = (0.2, 0.5, 0.5, 1.0)
+        mat.blend_method = 'BLEND'
+        mat.use_nodes = True
+        mat.node_tree.nodes.remove(mat.node_tree.nodes.get('Principled BSDF'))
+        material_output = mat.node_tree.nodes.get('Material Output')
+        transparent = mat.node_tree.nodes.new('ShaderNodeBsdfTransparent')
+        mat.node_tree.links.new(material_output.inputs[0], transparent.outputs[0])
+        mat.node_tree.nodes["Transparent BSDF"].inputs[0].default_value = (0.38, 0.89, 0.37, 1)
 
     return mat
