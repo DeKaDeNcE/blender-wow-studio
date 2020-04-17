@@ -464,7 +464,7 @@ class BlenderM2Scene:
     @staticmethod
     def _create_fcurves(action, bone, callback, length, anim_index, data_path, anim_track):
 
-        if bone.translation.timestamps.n_elements:
+        if bone.translation.timestamps.n_elements > anim_index:
             frames = anim_track.timestamps[anim_index]
             track = anim_track.values[anim_index]
 
@@ -552,7 +552,8 @@ class BlenderM2Scene:
 
             self.animations.append(idx)
 
-    def _bl_group_bone_channels(self, action, bone):
+    @staticmethod
+    def _bl_group_bone_channels(action, bone):
         if bone.name not in action.groups:
             action.groups.new(name=bone.name)
 

@@ -1,10 +1,11 @@
 import hashlib
 import bpy
-import os
+import bmesh
 
 from mathutils import Vector
-from math import sqrt, log
+from bmesh.types import BMVert
 
+from math import sqrt, atan2, pi
 from typing import Dict, List
 
 from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies, BlenderWMOMaterialRenderFlags
@@ -551,6 +552,73 @@ class BlenderWMOScene:
             self.wmo.add_light(light_type, unk1, unk2, use_attenuation, padding, color,
                                position, intensity, attenuation_start, attenuation_end)
 
+    @staticmethod
+    def get_angle(vec_a: Vector, vec_b: Vector, vec_n: Vector) -> float:
+        return atan2(
+            -(vec_a.x * vec_b.y * vec_n.z + vec_b.x * vec_n.y * vec_a.z + vec_n.x * vec_a.y * vec_b.z
+              - vec_a.z * vec_b.y * vec_n.x - vec_b.z * vec_n.y * vec_a.x - vec_n.z * vec_a.y * vec_b.x),
+            -(vec_a.x * vec_b.x + vec_a.y * vec_b.y + vec_a.z * vec_b.z)) + pi
+
+    @staticmethod
+    def traverse(  cur_vtx: BMVert
+                 , nodes_to_hit: List
+                 , nodes_hit: List
+                 , origin: BMVert) -> List:
+
+        for edge in cur_vtx.link_edges:
+
+            other = edge.other_vert(cur_vtx)
+
+            if other == origin:
+                if not nodes_to_hit:
+                    return nodes_hit
+                else:
+                    continue
+
+            if other in nodes_hit:
+                continue
+
+            nodes_to_hit_new = nodes_to_hit.copy()
+            nodes_to_hit_new.remove(other)
+
+            nodes_hit_new = nodes_hit.copy()
+            nodes_hit_new.append(other)
+
+            result = BlenderWMOScene.traverse(other, nodes_to_hit_new, nodes_hit_new, origin)
+
+            if result:
+                return result
+
+        return []
+
+    @staticmethod
+    def sort_portal_vertices(vertices: List[BMVert], normal: Vector) -> List[BMVert]:
+
+        pos_n = Vector((0, 0, 0))
+        origin = None
+
+        for vtx in vertices:
+            if len(vtx.link_edges) == 2 and origin is None:
+                origin = vtx
+            pos_n += vtx.co
+
+        pos_n /= len(vertices)
+        vtx_a = origin.link_edges[0].other_vert(origin)
+        vtx_b = origin.link_edges[1].other_vert(origin)
+        vector_o = origin.co - pos_n
+        next_vtx = vtx_b if BlenderWMOScene.get_angle(vtx_a.co - pos_n, vector_o, normal) \
+                            < BlenderWMOScene.get_angle(vtx_b.co - pos_n, vector_o, normal) else vtx_a
+
+        # traversing mesh
+        nodes_to_hit = list(vertices).copy()
+        nodes_to_hit.remove(origin)
+        nodes_to_hit.remove(next_vtx)
+
+        nodes_hit = [origin, next_vtx]
+        result = BlenderWMOScene.traverse(next_vtx, nodes_to_hit, nodes_hit, origin)
+
+        return result
+
     def save_portals(self):
 
         saved_portals_ids = []
@@ -574,10 +642,17 @@ class BlenderWMOScene:
                     portal_info.start_vertex = len(self.wmo.mopv.portal_vertices)
                     v = []
 
-                    for vertex in portal_mesh.vertices:
-                        vertex_pos = vertex.co @ portal_obj.matrix_world
+                    bm = bmesh.new()
+                    bm.from_mesh(portal_mesh)
+
+                    portal_verts = self.sort_portal_vertices(bm.verts, portal_mesh.polygons[0].normal)
+
+                    for vertex in portal_verts:
+                        vertex_pos = portal_obj.matrix_world @ vertex.co
                         self.wmo.mopv.portal_vertices.append(vertex_pos.to_tuple())
                         v.append(vertex_pos)
+
+                    bm.free()
 
                     v_A = v[0][1] * v[1][2] - v[1][1] * v[0][2] - v[0][1] * v[2][2] + v[2][1] * v[0][2] + v[1][1] * \
                           v[2][2] - \

@@ -49,7 +49,6 @@ class BlenderWMOSceneGroup:
                 return True
         return False
 
-
     @staticmethod
     def get_batch_type(b_face, batch_map_trans, batch_map_int):
         """ Find which MOBA batch type a passed bmesh face belongs two """
