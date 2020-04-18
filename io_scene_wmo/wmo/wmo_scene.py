@@ -173,6 +173,18 @@ class BlenderWMOScene:
 
             self.bl_lights.append(light)
 
+            # move lights to collection
+            scn = bpy.context.scene
+
+            light_collection = bpy.data.collections.get("Lights")
+            if not light_collection:
+                light_collection = bpy.data.collections.new("Lights")
+                scn.collection.children.link(light_collection)
+
+            if obj:
+                scn.collection.objects.unlink(obj)
+                light_collection.objects.link(obj)
+
     def load_fogs(self):
         """ Load fogs from WMO Root File"""
 
@@ -208,6 +220,18 @@ class BlenderWMOScene:
 
             self.bl_fogs.append(fog_obj)
 
+            # move fogs to collection
+            scn = bpy.context.scene
+
+            fog_collection = bpy.data.collections.get("Fogs")
+            if not fog_collection:
+                fog_collection = bpy.data.collections.new("Fogs")
+                scn.collection.children.link(fog_collection)
+
+            if fog_obj:
+                scn.collection.objects.unlink(fog_obj)
+                fog_collection.objects.link(fog_obj)
+
     def load_doodads(self):
 
         cache_path = self.settings.cache_dir_path
@@ -232,6 +256,17 @@ class BlenderWMOScene:
                 anchor.lock_location = (True, True, True)
                 anchor.lock_rotation = (True, True, True)
                 anchor.lock_scale = (True, True, True)
+
+                # move doodads to collection
+                doodad_collection = bpy.data.collections.get("Doodads")
+
+                if not doodad_collection:
+                    doodad_collection = bpy.data.collections.new("Doodads")
+                    scene.collection.children.link(doodad_collection)
+
+                if anchor:
+                    doodad_collection.objects.link(anchor)
+                    scene.collection.objects.unlink(anchor)
 
                 for i in range(doodad_set.start_doodad, doodad_set.start_doodad + doodad_set.n_doodads):
                     doodad = self.wmo.modd.definitions[i]
@@ -283,6 +318,11 @@ class BlenderWMOScene:
                     nobj.hide_set(True)
                     slot = scene.wow_wmo_root_elements.doodad_sets[-1].doodads.add()
                     slot.pointer = nobj
+
+                    if nobj:
+                        doodad_collection.objects.link(nobj)
+                        scene.collection.objects.unlink(nobj)
+
 
                     progress.update(1)
 
@@ -340,6 +380,18 @@ class BlenderWMOScene:
             portal_mat.node_tree.nodes["Transparent BSDF"].inputs[0].default_value = (1, 0, 0, 1)
 
             obj.data.materials.append(portal_mat)
+
+            # move portals to collection
+            scn = bpy.context.scene
+
+            portal_collection = bpy.data.collections.get("Portals")
+            if not portal_collection:
+                portal_collection = bpy.data.collections.new("Portals")
+                scn.collection.children.link(portal_collection)
+
+            if obj:
+                scn.collection.objects.unlink(obj)
+                portal_collection.objects.link(obj)
 
     def load_properties(self):
         """ Load global WoW WMO properties """

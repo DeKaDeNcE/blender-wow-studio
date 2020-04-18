@@ -299,7 +299,6 @@ class BlenderWMOSceneGroup:
         scn = bpy.context.scene
 
         nobj = bpy.data.objects.new(self.name, mesh)
-        scn.collection.objects.link(nobj)
 
         collision_face_ids = []
         for i, poly in enumerate(mesh.polygons):
@@ -519,7 +518,25 @@ class BlenderWMOSceneGroup:
         nobj.wow_wmo_group.flags = flag_set
         nobj.pass_index = pass_index
 
-        # remove collision faces from mesh\
+        # move objects to collection
+
+        wmo_outdoor_collection = bpy.data.collections.get("Outdoor")
+        if not wmo_outdoor_collection:
+            wmo_outdoor_collection = bpy.data.collections.new("Outdoor")
+            scn.collection.children.link(wmo_outdoor_collection)
+
+        wmo_indoor_collection = bpy.data.collections.get("Indoor")
+        if not wmo_indoor_collection:
+            wmo_indoor_collection = bpy.data.collections.new("Indoor")
+            scn.collection.children.link(wmo_indoor_collection)
+
+        if nobj.wow_wmo_group.place_type == '8':
+            wmo_outdoor_collection.objects.link(nobj)
+
+        if nobj.wow_wmo_group.place_type == '8192':
+            wmo_indoor_collection.objects.link(nobj)
+
+        # remove collision faces from mesh
         if collision_face_ids:
 
             bm_col = bmesh.new()
@@ -563,8 +580,14 @@ class BlenderWMOSceneGroup:
             bm.free()
 
             c_obj = bpy.data.objects.new(c_mesh.name, c_mesh)
-            scn.collection.objects.link(c_obj)
             nobj.wow_wmo_group.collision_mesh = c_obj
+
+            collision_collection = bpy.data.collections.get("Collision")
+            if not collision_collection:
+                collision_collection = bpy.data.collections.new("Collision")
+                scn.collection.children.link(collision_collection)
+
+            collision_collection.objects.link(c_obj)
 
         # assign ghost material
         if nobj.wow_wmo_group.collision_mesh:
