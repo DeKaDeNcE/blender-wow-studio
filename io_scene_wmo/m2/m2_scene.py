@@ -1,6 +1,6 @@
 import os
+
 from math import sqrt, isinf
-from collections import Iterable
 from functools import partial
 
 import bpy
@@ -27,6 +27,7 @@ class BlenderM2Scene:
         self.uv_transforms = {}
         self.geosets = []
         self.animations = []
+        self.alias_animation_lookup = {}
         self.global_sequences = []
         self.rig = None
         self.collision_mesh = None
@@ -446,34 +447,61 @@ class BlenderM2Scene:
             f_curve.keyframe_points.add(len(frames))
 
         # set values for each channel
-        for j, timestamp in enumerate(frames):
-            value = callback(value=track[j])
-            frame = timestamp * 0.0266666
 
-            if length:
+        if track:
+
+            for j, timestamp in enumerate(frames):
+                value = callback(value=track[j])
+                frame = timestamp * 0.0266666
+
                 for k in range(len(value)):
                     keyframe = f_curves[k].keyframe_points[j]
-                    keyframe.co = frame, value[k]
+                    keyframe.co = frame, (value[k] if length > 1 else value)
                     keyframe.interpolation = interp_type
 
-            else:
+        else:
+
+            for j, timestamp in enumerate(frames):
+                frame = timestamp * 0.0266666
                 keyframe = f_curves[0].keyframe_points[j]
-                keyframe.co = frame, value
+                keyframe.co = frame, True
                 keyframe.interpolation = interp_type
 
     @staticmethod
-    def _create_fcurves(action, bone, callback, length, anim_index, data_path, anim_track):
+    def _bl_create_fcurves(action, action_group, callback, length, anim_index, data_path, anim_track):
 
-        if bone.translation.timestamps.n_elements > anim_index:
+        if anim_track.timestamps.n_elements > anim_index:
+
             frames = anim_track.timestamps[anim_index]
-            track = anim_track.values[anim_index]
+
+            try:
+                track = anim_track.values[anim_index]
+            except AttributeError:
+                track = None
 
             if frames:
-                t_fcurves = [action.fcurves.new(data_path=data_path,index=k, action_group=bone.name)
+                t_fcurves = [action.fcurves.new(data_path=data_path, index=k, action_group=action_group)
                              for k in range(length)]
 
                 BlenderM2Scene._populate_bl_fcurve(t_fcurves, frames, track, length, callback,
                                                    'LINEAR' if anim_track.interpolation_type == 1 else 'CONSTANT')
+
+    @staticmethod
+    def _bl_create_action(anim_pair, name: str) -> bpy.types.Action:
+
+        if not anim_pair.action:
+
+            action = bpy.data.actions.new(name=name)
+            action.use_fake_user = True
+            anim_pair.action = action
+
+            return action
+
+        return anim_pair.action
+
+    @staticmethod
+    def _bl_convert_track_dummy(value=None):
+        return value
 
     def _bl_add_sequence(self, name: str = "Sequence", is_global: bool = False, is_alias: bool = False):
         seq = self.scene.wow_m2_animations.add()
@@ -533,6 +561,7 @@ class BlenderM2Scene:
                 for j, seq in m2_sequences:
                     if j == sequence.alias_next:
                         anim.alias_next = j + len(self.m2.root.global_sequences)
+                        self.alias_animation_lookup[i] = j
                         break
 
             # add animation properties
@@ -553,9 +582,11 @@ class BlenderM2Scene:
             self.animations.append(idx)
 
     @staticmethod
-    def _bl_group_bone_channels(action, bone):
-        if bone.name not in action.groups:
-            action.groups.new(name=bone.name)
+    def _bl_create_action_group(action: bpy.types.Action, name: str) -> str:
+        if name not in action.groups:
+            action.groups.new(name=name)
+
+        return name
 
     def load_animations(self):
 
@@ -608,21 +639,21 @@ class BlenderM2Scene:
             # write global sequence fcurves
             if is_global_seq_trans:
                 action = scene.wow_m2_animations[glob_sequences[bone.translation.global_sequence]].anim_pairs[1].action
-                self._bl_group_bone_channels(action, bone)
-                self._create_fcurves(action, bone, partial(bl_convert_trans_track, bl_bone=bl_bone, bone=bone), 3, 0,
-                                     'pose.bones.["{}"].location'.format(bl_bone.name), bone.translation)
+                self._bl_create_action_group(action, bone.name)
+                self._bl_create_fcurves(action, bone.name, partial(bl_convert_trans_track, bl_bone=bl_bone, bone=bone),
+                                        3, 0, 'pose.bones.["{}"].location'.format(bl_bone.name), bone.translation)
 
             if is_global_seq_rot:
                 action = scene.wow_m2_animations[glob_sequences[bone.rotation.global_sequence]].anim_pairs[1].action
-                self._bl_group_bone_channels(action, bone)
-                self._create_fcurves(action, bone, partial(bl_convert_rot_track), 4, 0,
-                                     'pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name), bone.rotation)
+                self._bl_create_action_group(action, bone.name)
+                self._bl_create_fcurves(action, bone.name, partial(bl_convert_rot_track), 4, 0,
+                                        'pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name), bone.rotation)
 
             if is_global_seq_scale:
                 action = scene.wow_m2_animations[glob_sequences[bone.scale.global_sequence]].anim_pairs[1].action
-                self._bl_group_bone_channels(action, bone)
-                self._create_fcurves(action, bone, partial(bl_convert_scale_track, bl_bone=bl_bone, bone=bone), 3, 0,
-                                     'pose.bones.["{}"].scale'.format(bl_bone.name), bone.scale)
+                self._bl_create_action_group(action, bone.name)
+                self._bl_create_fcurves(action, bone.name, partial(bl_convert_scale_track, bl_bone=bl_bone, bone=bone),
+                                        3, 0, 'pose.bones.["{}"].scale'.format(bl_bone.name), bone.scale)
 
             # write regular animation fcurves
             n_global_sequences = len(self.m2.root.global_sequences)
@@ -633,23 +664,26 @@ class BlenderM2Scene:
                 if not action:
                     continue
 
-                self._bl_group_bone_channels(action, bone)
-
                 # translate bones
                 if not is_global_seq_trans and bone.translation.timestamps.n_elements > anim_index:
-                    self._create_fcurves(action, bone, partial(bl_convert_trans_track, bl_bone=bl_bone, bone=bone), 3,
-                                         anim_index, 'pose.bones.["{}"].location'.format(bl_bone.name), bone.translation)
+                    self._bl_create_action_group(action, bone.name)
+                    self._bl_create_fcurves(action, bone.name, partial(bl_convert_trans_track, bl_bone=bl_bone,
+                                            bone=bone), 3, anim_index,
+                                            'pose.bones.["{}"].location'.format(bl_bone.name), bone.translation)
 
                 # rotate bones
                 if not is_global_seq_rot and bone.rotation.timestamps.n_elements > anim_index:
-                    self._create_fcurves(action, bone, partial(bl_convert_rot_track), 4,
-                                         anim_index,'pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name),
-                                         bone.rotation)
+                    self._bl_create_action_group(action, bone.name)
+                    self._bl_create_fcurves(action, bone.name, partial(bl_convert_rot_track), 4,
+                                            anim_index,'pose.bones.["{}"].rotation_quaternion'.format(bl_bone.name),
+                                            bone.rotation)
 
                 # scale bones
                 if not is_global_seq_scale and bone.scale.timestamps.n_elements > anim_index:
-                    self._create_fcurves(action, bone, partial(bl_convert_scale_track, bl_bone=bl_bone, bone=bone), 3,
-                                         anim_index, 'pose.bones.["{}"].scale'.format(bl_bone.name), bone.scale)
+                    self._bl_create_action_group(action, bone.name)
+                    self._bl_create_fcurves(action, bone.name, partial(bl_convert_scale_track, bl_bone=bl_bone,
+                                            bone=bone), 3, anim_index, 'pose.bones.["{}"].scale'.format(bl_bone.name),
+                                            bone.scale)
 
     def load_geosets(self):
 
@@ -739,105 +773,11 @@ class BlenderM2Scene:
 
     def load_texture_transforms(self):
 
-        def animate_tex_transform_controller_trans(anim_pair, name, trans_track, anim_index):
+        def bl_convert_trans_track(value=None):
+            return Vector((0, 0, 0)) + Vector(value)
 
-            action = anim_pair.action
-
-            try:
-                frames = trans_track.timestamps[anim_index]
-                track = trans_track.values[anim_index]
-            except IndexError:
-                return
-
-            if not len(frames):
-                return
-
-            if not action:
-                action = bpy.data.actions.new(name=name)
-                action.use_fake_user = True
-                anim_pair.action = action
-
-            # create fcurve
-            f_curves = [action.fcurves.new(data_path='location', index=k) for k in range(3)]
-
-            # init keyframes on the curve
-            for f_curve in f_curves: f_curve.keyframe_points.add(len(frames))
-
-            # set translation values for each channel
-            for i, timestamp in enumerate(frames):
-                trans_vec = Vector((0, 0, 0)) + Vector(track[i])
-                frame = timestamp * 0.0266666
-
-                for j in range(3):
-                    keyframe = f_curves[j].keyframe_points[i]
-                    keyframe.co = frame, trans_vec[j]
-                    keyframe.interpolation = 'LINEAR' if trans_track.interpolation_type == 1 else 'CONSTANT'
-
-        def animate_tex_transform_controller_rot(anim_pair, name, rot_track, anim_index):
-            action = anim_pair.action
-
-            try:
-                frames = rot_track.timestamps[anim_index]
-                track = rot_track.values[anim_index]
-            except IndexError:
-                return
-
-            if not len(frames):
-                return
-
-            if not action:
-                action = bpy.data.actions.new(name=name)
-                action.use_fake_user = True
-                anim_pair.action = action
-
-            # create fcurve
-            f_curves = [action.fcurves.new(data_path='rotation_quaternion', index=k) for k in range(4)]
-
-            # init keyframes on the curve
-            for f_curve in f_curves: f_curve.keyframe_points.add(len(frames))
-
-            # set translation values for each channel
-            for i, timestamp in enumerate(frames):
-                frame = timestamp * 0.0266666
-
-                rot_quat = (track[i][3], -track[i][1], track[i][0], track[i][2])
-
-                for j in range(4):
-                    keyframe = f_curves[j].keyframe_points[i]
-                    keyframe.co = frame, rot_quat[j]
-                    keyframe.interpolation = 'LINEAR' if rot_track.interpolation_type == 1 else 'CONSTANT'
-
-        def animate_tex_transform_controller_scale(anim_pair, name, scale_track, anim_index):
-            action = anim_pair.action
-
-            try:
-                frames = scale_track.timestamps[anim_index]
-                track = scale_track.values[anim_index]
-            except IndexError:
-                return
-
-            if not len(frames):
-                return
-
-            if not action:
-                action = bpy.data.actions.new(name=name)
-                action.use_fake_user = True
-                anim_pair.action = action
-
-            # create fcurve
-            f_curves = [action.fcurves.new(data_path='scale', index=k) for k in range(3)]
-
-            # init keyframes on the curve
-            for f_curve in f_curves: f_curve.keyframe_points.add(len(frames))
-
-            # set translation values for each channel
-            for i, timestamp in enumerate(frames):
-                frame = timestamp * 0.0266666
-
-                for j in range(3):
-                    keyframe = f_curves[j].keyframe_points[i]
-                    keyframe.co = frame, track[i][j]
-                    keyframe.interpolation = 'LINEAR' if scale_track.interpolation_type == 1 else 'CONSTANT'
+        def bl_convert_rot_track(value=None):
+            return value[3], -value[1], value[0], value[2]
 
         if not self.geosets:
             print('\nNo geosets found. Skipping texture transform import')
@@ -857,7 +797,7 @@ class BlenderM2Scene:
 
                 c_obj = self.uv_transforms.get(tex_tranform_index)
                 tex_transform = self.m2.root.texture_transforms[tex_tranform_index]
-                anim_data_dbc = load_game_data().db_files_client.AnimationData
+                seq_name_table = M2SequenceNames()
                 n_global_sequences = len(self.global_sequences)
 
                 if not c_obj:
@@ -894,71 +834,71 @@ class BlenderM2Scene:
                     anim_pair.type = 'OBJECT'
                     anim_pair.object = c_obj
 
-                    if tex_transform.translation.global_sequence == j:
-                        animate_tex_transform_controller_trans(anim_pair, name, tex_transform.translation, 0)
+                    if tex_transform.translation.global_sequence == j \
+                    and tex_transform.translation.timestamps.n_elements:
+                        action = self._bl_create_action(anim_pair, name)
+                        self._bl_create_fcurves(action, obj.name, bl_convert_trans_track, 3, 0, 'location',
+                                                tex_transform.translation)
 
-                    if tex_transform.rotation.global_sequence == j:
-                        animate_tex_transform_controller_rot(anim_pair, name, tex_transform.rotation, 0)
+                    if tex_transform.rotation.global_sequence == j \
+                    and tex_transform.rotation.timestamps.n_elements:
+                        action = self._bl_create_action(anim_pair, name)
+                        self._bl_create_fcurves(action, obj.name, bl_convert_rot_track, 4, 0, 'rotation_quaternion',
+                                                tex_transform.rotation)
 
-                    if tex_transform.scaling.global_sequence == j:
-                        animate_tex_transform_controller_scale(anim_pair, name, tex_transform.scaling, 0)
+                    if tex_transform.scaling.global_sequence == j \
+                    and tex_transform.scaling.timestamps.n_elements:
+                        action = self._bl_create_action(anim_pair, name)
+                        self._bl_create_fcurves(action, obj.name, self._bl_convert_track_dummy, 3, 0, 'scale',
+                                                tex_transform.scaling)
 
                     if not anim_pair.action:
-                        anim.anim_pairs.remove(cur_index)
+                            anim.anim_pairs.remove(cur_index)
 
                 # load animations
                 for j, anim_index in enumerate(self.animations):
+
+                    # skip alias
+                    if self.alias_animation_lookup.get(j):
+                        continue
+
                     anim = bpy.context.scene.wow_m2_animations[j + n_global_sequences]
                     sequence = self.m2.root.sequences[anim_index]
 
-                    field_name = anim_data_dbc.get_field(sequence.id, 'Name')
+                    field_name = seq_name_table.get_sequence_name(sequence.id)
                     name = 'TT_{}_{}_{}_UnkAnim'.format(tex_tranform_index, obj.name, str(j).zfill(3)) \
-                        if not field_name else "TT_{}_{}_{}_{}_({})".format(tex_tranform_index,
-                                                                            obj.name,
-                                                                            str(j).zfill(3),
-                                                                            field_name,
-                                                                            sequence.variation_index)
+                         if not field_name else "TT_{}_{}_{}_{}_({})".format(tex_tranform_index,
+                                                                             obj.name,
+                                                                             str(j).zfill(3),
+                                                                             field_name,
+                                                                             sequence.variation_index)
 
                     cur_index = len(anim.anim_pairs)
                     anim_pair = anim.anim_pairs.add()
                     anim_pair.type = 'OBJECT'
                     anim_pair.object = c_obj
 
-                    if tex_transform.translation.global_sequence < 0:
-                        animate_tex_transform_controller_trans(anim_pair, name, tex_transform.translation, j)
+                    if tex_transform.translation.global_sequence < 0 \
+                    and tex_transform.translation.timestamps.n_elements > j:
+                        action = self._bl_create_action(anim_pair, name)
+                        self._bl_create_fcurves(action, obj.name, bl_convert_trans_track, 3, j, 'location',
+                                                tex_transform.translation)
 
-                    if tex_transform.rotation.global_sequence < 0:
-                        animate_tex_transform_controller_rot(anim_pair, name, tex_transform.rotation, j)
+                    if tex_transform.rotation.global_sequence < 0 and tex_transform.rotation.timestamps.n_elements > j:
+                        action = self._bl_create_action(anim_pair, name)
+                        self._bl_create_fcurves(action, obj.name, bl_convert_rot_track, 4, j, 'rotation_quaternion',
+                                                tex_transform.rotation)
 
-                    if tex_transform.scaling.global_sequence < 0:
-                        animate_tex_transform_controller_scale(anim_pair, name, tex_transform.scaling, j)
+                    if tex_transform.scaling.global_sequence < 0 and tex_transform.scaling.timestamps.n_elements > j:
+                        action = self._bl_create_action(anim_pair, name)
+                        self._bl_create_fcurves(action, obj.name, self._bl_convert_track_dummy, 4, j,
+                                                'rotation_quaternion', tex_transform.rotation)
 
                     if not anim_pair.action:
                         anim.anim_pairs.remove(cur_index)
 
     def load_attachments(self):
         # TODO: unknown field
-
-        def animate_attachment(attachment, obj, anim, anim_name, frames, track):
-            anim_pair = anim.anim_pairs.add()
-            anim_pair.type = 'OBJECT'
-            anim_pair.object = obj
-            action = anim_pair.action = bpy.data.actions.new(name=anim_name)
-            action.use_fake_user = True
-            anim_pair.action = action
-
-            # create fcurve
-            f_curve = action.fcurves.new(data_path='wow_m2_attachment.animate')
-
-            # init translation keyframes on the curve
-            f_curve.keyframe_points.add(len(frames))
-
-            # set translation values for each channel
-            for k, timestamp in enumerate(frames):
-                frame = timestamp * 0.0266666
-                keyframe = f_curve.keyframe_points[k]
-                keyframe.co = frame, track[k]
-                keyframe.interpolation = 'LINEAR' if attachment.animate_attached.interpolation_type == 1 else 'CONSTANT'
 
         for i, attachment in enumerate(self.m2.root.attachments):
             bpy.ops.object.empty_add(type='SPHERE', location=(0, 0, 0))
@@ -982,23 +922,29 @@ class BlenderM2Scene:
             # animate attachment
             obj.animation_data_create()
             obj.animation_data.action_blend_type = 'ADD'
-            anim_data_dbc = load_game_data().db_files_client.AnimationData
+            seq_name_table = M2SequenceNames()
             n_global_sequences = len(self.global_sequences)
 
-            # load global sequences
-            for j, seq_index in enumerate(self.global_sequences):
-                anim = bpy.context.scene.wow_m2_animations[seq_index]
+            # load global sequence
+            if attachment.animate_attached.global_sequence >= 0:
+                anim = bpy.context.scene.wow_m2_animations[attachment.animate_attached.global_sequence]
 
-                if attachment.animate_attached.global_sequence == j:
-                    frames = attachment.animate_attached.timestamps[0]
-                    track = attachment.animate_attached.values[0]
+                if not attachment.animate_attached.timestamps.n_elements \
+                or not attachment.animate_attached.timestamps[0]:
+                    return
 
-                    if not len(frames):
-                        continue
+                name = "AT_{}_{}_Global_Sequence_{}".format(i, obj.name,
+                                                            str(attachment.animate_attached.global_sequence).zfill(3))
 
-                    name = "AT_{}_{}_Global_Sequence_{}".format(i, obj.name, str(j).zfill(3))
+                anim_pair = anim.anim_pairs.add()
+                anim_pair.type = 'OBJECT'
+                anim_pair.object = obj
+                anim_pair.action = self._bl_create_action(anim_pair, name)
 
-                    animate_attachment(attachment, obj, anim, name, frames, track)
+                self._bl_create_fcurves(anim_pair.action, "", self._bl_convert_track_dummy, 1, 0,
+                                        'wow_m2_attachment.animate', attachment.animate_attached)
+
+                return
 
             # load animations
             for j, anim_index in enumerate(self.animations):
@@ -1006,55 +952,41 @@ class BlenderM2Scene:
                 sequence = self.m2.root.sequences[anim_index]
 
                 if attachment.animate_attached.timestamps.n_elements > anim_index:
-                    frames = attachment.animate_attached.timestamps[anim_index]
-                    track = attachment.animate_attached.values[anim_index]
-
-                    if not len(frames):
+                    if not len(attachment.animate_attached.timestamps[anim_index]):
                         continue
 
-                    field_name = anim_data_dbc.get_field(sequence.id, 'Name')
-                    name = 'AT_{}_{}_UnkAnim'.format(i, obj.name, str(j).zfill(3)) if not field_name \
-                        else "AT_{}_{}_{}_({})".format(i, obj.name, str(j).zfill(3), field_name,
-                                                       sequence.variation_index)
+                    field_name = seq_name_table.get_field(sequence.id, 'Name')
+                    name = 'AT_{}_{}_UnkAnim'.format(i, obj.name, str(j).zfill(3)) \
+                         if not field_name else "AT_{}_{}_{}_({})".format(i, obj.name, str(j).zfill(3), field_name,
+                                                                          sequence.variation_index)
 
-                    animate_attachment(attachment, obj, anim, name, frames, track)
+                    anim_pair = anim.anim_pairs.add()
+                    anim_pair.type = 'OBJECT'
+                    anim_pair.object = obj
+                    self._bl_create_action(anim_pair, name)
+
+                    self._bl_create_fcurves(anim_pair.action, "", self._bl_convert_track_dummy, 1, j,
+                                            'wow_m2_attachment.animate', attachment.animate_attached)
 
     def load_lights(self):
 
         def animate_property(anim_pair, m2_light, prop_name, length, action_name, anim_index):
 
-            action = anim_pair.action
             prop_track = getattr(m2_light, prop_name)
 
             try:
                 frames = prop_track.timestamps[anim_index]
-                track = prop_track.values[anim_index]
             except IndexError:
                 return
 
             if not len(frames):
                 return
 
-            if not action:
-                anim_pair.action = action = bpy.data.actions.new(name=action_name)
+            self._bl_create_action(anim_pair, action_name)
+            action_group = self._bl_create_action_group(anim_pair.action, 'Color_{}'.format(prop_name))
 
-            # create fcurve
-            f_curves = [action.fcurves.new(data_path='data.wow_m2_light.{}'.format(prop_name),
-                                           index=k,
-                                           action_group='Color_{}'.format(prop_name)) for k in range(length)]
-
-            # init keyframes on the curve
-            for f_curve in f_curves:
-                f_curve.keyframe_points.add(len(frames))
-
-            # set translation values for each channel
-            for i, timestamp in enumerate(frames):
-                frame = timestamp * 0.0266666
-
-                for j in range(length):
-                    keyframe = f_curves[j].keyframe_points[i]
-                    keyframe.co = frame, track[i][j] if length > 1 else track[i]
-                    keyframe.interpolation = 'LINEAR' if prop_track.interpolation_type == 1 else 'CONSTANT'
+            self._bl_create_fcurves(anim_pair.action, action_group, self._bl_convert_track_dummy, length, anim_index,
+                                    'data.wow_m2_light.{}'.format(prop_name), prop_track)
 
         for i, light in enumerate(self.m2.root.lights):
             bpy.ops.object.lamp_add(type='POINT' if light.type else 'SPOT', location=(0, 0, 0))
@@ -1077,7 +1009,7 @@ class BlenderM2Scene:
             # animate light
             obj.animation_data_create()
             obj.animation_data.action_blend_type = 'ADD'
-            anim_data_dbc = load_game_data().db_files_client.AnimationData
+            seq_name_table = M2SequenceNames()
             n_global_sequences = len(self.global_sequences)
 
             channels = [('ambient_color', 3), ('ambient_intensity', 1), ('diffuse_color', 3),
@@ -1086,14 +1018,13 @@ class BlenderM2Scene:
             # load global sequences
             for j, seq_index in enumerate(self.global_sequences):
                 anim = bpy.context.scene.wow_m2_animations[seq_index]
-                action_name = "AT_{}_{}_Global_Sequence_{}".format(i, obj.name, str(j).zfill(3))
+                action_name = "LT_{}_{}_Global_Sequence_{}".format(i, obj.name, str(j).zfill(3))
 
                 anim_pair = anim.anim_pairs.add()
                 anim_pair.type = 'OBJECT'
                 anim_pair.object = obj
 
                 for channel, array_length in channels:
-
                     if getattr(light, channel).global_sequence == seq_index:
                         animate_property(anim_pair, light, channel, array_length, action_name, 0)
 
@@ -1105,7 +1036,7 @@ class BlenderM2Scene:
                 anim = bpy.context.scene.wow_m2_animations[j + n_global_sequences]
                 sequence = self.m2.root.sequences[anim_index]
 
-                field_name = anim_data_dbc.get_field(sequence.id, 'Name')
+                field_name = seq_name_table.get_sequence_name(sequence.id)
                 action_name = 'LT_{}_UnkAnim'.format(i, str(j).zfill(3)) if not field_name \
                     else "LT_{}_{}_({})".format(i, str(j).zfill(3), field_name, sequence.variation_index)
 
@@ -1114,7 +1045,6 @@ class BlenderM2Scene:
                 anim_pair.object = obj
 
                 for channel, array_length in channels:
-
                     if getattr(light, channel).global_sequence < 0:
                         animate_property(anim_pair, light, channel, array_length, action_name, anim_index)
 
@@ -1124,9 +1054,7 @@ class BlenderM2Scene:
     def load_events(self):
 
         def animate_event(event, obj, anim_name, frames):
-            anim_pair = anim.anim_pairs.add()
-            anim_pair.type = 'OBJECT'
-            anim_pair.object = obj
+
             action = anim_pair.action = bpy.data.actions.new(name=anim_name)
             action.use_fake_user = True
             anim_pair.action = action
@@ -1178,22 +1106,27 @@ class BlenderM2Scene:
             # animate event firing
             obj.animation_data_create()
             obj.animation_data.action_blend_type = 'ADD'
-            anim_data_dbc = load_game_data().db_files_client.AnimationData
+            seq_name_table = M2SequenceNames()
             n_global_sequences = len(self.global_sequences)
 
             # load global sequences
-            for j, seq_index in enumerate(self.global_sequences):
-                anim = bpy.context.scene.wow_m2_animations[seq_index]
+            if event.enabled.global_sequence >= 0:
+                anim = bpy.context.scene.wow_m2_animations[event.enabled.global_sequence]
+                if not event.enabled.timestamps.n_elements \
+                or not event.enabled.timestamps[0]:
+                    return
 
-                if event.enabled.global_sequence == j:
-                    frames = event.enabled.timestamps[0]
+                anim_pair = anim.anim_pairs.add()
+                anim_pair.type = 'OBJECT'
+                anim_pair.object = obj
 
-                    if not len(frames):
-                        continue
+                name = 'ET_{}_{}_UnkAnim'.format(token, str(event.enabled.global_sequence).zfill(3))
 
-                    name = 'ET_{}_{}_UnkAnim'.format(token, str(j).zfill(3))
+                self._bl_create_action(anim_pair, name)
+                self._bl_create_fcurves(anim_pair.action, "", self._bl_convert_track_dummy, 1, 0, 'wow_m2_event.fire',
+                                        event.enabled)
 
-                    animate_event(event, obj, name, frames)
+                return
 
             # load animations
             for j, anim_index in enumerate(self.animations):
@@ -1201,17 +1134,21 @@ class BlenderM2Scene:
                 sequence = self.m2.root.sequences[anim_index]
 
                 if event.enabled.timestamps.n_elements > anim_index:
-                    frames = event.enabled.timestamps[anim_index]
-
-                    if not len(frames):
+                    if not event.enabled.timestamps[anim_index]:
                         continue
 
-                    field_name = anim_data_dbc.get_field(sequence.id, 'Name')
-                    name = 'ET_{}_{}_UnkAnim'.format(token, str(anim_index).zfill(3)) if not field_name \
-                        else "ET_{}_{}_{}_({})".format(token, str(anim_index).zfill(3), field_name,
-                                                       sequence.variation_index)
+                    anim_pair = anim.anim_pairs.add()
+                    anim_pair.type = 'OBJECT'
+                    anim_pair.object = obj
 
-                    animate_event(event, obj, name, frames)
+                    field_name = seq_name_table.get_sequence_name(sequence.id)
+                    name = 'ET_{}_{}_UnkAnim'.format(token, str(anim_index).zfill(3)) if not field_name \
+                           else "ET_{}_{}_{}_({})".format(token, str(anim_index).zfill(3), field_name,
+                                                          sequence.variation_index)
+
+                    self._bl_create_action(anim_pair, name)
+                    self._bl_create_fcurves(anim_pair.action, "", self._bl_convert_track_dummy, 1, j,
+                                            'wow_m2_event.fire', event.enabled)
 
     def load_cameras(self):
 
@@ -1409,11 +1346,6 @@ class BlenderM2Scene:
             bpy.context.view_layer.objects.active = obj  # active object is required for constraints to install properly
             obj.wow_m2_camera.target = t_obj
 
-
-
-
-
-
     def load_particles(self):
         if not len(self.m2.root.particles):
             print("\nNo particles found to import.")
@@ -1445,7 +1377,8 @@ class BlenderM2Scene:
             print("\nImporting collision mesh.")
 
         vertices = [vertex for vertex in self.m2.root.collision_vertices]
-        triangles = [self.m2.root.collision_triangles[i:i+3] for i in range(0, len(self.m2.root.collision_triangles), 3)]
+        triangles = [self.m2.root.collision_triangles[i:i+3]
+                     for i in range(0, len(self.m2.root.collision_triangles), 3)]
 
         # create mesh
         mesh = bpy.data.meshes.new(self.m2.root.name.value)
@@ -1658,7 +1591,7 @@ class BlenderM2Scene:
 
             # collect rig data
             if new_obj.vertex_groups:
-                bpy.ops.object.vertex_group_limit_total(limit=4)
+                bpy.ops.object.vertex_group_limit_total()
 
             if self.rig:
 

@@ -55,7 +55,7 @@ def import_m2(version, filepath, local_path=""):  # TODO: implement multiversion
 
     bl_m2.load_armature()
     bl_m2.load_animations()
-    bl_m2.load_colors()
+    #bl_m2.load_colors()
     bl_m2.load_transparency()
     bl_m2.load_materials(addon_preferences.cache_dir_path, os.path.dirname(filepath))
     bl_m2.load_geosets()
@@ -64,6 +64,6 @@ def import_m2(version, filepath, local_path=""):  # TODO: implement multiversion
     bl_m2.load_attachments()
     bl_m2.load_lights()
     bl_m2.load_events()
-    bl_m2.load_cameras()
+    #bl_m2.load_cameras()
 
 
