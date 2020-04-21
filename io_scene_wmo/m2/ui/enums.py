@@ -115,7 +115,12 @@ MESH_PART_TYPES = [
     ("Belt", "Belt", "Belt / Bellypack geosets", 'PMARKER', 20),
     ("Trail", "Trail", "Trail geosets / Undead bones (Legion+)", 'PMARKER', 21),
     ("Feet", "Feet", "Feet geosets", 'PMARKER', 22),
-    ("Hands", "BE Hands", "Hands for Blood Elf / Night Elf (Legion+)", 'PMARKER', 23)
+    ("Hands", "BE Hands", "Hands for Blood Elf / Night Elf (Legion+)", 'PMARKER', 23),
+    ("Head", "Head", "", 'PMARKER', 24),
+    ("Torso", "Torso", "", 'PMARKER', 25),
+    ("Shoulders", "Shoulders", "", 'PMARKER', 26),
+    ("Helmet", "Helmet", "", 'PMARKER', 27),
+    ("Unknown4", "Unknown4", "", 'PMARKER', 28),
 ]
 
 ANIMATION_FLAGS = [
@@ -177,16 +182,20 @@ def mesh_part_id_menu(self, context):
     elif geoset_group == 'Wristbands':
         return [("801", "None (DNE)", "No wristbands"),
                 ("802", "Normal", "Normal wristbands"),
-                ("803", "Ruffled", "Ruffled wristbands")]
+                ("803", "Ruffled", "Ruffled wristbands"),
+                ("804", "Panda Collar Shirt", "")]
 
     elif geoset_group == 'Kneepads':
         return [("901", "None (DNE)", "No kneepads"),
                 ("902", "Long", "Long kneepads"),
-                ("903", "Short", "Short kneepads")]
+                ("903", "Short", "Short kneepads"),
+                ("904", "Panda Pants", "")]
 
     elif geoset_group == 'Chest':
         return [("1001", "None (DNE)", "No chest"),
-                ("1002", "Plate", "Downside of a plate chest")]
+                ("1002", "Plate", "Downside of a plate chest"),
+                ("1003", "Body 2", ""),
+                ("1004", "Body 3", "")]
 
     elif geoset_group == 'Pants':
         return [("1101", "Regular", "Regular pants"),
@@ -195,11 +204,12 @@ def mesh_part_id_menu(self, context):
 
     elif geoset_group == 'Tabard':
         return [("1201", "None (DNE)", "No tabard"),
-                ("1202", "Tabard", "Tabard")]
+                ("1202", "Tabard", "Tabard"),
+                ("1203", "Tabard Unk", "SL +")]
 
     elif geoset_group == 'Legs':
         return [("1301", "Trousers", ""),
-               ("1302", "Dress", "")]
+                ("1302", "Dress", "")]
 
     elif geoset_group == 'Cloak':
         return [("1501", "Scarf", "Shortest cloak"),
@@ -207,7 +217,12 @@ def mesh_part_id_menu(self, context):
                 ("1503", "Normal", ""),
                 ("1504", "Double-tail", ""),
                 ("1505", "Small", ""),
-                ("1506", "Small double-tail", "")]
+                ("1506", "Small double-tail", ""),
+                ("1507", "Guild cloak", ""),
+                ("1508", "Split", "Long"),
+                ("1509", "Tapered", "Long"),
+                ("1509", "Notched", "Long"),
+                ("1510", "Unknown", "SL+")]
 
     elif geoset_group == 'Eyeglows':
         return [("1701", "None (DNE)", "No eyeglow"),
@@ -216,14 +231,28 @@ def mesh_part_id_menu(self, context):
 
     elif geoset_group == 'Belt':
         return [("1801", "None (DNE)", "No belt / bellypack"),
-                ("1802", "Bulky", "Bulky belt")]
+                ("1802", "Bulky", "Bulky belt"),
+                ("1803", "Panda Cord Belt", "")]
 
     elif geoset_group == 'Feet':
-        return [("2001", "None (DNE)", "No feet"),
-                ("2002", "Feet", "Feet")]
+        return [("2001", "Basic shoes", ""),
+                ("2002", "Toes", "")]
+
+    elif geoset_group == 'Head':
+        return [("2101", "Show head", "")]
+
+    elif geoset_group == 'Torso':
+        return [("2201", "Default", ""),
+                ("2202", "Covered torso", "")]
 
     elif geoset_group == 'Hands':
         return [("2301", "BE / NE Hands", 'Hands for Blood Elf / Night Elf')]
+
+    elif geoset_group == 'Shoulders':
+        return [("2201", "Show shoulders", "")]
+
+    elif geoset_group == 'Helmet':
+        return [("2202", "Helmet", "")]
 
     else:
         return [('0', 'No subtype', "")]

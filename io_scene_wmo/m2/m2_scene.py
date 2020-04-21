@@ -600,12 +600,14 @@ class BlenderM2Scene:
 
         def bl_convert_scale_track(value=None):
 
+            value = list(value)
+
             for i, val in enumerate(value):
                 if isinf(val):
-                    print("\nWarning: Fixed infinite scale value!")  # TODO: figure out infinite values there
+                    print("\nWarning: Fixed infinite scale value!")  #TODO: figure out infinite values there
                     value[i] = 1.0
 
-            return value
+            return tuple(value)
 
         if not len(self.m2.root.sequences) and not len(self.m2.root.global_sequences):
             print("\nNo animation data found to import.")
@@ -652,8 +654,8 @@ class BlenderM2Scene:
             if is_global_seq_scale:
                 action = scene.wow_m2_animations[glob_sequences[bone.scale.global_sequence]].anim_pairs[1].action
                 self._bl_create_action_group(action, bone.name)
-                self._bl_create_fcurves(action, bone.name, partial(bl_convert_scale_track, bl_bone=bl_bone, bone=bone),
-                                        3, 0, 'pose.bones.["{}"].scale'.format(bl_bone.name), bone.scale)
+                self._bl_create_fcurves(action, bone.name, partial(bl_convert_scale_track), 3, 0,
+                                        'pose.bones.["{}"].scale'.format(bl_bone.name), bone.scale)
 
             # write regular animation fcurves
             n_global_sequences = len(self.m2.root.global_sequences)
@@ -669,7 +671,8 @@ class BlenderM2Scene:
                     self._bl_create_action_group(action, bone.name)
                     self._bl_create_fcurves(action, bone.name, partial(bl_convert_trans_track, bl_bone=bl_bone,
                                             bone=bone), 3, anim_index,
-                                            'pose.bones.["{}"].location'.format(bl_bone.name), bone.translation)
+                                            'pose.bones.["{}"].location'.format(bl_bone.name),
+                                            bone.translation)
 
                 # rotate bones
                 if not is_global_seq_rot and bone.rotation.timestamps.n_elements > anim_index:
@@ -681,8 +684,8 @@ class BlenderM2Scene:
                 # scale bones
                 if not is_global_seq_scale and bone.scale.timestamps.n_elements > anim_index:
                     self._bl_create_action_group(action, bone.name)
-                    self._bl_create_fcurves(action, bone.name, partial(bl_convert_scale_track, bl_bone=bl_bone,
-                                            bone=bone), 3, anim_index, 'pose.bones.["{}"].scale'.format(bl_bone.name),
+                    self._bl_create_fcurves(action, bone.name, partial(bl_convert_scale_track), 3, anim_index,
+                                            'pose.bones.["{}"].scale'.format(bl_bone.name),
                                             bone.scale)
 
     def load_geosets(self):
@@ -1053,25 +1056,6 @@ class BlenderM2Scene:
 
     def load_events(self):
 
-        def animate_event(event, obj, anim_name, frames):
-
-            action = anim_pair.action = bpy.data.actions.new(name=anim_name)
-            action.use_fake_user = True
-            anim_pair.action = action
-
-            # create fcurve
-            f_curve = action.fcurves.new(data_path='wow_m2_event.fire')
-
-            # init translation keyframes on the curve
-            f_curve.keyframe_points.add(len(frames))
-
-            # fire event
-            for k, timestamp in enumerate(frames):
-                frame = timestamp * 0.0266666
-                keyframe = f_curve.keyframe_points[k]
-                keyframe.co = frame, True
-                keyframe.interpolation = 'LINEAR' if event.enabled.interpolation_type == 1 else 'CONSTANT'
-
         if not len(self.m2.root.events):
             print("\nNo events found to import.")
             return
@@ -1096,11 +1080,11 @@ class BlenderM2Scene:
             obj.wow_m2_event.enabled = True
             obj.wow_m2_event.token = event.identifier
 
-            if obj.name in ('PlayEmoteSound',
-                            'DoodadSoundUnknown',
-                            'DoodadSoundOneShot',
-                            'GOPlaySoundKitCustom',
-                            'GOAddShake'):
+            if token in ('PlayEmoteSound',
+                         'DoodadSoundUnknown',
+                         'DoodadSoundOneShot',
+                         'GOPlaySoundKitCustom',
+                         'GOAddShake'):
                 obj.wow_m2_event.data = event.data
 
             # animate event firing

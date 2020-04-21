@@ -30,6 +30,16 @@ def import_m2(version, filepath, local_path=""):  # TODO: implement multiversion
 
         while skel_fdid:
             skel_path = game_data.extract_file(addon_preferences.cache_dir_path, skel_fdid, local_path, 'skel', os_dir)
+
+            if os.path.dirname(skel_path) in os_dir:
+                skel_path = os.path.join(os_dir, os.path.basename(skel_path))
+
+                if not os.path.isfile(skel_path):
+                    skel_path = os.path.join(os_dir, skel_path)
+
+            else:
+                skel_path = os.path.join(os_dir, skel_path)
+
             skel_fdid = m2_file.read_skel(skel_path)
 
         m2_file.process_skels()
@@ -39,15 +49,17 @@ def import_m2(version, filepath, local_path=""):  # TODO: implement multiversion
         m2_file.texture_path_map = game_data.extract_textures_as_png(addon_preferences.cache_dir_path,
                                                                      dependencies.textures, local_path, os_dir)
 
-        game_data.extract_files(addon_preferences.cache_dir_path, dependencies.anims, local_path, 'anim', os_dir)
+        game_data.extract_files(addon_preferences.cache_dir_path, dependencies.anims, local_path, 'anim', os_dir, True)
         game_data.extract_files(addon_preferences.cache_dir_path, dependencies.skins, local_path, 'skin', os_dir)
 
         if version >= M2Versions.WOD:
-            game_data.extract_files(addon_preferences.cache_dir_path, dependencies.bones, local_path, 'bone', os_dir)
+            game_data.extract_files(addon_preferences.cache_dir_path, dependencies.bones, local_path, 'bone',
+                                    os_dir, True)
             game_data.extract_files(addon_preferences.cache_dir_path,
-                                    dependencies.lod_skins, local_path, 'skin', os_dir)
+                                    dependencies.lod_skins, local_path, 'skin', os_dir, True)
 
     m2_file.read_additional_files()
+    m2_file.root.assign_bone_names()
 
     print("\n\n### Importing M2 model ###")
 
