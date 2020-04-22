@@ -6,7 +6,7 @@ from ..pywowlib.m2_file import M2File, M2Versions
 from ..ui import get_addon_prefs
 
 
-def import_m2(version, filepath, local_path=""):  # TODO: implement multiversioning
+def import_m2(version, filepath, local_path=""):
 
     # get global variables
     addon_preferences = get_addon_prefs()
