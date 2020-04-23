@@ -122,8 +122,6 @@ def update_wmo_material_enabled(self, context):
         update_wmo_mat_node_tree(self.self_pointer)
 
 
-
-
 class WowMaterialPropertyGroup(bpy.types.PropertyGroup):
 
     enabled:  bpy.props.BoolProperty()

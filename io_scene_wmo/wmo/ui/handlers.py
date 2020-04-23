@@ -347,7 +347,8 @@ def on_depsgraph_update(_):
 
                 mat = bpy.data.materials[update.id.name, update.id.library]
 
-                if mat.wow_wmo_material.enabled:
+                if mat.wow_wmo_material.enabled \
+                and bpy.context.scene.wow_wmo_root_elements.materials.find(mat.name) < 0:
                     mat.wow_wmo_material.enabled = False
                     slot = bpy.context.scene.wow_wmo_root_elements.materials.add()
                     slot.pointer = mat

@@ -17,13 +17,11 @@ class WMO_OT_generate_materials(bpy.types.Operator):
         return context.scene.wow_scene.type == 'WMO'
 
     def execute(self, context):
-        if 'MO_WMOShader' not in bpy.data.node_groups:
-            load_wmo_shader_dependencies(True)
+        load_wmo_shader_dependencies()
 
-        materials = bpy.data.materials
+        materials = []
 
         if context.selected_objects:
-            materials = []
             for obj in context.selected_objects:
                 if not obj.wow_wmo_group.enabled:
                     continue
@@ -44,7 +42,7 @@ class WMO_OT_generate_materials(bpy.types.Operator):
 
             with DepsgraphLock():
 
-                if mat.name not in context.scene.wow_wmo_root_elements.materials:
+                if context.scene.wow_wmo_root_elements.materials.find(mat.name) < 0:
                     mat.wow_wmo_material.self_pointer = mat
 
                     mat.wow_wmo_material.diff_texture_1 = tex
