@@ -841,6 +841,9 @@ class BlenderWMOSceneGroup:
 
         uv2 = bm.loops.layers.uv.get('UVMap.001')
 
+        if uv2:
+            group.add_blendmap_chunks()
+
         obj_collision_vg = None
         vg_collision_index = 0
 
