@@ -162,7 +162,7 @@ def on_depsgraph_update(_):
             if isinstance(update.id, bpy.types.Object) and update.id.type == 'MESH':
                 if update.id.wow_wmo_doodad.enabled:
                     obj = bpy.data.objects[update.id.name, update.id.library]
-                    DEPSGRAPH_UPDATE_LOCK = True
+                    DepsgraphLock().DEPSGRAPH_UPDATE_LOCK = True
 
                     # handle object copies
                     if obj.active_material.users > 1:
@@ -343,10 +343,17 @@ def on_depsgraph_update(_):
                     bpy.wbs_n_scene_objects = n_objs
                     _add_col_items(bpy.context.scene)
 
+            elif isinstance(update.id, bpy.types.Material):
+
+                mat = bpy.data.materials[update.id.name, update.id.library]
+
+                if mat.wow_wmo_material.enabled:
+                    mat.wow_wmo_material.enabled = False
+                    slot = bpy.context.scene.wow_wmo_root_elements.materials.add()
+                    slot.pointer = mat
+
         finally:
             DepsgraphLock().DEPSGRAPH_UPDATE_LOCK = False
-
-
 
     if delete:
         show_message_box('One or more doodads were deleted due to mesh changes. Editing doodads is not allowed.'

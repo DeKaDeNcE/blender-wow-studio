@@ -361,7 +361,8 @@ def update_material_pointer(self, context):
             self.pointer_old = None
 
         # check if material is used
-        if self.pointer.wow_wmo_material.enabled:
+        if self.pointer.wow_wmo_material.enabled \
+        and context.scene.wow_wmo_root_elements.materials.find(self.pointer.name) >= 0:
             self.pointer = None
             return
 

@@ -899,6 +899,10 @@ class BlenderWMOSceneGroup:
             mat_id = scene.wow_wmo_root_elements.materials.find(
                 mesh.materials[mat_index].name) if mat_index != 0xFF else mat_index
 
+            if mat_id < 0:
+                raise Exception('Error: Assigned material \"{}\" is not registered as WoW Material.'.format(
+                    mesh.materials[mat_index].name))
+
             batch = Batch()
             batch.start_triangle = len(group.movi.indices)
             batch.start_vertex = len(group.movt.vertices)
