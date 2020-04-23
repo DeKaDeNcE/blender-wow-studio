@@ -2,6 +2,16 @@ import bpy
 from ..handlers import DepsgraphLock
 
 
+_obj_props = ['wow_wmo_portal',
+              'wow_wmo_fog',
+              'wow_wmo_group',
+              'wow_wmo_liquid',
+              'wow_wmo_doodad_set',
+              'wow_wmo_light',
+              'wow_wmo_doodad'
+              ]
+
+
 def update_doodad_pointer(self, context):
     if self.pointer and self.name != self.pointer.name:
         self.name = self.pointer.name
@@ -28,6 +38,17 @@ def update_current_object(self, context, col_name, cur_item_name):
             bpy.ops.object.select_all(action='DESELECT')
             bpy.context.view_layer.objects.active = slot.pointer
             slot.pointer.select_set(True)
+
+
+def is_obj_unused(obj):
+    for prop in _obj_props:
+        if getattr(obj, prop).enabled:
+            return False
+
+    if obj.wow_wmo_collision_rel and obj.wow_wmo_collision_rel.wow_wmo_group.collision_mesh == obj:
+        return False
+
+    return True
 
 
 class WMO_UL_root_elements_template_list(bpy.types.UIList):

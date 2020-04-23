@@ -2,7 +2,6 @@ import bpy
 
 from collections import namedtuple
 
-from .... import ui_icons
 from .utils import update_current_object, update_doodad_pointer, WMO_UL_root_elements_template_list
 from .doodad import WMO_PT_doodad
 
@@ -29,12 +28,12 @@ class WMO_OT_doodad_set_components_change(bpy.types.Operator):
             obj = bpy.context.view_layer.objects.active
             obj.parent = root_comps.doodad_sets[root_comps.cur_doodad_set].pointer
 
-
         else:
             d_set = root_comps.doodad_sets[root_comps.cur_doodad_set]
 
             if d_set.cur_doodad < len(d_set.doodads):
                 d_set.doodads[d_set.cur_doodad].pointer.parent = None
+                d_set.doodads[d_set.cur_doodad].pointer.wow_wmo_doodad.enabled = False
                 d_set.doodads.remove(d_set.cur_doodad)
 
         return {'FINISHED'}

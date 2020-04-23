@@ -2,8 +2,10 @@ import bpy
 
 from collections import namedtuple
 
-from ..enums import *
+from .utils import is_obj_unused
 from .liquid import WMO_PT_liquid
+from ..enums import *
+
 
 class WMO_PT_wmo_group(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
@@ -103,9 +105,14 @@ def fog_validator(self, context):
         self.fog4 = None
 
 
-def collision_validator(self, context):
+def update_collision(self, context):
+    if not self.collision_mesh:
+        return
+
     if self.collision_mesh.type != 'MESH':
         self.collision_mesh = None
+
+    self.collision_mesh.wow_wmo_collision_rel = context.object
 
 
 def update_place_type(self, context):
@@ -145,6 +152,7 @@ def update_flags(self, context):
         obj.pass_index |= 0x4  # BlenderWMOObjectRenderFlags.NoLocalLight
     else:
         obj.pass_index &= ~0x4
+
 
 def is_liquid_unused(obj):
 
@@ -226,8 +234,8 @@ class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
         type=bpy.types.Object,
         name='Collision',
         description='Invisible collision geometry of this group',
-        poll=lambda self, obj: obj.type == 'MESH',
-        update=collision_validator
+        poll=lambda self, obj: is_obj_unused(obj) and obj.type == 'MESH',
+        update=update_collision
     )
 
     liquid_mesh: bpy.props.PointerProperty(
@@ -244,6 +252,7 @@ class WowWMOGroupPropertyGroup(bpy.types.PropertyGroup):
 
 def register():
     bpy.types.Object.wow_wmo_group = bpy.props.PointerProperty(type=WowWMOGroupPropertyGroup)
+    bpy.types.Object.wow_wmo_collision_rel = bpy.props.PointerProperty(type=bpy.types.Object)
 
 
 def unregister():

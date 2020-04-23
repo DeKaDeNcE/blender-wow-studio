@@ -33,12 +33,9 @@ class WMO_OT_wmv_import_doodad_from_wmv(bpy.types.Operator):
                                    "Make sure to use compatible WMV version or open an .m2 there.")
             return {'CANCELLED'}
 
-        location = context.view_layer.objects.active.location if context.view_layer.objects.active \
-                                                              else context.scene.cursor.location
-
         obj = import_doodad(m2_path, cache_path)
         obj.parent = doodad_set_obj
-        obj.location = location
+        obj.location = context.scene.cursor.location
 
         bpy.context.collection.objects.link(obj)
         context.view_layer.objects.active = obj

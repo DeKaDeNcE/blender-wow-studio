@@ -8,7 +8,7 @@ from .group import WMO_PT_wmo_group
 from .light import WMO_PT_light
 from .material import WMO_PT_material, update_flags, update_shader
 from .portal import WMO_PT_portal
-from .utils import WMO_UL_root_elements_template_list, update_current_object, update_doodad_pointer
+from .utils import WMO_UL_root_elements_template_list, update_current_object, update_doodad_pointer, is_obj_unused
 from ..handlers import DepsgraphLock
 from .... import ui_icons
 
@@ -91,21 +91,6 @@ _ui_lists = {
     'doodad_sets': 'WMO_UL_root_elements_doodadset_list'
 }
 
-_obj_props = ['wow_wmo_portal',
-              'wow_wmo_fog',
-              'wow_wmo_group',
-              'wow_wmo_liquid',
-              'wow_wmo_doodad_set',
-              'wow_wmo_light'
-              ]
-
-
-def is_obj_unused(obj):
-    for prop in _obj_props:
-        if getattr(obj, prop).enabled:
-            return False
-
-    return True
 
 #####################
 ##### Panels #####
@@ -308,17 +293,30 @@ def draw_list(context, col, cur_idx_name, col_name):
 ##### Property Groups #####
 ###########################
 
+prop_map = {
+    'wow_wmo_material': 'materials',
+    'wow_wmo_group': 'groups',
+    'wow_wmo_light': 'lights',
+    'wow_wmo_doodad_set': 'doodad_sets',
+    'wow_wmo_fog': 'fogs',
+    'wow_wmo_portal': 'portals'
+}
+
+
 def update_object_pointer(self, context, prop, obj_type):
 
     if self.pointer:
 
         # handle replacing pointer value
         if self.pointer_old:
-            getattr(self.pointer_old, prop).enabled = False
+            if getattr(context.scene.wow_wmo_root_elements, prop_map[prop]).find(self.pointer.name) < 0:
+                getattr(self.pointer_old, prop).enabled = False
             self.pointer_old = None
 
         # check if object is another type
-        if not is_obj_unused(self.pointer) or self.pointer.type != obj_type:
+        if not is_obj_unused(self.pointer) \
+                or self.pointer.type != obj_type \
+                or getattr(context.scene.wow_wmo_root_elements, prop_map[prop]).find(self.pointer.name) >= 0:
             self.pointer = None
             return
 
@@ -356,7 +354,8 @@ def update_material_pointer(self, context):
     if self.pointer:
 
         # handle replacing pointer value
-        if self.pointer_old:
+        if self.pointer_old\
+        and context.scene.wow_wmo_root_elements.materials.find(self.pointer.name) < 0:
             self.pointer_old.wow_wmo_material.enabled = False
             self.pointer_old = None
 

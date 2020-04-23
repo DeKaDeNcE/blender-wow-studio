@@ -581,6 +581,7 @@ class BlenderWMOSceneGroup:
 
             c_obj = bpy.data.objects.new(c_mesh.name, c_mesh)
             nobj.wow_wmo_group.collision_mesh = c_obj
+            c_obj.wow_wmo_collision_rel = nobj
 
             collision_collection = bpy.data.collections.get("Collision")
             if not collision_collection:
