@@ -169,8 +169,6 @@ class BlenderWMOScene:
             obj.wow_wmo_light.attenuation_start = wmo_light.attenuation_start
             obj.wow_wmo_light.attenuation_end = wmo_light.attenuation_end
 
-            bpy.context.collection.objects.link(obj)
-
             self.bl_lights.append(light)
 
             # move lights to collection
@@ -180,9 +178,6 @@ class BlenderWMOScene:
             if not light_collection:
                 light_collection = bpy.data.collections.new("Lights")
                 scn.collection.children.link(light_collection)
-
-            if obj:
-                scn.collection.objects.unlink(obj)
                 light_collection.objects.link(obj)
 
     def load_fogs(self):
@@ -227,9 +222,6 @@ class BlenderWMOScene:
             if not fog_collection:
                 fog_collection = bpy.data.collections.new("Fogs")
                 scn.collection.children.link(fog_collection)
-
-            if fog_obj:
-                scn.collection.objects.unlink(fog_obj)
                 fog_collection.objects.link(fog_obj)
 
     def load_doodads(self):
@@ -266,7 +258,6 @@ class BlenderWMOScene:
 
                 if anchor:
                     doodad_collection.objects.link(anchor)
-                    scene.collection.objects.unlink(anchor)
 
                 for i in range(doodad_set.start_doodad, doodad_set.start_doodad + doodad_set.n_doodads):
                     doodad = self.wmo.modd.definitions[i]
@@ -319,9 +310,7 @@ class BlenderWMOScene:
                     slot = scene.wow_wmo_root_elements.doodad_sets[-1].doodads.add()
                     slot.pointer = nobj
 
-                    if nobj:
-                        doodad_collection.objects.link(nobj)
-                        scene.collection.objects.unlink(nobj)
+                    doodad_collection.objects.link(nobj)
 
 
                     progress.update(1)
@@ -365,7 +354,6 @@ class BlenderWMOScene:
                         break
 
             mesh.from_pydata(verts, [], faces)
-            bpy.context.collection.objects.link(obj)
 
             self.bl_portals.append(obj)
 
@@ -388,9 +376,6 @@ class BlenderWMOScene:
             if not portal_collection:
                 portal_collection = bpy.data.collections.new("Portals")
                 scn.collection.children.link(portal_collection)
-
-            if obj:
-                scn.collection.objects.unlink(obj)
                 portal_collection.objects.link(obj)
 
     def load_properties(self):

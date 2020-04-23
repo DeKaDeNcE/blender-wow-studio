@@ -14,6 +14,7 @@ class WBS_PT_wow_scene(bpy.types.Panel):
         col.prop(context.scene.wow_scene, 'version')
         col.prop(context.scene.wow_scene, 'type')
         col.prop(context.scene.wow_scene, 'game_path')
+        col.prop(context.scene, 'wow_screen_3d', text='Main workspace')
 
     @classmethod
     def poll(cls, context):
@@ -42,9 +43,25 @@ class WowScenePropertyGroup(bpy.types.PropertyGroup):
         description='A path to the model in WoW filesystem.'
     )
 
+def update_screen_3d(self, context):
+
+    if not self.wow_screen_3d:
+        return
+
+    viewport = None
+
+    for area in bpy.context.scene.wow_screen_3d.areas:
+        if area.type == 'VIEW_3D':
+            rv3d = area.spaces[0].region_3d
+            if rv3d is not None:
+                viewport = rv3d
+                break
+
+    bpy.app.driver_namespace["wow_viewport"] = viewport
 
 def register_wow_scene_properties():
     bpy.types.Scene.wow_scene = bpy.props.PointerProperty(type=WowScenePropertyGroup)
+    bpy.types.Scene.wow_screen_3d = bpy.props.PointerProperty(type=bpy.types.Screen, update=update_screen_3d)
 
 
 def unregister_wow_scene_properties():

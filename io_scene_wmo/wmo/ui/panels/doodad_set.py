@@ -51,10 +51,12 @@ class WMO_UL_doodad_set_doodad_list(WMO_UL_root_elements_template_list, bpy.type
             sub_col = row.column()
             sub_col.scale_x = 0.3
 
-            sub_col.label(text="#{}".format(index), icon='WORLD' if item.pointer.name == '$SetDefaultGlobal' else 'GROUP')
+            sub_col.label(text="#{}".format(index), icon='WORLD' if item.pointer and item.pointer.name == '$SetDefaultGlobal' else 'GROUP')
 
             sub_col = row.column()
-            sub_col.prop(item.pointer, 'name', emboss=False, text='')
+
+            if item.pointer:
+                sub_col.prop(item.pointer, 'name', emboss=False, text='')
 
         elif self.layout_type in {'GRID'}:
             pass

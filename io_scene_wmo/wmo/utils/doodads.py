@@ -189,7 +189,6 @@ def import_doodad_model(asset_dir: str, filepath: str) -> bpy.types.Object:
             submeshes[submesh_id].blend_mode = blend_modes[render_flag_index]
         '''
 
-
     ###### Build blender object ######
     faces = [[0, 0, 0]] * n_triangles
 
@@ -288,12 +287,6 @@ def import_doodad_model(asset_dir: str, filepath: str) -> bpy.types.Object:
         elif submesh.blend_mode == 1:
             mat.blend_method = 'CLIP'
             mat.alpha_threshold = 0.9
-        elif submesh.blend_mode == 2:
-            mat.blend_method = 'BLEND'
-        elif submesh.blend_mode in (3, 4):
-            mat.blend_method = 'ADD'
-        elif submesh.blend_mode == 5:
-            mat.blend_method = 'MULTIPLY'
         else:
             mat.blend_method = 'BLEND'
 
