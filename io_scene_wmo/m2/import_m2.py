@@ -39,13 +39,13 @@ def import_m2(version, filepath, is_local_file=False):
         m2_file.texture_path_map = game_data.extract_textures_as_png(extract_dir, dependencies.textures)
 
         game_data.extract_files(extract_dir, dependencies.anims, 'anim', True)
-        game_data.extract_files(extract_dir, dependencies.skins, 'skin')
+        skin_filepaths = game_data.extract_files(extract_dir, dependencies.skins, 'skin')
 
         if version >= M2Versions.WOD:
             game_data.extract_files(extract_dir, dependencies.bones, 'bone', True)
             game_data.extract_files(extract_dir, dependencies.lod_skins, 'skin', True)
 
-    m2_file.read_additional_files()
+    m2_file.read_additional_files(fallback_dir=os.path.dirname(skin_filepaths[0]))
     m2_file.root.assign_bone_names()
 
     print("\n\n### Importing M2 model ###")
