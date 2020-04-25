@@ -930,7 +930,8 @@ class BlenderWMOSceneGroup:
                         if vert_info is None:
 
                             # determine if vertex is collideable
-                            is_collideable = (obj_collision_vg and (vg_collision_index in dvert)) or tri_mat.material_id == 0xFF
+                            is_collideable = (obj_collision_vg and dvert and (vg_collision_index in dvert)) \
+                                             or tri_mat.material_id == 0xFF
 
                             if is_collideable:
                                 collision_counter += 1

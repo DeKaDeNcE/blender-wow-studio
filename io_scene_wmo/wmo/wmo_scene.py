@@ -415,13 +415,16 @@ class BlenderWMOScene:
         # process materials
         for i, slot in enumerate(root_elements.materials):
             if not slot.pointer:
-                raise ReferenceError('\nError saving WMO. Material slot does not point to a valid material.')
+                raise ReferenceError('\nError: Material slot does not point to a valid material.')
 
             self.bl_materials[i] = slot.pointer
 
         # process groups
         group_objects = []
         for i, slot in enumerate(root_elements.groups):
+
+            if not slot.pointer:
+                raise ReferenceError('\nError: Group slot \"#{}\" is empty or pointing to an invalid object.')
 
             if (export_selected and not slot.pointer.select_get()) or slot.pointer.hide_get():
                 continue
@@ -444,8 +447,7 @@ class BlenderWMOScene:
             slot.pointer.wow_wmo_portal.portal_id = i
 
             if not slot.pointer.wow_wmo_portal.first or not slot.pointer.wow_wmo_portal.second:
-                raise ReferenceError('\nError saving WMO. '
-                                     'Portal \"{}\" points to a non-existing group.'.format(slot.pointer.name))
+                raise ReferenceError('\nError: Portal \"{}\" points to a non-existing group.'.format(slot.pointer.name))
 
             rel = slot.pointer.wow_wmo_portal.first.wow_wmo_group.relations.portals.add()
             rel.id = slot.pointer.name  # TODO: store pointer instead?
@@ -492,11 +494,12 @@ class BlenderWMOScene:
             mat = mat_slot.pointer
 
             if not mat.wow_wmo_material.diff_texture_1:
-                raise ReferenceError('\nError saving WMO. Material \"{}\" must have a diffuse texture.'.format(mat.name))
+                raise ReferenceError('\nError:  Material \"{}\" must have a diffuse texture.'.format(mat.name))
 
             diff_texture_1 = mat.wow_wmo_material.diff_texture_1.wow_wmo_texture.path
 
-            diff_texture_2 = mat.wow_wmo_material.diff_texture_2.wow_wmo_texture.path if mat.wow_wmo_material.diff_texture_2 else ""
+            diff_texture_2 = mat.wow_wmo_material.diff_texture_2.wow_wmo_texture.path \
+                if mat.wow_wmo_material.diff_texture_2 else ""
 
             flags = 0
 
