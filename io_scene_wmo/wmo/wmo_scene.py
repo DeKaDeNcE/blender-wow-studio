@@ -241,7 +241,6 @@ class BlenderWMOScene:
                 slot = scene.wow_wmo_root_elements.doodad_sets.add()
                 slot.pointer = anchor
 
-                bpy.context.collection.objects.link(anchor)
                 anchor.name = doodad_set.name
                 anchor.hide_set(True)
                 anchor.hide_select = True
@@ -311,7 +310,6 @@ class BlenderWMOScene:
                     slot.pointer = nobj
 
                     doodad_collection.objects.link(nobj)
-
 
                     progress.update(1)
 

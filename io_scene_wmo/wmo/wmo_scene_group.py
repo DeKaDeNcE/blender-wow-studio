@@ -961,7 +961,8 @@ class BlenderWMOSceneGroup:
                                         vertex_color[k] = round(vcol[3 - k - 1] * 255)
 
                                     if obj_light_map:
-                                        attenuation = round(face.loops[j][obj_light_map][0] * 255) if obj_light_map else 0
+                                        attenuation = round(face.loops[j][obj_light_map][0] * 255) \
+                                            if obj_light_map else 0
 
                                         if attenuation > 0:
                                             tri_mat.flags |= 0x1  # TODO: actually check what this does
