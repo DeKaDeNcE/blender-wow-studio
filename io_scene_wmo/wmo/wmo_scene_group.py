@@ -341,19 +341,21 @@ class BlenderWMOSceneGroup:
             pass_index |= BlenderWMOObjectRenderFlags.HasBlendmap
 
         # set uv
-        uv1 = mesh.uv_layers.new(name="UVMap")
+        mesh.uv_layers.new(name="UVMap")
         uv_layer1 = mesh.uv_layers[0]
 
-        for i in range(len(uv_layer1.data)):
-            # set uv1
+        for i, uv_loop in enumerate(uv_layer1.data):
             uv = tex_coords[mesh.loops[i].vertex_index]
             uv_layer1.data[i].uv = (uv[0], 1 - uv[1])
 
-        uv_layer2 = None
         if group.mogp.flags & MOGPFlags.HasTwoMOTV:
             uv2 = mesh.uv_layers.new(name="UVMap.001")
             nobj.wow_wmo_vertex_info.second_uv = uv2.name
             uv_layer2 = mesh.uv_layers[1]
+
+            for i, uv_loop in enumerate(uv_layer2.data):
+                uv = group.motv2.tex_coords[mesh.loops[i].vertex_index]
+                uv_loop.uv = (uv[0], 1 - uv[1])
 
         # map wmo material ID to index in mesh materials
         material_indices = {}
@@ -426,10 +428,6 @@ class BlenderWMOSceneGroup:
                                                                 mocv_layer.vert_colors[loop.vertex_index][3] / 255,
                                                                 mocv_layer.vert_colors[loop.vertex_index][3] / 255,
                                                                 1.0)
-
-            if uv_layer2 is not None:
-                uv = group.motv2.tex_coords[loop.vertex_index]
-                uv_layer2.data[i].uv = (uv[0], 1 - uv[1])
 
             if batch_map_a:
                 mesh.vertex_colors['BatchmapTrans'].data[i].color = (1, 1, 1, 1) if loop.vertex_index in batch_a_range else (0, 0, 0, 0)

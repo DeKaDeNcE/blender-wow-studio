@@ -286,7 +286,10 @@ def on_depsgraph_update(_):
                                         root_elements.cur_material = mat_index
 
                     if update.is_updated_geometry:
-                        bpy.context.scene.wow_wmo_root_elements.groups.get(obj.name).export = True
+                        group_entry = bpy.context.scene.wow_wmo_root_elements.groups.get(obj.name)
+
+                        if group_entry:  # TODO: find out why there is a possible WMO group not in the list yet.
+                            group_entry.export = True
 
             elif isinstance(update.id, bpy.types.Scene):
 
