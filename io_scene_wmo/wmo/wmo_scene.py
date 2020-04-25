@@ -241,13 +241,6 @@ class BlenderWMOScene:
                 slot = scene.wow_wmo_root_elements.doodad_sets.add()
                 slot.pointer = anchor
 
-                anchor.name = doodad_set.name
-                anchor.hide_set(True)
-                anchor.hide_select = True
-                anchor.lock_location = (True, True, True)
-                anchor.lock_rotation = (True, True, True)
-                anchor.lock_scale = (True, True, True)
-
                 # move doodads to collection
                 doodad_collection = bpy.data.collections.get("Doodads")
 
@@ -257,6 +250,13 @@ class BlenderWMOScene:
 
                 if anchor:
                     doodad_collection.objects.link(anchor)
+
+                anchor.name = doodad_set.name
+                anchor.hide_set(True)
+                anchor.hide_select = True
+                anchor.lock_location = (True, True, True)
+                anchor.lock_rotation = (True, True, True)
+                anchor.lock_scale = (True, True, True)
 
                 for i in range(doodad_set.start_doodad, doodad_set.start_doodad + doodad_set.n_doodads):
                     doodad = self.wmo.modd.definitions[i]
