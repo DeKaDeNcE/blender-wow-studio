@@ -185,7 +185,7 @@ class WBS_OT_m2_import(bpy.types.Operator):
         )
 
     def execute(self, context):
-        import_m2(int(context.scene.wow_scene.version), self.filepath)
+        import_m2(int(context.scene.wow_scene.version), self.filepath, True)
         context.scene.wow_scene.type = 'M2'
         return {'FINISHED'}
 

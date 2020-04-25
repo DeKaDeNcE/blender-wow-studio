@@ -6,7 +6,7 @@ from ..pywowlib.m2_file import M2File, M2Versions
 from ..ui import get_addon_prefs
 
 
-def import_m2(version, filepath, local_path=""):
+def import_m2(version, filepath, is_local_file=False):
 
     # get global variables
     addon_preferences = get_addon_prefs()
@@ -21,42 +21,29 @@ def import_m2(version, filepath, local_path=""):
     m2 = m2_file.root
     m2.filepath = filepath  # TODO: HACK
 
-    if addon_preferences.cache_dir_path and game_data:
+    extract_dir = os.path.dirname(filepath) if is_local_file else addon_preferences.cache_dir_path
 
-        os_dir = os.path.dirname(filepath)
+    if extract_dir and game_data:
 
         # extract and read skel
         skel_fdid = m2_file.find_main_skel()
 
         while skel_fdid:
-            skel_path = game_data.extract_file(addon_preferences.cache_dir_path, skel_fdid, local_path, 'skel', os_dir)
-
-            if os.path.dirname(skel_path) in os_dir:
-                skel_path = os.path.join(os_dir, os.path.basename(skel_path))
-
-                if not os.path.isfile(skel_path):
-                    skel_path = os.path.join(os_dir, skel_path)
-
-            else:
-                skel_path = os.path.join(os_dir, skel_path)
-
+            skel_path = game_data.extract_file(extract_dir, skel_fdid, 'skel')
             skel_fdid = m2_file.read_skel(skel_path)
 
         m2_file.process_skels()
 
         dependencies = m2_file.find_model_dependencies()
 
-        m2_file.texture_path_map = game_data.extract_textures_as_png(addon_preferences.cache_dir_path,
-                                                                     dependencies.textures, local_path, os_dir)
+        m2_file.texture_path_map = game_data.extract_textures_as_png(extract_dir, dependencies.textures)
 
-        game_data.extract_files(addon_preferences.cache_dir_path, dependencies.anims, local_path, 'anim', os_dir, True)
-        game_data.extract_files(addon_preferences.cache_dir_path, dependencies.skins, local_path, 'skin', os_dir)
+        game_data.extract_files(extract_dir, dependencies.anims, 'anim', True)
+        game_data.extract_files(extract_dir, dependencies.skins, 'skin')
 
         if version >= M2Versions.WOD:
-            game_data.extract_files(addon_preferences.cache_dir_path, dependencies.bones, local_path, 'bone',
-                                    os_dir, True)
-            game_data.extract_files(addon_preferences.cache_dir_path,
-                                    dependencies.lod_skins, local_path, 'skin', os_dir, True)
+            game_data.extract_files(extract_dir, dependencies.bones, 'bone', True)
+            game_data.extract_files(extract_dir, dependencies.lod_skins, 'skin', True)
 
     m2_file.read_additional_files()
     m2_file.root.assign_bone_names()

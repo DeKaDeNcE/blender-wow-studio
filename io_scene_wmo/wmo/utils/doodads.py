@@ -47,12 +47,14 @@ def import_doodad_model(asset_dir: str, filepath: str) -> bpy.types.Object:
     m2_name = os.path.basename(os.path.splitext(m2_path)[0])
 
     try:
-        m2_file = io.BytesIO(game_data.read_file(m2_path))
+        file, _ = game_data.read_file(m2_path)
+        m2_file = io.BytesIO(file)
     except KeyError:
         raise FileNotFoundError("\nModel <<{}>> not found in WoW file system.".format(filepath))
 
     try:
-        skin_file = io.BytesIO(game_data.read_file(skin_path))
+        file, _ = game_data.read_file(skin_path)
+        skin_file = io.BytesIO(file)
     except KeyError:
         raise FileNotFoundError("\nSkin file for model <<{}>> not found in WoW file system.".format(filepath))
 
