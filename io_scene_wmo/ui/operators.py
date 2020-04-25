@@ -44,9 +44,10 @@ class WBS_OT_reload_game_data(bpy.types.Operator):
     def execute(self, context):
 
         if hasattr(bpy, "wow_game_data"):
-            for storage, type_ in bpy.wow_game_data.files:
-                if type_:
-                    storage.close()
+            if bpy.wow_game_data.files:
+                for storage, type_ in bpy.wow_game_data.files:
+                    if type_:
+                        storage.close()
 
             delattr(bpy, "wow_game_data")
 
