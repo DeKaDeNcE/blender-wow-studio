@@ -743,8 +743,11 @@ class BlenderM2Scene:
             obj = bpy.data.objects.new(name if name else 'Geoset', mesh)
             bpy.context.collection.objects.link(obj)
 
-            obj.wow_m2_geoset.mesh_part_group = name
-            obj.wow_m2_geoset.mesh_part_id = str(smesh.skin_section_id)
+            try:
+                obj.wow_m2_geoset.mesh_part_group = name
+                obj.wow_m2_geoset.mesh_part_id = str(smesh.skin_section_id)
+            except TypeError:
+                print('Warning: unknown mesh part ID \"{}\"'.format(smesh.skin_section_id))
 
             for item in mesh_part_id_menu(obj.wow_m2_geoset, None):
                 if item[0] == smesh.skin_section_id:
@@ -1078,7 +1081,11 @@ class BlenderM2Scene:
             token = M2EventTokens.get_event_name(event.identifier)
             obj.name = "Event_{}".format(token)
             obj.wow_m2_event.enabled = True
-            obj.wow_m2_event.token = event.identifier
+
+            try:
+                obj.wow_m2_event.token = event.identifier
+            except TypeError:
+                print('Warning: unknown event token \"{}\".'.format(event.identifier))
 
             if token in ('PlayEmoteSound',
                          'DoodadSoundUnknown',
