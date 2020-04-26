@@ -23,7 +23,10 @@ def import_m2(version, filepath, is_local_file=False):
 
     extract_dir = os.path.dirname(filepath) if is_local_file else addon_preferences.cache_dir_path
 
-    if extract_dir and game_data:
+    if not extract_dir:
+        raise Exception('Error: cache directory is not specified. Check addon settings.')
+
+    if game_data and game_data.files:
 
         # extract and read skel
         skel_fdid = m2_file.find_main_skel()
@@ -36,16 +39,25 @@ def import_m2(version, filepath, is_local_file=False):
 
         dependencies = m2_file.find_model_dependencies()
 
+        # extract textures
         m2_file.texture_path_map = game_data.extract_textures_as_png(extract_dir, dependencies.textures)
 
-        game_data.extract_files(extract_dir, dependencies.anims, 'anim', True)
+        # extract anims
+        anim_filepaths = {}
+        for key, identifier in dependencies.anims.items():
+            anim_filepaths[key] = game_data.extract_file(extract_dir, identifier, 'anim')
+
+        # extract skins and everything else
         skin_filepaths = game_data.extract_files(extract_dir, dependencies.skins, 'skin')
 
         if version >= M2Versions.WOD:
             game_data.extract_files(extract_dir, dependencies.bones, 'bone', True)
             game_data.extract_files(extract_dir, dependencies.lod_skins, 'skin', True)
 
-    m2_file.read_additional_files(fallback_dir=os.path.dirname(skin_filepaths[0]))
+    else:
+        raise NotImplementedError('Error: Importing without gamedata loaded is not yet implemented.')
+
+    m2_file.read_additional_files(skin_filepaths, anim_filepaths)
     m2_file.root.assign_bone_names()
 
     print("\n\n### Importing M2 model ###")
