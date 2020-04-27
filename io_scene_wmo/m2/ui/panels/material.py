@@ -22,6 +22,7 @@ class M2_PT_material_panel(bpy.types.Panel):
         col.separator()
         col.prop(context.material.wow_m2_material, "blending_mode")
         col.prop(context.material.wow_m2_material, "shader")
+        col.prop(context.material.wow_m2_material, "texture")
 
     @classmethod
     def poll(cls, context):
@@ -59,7 +60,7 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         )
 
     texture: bpy.props.PointerProperty(
-        type=bpy.types.ImageTexture
+        type=bpy.types.Image
     )
 
     # Blender animation playback settings

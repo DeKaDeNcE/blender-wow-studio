@@ -68,7 +68,7 @@ def import_m2(version, filepath, is_local_file=False):
     bl_m2.load_animations()
     #bl_m2.load_colors()
     bl_m2.load_transparency()
-    bl_m2.load_materials(addon_preferences.cache_dir_path, os.path.dirname(filepath))
+    bl_m2.load_materials()
     bl_m2.load_geosets()
     bl_m2.load_texture_transforms()
     bl_m2.load_collision()

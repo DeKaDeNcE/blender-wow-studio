@@ -178,7 +178,7 @@ class BlenderM2Scene:
             return
 
         else:
-            print("\nImporting colors.")
+            print("\nImporting transparency.")
 
         bpy.context.scene.animation_data_create()
         bpy.context.scene.animation_data.action_blend_type = 'ADD'
@@ -214,18 +214,22 @@ class BlenderM2Scene:
                 if m2_transparency.global_sequence < 0:
                     animate_transparency(anim_pair, m2_transparency, i, anim_index)
 
-    def load_materials(self, cache_dir, local_dir):
+    def load_materials(self):
 
         # TODO: multitexturing
         skin = self.m2.skins[0]  # assuming first skin is the most detailed one
+
+        loaded_textures = {}
 
         for tex_unit in skin.texture_units:
             texture = self.m2.root.textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index]]
 
             tex_path_png = ""
 
-            if texture.filename.value and not texture.type:
-                tex_path_blp = self.m2.texture_path_map[texture.txid] if texture.txid else texture.filename.value
+            if not texture.type:
+                tex_path_blp = self.m2.texture_path_map[texture.txid] \
+                    if texture.txid else self.m2.texture_path_map[texture.filename.value]
+
                 tex_path_png = os.path.splitext(tex_path_blp)[0] + '.png'
 
             m2_mat = self.m2.root.materials[tex_unit.material_index]
@@ -234,40 +238,20 @@ class BlenderM2Scene:
             blender_mat = bpy.data.materials.new(os.path.basename(tex_path_png))
             blender_mat.wow_m2_material.live_update = True
 
-            tex1_name = blender_mat.name + "_Tex_02"
-            tex1 = bpy.data.textures.new(tex1_name, 'IMAGE')
-            tex1.wow_m2_texture.flags = parse_bitfield(texture.flags, 0x2)
-            tex1.wow_m2_texture.texture_type = str(texture.type)
-            tex1.wow_m2_texture.path = texture.filename.value
+            tex1 = loaded_textures.get(self.m2.root.texture_lookup_table[tex_unit.texture_combo_index])
+            if tex_path_png and not tex1:
+                try:
+                    tex1 = bpy.data.images.load(tex_path_png)
+                    loaded_textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index]] = tex1
+                except RuntimeError:
+                    print("\nWarning: failed to load texture \"{}\".".format(tex_path_png))
 
-            blender_mat.wow_m2_material.texture = tex1
-
-            if tex_path_png:
-
-                # loading images
-                if os.name != 'nt': tex_path_png = tex_path_png.replace('\\', '/')  # reverse slahes for unix
-
-                loaded = False
-
-                if local_dir:
-                    try:
-                        tex1_img = bpy.data.images.load(os.path.join(local_dir, tex_path_png))
-                        tex1.image = tex1_img
-                    except:
-                        pass
-                    else:
-                        loaded = True
-
-                if cache_dir and not loaded:
-
-                    try:
-                        tex1_img = bpy.data.images.load(os.path.join(cache_dir, tex_path_png))
-                        tex1.image = tex1_img
-                    except:
-                        pass
-
-                    else:
-                        raise FileNotFoundError("\nError loading texture \"{}\".".format(tex_path_png))
+            if tex1:
+                loaded_textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index]] = tex1
+                blender_mat.wow_m2_material.texture = tex1
+                tex1.wow_m2_texture.flags = parse_bitfield(texture.flags, 0x2)
+                tex1.wow_m2_texture.texture_type = str(texture.type)
+                tex1.wow_m2_texture.path = texture.filename.value
 
             update_m2_mat_node_tree(blender_mat)
 

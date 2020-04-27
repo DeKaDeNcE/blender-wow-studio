@@ -11,22 +11,22 @@ class M2_PT_texture_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
-        col.prop(context.texture.wow_m2_texture, "flags")
+        col.prop(context.edit_image.wow_m2_texture, "flags")
         col.separator()
-        col.prop(context.texture.wow_m2_texture, "texture_type")
+        col.prop(context.edit_image.wow_m2_texture, "texture_type")
         col.separator()
-        col.prop(context.texture.wow_m2_texture, "path", text='Path')
+        col.prop(context.edit_image.wow_m2_texture, "path", text='Path')
         col.separator()
-        col.prop_search(context.texture.wow_m2_texture, "color",
+        col.prop_search(context.edit_image.wow_m2_texture, "color",
                         context.scene, "wow_m2_colors", text='Color', icon='COLOR')
-        col.prop_search(context.texture.wow_m2_texture, "transparency",
+        col.prop_search(context.edit_image.wow_m2_texture, "transparency",
                         context.scene, "wow_m2_transparency", text='Transparency', icon='RESTRICT_VIEW_OFF')
 
     @classmethod
     def poll(cls, context):
         return (context.scene is not None
                 and context.scene.wow_scene.type == 'M2'
-                and context.texture is not None)
+                and context.edit_image is not None)
 
 
 class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
@@ -62,8 +62,8 @@ class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
 
 
 def register():
-    bpy.types.ImageTexture.wow_m2_texture = bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)
+    bpy.types.Image.wow_m2_texture = bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)
 
 
 def unregister():
-    del bpy.types.ImageTexture.wow_m2_texture
+    del bpy.types.Image.wow_m2_texture
