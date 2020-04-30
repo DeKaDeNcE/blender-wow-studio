@@ -4,11 +4,39 @@ import sys
 import time
 
 from mathutils import Vector
+from collections import namedtuple
 
 from ..pywowlib import WoWVersionManager
 from ..pywowlib.archives.wow_filesystem import WoWFileData
 from .. import PACKAGE_NAME
 
+
+SequenceRecord = namedtuple('SequenceRecord', ['name', 'value'])
+
+
+class Sequence(type):
+
+    def __new__(mcs, name, bases, dct):
+
+        dct['__fields__'] = list(dct.keys())[2:]
+        dct['_iter'] = 0
+
+        return super().__new__(mcs, name, bases, dct)
+
+    def __getitem__(self, item):
+        return getattr(self, self.__fields__[item + 2])
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+
+        if self._iter == len(self.__fields__):
+            raise StopIteration
+        
+        item = SequenceRecord(self.__fields__[self._iter], getattr(self, self.__fields__[self._iter]))
+        self._iter += 1
+        return item
 
 def singleton(class_):
     instances = {}

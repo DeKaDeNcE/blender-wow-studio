@@ -4,7 +4,7 @@ import bmesh
 from functools import partial
 
 from bpy.app.handlers import persistent
-from ..render import BlenderWMOObjectRenderFlags
+from ..bl_render import BlenderWMOObjectRenderFlags
 from ...utils.misc import show_message_box, singleton
 
 

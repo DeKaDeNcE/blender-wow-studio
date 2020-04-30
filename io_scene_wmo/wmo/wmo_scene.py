@@ -8,7 +8,7 @@ from bmesh.types import BMVert
 from math import sqrt, atan2, pi
 from typing import Dict, List
 
-from .render import update_wmo_mat_node_tree, load_wmo_shader_dependencies, BlenderWMOMaterialRenderFlags
+from .bl_render import update_wmo_mat_node_tree, load_wmo_shader_dependencies, BlenderWMOMaterialRenderFlags
 from .utils.fogs import create_fog_object
 from .utils.materials import load_texture, add_ghost_material
 from .utils.doodads import import_doodad

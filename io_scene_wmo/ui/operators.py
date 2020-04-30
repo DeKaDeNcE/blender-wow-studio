@@ -450,3 +450,20 @@ class CookieCutter_UITest(CookieCutter, bpy.types.Operator):
 
     # there are no drawing methods for this example
     # this is all buttons and input wundows
+
+
+class M2DrawingTest(bpy.types.Operator):
+    bl_idname = "wm.render_test"
+    bl_label = "M2 Render Test"
+
+    def execute(self, context):
+
+        import importlib
+        from .. import render
+        importlib.reload(render)
+
+        dm = render.M2DrawingManager()
+        dm.queue_for_drawing(bpy.context.view_layer.objects.active)
+
+        return {'FINISHED'}
+

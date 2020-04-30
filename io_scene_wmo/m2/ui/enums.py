@@ -43,12 +43,13 @@ RENDER_FLAGS = [
 
 BLENDING_MODES = [
     ("0", "Opaque", "Blending disabled", 'MESH_CUBE', 1),
-    ("1", "AlphaTesting", "All pixels are fully opaque or transparent, leading to aliasing (“jaggies”)", 'MOD_BEVEL', 2),
-    ("2", "AlphaBlending", "All pixels can support full transparency range. Sometimes thus can produce some rendering issues", 'MOD_CAST', 3),
-    ("3", "Add", "Takes the pixels of the Material and adds them to the pixels of the background. This means that there is no darkening; since all pixel values are added together, blacks will just render as transparent", 'FORCE_TEXTURE', 4),
-    ("4", "AddAlpha", "This Blend Mode works by taking in an Opacity value or texture and applying it to the surface such that black areas are completely transparent, white areas are completely opaque, and the varying shades of gradation between result in corresponding transparency levels", 'TPAINT_HLT', 5),
-    ("5", "Modulate", "The Modulate Blend Mode simply multiplies the value of the Material against the pixels of the background", 'FACESEL', 6),
-    ("6", "DeeeprunTram", "Probably is used in particles. Needs to be researched", 'MOD_PARTICLES', 7)
+    ("1", "AlphaKey", "All pixels are fully opaque or transparent, leading to aliasing (“jaggies”)", 'MOD_BEVEL', 2),
+    ("2", "Alpha", "All pixels can support full transparency range. Sometimes thus can produce some rendering issues", 'MOD_CAST', 3),
+    ("3", "NoAlphaAdd", "Takes the pixels of the Material and adds them to the pixels of the background. This means that there is no darkening; since all pixel values are added together, blacks will just render as transparent", 'FORCE_TEXTURE', 4),
+    ("4", "Add", "This Blend Mode works by taking in an Opacity value or texture and applying it to the surface such that black areas are completely transparent, white areas are completely opaque, and the varying shades of gradation between result in corresponding transparency levels", 'TPAINT_HLT', 5),
+    ("5", "Mod", "The Modulate Blend Mode simply multiplies the value of the Material against the pixels of the background", 'FACESEL', 6),
+    ("6", "Mod2X", "Probably is used in particles. Needs to be researched", 'MOD_PARTICLES', 7),
+    ("7", "BlendAdd", "Probably is used in particles. Needs to be researched", 'MOD_PARTICLES', 8)
 ]
 
 TEXTURE_TYPES = [

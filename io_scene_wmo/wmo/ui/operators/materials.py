@@ -1,7 +1,7 @@
 import bpy
 import bmesh
 
-from ...render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
+from ...bl_render import load_wmo_shader_dependencies, update_wmo_mat_node_tree
 from ....utils.misc import resolve_texture_path
 from ...ui.handlers import DepsgraphLock
 

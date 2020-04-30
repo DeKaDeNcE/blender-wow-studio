@@ -10,7 +10,7 @@ from ....ui import get_addon_prefs
 from ....utils.misc import load_game_data
 from ...utils.wmv import wmv_get_last_texture
 from ...utils.materials import load_texture
-from ...render import update_wmo_mat_node_tree, load_wmo_shader_dependencies
+from ...bl_render import update_wmo_mat_node_tree, load_wmo_shader_dependencies
 
 
 class WMO_OT_assign_material(bpy.types.Operator):

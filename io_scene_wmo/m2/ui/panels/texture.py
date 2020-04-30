@@ -5,7 +5,7 @@ from ..enums import *
 class M2_PT_texture_panel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
-    bl_context = "texture"
+    bl_context = "image"
     bl_label = "M2 Texture"
 
     def draw(self, context):
@@ -26,7 +26,7 @@ class M2_PT_texture_panel(bpy.types.Panel):
     def poll(cls, context):
         return (context.scene is not None
                 and context.scene.wow_scene.type == 'M2'
-                and context.edit_image is not None)
+                and context.image is not None)
 
 
 class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):

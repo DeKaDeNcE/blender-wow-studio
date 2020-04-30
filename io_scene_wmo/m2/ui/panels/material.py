@@ -47,17 +47,22 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         options={"ENUM_FLAG"}
         )
 
+    '''
     shader:  bpy.props.EnumProperty(
         items=SHADERS,
         name="shader",
         description="WoW shader assigned to this material"
         )
+        
+    '''
+    shader: bpy.props.IntProperty(name='Shader')
 
     blending_mode:  bpy.props.EnumProperty(
         items=BLENDING_MODES,
         name="Blending",
         description="WoW material blending mode"
         )
+
 
     texture: bpy.props.PointerProperty(
         type=bpy.types.Image

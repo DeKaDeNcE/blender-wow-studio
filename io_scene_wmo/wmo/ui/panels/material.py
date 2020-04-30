@@ -1,6 +1,6 @@
 import bpy
 from ..enums import *
-from ...render import update_wmo_mat_node_tree
+from ...bl_render import update_wmo_mat_node_tree
 from ....utils.callbacks import on_release
 
 

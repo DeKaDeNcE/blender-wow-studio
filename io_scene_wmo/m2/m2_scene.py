@@ -6,7 +6,7 @@ from functools import partial
 import bpy
 from mathutils import Vector
 
-from .render import update_m2_mat_node_tree
+from .bl_render import update_m2_mat_node_tree
 from ..utils.misc import parse_bitfield, construct_bitfield, load_game_data
 from ..utils.misc import resolve_texture_path, get_origin_position, get_objs_boundbox_world, get_obj_boundbox_center, \
     get_obj_radius
@@ -369,9 +369,9 @@ class BlenderM2Scene:
             blender_mat.wow_m2_material.blending_mode = str(m2_mat.blending_mode)  # TODO: ? bitfield
 
             try:
-                blender_mat.wow_m2_material.shader = str(tex_unit.shader_id)
+                blender_mat.wow_m2_material.shader = tex_unit.shader_id
             except TypeError:
-                print('\"Failed to set shader ID ({}) to material \"{}\".'.format(blender_mat.name, tex_unit.shader_id))
+                print('\"Failed to set shader ID ({}) to material \"{}\".'.format(tex_unit.shader_id, blender_mat.name))
 
             # TODO: other settings
 

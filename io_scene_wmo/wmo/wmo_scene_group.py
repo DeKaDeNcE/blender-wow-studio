@@ -9,7 +9,7 @@ from math import pi, ceil, floor
 from ..pywowlib.file_formats.wmo_format_group import MOGPFlags, LiquidVertex, TriangleMaterial, Batch
 from ..pywowlib.wmo_file import WMOGroupFile
 from .bsp_tree import *
-from .render import BlenderWMOObjectRenderFlags
+from .bl_render import BlenderWMOObjectRenderFlags
 
 
 class BlenderWMOSceneGroup:
