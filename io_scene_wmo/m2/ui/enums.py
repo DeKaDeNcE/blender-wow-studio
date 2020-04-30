@@ -81,15 +81,15 @@ TEXTURE_FLAGS = [
 ]
 
 BONE_FLAGS = [
-    ("1", "Unknown", "", 'PMARKER', 0x1),
-    ("2", "Unknown", "", 'PMARKER', 0x2),
-    ("4", "Unknown", "", 'PMARKER', 0x4),
+    ("1", "Ignore Parent Translate", "", 'PMARKER', 0x1),
+    ("2", "Ignore Parent Scale", "", 'PMARKER', 0x2),
+    ("4", "Ignore Parent Rotation", "", 'PMARKER', 0x4),
     ("8", "Spherical Billboard", "", 'PMARKER', 0x8),
     ("16", "Cylindrical Billboard Lock X", "", 'PMARKER', 0x10),
     ("32", "Cylindrical Billboard Lock Y", "", 'PMARKER', 0x20),
     ("64", "Cylindrical Billboard Lock Z", "", 'PMARKER', 0x40),
     ("512", "Transformed", "", 'PMARKER', 0x200),
-    ("1024", "Kinematic Bone", "", 'PMARKER', 0x400),
+    ("1024", "Kinematic Bone", "MoP+. Allow physics to influence this bone", 'PMARKER', 0x400),
     ("4096", "Helmet Anim Scaled", "", 'PMARKER', 0x1000),
 ]
 
