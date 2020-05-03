@@ -63,7 +63,6 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         description="WoW material blending mode"
         )
 
-
     texture: bpy.props.PointerProperty(
         type=bpy.types.Image
     )

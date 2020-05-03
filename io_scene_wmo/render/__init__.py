@@ -5,9 +5,11 @@ import traceback
 import mathutils
 import struct
 import numpy as np
+from math import radians
+from mathutils import Matrix, Vector
 
 from tqdm import tqdm
-from enum import IntEnum, Enum
+from enum import IntEnum
 from ctypes import c_uint, c_uint8
 from typing import List, Dict, Tuple
 from ..utils.misc import singleton, Sequence
@@ -128,107 +130,106 @@ M2ShaderTableRecord = namedtuple('M2ShaderTableRecord',['pixel_shader', 'vertex_
 
 
 class M2ShaderTable(metaclass=Sequence):
-    Combiners_Opaque_Mod2xNA_Alpha_Diffuse_T1_Env = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_Mod2xNA_Alpha, M2VertexShader.Diffuse_T1_Env)
+    Combiners_Opaque_Mod2xNA_Alpha_Diffuse_T1_Env = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_Mod2xNA_Alpha,           M2VertexShader.Diffuse_T1_Env)
 
-    Combiners_Opaque_AddAlpha_Diffuse_T1_Env = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_AddAlpha, M2VertexShader.Diffuse_T1_Env)
+    Combiners_Opaque_AddAlpha_Diffuse_T1_Env = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_AddAlpha,                M2VertexShader.Diffuse_T1_Env)
 
-    Combiners_Opaque_AddAlpha_Alpha_Diffuse_T1_Env = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_AddAlpha_Alpha, M2VertexShader.Diffuse_T1_Env)
+    Combiners_Opaque_AddAlpha_Alpha_Diffuse_T1_Env = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_AddAlpha_Alpha,          M2VertexShader.Diffuse_T1_Env)
 
-    Combiners_Opaque_Mod2xNA_Alpha_Add_Diffuse_T1_Env_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_Mod2xNA_Alpha_Add, M2VertexShader.Diffuse_T1_Env_T1)
+    Combiners_Opaque_Mod2xNA_Alpha_Add_Diffuse_T1_Env_T1 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_Mod2xNA_Alpha_Add,       M2VertexShader.Diffuse_T1_Env_T1)
 
-    Combiners_Mod_AddAlpha_Diffuse_T1_Env = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_AddAlpha, M2VertexShader.Diffuse_T1_Env)
+    Combiners_Mod_AddAlpha_Diffuse_T1_Env = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_AddAlpha,                   M2VertexShader.Diffuse_T1_Env)
 
-    Combiners_Opaque_AddAlpha_Diffuse_T1_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_AddAlpha, M2VertexShader.Diffuse_T1_T1)
+    Combiners_Opaque_AddAlpha_Diffuse_T1_T1 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_AddAlpha,                M2VertexShader.Diffuse_T1_T1)
 
-    Combiners_Mod_AddAlpha_Diffuse_T1_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_AddAlpha, M2VertexShader.Diffuse_T1_T1)
+    Combiners_Mod_AddAlpha_Diffuse_T1_T1 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_AddAlpha,                   M2VertexShader.Diffuse_T1_T1)
 
-    Combiners_Mod_AddAlpha_Alpha_Diffuse_T1_Env = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_AddAlpha_Alpha, M2VertexShader.Diffuse_T1_Env)
+    Combiners_Mod_AddAlpha_Alpha_Diffuse_T1_Env = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_AddAlpha_Alpha,             M2VertexShader.Diffuse_T1_Env)
 
-    Combiners_Opaque_Alpha_Alpha_Diffuse_T1_Env = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_Alpha_Alpha, M2VertexShader.Diffuse_T1_Env)
+    Combiners_Opaque_Alpha_Alpha_Diffuse_T1_Env = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_Alpha_Alpha,             M2VertexShader.Diffuse_T1_Env)
 
-    Combiners_Opaque_Mod2xNA_Alpha_3s_Diffuse_T1_Env_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_Mod2xNA_Alpha_3s, M2VertexShader.Diffuse_T1_Env_T1)
+    Combiners_Opaque_Mod2xNA_Alpha_3s_Diffuse_T1_Env_T1 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_Mod2xNA_Alpha_3s,        M2VertexShader.Diffuse_T1_Env_T1)
 
-    Combiners_Opaque_AddAlpha_Wgt_Diffuse_T1_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_AddAlpha_Wgt, M2VertexShader.Diffuse_T1_T1)
+    Combiners_Opaque_AddAlpha_Wgt_Diffuse_T1_T1 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_AddAlpha_Wgt,            M2VertexShader.Diffuse_T1_T1)
 
-    Combiners_Mod_Add_Alpha_Diffuse_T1_Env = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_Add_Alpha, M2VertexShader.Diffuse_T1_Env)
+    Combiners_Mod_Add_Alpha_Diffuse_T1_Env = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_Add_Alpha,                  M2VertexShader.Diffuse_T1_Env)
 
-    Combiners_Opaque_ModNA_Alpha_Diffuse_T1_Env = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_ModNA_Alpha, M2VertexShader.Diffuse_T1_Env)
+    Combiners_Opaque_ModNA_Alpha_Diffuse_T1_Env = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_ModNA_Alpha,             M2VertexShader.Diffuse_T1_Env)
 
-    Combiners_Mod_AddAlpha_Wgt_Diffuse_T1_Env = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_AddAlpha_Wgt, M2VertexShader.Diffuse_T1_Env)
+    Combiners_Mod_AddAlpha_Wgt_Diffuse_T1_Env = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_AddAlpha_Wgt,               M2VertexShader.Diffuse_T1_Env)
 
-    Combiners_Mod_AddAlpha_Wgt_Diffuse_T1_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_AddAlpha_Wgt, M2VertexShader.Diffuse_T1_T1)
+    Combiners_Mod_AddAlpha_Wgt_Diffuse_T1_T1 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_AddAlpha_Wgt,               M2VertexShader.Diffuse_T1_T1)
 
-    Combiners_Opaque_AddAlpha_Wgt_Diffuse_T1_T2 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_AddAlpha_Wgt, M2VertexShader.Diffuse_T1_T2)
+    Combiners_Opaque_AddAlpha_Wgt_Diffuse_T1_T2 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_AddAlpha_Wgt,            M2VertexShader.Diffuse_T1_T2)
 
-    Combiners_Opaque_Mod_Add_Wgt_Diffuse_T1_Env = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_Mod_Add_Wgt, M2VertexShader.Diffuse_T1_Env)
+    Combiners_Opaque_Mod_Add_Wgt_Diffuse_T1_Env = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_Mod_Add_Wgt,             M2VertexShader.Diffuse_T1_Env)
 
-    Combiners_Opaque_Mod2xNA_Alpha_UnshAlpha1 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_Mod2xNA_Alpha_UnshAlpha, M2VertexShader.Diffuse_T1_Env_T1)
+    Combiners_Opaque_Mod2xNA_Alpha_UnshAlpha1 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_Mod2xNA_Alpha_UnshAlpha, M2VertexShader.Diffuse_T1_Env_T1)
 
-    Combiners_Mod_Dual_Crossfade_Diffuse_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_Dual_Crossfade, M2VertexShader.Diffuse_T1)
+    Combiners_Mod_Dual_Crossfade_Diffuse_T1 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_Dual_Crossfade,             M2VertexShader.Diffuse_T1)
 
-    Combiners_Mod_Depth_Diffuse_EdgeFade_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_Depth, M2VertexShader.Diffuse_EdgeFade_T1)
+    Combiners_Mod_Depth_Diffuse_EdgeFade_T1 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_Depth,                      M2VertexShader.Diffuse_EdgeFade_T1)
 
-    Combiners_Opaque_Mod2xNA_Alpha_Alpha_Diffuse_T1_Env_T2 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_Mod2xNA_Alpha_Alpha, M2VertexShader.Diffuse_T1_Env_T2)
+    Combiners_Opaque_Mod2xNA_Alpha_Alpha_Diffuse_T1_Env_T2 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_Mod2xNA_Alpha_Alpha,     M2VertexShader.Diffuse_T1_Env_T2)
 
-    Combiners_Mod_Mod_Diffuse_EdgeFade_T1_T2 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_Mod, M2VertexShader.Diffuse_EdgeFade_T1_T2)
+    Combiners_Mod_Mod_Diffuse_EdgeFade_T1_T2 = M2ShaderTableRecord(M2PixelShader.Combiners_Mod_Mod,                        M2VertexShader.Diffuse_EdgeFade_T1_T2)
 
-    Combiners_Mod_Masked_Dual_Crossfade_Diffuse_T1_T2 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_Masked_Dual_Crossfade, M2VertexShader.Diffuse_T1_T2)
+    Combiners_Mod_Masked_Dual_Crossfade_Diffuse_T1_T2 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_Masked_Dual_Crossfade,      M2VertexShader.Diffuse_T1_T2)
 
-    Combiners_Opaque_Alpha_Diffuse_T1_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_Alpha, M2VertexShader.Diffuse_T1_T1)
+    Combiners_Opaque_Alpha_Diffuse_T1_T1 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_Alpha,                   M2VertexShader.Diffuse_T1_T1)
 
-    Combiners_Opaque_Mod2xNA_Alpha_UnshAlpha2 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque_Mod2xNA_Alpha_UnshAlpha, M2VertexShader.Diffuse_T1_Env_T2)
+    Combiners_Opaque_Mod2xNA_Alpha_UnshAlpha2 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque_Mod2xNA_Alpha_UnshAlpha, M2VertexShader.Diffuse_T1_Env_T2)
 
-    Combiners_Mod_Depth_Diffuse_EdgeFade_Env = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_Depth, M2VertexShader.Diffuse_EdgeFade_Env)
+    Combiners_Mod_Depth_Diffuse_EdgeFade_Env = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_Depth,                      M2VertexShader.Diffuse_EdgeFade_Env)
 
-    Guild_Diffuse_T1_T2_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Guild, M2VertexShader.Diffuse_T1_T2_T1)
+    Guild_Diffuse_T1_T2_T1 = M2ShaderTableRecord(
+        M2PixelShader.Guild,                                    M2VertexShader.Diffuse_T1_T2_T1)
 
-    Guild_NoBorder_Diffuse_T1_T2 = \
-        M2ShaderTableRecord(M2PixelShader.Guild_NoBorder, M2VertexShader.Diffuse_T1_T2)
+    Guild_NoBorder_Diffuse_T1_T2 = M2ShaderTableRecord(
+        M2PixelShader.Guild_NoBorder,                           M2VertexShader.Diffuse_T1_T2)
 
-    Guild_Opaque_Diffuse_T1_T2_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Guild_Opaque, M2VertexShader.Diffuse_T1_T2_T1)
+    Guild_Opaque_Diffuse_T1_T2_T1 = M2ShaderTableRecord(
+        M2PixelShader.Guild_Opaque,                             M2VertexShader.Diffuse_T1_T2_T1)
 
-    Illum_Diffuse_T1_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Illum, M2VertexShader.Diffuse_T1_T1)
+    Illum_Diffuse_T1_T1 = M2ShaderTableRecord(
+        M2PixelShader.Illum,                                    M2VertexShader.Diffuse_T1_T1)
 
-    Combiners_Mod_Mod_Mod_Const_Diffuse_T1_T2_T3 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_Mod_Mod_Const, M2VertexShader.Diffuse_T1_T2_T3)
+    Combiners_Mod_Mod_Mod_Const_Diffuse_T1_T2_T3 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_Mod_Mod_Const,              M2VertexShader.Diffuse_T1_T2_T3)
 
-    Combiners_Mod_Mod_Mod_Const_Color_T1_T2_T3 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_Mod_Mod_Const, M2VertexShader.Color_T1_T2_T3)
+    Combiners_Mod_Mod_Mod_Const_Color_T1_T2_T3 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_Mod_Mod_Const,              M2VertexShader.Color_T1_T2_T3)
 
-    Combiners_Opaque_Diffuse_T1 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Opaque, M2VertexShader.Diffuse_T1)
+    Combiners_Opaque_Diffuse_T1 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Opaque,                         M2VertexShader.Diffuse_T1)
 
-    Combiners_Mod_Mod2x_Diffuse_EdgeFade_T1_T2 = \
-        M2ShaderTableRecord(M2PixelShader.Combiners_Mod_Mod2x, M2VertexShader.Diffuse_EdgeFade_T1_T2)
+    Combiners_Mod_Mod2x_Diffuse_EdgeFade_T1_T2 = M2ShaderTableRecord(
+        M2PixelShader.Combiners_Mod_Mod2x,                      M2VertexShader.Diffuse_EdgeFade_T1_T2)
 
 
 @singleton
@@ -248,11 +249,11 @@ class M2ShaderPermutations:
                 vert_shader_string_perm = "#define COMPILING_VS {}\n" \
                                           "#define BONEINFLUENCES {}\n" \
                                           "#define VERTEXSHADER {}\n" \
-                                          "{}".format(1, record.value.vertex_shader, i, shader_string)
+                                          "{}".format(1, i, record.value.vertex_shader, shader_string)
                 frag_shader_string_perm = "#define COMPILING_FS {}\n" \
                                           "#define BONEINFLUENCES {}\n" \
                                           "#define FRAGMENTSHADER {}\n" \
-                                          "{}".format(1, record.value.pixel_shader, i, shader_string)
+                                          "{}".format(1, i, record.value.pixel_shader, shader_string)
 
                 self.shader_permutations[record.value.vertex_shader, record.value.pixel_shader, i] = \
                     gpu.types.GPUShader(vert_shader_string_perm, frag_shader_string_perm)
@@ -332,8 +333,8 @@ class M2ShaderPermutations:
 
         if shader_id < 0:
 
-            pixel_shader_id = shader_id & 0x7FFF;
-            if c_uint(pixel_shader_id) >= 0x22:
+            pixel_shader_id = shader_id & 0x7FFF
+            if c_uint(pixel_shader_id).value >= 0x22:
                 raise ValueError("Wrong shader ID for pixel shader")
 
             result = c_uint(M2ShaderTable[shader_id & 0x7FFF].pixel_shader).value
@@ -402,18 +403,40 @@ class M2DrawingBatch:
 
         return M2ShaderPermutations().get_shader_by_m2_id(self.texture_count, self.batch_shader_id,
                                                           self.bone_influences)
+    @staticmethod
+    def flatten(mat):
+        dim = len(mat)
+        return [mat[j][i] for i in range(dim)
+                for j in range(dim)]
 
     def draw(self):
 
         # bind textures
         material = self.bl_obj.data.materials[0]
         texture = material.wow_m2_material.texture
-        blend_record = M2BlendingModeToEGxBlend[int(material.wow_m2_material.blending_mode)]
+
+        color_name = texture.wow_m2_texture.color
+        transparency_name = texture.wow_m2_texture.transparency
+
+        color = bpy.context.scene.wow_m2_colors[color_name].color if color_name else (1.0, 1.0, 1.0, 1.0)
+        transparency = bpy.context.scene.wow_m2_transparency[transparency_name].value if transparency_name else 1.0
+
+        combined_color = (*color[:3], color[3] * transparency)
+
+        m2_blend_mode = int(material.wow_m2_material.blending_mode)
+        blend_record = M2BlendingModeToEGxBlend[m2_blend_mode]
 
         blend_enabled = blend_record.blending_enabled
         depth_write = '16' not in material.wow_m2_material.render_flags
         depth_culling = '8' not in material.wow_m2_material.render_flags
         backface_culling = '4' not in material.wow_m2_material.render_flags
+        is_unlit = int('1' in material.wow_m2_material.render_flags)
+        is_unfogged = int('2' in material.wow_m2_material.render_flags)
+
+        if m2_blend_mode == 1: # Alpha Key
+            u_alpha_test = 128.0 / 255.0 * combined_color[3]  # Maybe move this to shader logic?
+        else:
+            u_alpha_test = 1.0 / 255.0
 
         self.shader = self.determine_valid_shader()
 
@@ -442,7 +465,7 @@ class M2DrawingBatch:
         # get active viewport
         r3d = bpy.data.screens[5].areas[5].spaces[0].region_3d
 
-        sun_dir = mathutils.Vector(bpy.context.scene.wow_wmo_root.sun_direction)
+        sun_dir = mathutils.Vector(bpy.context.scene.wow_render_settings.sun_direction)
         sun_dir.negate()
 
         tex1_matrix_flattened = [j[i] for i in range(4)
@@ -452,26 +475,21 @@ class M2DrawingBatch:
 
         tex2_matrix_flattened = [j[i] for i in range(4) for j in mathutils.Matrix.Identity(4)]
 
-        bone_matrix_buf = struct.pack('{}f'.format(len(self.bl_rig.pose.bones) * 16),
-                                      *np.array([[j[i] for i in range(4)
-                                                 for j in self.bl_obj.matrix_world @ bone.matrix
-                                                ] for bone in self.bl_rig.pose.bones ]).flatten()
-                                      )
-
         self.shader.uniform_float('uViewProjectionMatrix', r3d.perspective_matrix)
-        self.shader.uniform_float('uPlacementMatrix', self.bl_obj.matrix_local)
-        self.shader.uniform_float('uSunDirAndFogStart', (*sun_dir[:3], 300))
-        self.shader.uniform_float('uSunColorAndFogEnd', (*bpy.context.scene.wow_wmo_root.ext_dir_color[:3], 600))
-        self.shader.uniform_float('uAmbientLight', bpy.context.scene.wow_wmo_root.ext_ambient_color)
-        self.shader.uniform_int('UnFogged_IsAffectedByLight_LightCount', (0, 1, 0))
+        self.shader.uniform_float('uPlacementMatrix', self.bl_obj.matrix_world)
+        self.shader.uniform_float('uSunDirAndFogStart', (*sun_dir[:3], 10))
+        self.shader.uniform_float('uSunColorAndFogEnd', (*bpy.context.scene.wow_render_settings.ext_dir_color[:3], 50))
+        self.shader.uniform_float('uAmbientLight', bpy.context.scene.wow_render_settings.ext_ambient_color)
+        self.shader.uniform_float('uFogColorAndAlphaTest', (1, 0, 0, u_alpha_test))
+        self.shader.uniform_int('UnFogged_IsAffectedByLight_LightCount', (is_unfogged, is_unlit, 0))
         self.shader.uniform_int('uTexture', 0)
-        self.shader.uniform_float('color_Transparency', (1.0, 1.0, 1.0, 1.0))
+        self.shader.uniform_float('color_Transparency', combined_color)
         self.shader.uniform_vector_float(self.shader.uniform_from_name('uTextMat'),
                                          struct.pack('16f', *tex1_matrix_flattened)
                                          + struct.pack('16f', *tex2_matrix_flattened), 16, 2)
 
         if self.bone_influences:
-            self.shader.uniform_vector_float(self.shader.uniform_from_name('uBoneMatrices'), bone_matrix_buf, 16,
+            self.shader.uniform_vector_float(self.shader.uniform_from_name('uBoneMatrices'), self.bone_matrices, 16,
                                              len(self.bl_rig.pose.bones))
 
         glCheckError('uniform')
@@ -533,20 +551,25 @@ class M2DrawingBatch:
         for vertex in mesh.vertices:
 
             v_bone_influences = 0
-            for i, group_info in enumerate(vertex.groups):
-                bone_id = self.bl_rig.pose.bones.find(obj.vertex_groups[i].name)
+            counter = 0
+            for group_info in vertex.groups:
+                bone_id = self.bl_rig.pose.bones.find(obj.vertex_groups[group_info.group].name)
                 weight = group_info.weight
 
-                if bone_id < 0:
-                    bone_id = 0.0
-                    weight = 0.0
-                else:
-                    v_bone_influences += 1
+                if bone_id < 0 or not weight:
+                    continue
 
-                self.bones[vertex.index][i] = bone_id
-                self.bone_weights[vertex.index][i] = weight
+                v_bone_influences += 1
 
-                assert i < 5
+                self.bones[vertex.index][counter] = bone_id
+                self.bone_weights[vertex.index][counter] = weight
+
+                counter += 1
+
+            assert counter < 5
+
+            if not counter:
+                self.bone_weights[vertex.index][0] = 1.0
 
             self.bone_influences = max(self.bone_influences, v_bone_influences)
 
@@ -574,7 +597,8 @@ class M2DrawingBatch:
 class M2DrawingObject:
     __slots__ = (
         'rig',
-        'batches'
+        'batches',
+        'bone_matrices'
     )
 
     def __init__(self, rig: bpy.types.Object):
@@ -584,11 +608,23 @@ class M2DrawingObject:
 
         self.rig = rig
         self.batches: List[M2DrawingBatch] = []
+        self.bone_matrices = np.empty((len(self.rig.pose.bones), 16), 'f')
 
         self.create_batches_from_armature(rig)
 
     def draw(self):
 
+        for i, pbone in enumerate(self.rig.pose.bones):
+
+            '''
+            rest_bone_mat = self.bl_rig.data.bones[pbone.name].matrix_local
+            mat = (self.bl_rig.matrix_world @ rest_bone_mat).inverted() @ (self.bl_rig.matrix_world @ pbone.matrix)
+            '''
+
+            self.bone_matrices[i] = [j[i] for i in range(4) for j in self.rig.convert_space(pose_bone=pbone,
+                                                                                            matrix=pbone.matrix_channel,
+                                                                                            from_space='POSE',
+                                                                                            to_space='WORLD')]
         broken_batches = []
 
         for batch in self.batches:
@@ -637,6 +673,9 @@ class M2DrawingManager:
 
         for m2 in self.m2_objects:
             m2.draw()
+
+    def __del__(self):
+        bpy.types.SpaceView3D.draw_handler_remove(self.handle, 'WINDOW')
 
 
 def glCheckError(title):

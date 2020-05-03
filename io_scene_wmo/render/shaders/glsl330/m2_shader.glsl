@@ -29,6 +29,8 @@ vec2 posToTexCoord(vec3 cameraPoint, vec3 normal){
 // Shader code
 #ifdef COMPILING_VS
 
+precision highp float;
+
 /* vertex shader code */
 in vec3 aPosition;
 in vec3 aNormal;
@@ -60,7 +62,7 @@ out vec4 vDiffuseColor;
 void main() {
 
     // Handle bone transforms
-    mat4 boneTransformMat = mat4(1.0);
+    mat4 boneTransformMat = mat4(1.0); // static vertex
 
     #if BONEINFLUENCES>0
         boneTransformMat = mat4(0.0);
@@ -75,7 +77,6 @@ void main() {
     #if BONEINFLUENCES>3
         boneTransformMat += (aBoneWeights.w ) * uBoneMatrices[int(aBones.w)];
     #endif
-
 
     vec4 aPositionVec4 = vec4(aPosition, 1.0f);
 
@@ -199,7 +200,7 @@ void main() {
     vNormal = normal;
     vPosition = cameraPoint.xyz;
 
-    gl_Position = uViewProjectionMatrix * uPlacementMatrix * aPositionVec4;
+    gl_Position = cameraPoint;
 
 }
 
@@ -207,6 +208,8 @@ void main() {
 
 
 #ifdef COMPILING_FS
+
+precision highp float;
 
 struct LocalLight
 {
@@ -298,11 +301,13 @@ void main() {
     vec2 texCoord2 = vTexCoord2.xy;
     vec2 texCoord3 = vTexCoord3.xy;
 
-    /* Get color from texture */
-    vec4 tex = texture(uTexture, texCoord).rgba;
+    vec4 gamma = vec4(0.454);
 
-    vec4 tex2 = texture(uTexture2, texCoord2).rgba;
-    vec4 tex3 = texture(uTexture3, texCoord3).rgba;
+    /* Get color from texture */
+    vec4 tex = pow(texture(uTexture, texCoord).rgba, gamma);
+
+    vec4 tex2 = pow(texture(uTexture2, texCoord2).rgba, gamma);
+    vec4 tex3 = pow(texture(uTexture3, texCoord3).rgba, gamma);
 
     vec4 tex2WithTextCoord1 = texture(uTexture2,texCoord);
     vec4 tex3WithTextCoord1 = texture(uTexture3,texCoord);
@@ -550,9 +555,11 @@ void main() {
         discard;
 
     int uUnFogged = UnFogged_IsAffectedByLight_LightCount.x;
-    float uFogEnd = uSunColorAndFogEnd.z;
+    float uFogEnd = uSunColorAndFogEnd.w;
     if (uUnFogged == 0) {
+
         vec3 fogColor = uFogColorAndAlphaTest.xyz;
+
         float fog_rate = 1.5;
         float fog_bias = 0.01;
 
@@ -561,7 +568,7 @@ void main() {
 
         float distanceToCamera = length(vPosition.xyz);
         float z_depth = (distanceToCamera - fog_bias);
-        float expFog = 1.0 / (exp((max(0.0, (z_depth - uSunDirAndFogStart.z)) * fog_rate)));
+        float expFog = 1.0 / (exp((max(0.0, (z_depth - uSunDirAndFogStart.w)) * fog_rate)));
         //float height = (dot(fogHeightPlane.xyz, vPosition.xyz) + fogHeightPlane.w);
         //float heightFog = clamp((height * heightRate), 0, 1);
         float heightFog = 1.0;
@@ -570,6 +577,7 @@ void main() {
         float fog_out = min(expFog, endFadeFog);
         finalColor.rgba = vec4(mix(fogColor.rgb, finalColor.rgb, vec3(fog_out)), finalColor.a);
     }
+
 
     outputColor = finalColor;
 

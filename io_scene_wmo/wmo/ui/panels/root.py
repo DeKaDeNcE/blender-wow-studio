@@ -1,6 +1,6 @@
 import bpy
 from ..enums import *
-from ....utils.callbacks import delay_execution, on_release
+from ....utils.callbacks import on_release
 
 
 class WMO_PT_root(bpy.types.Panel):
@@ -55,34 +55,6 @@ def update_ambient_color(self, context):
         properties.nodes['IntAmbientColor'].outputs[0].default_value = self.ambient_color
 
 
-@on_release()
-def update_ext_ambient_color(self, context):
-    properties = bpy.data.node_groups.get('MO_Properties')
-    if properties:
-        properties.nodes['extLightAmbientColor'].outputs[0].default_value = self.ext_ambient_color
-
-
-@on_release()
-def update_ext_dir_color(self, context):
-    properties = bpy.data.node_groups.get('MO_Properties')
-    if properties:
-        properties.nodes['extLightDirColor'].outputs[0].default_value = self.ext_dir_color
-
-
-@on_release()
-def update_sidn_scalar(self, context):
-    properties = bpy.data.node_groups.get('MO_Properties')
-    if properties:
-        properties.nodes['SIDNScalar'].outputs[0].default_value = self.sidn_scalar
-
-
-@on_release()
-def update_sun_direction(self, context):
-    properties = bpy.data.node_groups.get('MO_Properties')
-    if properties:
-        properties.nodes['SunDirection'].inputs[1].default_value = self.sun_direction
-
-
 class WowRootPropertyGroup(bpy.types.PropertyGroup):
 
 
@@ -115,44 +87,6 @@ class WowRootPropertyGroup(bpy.types.PropertyGroup):
         description="Used in WMOAreaTable (optional)",
         default=0,
         )
-
-    # render controls
-    ext_ambient_color:  bpy.props.FloatVectorProperty(
-        name="Ext. Ambient Color",
-        subtype='COLOR',
-        default=(1, 1, 1, 1),
-        size=4,
-        min=0.0,
-        max=1.0,
-        update=update_ext_ambient_color
-        )
-
-    ext_dir_color:  bpy.props.FloatVectorProperty(
-        name="Ext. Dir Color",
-        subtype='COLOR',
-        default=(0.991, 0.246, 0, 1),
-        size=4,
-        min=0.0,
-        max=1.0,
-        update=update_ext_dir_color
-    )
-
-    sidn_scalar:  bpy.props.FloatProperty(
-        name='SIDN intensity',
-        description='Controls intensity of night glow in materials',
-        min=0.0,
-        max=1.0,
-        update=update_sidn_scalar
-    )
-
-    sun_direction:  bpy.props.FloatVectorProperty(
-        name='Sun Direction',
-        description='Defines the direction of the sun',
-        default=(0.2, 0.7, 0.6),
-        size=3,
-        subtype='DIRECTION',
-        update=update_sun_direction
-    )
 
 
 def register():

@@ -24,7 +24,7 @@ class Sequence(type):
         return super().__new__(mcs, name, bases, dct)
 
     def __getitem__(self, item):
-        return getattr(self, self.__fields__[item + 2])
+        return getattr(self, self.__fields__[item])
 
     def __iter__(self):
         return self

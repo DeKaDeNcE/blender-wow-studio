@@ -246,12 +246,14 @@ class BlenderM2Scene:
                 except RuntimeError:
                     print("\nWarning: failed to load texture \"{}\".".format(tex_path_png))
 
-            if tex1:
-                loaded_textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index]] = tex1
-                blender_mat.wow_m2_material.texture = tex1
-                tex1.wow_m2_texture.flags = parse_bitfield(texture.flags, 0x2)
-                tex1.wow_m2_texture.texture_type = str(texture.type)
-                tex1.wow_m2_texture.path = texture.filename.value
+            if not tex1:
+                tex1 = bpy.data.images.new('Failed Loading', 256, 256)
+
+            loaded_textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index]] = tex1
+            blender_mat.wow_m2_material.texture = tex1
+            tex1.wow_m2_texture.flags = parse_bitfield(texture.flags, 0x2)
+            tex1.wow_m2_texture.texture_type = str(texture.type)
+            tex1.wow_m2_texture.path = texture.filename.value
 
             update_m2_mat_node_tree(blender_mat)
 

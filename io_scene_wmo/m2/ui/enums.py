@@ -77,7 +77,7 @@ TEXTURE_TYPES = [
 
 TEXTURE_FLAGS = [
     ("1", "Wrap X", "Texture wrap X", 'TRIA_RIGHT', 0x1),
-    ("2", "Wrap Y", "Texture wrap Y", 'TRIA_UP', 0x2),
+    ("2", "Wrap Y", "Texture wrap Y", 'TRIA_UP', 0x2)
 ]
 
 BONE_FLAGS = [
