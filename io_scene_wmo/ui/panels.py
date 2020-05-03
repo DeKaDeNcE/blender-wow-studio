@@ -45,37 +45,24 @@ class WowScenePropertyGroup(bpy.types.PropertyGroup):
     )
 
 
-class WMO_PT_root(bpy.types.Panel):
+class WOW_PT_render_settings(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
-    bl_label = "WMO Root"
+    bl_label = "WoW Render Settings"
 
     def draw(self, context):
         layout = self.layout
         layout.use_property_split = True
 
         col = layout.column()
-        col.prop(context.scene.wow_wmo_root, "flags")
-        col.separator()
 
-        if "2" in context.scene.wow_wmo_root.flags:
-            col.prop(context.scene.wow_wmo_root, "ambient_color")
+        col.prop(context.scene.wow_render_settings, "ext_ambient_color")
+        col.prop(context.scene.wow_render_settings, "ext_dir_color")
+        col.prop(context.scene.wow_render_settings, "sidn_scalar")
 
-        col.separator()
-
-        col.prop(context.scene.wow_wmo_root, "skybox_path")
-        col.prop(context.scene.wow_wmo_root, "wmo_id")
-
-        col.separator()
-        col.label(text='Render settings', icon='RESTRICT_RENDER_OFF')
-        col.prop(context.scene.wow_wmo_root, "ext_ambient_color")
-        col.prop(context.scene.wow_wmo_root, "ext_dir_color")
-        col.prop(context.scene.wow_wmo_root, "sidn_scalar")
-
-        if context.scene.render.engine in ('CYCLES', 'BLENDER_EEVEE'):
-            col.label(text='Sun Direciton:')
-            col.prop(context.scene.wow_wmo_root, "sun_direction", text='')
+        col.label(text='Sun Direciton:')
+        col.prop(context.scene.wow_wmo_root, "sun_direction", text='')
 
     @classmethod
     def poll(cls, context):
@@ -170,11 +157,12 @@ def update_screen_3d(self, context):
 def register_wow_scene_properties():
     bpy.types.Scene.wow_scene = bpy.props.PointerProperty(type=WowScenePropertyGroup)
     bpy.types.Scene.wow_screen_3d = bpy.props.PointerProperty(type=bpy.types.Screen, update=update_screen_3d)
-    bpy.types.Scene.wow_render_Settings = bpy.props.PointerProperty(type=WoWRenderSettingsPropertyGroup)
+    bpy.types.Scene.wow_render_settings = bpy.props.PointerProperty(type=WoWRenderSettingsPropertyGroup)
 
 
 def unregister_wow_scene_properties():
     del bpy.types.Scene.wow_scene
+    del bpy.types.Scene.wow_render_settings
 
 
 def render_top_bar(self, context):

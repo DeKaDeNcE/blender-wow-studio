@@ -25,16 +25,6 @@ class WMO_PT_root(bpy.types.Panel):
         col.prop(context.scene.wow_wmo_root, "skybox_path")
         col.prop(context.scene.wow_wmo_root, "wmo_id")
 
-        col.separator()
-        col.label(text='Render settings', icon='RESTRICT_RENDER_OFF')
-        col.prop(context.scene.wow_wmo_root, "ext_ambient_color")
-        col.prop(context.scene.wow_wmo_root, "ext_dir_color")
-        col.prop(context.scene.wow_wmo_root, "sidn_scalar")
-
-        if context.scene.render.engine in ('CYCLES', 'BLENDER_EEVEE'):
-            col.label(text='Sun Direciton:')
-            col.prop(context.scene.wow_wmo_root, "sun_direction", text='')
-
     @classmethod
     def poll(cls, context):
         return context.scene is not None and context.scene.wow_scene.type == 'WMO'

@@ -357,6 +357,7 @@ class M2DrawingBatch:
     __slots__ = (
         'bl_obj',
         'bl_rig',
+        'draw_obj',
         'texture_count',
         'vertices',
         'normals',
@@ -368,29 +369,73 @@ class M2DrawingBatch:
         'bone_influences',
         'batch',
         'batch_shader_id',
-        'shader'
+        'shader',
+        'material',
+        'texture',
+        'bind_code1'
     )
 
-    def __init__(self, obj: bpy.types.Object, rig: bpy.types.Object):
+    def __init__(self, obj: bpy.types.Object, draw_obj: 'M2DrawingObject'):
         self.bl_obj = obj
-        self.bl_rig = rig
+        self.bl_rig = draw_obj.rig
+        self.draw_obj = draw_obj
+
         self.texture_count = 1
         self.bone_influences = 0
         self.batch_shader_id = 0
 
-        self.vertices: np.array = None
-        self.normals: np.array = None
-        self.indices: np.array = None
-        self.tex_coords: np.array = None
-        self.tex_coords2: np.array = None
-        self.bones: np.array = None
-        self.bone_weights: np.array = None
-        self.shader: gpu.types.GPUShader = None
-        self.batch: gpu.types.GPUBatch = None
+        self.vertices: np.array
+        self.normals: np.array
+        self.indices: np.array
+        self.tex_coords: np.array
+        self.tex_coords2: np.array
+        self.bones: np.array
+        self.bone_weights: np.array
+        self.shader: gpu.types.GPUShader
+        self.batch: gpu.types.GPUBatch
+        self.material: bpy.types.Material
+        self.texture: bpy.types.Image = None
+        self.bind_code1 = 0
 
-        self.recreate_batch()
+        self._update_batch_geometry(self.bl_obj)
+        self.shader = self.determine_valid_shader()
+        self.batch = self._create_batch()
+        self.bind_textures()
+
+    def bind_textures(self):
+        self.material = self.bl_obj.data.materials[0]
+        self.texture = self.material.wow_m2_material.texture
+
+        bind_code, users = self.draw_obj.drawing_mgr.bound_textures.get(self.texture, (None, None))
+
+        if bind_code is None and self.texture:
+            self.texture.gl_load()
+            bind_code = self.texture.bindcode
+            self.draw_obj.drawing_mgr.bound_textures[self.texture] = bind_code, [self, ]
+
+        elif self not in users:
+            users.append(self)
+
+        self.bind_code1 = bind_code
+
+    def _set_active_textures(self):
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, self.bind_code1)
+
+    def free_textures(self):
+
+        bind_code, users = self.draw_obj.drawing_mgr.bound_textures.get(self.texture, (None, None))
+
+        if bind_code:
+            if len(users) == 1:
+                self.texture.gl_free()
+                del self.draw_obj.drawing_mgr.bound_textures[self.texture]
+            else:
+                users.remove(self)
 
     def recreate_batch(self):
+        self.free_textures()
+        self.bind_textures()
         self._update_batch_geometry(self.bl_obj)
         self.shader = self.determine_valid_shader()
         self.batch = self._create_batch()
@@ -403,35 +448,28 @@ class M2DrawingBatch:
 
         return M2ShaderPermutations().get_shader_by_m2_id(self.texture_count, self.batch_shader_id,
                                                           self.bone_influences)
-    @staticmethod
-    def flatten(mat):
-        dim = len(mat)
-        return [mat[j][i] for i in range(dim)
-                for j in range(dim)]
 
     def draw(self):
 
-        # bind textures
-        material = self.bl_obj.data.materials[0]
-        texture = material.wow_m2_material.texture
+        self._set_active_textures()
 
-        color_name = texture.wow_m2_texture.color
-        transparency_name = texture.wow_m2_texture.transparency
+        color_name = self.texture.wow_m2_texture.color
+        transparency_name = self.texture.wow_m2_texture.transparency
 
         color = bpy.context.scene.wow_m2_colors[color_name].color if color_name else (1.0, 1.0, 1.0, 1.0)
         transparency = bpy.context.scene.wow_m2_transparency[transparency_name].value if transparency_name else 1.0
 
         combined_color = (*color[:3], color[3] * transparency)
 
-        m2_blend_mode = int(material.wow_m2_material.blending_mode)
+        m2_blend_mode = int(self.material.wow_m2_material.blending_mode)
         blend_record = M2BlendingModeToEGxBlend[m2_blend_mode]
 
         blend_enabled = blend_record.blending_enabled
-        depth_write = '16' not in material.wow_m2_material.render_flags
-        depth_culling = '8' not in material.wow_m2_material.render_flags
-        backface_culling = '4' not in material.wow_m2_material.render_flags
-        is_unlit = int('1' in material.wow_m2_material.render_flags)
-        is_unfogged = int('2' in material.wow_m2_material.render_flags)
+        depth_write = '16' not in self.material.wow_m2_material.render_flags
+        depth_culling = '8' not in self.material.wow_m2_material.render_flags
+        backface_culling = '4' not in self.material.wow_m2_material.render_flags
+        is_unlit = int('1' in self.material.wow_m2_material.render_flags)
+        is_unfogged = int('2' in self.material.wow_m2_material.render_flags)
 
         if m2_blend_mode == 1: # Alpha Key
             u_alpha_test = 128.0 / 255.0 * combined_color[3]  # Maybe move this to shader logic?
@@ -439,11 +477,6 @@ class M2DrawingBatch:
             u_alpha_test = 1.0 / 255.0
 
         self.shader = self.determine_valid_shader()
-
-        texture.gl_load()
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, texture.bindcode)
-
         self.shader.bind()
 
         # draw
@@ -489,8 +522,8 @@ class M2DrawingBatch:
                                          + struct.pack('16f', *tex2_matrix_flattened), 16, 2)
 
         if self.bone_influences:
-            self.shader.uniform_vector_float(self.shader.uniform_from_name('uBoneMatrices'), self.bone_matrices, 16,
-                                             len(self.bl_rig.pose.bones))
+            self.shader.uniform_vector_float(self.shader.uniform_from_name('uBoneMatrices'),
+                                             self.draw_obj.bone_matrices, 16, len(self.bl_rig.pose.bones))
 
         glCheckError('uniform')
         self.batch.draw(self.shader)
@@ -507,9 +540,6 @@ class M2DrawingBatch:
 
         if depth_culling:
             glDisable(GL_DEPTH_TEST)
-
-        # free textures
-        texture.gl_free()
 
     def _update_batch_geometry(self, obj: bpy.types.Object):
 
@@ -596,16 +626,18 @@ class M2DrawingBatch:
 
 class M2DrawingObject:
     __slots__ = (
+        'drawing_mgr',
         'rig',
         'batches',
         'bone_matrices'
     )
 
-    def __init__(self, rig: bpy.types.Object):
+    def __init__(self, rig: bpy.types.Object, drawing_mgr: 'M2DrawingManager'):
 
         if rig.type != 'ARMATURE':
             raise Exception('Error: object \"{}\" is not an armature object.'.format(rig.name))
 
+        self.drawing_mgr = drawing_mgr
         self.rig = rig
         self.batches: List[M2DrawingBatch] = []
         self.bone_matrices = np.empty((len(self.rig.pose.bones), 16), 'f')
@@ -636,6 +668,7 @@ class M2DrawingObject:
                 traceback.print_exc()
 
         for batch in broken_batches:
+            batch.free_textures()
             self.batches.remove(batch)
 
     def create_batches_from_armature(self, rig: bpy.types.Object):
@@ -652,7 +685,7 @@ class M2DrawingObject:
             self._create_batch_from_object(obj)
 
     def _create_batch_from_object(self, obj: bpy.types.Object):
-        self.batches.append(M2DrawingBatch(obj, self.rig))
+        self.batches.append(M2DrawingBatch(obj, self))
 
 
 class M2DrawingManager:
@@ -660,13 +693,14 @@ class M2DrawingManager:
     def __init__(self):
         self.shaders = M2ShaderPermutations()
         self.m2_objects: List[M2DrawingObject] = []
+        self.bound_textures: Dict[bpy.types.Image, Tuple[int, List[M2DrawingBatch]]] = {}
         self.handle = bpy.types.SpaceView3D.draw_handler_add(self.draw_callback, (self,), 'WINDOW','POST_VIEW')
 
     def queue_for_drawing(self, obj: bpy.types.Object):
         if obj.type != 'ARMATURE':
             raise Exception('Error: M2 should be represented as armature object. Failed to queue for drawing.')
 
-        self.m2_objects.append(M2DrawingObject(obj))
+        self.m2_objects.append(M2DrawingObject(obj, self))
 
     @staticmethod
     def draw_callback(self):
