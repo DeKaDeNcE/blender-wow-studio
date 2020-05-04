@@ -395,18 +395,30 @@ class M2DrawingBatch:
         self.batch: gpu.types.GPUBatch
         self.material: bpy.types.Material
         self.texture: bpy.types.Image = None
-        self.bind_code1 = 0
 
         self._update_batch_geometry(self.bl_obj)
         self.shader = self.determine_valid_shader()
         self.batch = self._create_batch()
         self.bind_textures()
 
-    def bind_textures(self):
+    def bind_textures(self, rebind=False):
         self.material = self.bl_obj.data.materials[0]
         self.texture = self.material.wow_m2_material.texture
 
         bind_code, users = self.draw_obj.drawing_mgr.bound_textures.get(self.texture, (None, None))
+
+        if rebind:
+
+            if bind_code is not None and self.texture:
+                self.texture.gl_load()
+                bind_code = self.texture.bindcode
+                self.draw_obj.drawing_mgr.bound_textures[self.texture] = bind_code, [self, ]
+            elif self not in users:
+
+                self.texture.gl_load()
+                bind_code = self.texture.bindcode
+                users.append(self)
+                self.draw_obj.drawing_mgr.bound_textures[self.texture] = bind_code, users
 
         if bind_code is None and self.texture:
             self.texture.gl_load()
@@ -416,11 +428,13 @@ class M2DrawingBatch:
         elif self not in users:
             users.append(self)
 
-        self.bind_code1 = bind_code
-
     def _set_active_textures(self):
+
+        if self.texture.bindcode == 0:
+            self.bind_textures(rebind=True)
+
         glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, self.bind_code1)
+        glBindTexture(GL_TEXTURE_2D, self.texture.bindcode)
 
     def free_textures(self):
 
@@ -452,6 +466,7 @@ class M2DrawingBatch:
     def draw(self):
 
         self._set_active_textures()
+        print(self.texture.bindcode)
 
         color_name = self.texture.wow_m2_texture.color
         transparency_name = self.texture.wow_m2_texture.transparency
@@ -509,13 +524,23 @@ class M2DrawingBatch:
         tex2_matrix_flattened = [j[i] for i in range(4) for j in mathutils.Matrix.Identity(4)]
 
         self.shader.uniform_float('uViewProjectionMatrix', r3d.perspective_matrix)
+        glCheckError('uniform block 1')
         self.shader.uniform_float('uPlacementMatrix', self.bl_obj.matrix_world)
+        glCheckError('uniform block 2')
         self.shader.uniform_float('uSunDirAndFogStart', (*sun_dir[:3], 10))
+        glCheckError('uniform block 3')
         self.shader.uniform_float('uSunColorAndFogEnd', (*bpy.context.scene.wow_render_settings.ext_dir_color[:3], 50))
+        glCheckError('uniform block 4')
         self.shader.uniform_float('uAmbientLight', bpy.context.scene.wow_render_settings.ext_ambient_color)
+        glCheckError('uniform block 5')
         self.shader.uniform_float('uFogColorAndAlphaTest', (1, 0, 0, u_alpha_test))
+        glCheckError('uniform block 6')
         self.shader.uniform_int('UnFogged_IsAffectedByLight_LightCount', (is_unfogged, is_unlit, 0))
+
+        glCheckError('uniform block 7')
         self.shader.uniform_int('uTexture', 0)
+        glCheckError('texture ')
+
         self.shader.uniform_float('color_Transparency', combined_color)
         self.shader.uniform_vector_float(self.shader.uniform_from_name('uTextMat'),
                                          struct.pack('16f', *tex1_matrix_flattened)
@@ -525,7 +550,7 @@ class M2DrawingBatch:
             self.shader.uniform_vector_float(self.shader.uniform_from_name('uBoneMatrices'),
                                              self.draw_obj.bone_matrices, 16, len(self.bl_rig.pose.bones))
 
-        glCheckError('uniform')
+        glCheckError('uniform block 2')
         self.batch.draw(self.shader)
         glCheckError('draw')
 
@@ -540,6 +565,8 @@ class M2DrawingBatch:
 
         if depth_culling:
             glDisable(GL_DEPTH_TEST)
+
+        gpu.shader.unbind()
 
     def _update_batch_geometry(self, obj: bpy.types.Object):
 
