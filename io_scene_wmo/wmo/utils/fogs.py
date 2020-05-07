@@ -7,7 +7,6 @@ def create_fog_object(name='Fog', radius=1.0, location=None, color=(1.0, 1.0, 1.
                                          , location=bpy.context.scene.cursor.location if location is None else location
                                          )
 
-
     fog = bpy.context.view_layer.objects.active
     fog.name = name
 

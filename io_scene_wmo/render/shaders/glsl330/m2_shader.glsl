@@ -231,6 +231,9 @@ uniform sampler2D uTexture2;
 uniform sampler2D uTexture3;
 uniform sampler2D uTexture4;
 
+uniform sampler2D uTextureDepth;
+uniform vec2 uResolution;
+
 out vec4 outputColor;
 
 //Whole model
@@ -577,7 +580,6 @@ void main() {
         float fog_out = min(expFog, endFadeFog);
         finalColor.rgba = vec4(mix(fogColor.rgb, finalColor.rgb, vec3(fog_out)), finalColor.a);
     }
-
 
     outputColor = finalColor;
 

@@ -459,10 +459,9 @@ class M2DrawingTest(bpy.types.Operator):
     def execute(self, context):
 
         import importlib
-        from .. import render
-        importlib.reload(render)
+        from ..render.m2.drawing_manager import M2DrawingManager
 
-        dm = render.M2DrawingManager()
+        dm = M2DrawingManager(handler_mode=True)
         dm.queue_for_drawing(bpy.context.view_layer.objects.active)
 
         return {'FINISHED'}
