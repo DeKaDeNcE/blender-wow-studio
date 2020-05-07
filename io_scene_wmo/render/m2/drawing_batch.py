@@ -4,10 +4,11 @@ import struct
 import numpy as np
 import mathutils
 
+from typing import Tuple, List
 from bgl import *
 from gpu_extras.batch import batch_for_shader
 
-from .shaders import M2ShaderPermutations, M2BlendingModeToEGxBlend
+from .shaders import M2ShaderPermutations, M2BlendingModeToEGxBlend, EGxBlendRecord
 from ..bgl_ext import glCheckError
 
 
@@ -30,10 +31,15 @@ class M2DrawingBatch:
         'shader',
         'material',
         'texture',
-        'bind_code1'
+        'context'
     )
 
-    def __init__(self, obj: bpy.types.Object, draw_obj: 'M2DrawingObject'):
+    def __init__(self
+                 , obj: bpy.types.Object
+                 , draw_obj: 'M2DrawingObject'
+                 , context: bpy.types.Context):
+
+        self.context = context
         self.bl_obj = obj
         self.bl_rig = draw_obj.rig
         self.draw_obj = draw_obj
@@ -51,8 +57,10 @@ class M2DrawingBatch:
         self.bone_weights: np.array
         self.shader: gpu.types.GPUShader
         self.batch: gpu.types.GPUBatch
+
+        # uniform data
         self.material: bpy.types.Material
-        self.texture: bpy.types.Image = None
+        self.texture: bpy.types.Image
 
         self._update_batch_geometry(self.bl_obj)
         self.shader = self.determine_valid_shader()
@@ -123,32 +131,24 @@ class M2DrawingBatch:
 
     def draw(self):
 
-        print('drawing')
-
-        self._set_active_textures()
-
         color_name = self.texture.wow_m2_texture.color
         transparency_name = self.texture.wow_m2_texture.transparency
-
-        color = bpy.context.scene.wow_m2_colors[color_name].color if color_name else (1.0, 1.0, 1.0, 1.0)
-        transparency = bpy.context.scene.wow_m2_transparency[transparency_name].value if transparency_name else 1.0
-
+        color = self.context.scene.wow_m2_colors[color_name].color if color_name else (1.0, 1.0, 1.0, 1.0)
+        transparency = self.context.scene.wow_m2_transparency[transparency_name].value if transparency_name else 1.0
         combined_color = (*color[:3], color[3] * transparency)
 
         m2_blend_mode = int(self.material.wow_m2_material.blending_mode)
         blend_record = M2BlendingModeToEGxBlend[m2_blend_mode]
-
         blend_enabled = blend_record.blending_enabled
         depth_write = '16' not in self.material.wow_m2_material.render_flags
         depth_culling = '8' not in self.material.wow_m2_material.render_flags
         backface_culling = '4' not in self.material.wow_m2_material.render_flags
         is_unlit = int('1' in self.material.wow_m2_material.render_flags)
         is_unfogged = int('2' in self.material.wow_m2_material.render_flags)
+        u_alpha_test = 128.0 / 255.0 * combined_color[3] \
+            if m2_blend_mode == 1 else 1.0 / 255.0  # Maybe move this to shader logic?
 
-        if m2_blend_mode == 1: # Alpha Key
-            u_alpha_test = 128.0 / 255.0 * combined_color[3]  # Maybe move this to shader logic?
-        else:
-            u_alpha_test = 1.0 / 255.0
+        self._set_active_textures()
 
         self.shader = self.determine_valid_shader()
         self.shader.bind()
@@ -169,33 +169,21 @@ class M2DrawingBatch:
 
         glBlendFunc(blend_record.src_color, blend_record.dest_color)
 
-        sun_dir = mathutils.Vector(bpy.context.scene.wow_render_settings.sun_direction)
-        sun_dir.negate()
-
         tex1_matrix_flattened = [j[i] for i in range(4)
-                                 for j in bpy.context.scene.objects['TT_Controller.003'].matrix_world] \
+                                 for j in self.bl_obj.wow_m2_geoset.uv_transform.matrix_world] \
                                 if self.bl_obj.wow_m2_geoset.uv_transform \
                                 else [j[i] for i in range(4) for j in mathutils.Matrix.Identity(4)]
 
         tex2_matrix_flattened = [j[i] for i in range(4) for j in mathutils.Matrix.Identity(4)]
 
         self.shader.uniform_float('uViewProjectionMatrix', self.draw_obj.drawing_mgr.region_3d.perspective_matrix)
-        glCheckError('uniform block 1')
-        self.shader.uniform_float('uPlacementMatrix', self.bl_obj.matrix_world)
-        glCheckError('uniform block 2')
-        self.shader.uniform_float('uSunDirAndFogStart', (*sun_dir[:3], 10))
-        glCheckError('uniform block 3')
-        self.shader.uniform_float('uSunColorAndFogEnd', (*bpy.context.scene.wow_render_settings.ext_dir_color[:3], 50))
-        glCheckError('uniform block 4')
-        self.shader.uniform_float('uAmbientLight', bpy.context.scene.wow_render_settings.ext_ambient_color)
-        glCheckError('uniform block 5')
-        self.shader.uniform_float('uFogColorAndAlphaTest', (0.1, 0.5, 0, u_alpha_test))
-        glCheckError('uniform block 6')
+        self.shader.uniform_float('uPlacementMatrix', self.bl_obj.matrix_local)
+        self.shader.uniform_float('uSunDirAndFogStart', self.draw_obj.drawing_mgr.sun_dir_and_fog_start)
+        self.shader.uniform_float('uSunColorAndFogEnd', self.draw_obj.drawing_mgr.sun_color_and_fog_end)
+        self.shader.uniform_float('uAmbientLight', self.draw_obj.drawing_mgr.ambient_light)
+        self.shader.uniform_float('uFogColorAndAlphaTest', (*self.draw_obj.drawing_mgr.fog_color, u_alpha_test))
         self.shader.uniform_int('UnFogged_IsAffectedByLight_LightCount', (is_unfogged, is_unlit, 0))
-
-        glCheckError('uniform block 7')
         self.shader.uniform_int('uTexture', 0)
-        glCheckError('texture ')
 
         self.shader.uniform_float('color_Transparency', combined_color)
         self.shader.uniform_vector_float(self.shader.uniform_from_name('uTextMat'),
@@ -206,9 +194,7 @@ class M2DrawingBatch:
             self.shader.uniform_vector_float(self.shader.uniform_from_name('uBoneMatrices'),
                                              self.draw_obj.bone_matrices, 16, len(self.bl_rig.pose.bones))
 
-        glCheckError('uniform block 2')
         self.batch.draw(self.shader)
-        glCheckError('draw')
 
         if blend_enabled:
             glDisable(GL_BLEND)
@@ -223,6 +209,7 @@ class M2DrawingBatch:
             glDisable(GL_DEPTH_TEST)
 
         gpu.shader.unbind()
+        glCheckError('draw')
 
     def _update_batch_geometry(self, obj: bpy.types.Object):
 

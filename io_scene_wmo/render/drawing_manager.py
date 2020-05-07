@@ -1,18 +1,22 @@
 import bpy
-from typing import  List, Tuple, Dict
+from typing import List, Tuple, Dict
+from mathutils import Vector
 
-from .shaders import M2ShaderPermutations
-from .drawing_object import M2DrawingObject
-from .drawing_batch import M2DrawingBatch
+from .m2.shaders import M2ShaderPermutations
+from .m2.drawing_object import M2DrawingObject
+from .m2.drawing_batch import M2DrawingBatch
+
+from profilehooks import profile
 
 from bgl import *
 
 
-class M2DrawingManager:
+class DrawingManager:
 
-    def __init__(self, handler_mode=False):
+    def __init__(self, context, handler_mode=False):
+        self.context: bpy.types.Context = context
         self.shaders = M2ShaderPermutations()
-        self.m2_objects: List[M2DrawingObject] = []
+        self.m2_objects: Dict[str, M2DrawingObject] = {}
         self.bound_textures: Dict[bpy.types.Image, Tuple[int, List[M2DrawingBatch]]] = {}
 
         if handler_mode:
@@ -27,25 +31,56 @@ class M2DrawingManager:
         self.depth_tex_id_buf: Buffer
         self.depth_buf: Buffer
 
+        # uniform data
+        sun_dir = Vector(context.scene.wow_render_settings.sun_direction)
+        sun_dir.negate()
+        self.sun_dir_and_fog_start = (*sun_dir[:3], 10)
+        self.sun_color_and_fog_end = (*context.scene.wow_render_settings.ext_dir_color[:3], 50)
+        self.ambient_light = context.scene.wow_render_settings.ext_ambient_color
+        self.fog_color = (0.1, 0.5, 0)
+
+    @profile
+    def update_render_data(self, depsgraph: bpy.types.Depsgraph):
+
+        for update in depsgraph.updates:
+
+            if isinstance(update.id, bpy.types.Scene):
+                sun_dir = Vector(self.context.scene.wow_render_settings.sun_direction)
+                sun_dir.negate()
+                self.sun_dir_and_fog_start = (*sun_dir[:3], 10)
+                self.sun_color_and_fog_end = (*self.context.scene.wow_render_settings.ext_dir_color[:3], 50)
+                self.ambient_light = self.context.scene.wow_render_settings.ext_ambient_color
+                self.fog_color = (0.1, 0.5, 0)
+
+            if isinstance(update.id, bpy.types.Object):
+
+                if update.id.type == 'ARMATURE':
+
+                    draw_obj = self.m2_objects.get(update.id.name)
+
+                    if update.is_updated_geometry:
+                        draw_obj.update_bone_matrices()
+
     def queue_for_drawing(self, obj: bpy.types.Object):
         if obj.type != 'ARMATURE':
             raise Exception('Error: M2 should be represented as armature object. Failed to queue for drawing.')
 
-        self.m2_objects.append(M2DrawingObject(obj, self))
+        self.m2_objects[obj.name] = M2DrawingObject(obj, self, self.context)
 
+    @profile
     def draw(self):
 
-        self._render_depth_opengl()
+        #self._render_depth_opengl()
 
         self.region_3d = bpy.context.space_data.region_3d
         self.region = self._get_active_region()
 
-        for m2 in self.m2_objects:
+        for m2 in self.m2_objects.values():
             m2.draw()
 
         #self.render_depth_texture()
 
-        self._destroy_depthbuffer_texture()
+        #self._destroy_depthbuffer_texture()
 
     def render_depth_texture(self) -> bpy.types.Image:
         """ Render scene depth_tex_bindcode into texture """
@@ -68,6 +103,11 @@ class M2DrawingManager:
         image.pixels = [y for x in [linearize(v) for v in self.depth_buf] for y in x]
 
         return image
+
+    def _m2_draw_obj_from_bl_obj(self, obj: bpy.types.Object):
+        for m2 in self.m2_objects:
+            if m2.rig.name == obj.name:  # TODO: get rid of string comparison
+                return m2
 
     @staticmethod
     def _get_active_region() -> bpy.types.Region:

@@ -235,9 +235,6 @@ class WBS_OT_m2_export(bpy.types.Operator, ExportHelper):
         self.report({'ERROR'}, 'Invalid scene type.')
 
 
-from ..addon_common.cookiecutter.cookiecutter import CookieCutter
-from ..addon_common.common import ui
-
 '''
 Created on Dec 30, 2019
 
@@ -458,10 +455,9 @@ class M2DrawingTest(bpy.types.Operator):
 
     def execute(self, context):
 
-        import importlib
-        from ..render.m2.drawing_manager import M2DrawingManager
+        from render.drawing_manager import DrawingManager
 
-        dm = M2DrawingManager(handler_mode=True)
+        dm = DrawingManager(handler_mode=True)
         dm.queue_for_drawing(bpy.context.view_layer.objects.active)
 
         return {'FINISHED'}
