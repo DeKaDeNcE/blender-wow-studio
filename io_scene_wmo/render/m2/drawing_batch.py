@@ -8,14 +8,15 @@ from typing import Tuple, List
 from bgl import *
 from gpu_extras.batch import batch_for_shader
 
-from .shaders import M2ShaderPermutations, M2BlendingModeToEGxBlend, EGxBlendRecord
+from .shaders import M2ShaderPermutations, EGxBLend
+from .drawing_material import M2DrawingMaterial
+from ..drawing_elements import DrawingElements, ElementTypes
 from ..bgl_ext import glCheckError
 
 
 class M2DrawingBatch:
     __slots__ = (
-        'bl_obj',
-        'bl_rig',
+        'bl_obj_name',
         'draw_obj',
         'texture_count',
         'vertices',
@@ -29,10 +30,29 @@ class M2DrawingBatch:
         'batch',
         'batch_shader_id',
         'shader',
-        'material',
+        'draw_material',
         'texture',
-        'context'
+        'context',
+        'sort_radius'
     )
+
+    # vertex attributes
+    vertices: np.array
+    normals: np.array
+    indices: np.array
+    tex_coords: np.array
+    tex_coords2: np.array
+    bones: np.array
+    bone_weights: np.array
+
+    # control
+    mesh_type: int = ElementTypes.M2Mesh
+    shader: gpu.types.GPUShader
+    batch: gpu.types.GPUBatch
+
+    # uniform data
+    draw_material: M2DrawingMaterial
+    texture: bpy.types.Image
 
     def __init__(self
                  , obj: bpy.types.Object
@@ -40,36 +60,82 @@ class M2DrawingBatch:
                  , context: bpy.types.Context):
 
         self.context = context
-        self.bl_obj = obj
-        self.bl_rig = draw_obj.rig
+        self.bl_obj_name = obj.name
         self.draw_obj = draw_obj
 
         self.texture_count = 1
         self.bone_influences = 0
         self.batch_shader_id = 0
+        self.sort_radius = 0.0
 
-        self.vertices: np.array
-        self.normals: np.array
-        self.indices: np.array
-        self.tex_coords: np.array
-        self.tex_coords2: np.array
-        self.bones: np.array
-        self.bone_weights: np.array
-        self.shader: gpu.types.GPUShader
-        self.batch: gpu.types.GPUBatch
+        # handle materials
+        draw_material = self.draw_obj.drawing_mgr.drawing_materials.get(self.bl_obj.active_material.name)
 
-        # uniform data
-        self.material: bpy.types.Material
-        self.texture: bpy.types.Image
+        if draw_material:
+            self.draw_material = draw_material
+        else:
+            self.draw_material = M2DrawingMaterial(self.bl_obj.active_material)
+            self.draw_obj.drawing_mgr.drawing_materials[self.bl_obj.active_material.name] = self.draw_material  # TODO: handle 0 materials
 
+        # prepare batch
         self._update_batch_geometry(self.bl_obj)
         self.shader = self.determine_valid_shader()
         self.batch = self._create_batch()
         self.bind_textures()
 
+        DrawingElements().add_batch(self)
+
+    @property
+    def bl_obj(self):
+        return bpy.data.objects[self.bl_obj_name]
+
+    @property
+    def is_transparent(self):
+        return (self.draw_material.blend_mode > EGxBLend.AlphaKey) or not self.draw_material.depth_write
+
+    @property
+    def priority_plane(self):
+        return self.draw_material.bl_material.wow_m2_material.priority_plane
+
+    @property
+    def layer(self):
+        return self.draw_material.bl_material.wow_m2_material.layer
+
+    @property
+    def is_skybox(self):
+        return self.draw_obj.is_skybox
+
+    @property
+    def m2_draw_obj_idx(self):
+        return self.draw_obj.drawing_mgr.m2_objects.index(self.draw_obj)
+
+    @property
+    def bb_center(self):
+        return 0.125 * sum((mathutils.Vector(b) for b in self.bl_obj.bound_box), mathutils.Vector())
+
+    @property
+    def sort_distance(self):
+
+        bb_center = self.draw_obj.drawing_mgr.region_3d.perspective_matrix @ self.bb_center
+
+        value = bb_center.length
+
+        if self.draw_material.is_inverted and self.draw_material.is_transformed:
+            result_point = bb_center * (1.0 / value) if value > 0.00000023841858 else bb_center
+
+            sort_dist = self.draw_obj.drawing_mgr.region_3d.perspective_matrix.to_translation().length \
+                        * self.sort_radius
+
+            result_point *= sort_dist
+
+            value = (bb_center - result_point).length \
+                if self.draw_material.is_inverted else (bb_center + result_point).length
+
+        return value
+
     def bind_textures(self, rebind=False):
-        self.material = self.bl_obj.data.materials[0]
-        self.texture = self.material.wow_m2_material.texture
+
+        self.texture = self.draw_material.bl_material.wow_m2_material.texture  # TODO: proper updates
 
         bind_code, users = self.draw_obj.drawing_mgr.bound_textures.get(self.texture, (None, None))
 
@@ -137,16 +203,8 @@ class M2DrawingBatch:
         transparency = self.context.scene.wow_m2_transparency[transparency_name].value if transparency_name else 1.0
         combined_color = (*color[:3], color[3] * transparency)
 
-        m2_blend_mode = int(self.material.wow_m2_material.blending_mode)
-        blend_record = M2BlendingModeToEGxBlend[m2_blend_mode]
-        blend_enabled = blend_record.blending_enabled
-        depth_write = '16' not in self.material.wow_m2_material.render_flags
-        depth_culling = '8' not in self.material.wow_m2_material.render_flags
-        backface_culling = '4' not in self.material.wow_m2_material.render_flags
-        is_unlit = int('1' in self.material.wow_m2_material.render_flags)
-        is_unfogged = int('2' in self.material.wow_m2_material.render_flags)
         u_alpha_test = 128.0 / 255.0 * combined_color[3] \
-            if m2_blend_mode == 1 else 1.0 / 255.0  # Maybe move this to shader logic?
+            if self.draw_material.blend_mode.index == EGxBLend.AlphaKey.index else 1.0 / 255.0  # Maybe move this to shader logic?
 
         self._set_active_textures()
 
@@ -155,19 +213,19 @@ class M2DrawingBatch:
 
         # draw
 
-        if depth_culling:
+        if self.draw_material.depth_culling:
             glEnable(GL_DEPTH_TEST)
 
-        if depth_write:
+        if self.draw_material.depth_write:
             glDepthMask(GL_TRUE)
 
-        if backface_culling:
+        if self.draw_material.backface_culling:
             glEnable(GL_CULL_FACE)
 
-        if blend_enabled:
+        if self.draw_material.blend_mode.blending_enabled:
             glEnable(GL_BLEND)
 
-        glBlendFunc(blend_record.src_color, blend_record.dest_color)
+        glBlendFunc(self.draw_material.blend_mode.src_color, self.draw_material.blend_mode.dest_color)
 
         tex1_matrix_flattened = [j[i] for i in range(4)
                                  for j in self.bl_obj.wow_m2_geoset.uv_transform.matrix_world] \
@@ -182,7 +240,8 @@ class M2DrawingBatch:
         self.shader.uniform_float('uSunColorAndFogEnd', self.draw_obj.drawing_mgr.sun_color_and_fog_end)
         self.shader.uniform_float('uAmbientLight', self.draw_obj.drawing_mgr.ambient_light)
         self.shader.uniform_float('uFogColorAndAlphaTest', (*self.draw_obj.drawing_mgr.fog_color, u_alpha_test))
-        self.shader.uniform_int('UnFogged_IsAffectedByLight_LightCount', (is_unfogged, is_unlit, 0))
+        self.shader.uniform_int('UnFogged_IsAffectedByLight_LightCount', (self.draw_material.is_unfogged,
+                                                                          self.draw_material.is_unlit, 0))
         self.shader.uniform_int('uTexture', 0)
 
         self.shader.uniform_float('color_Transparency', combined_color)
@@ -192,24 +251,24 @@ class M2DrawingBatch:
 
         if self.bone_influences:
             self.shader.uniform_vector_float(self.shader.uniform_from_name('uBoneMatrices'),
-                                             self.draw_obj.bone_matrices, 16, len(self.bl_rig.pose.bones))
+                                             self.draw_obj.bone_matrices, 16, len(self.draw_obj.bl_rig.pose.bones))
 
         self.batch.draw(self.shader)
 
-        if blend_enabled:
+        if self.draw_material.blend_mode.blending_enabled:
             glDisable(GL_BLEND)
 
-        if backface_culling:
+        if self.draw_material.backface_culling:
             glDisable(GL_CULL_FACE)
 
-        if depth_write:
+        if self.draw_material.depth_write:
             glDepthMask(GL_FALSE)
 
-        if depth_culling:
+        if self.draw_material.depth_culling:
             glDisable(GL_DEPTH_TEST)
 
         gpu.shader.unbind()
-        glCheckError('draw')
+        #glCheckError('draw')
 
     def _update_batch_geometry(self, obj: bpy.types.Object):
 
@@ -247,13 +306,14 @@ class M2DrawingBatch:
                 self.tex_coords[loop.vertex_index] = uv_layer.data[loop.index].uv
 
         # handle bone data
+        bb_center = self.bb_center
         self.bone_influences = 0
         for vertex in mesh.vertices:
 
             v_bone_influences = 0
             counter = 0
             for group_info in vertex.groups:
-                bone_id = self.bl_rig.pose.bones.find(obj.vertex_groups[group_info.group].name)
+                bone_id = self.draw_obj.bl_rig.pose.bones.find(obj.vertex_groups[group_info.group].name)
                 weight = group_info.weight
 
                 if bone_id < 0 or not weight:
@@ -272,6 +332,9 @@ class M2DrawingBatch:
                 self.bone_weights[vertex.index][0] = 1.0
 
             self.bone_influences = max(self.bone_influences, v_bone_influences)
+
+            # calc sort radius
+            self.sort_radius = max(self.sort_radius, (vertex.co - bb_center).length)
 
     def _get_valid_attributes(self) -> dict:
 

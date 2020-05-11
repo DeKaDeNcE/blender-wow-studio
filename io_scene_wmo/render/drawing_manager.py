@@ -5,6 +5,8 @@ from mathutils import Vector
 from .m2.shaders import M2ShaderPermutations
 from .m2.drawing_object import M2DrawingObject
 from .m2.drawing_batch import M2DrawingBatch
+from .m2.drawing_material import M2DrawingMaterial
+from .drawing_elements import DrawingElements
 
 from profilehooks import profile
 
@@ -18,6 +20,7 @@ class DrawingManager:
         self.shaders = M2ShaderPermutations()
         self.m2_objects: Dict[str, M2DrawingObject] = {}
         self.bound_textures: Dict[bpy.types.Image, Tuple[int, List[M2DrawingBatch]]] = {}
+        self.drawing_materials: Dict[str, M2DrawingMaterial] = {}
 
         if handler_mode:
             self.handle = bpy.types.SpaceView3D.draw_handler_add(self._draw_callback, (self,), 'WINDOW', 'POST_VIEW')
@@ -52,7 +55,7 @@ class DrawingManager:
                 self.ambient_light = self.context.scene.wow_render_settings.ext_ambient_color
                 self.fog_color = (0.1, 0.5, 0)
 
-            if isinstance(update.id, bpy.types.Object):
+            elif isinstance(update.id, bpy.types.Object):
 
                 if update.id.type == 'ARMATURE':
 
@@ -60,6 +63,12 @@ class DrawingManager:
 
                     if update.is_updated_geometry:
                         draw_obj.update_bone_matrices()
+
+            elif isinstance(update.id, bpy.types.Material):
+                draw_mat = self.drawing_materials.get(update.id.name)
+
+                if draw_mat:
+                    draw_mat.update_uniform_data()
 
     def queue_for_drawing(self, obj: bpy.types.Object):
         if obj.type != 'ARMATURE':
@@ -75,8 +84,7 @@ class DrawingManager:
         self.region_3d = bpy.context.space_data.region_3d
         self.region = self._get_active_region()
 
-        for m2 in self.m2_objects.values():
-            m2.draw()
+        DrawingElements().draw()
 
         #self.render_depth_texture()
 
@@ -103,11 +111,6 @@ class DrawingManager:
         image.pixels = [y for x in [linearize(v) for v in self.depth_buf] for y in x]
 
         return image
-
-    def _m2_draw_obj_from_bl_obj(self, obj: bpy.types.Object):
-        for m2 in self.m2_objects:
-            if m2.rig.name == obj.name:  # TODO: get rid of string comparison
-                return m2
 
     @staticmethod
     def _get_active_region() -> bpy.types.Region:
@@ -155,7 +158,7 @@ class DrawingManager:
 
     def __contains__(self, item):
 
-        for draw_obj in self.m2_objects:
+        for draw_obj in self.m2_objects.values():
             if draw_obj.rig == item:
                 return True
 

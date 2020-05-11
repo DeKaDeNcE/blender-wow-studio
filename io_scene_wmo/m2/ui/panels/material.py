@@ -24,6 +24,10 @@ class M2_PT_material_panel(bpy.types.Panel):
         col.prop(context.material.wow_m2_material, "shader")
         col.prop(context.material.wow_m2_material, "texture")
 
+        col.prop(context.material.wow_m2_material, "priority_plane")
+        col.prop(context.material.wow_m2_material, "layer")
+
+
     @classmethod
     def poll(cls, context):
         return(context.scene is not None
@@ -66,6 +70,13 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
     texture: bpy.props.PointerProperty(
         type=bpy.types.Image
     )
+
+    layer: bpy.props.IntProperty(
+        min=0,
+        max=7
+    )
+
+    priority_plane: bpy.props.IntProperty()
 
     # Blender animation playback settings
 

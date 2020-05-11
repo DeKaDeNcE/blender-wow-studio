@@ -1,7 +1,6 @@
 import bpy
 import os
 import sys
-import time
 
 from mathutils import Vector
 from collections import namedtuple
@@ -11,7 +10,7 @@ from ..pywowlib.archives.wow_filesystem import WoWFileData
 from .. import PACKAGE_NAME
 
 
-SequenceRecord = namedtuple('SequenceRecord', ['name', 'value'])
+SequenceRecord = namedtuple('SequenceRecord', ['name', 'value', 'index'])
 
 
 class Sequence(type):
@@ -34,7 +33,7 @@ class Sequence(type):
         if self._iter == len(self.__fields__):
             raise StopIteration
         
-        item = SequenceRecord(self.__fields__[self._iter], getattr(self, self.__fields__[self._iter]))
+        item = SequenceRecord(self.__fields__[self._iter], getattr(self, self.__fields__[self._iter]), self._iter)
         self._iter += 1
         return item
 

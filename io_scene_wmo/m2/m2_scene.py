@@ -368,7 +368,10 @@ class BlenderM2Scene:
             blender_mat.wow_m2_material.flags = parse_bitfield(tex_unit.flags, 0x80)  # texture unit flags
             blender_mat.wow_m2_material.render_flags = parse_bitfield(m2_mat.flags, 0x800)  # render flags
 
-            blender_mat.wow_m2_material.blending_mode = str(m2_mat.blending_mode)  # TODO: ? bitfield
+            blender_mat.wow_m2_material.blending_mode = str(m2_mat.blending_mode)
+
+            blender_mat.wow_m2_material.layer = tex_unit.material_layer
+            blender_mat.wow_m2_material.priority_plane = tex_unit.priority_plane
 
             try:
                 blender_mat.wow_m2_material.shader = tex_unit.shader_id
@@ -734,7 +737,6 @@ class BlenderM2Scene:
                 obj.wow_m2_geoset.mesh_part_id = str(smesh.skin_section_id)
             except TypeError:
                 print('Warning: unknown mesh part ID \"{}\"'.format(smesh.skin_section_id))
-
             for item in mesh_part_id_menu(obj.wow_m2_geoset, None):
                 if item[0] == smesh.skin_section_id:
                     obj.name = item[1]
