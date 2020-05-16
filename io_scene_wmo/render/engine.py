@@ -2,7 +2,7 @@ import bpy
 import bgl
 
 from .drawing_manager import DrawingManager
-from .m2.shaders import M2ShaderPermutations
+from .utils import render_debug
 
 
 class CustomRenderEngine(bpy.types.RenderEngine):
@@ -19,12 +19,15 @@ class CustomRenderEngine(bpy.types.RenderEngine):
         self.first_time = True
         self.draw_data = None
 
-        self.m2_manager = DrawingManager(bpy.context)
+        self.draw_manager = DrawingManager(bpy.context)
+
+        render_debug('Instantiated render engine.')
 
     # When the render engine instance is destroy, this is called. Clean up any
     # render engine data here, for example stopping running render threads.
     def __del__(self):
-        pass
+        self.draw_manager.free()
+        render_debug('Freed render engine.')
 
     # This is the method called by Blender for both final renders (F12) and
     # small preview for materials, world and lights.
@@ -56,7 +59,7 @@ class CustomRenderEngine(bpy.types.RenderEngine):
     # should be read from Blender in the same thread. Typically a render
     # thread will be started to do the work while keeping Blender responsive.
     def view_update(self, context, depsgraph):
-        #depsgraph = context.evaluated_depsgraph_get()
+        # depsgraph = context.evaluated_depsgraph_get()
 
         region = context.region
         view3d = context.space_data
@@ -72,10 +75,10 @@ class CustomRenderEngine(bpy.types.RenderEngine):
             # Loop over all datablocks used in the scene.
             for datablock in depsgraph.ids:
                 if isinstance(datablock, bpy.types.Object) and datablock.type == 'ARMATURE':
-                    self.m2_manager.queue_for_drawing(context.scene.objects[datablock.name])
+                    self.draw_manager.queue_for_drawing(context.scene.objects[datablock.name])
 
         else:
-            self.m2_manager.update_render_data(depsgraph)
+            self.draw_manager.update_render_data(depsgraph)
 
         '''
         # Loop over all object instances in the scene.
@@ -85,6 +88,16 @@ class CustomRenderEngine(bpy.types.RenderEngine):
                 
         '''
 
+        render_debug('Num unfreed materials: {}\n'
+                     'Num unfreed drawing objects: {}\n'
+                     'Num unfreed batches: {}\n'
+                     'Num unfreed textures: {}\n'.format(
+            len(self.draw_manager.drawing_materials),
+            len(self.draw_manager.m2_objects),
+            len(self.draw_manager.drawing_elements.batches),
+            len(self.draw_manager.bound_textures))
+        )
+
     # For viewport renders, this method is called whenever Blender redraws
     # the 3D viewport. The renderer is expected to quickly draw the render
     # with OpenGL, and not perform other expensive work.
@@ -93,27 +106,17 @@ class CustomRenderEngine(bpy.types.RenderEngine):
 
     def view_draw(self, context, depsgraph):
 
-        self.m2_manager.draw()
+        #bgl.glEnable(bgl.GL_BLEND)
+        #bgl.glBlendFunc(bgl.GL_ONE, bgl.GL_ONE_MINUS_SRC_ALPHA)
+        #self.bind_display_space_shader(context.scene)
+
+        self.draw_manager.draw()
+
+
+        #self.unbind_display_space_shader()
+        #bgl.glDisable(bgl.GL_BLEND)
 
         return
-        region = context.region
-        scene = depsgraph.scene
-
-        # Get viewport dimensions
-        dimensions = region.width, region.height
-
-        # Bind shader that converts from scene linear to display space,
-        bgl.glEnable(bgl.GL_BLEND)
-        bgl.glBlendFunc(bgl.GL_ONE, bgl.GL_ONE_MINUS_SRC_ALPHA)
-        self.bind_display_space_shader(scene)
-
-        if not self.draw_data or self.draw_data.dimensions != dimensions:
-            self.draw_data = CustomDrawData(dimensions, self.m2_manager)
-
-        self.draw_data.draw()
-
-        self.unbind_display_space_shader()
-        bgl.glDisable(bgl.GL_BLEND)
 
 
 # RenderEngines also need to tell UI Panels that they are compatible with.
@@ -138,9 +141,6 @@ def get_panels():
 def register():
     # Register the RenderEngine
     bpy.utils.register_class(CustomRenderEngine)
-
-    # compile shaders
-    M2ShaderPermutations()
 
     for panel in get_panels():
         panel.COMPAT_ENGINES.add('CUSTOM')

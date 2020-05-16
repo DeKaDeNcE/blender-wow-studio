@@ -57,16 +57,24 @@ class WOW_PT_render_settings(bpy.types.Panel):
 
         col = layout.column()
 
+        col.label(text='Lighting:')
+
         col.prop(context.scene.wow_render_settings, "ext_ambient_color")
         col.prop(context.scene.wow_render_settings, "ext_dir_color")
         col.prop(context.scene.wow_render_settings, "sidn_scalar")
 
+        col.label(text='Fog:')
+        col.prop(context.scene.wow_render_settings, "fog_color")
+        col.prop(context.scene.wow_render_settings, "fog_start")
+        col.prop(context.scene.wow_render_settings, "fog_end")
+
         col.label(text='Sun Direciton:')
-        col.prop(context.scene.wow_wmo_root, "sun_direction", text='')
+        col.prop(context.scene.wow_render_settings, "sun_direction", text='')
+
 
     @classmethod
     def poll(cls, context):
-        return context.scene is not None and context.scene.wow_scene.type == 'WMO'
+        return context.scene is not None
 
 
 @on_release()
@@ -134,6 +142,27 @@ class WoWRenderSettingsPropertyGroup(bpy.types.PropertyGroup):
         size=3,
         subtype='DIRECTION',
         update=update_sun_direction
+    )
+
+    fog_color: bpy.props.FloatVectorProperty(
+        name='Fog Color',
+        subtype='COLOR',
+        default=(0.5, 0.5, 0.5),
+        size=3,
+        min=0.0,
+        max=1.0
+    )
+
+    fog_start: bpy.props.FloatProperty(
+        name='Fog Start',
+        min=0.1,
+        default=30.0
+    )
+
+    fog_end: bpy.props.FloatProperty(
+        name='Fog End',
+        min=0.1,
+        default=1000.0
     )
 
 

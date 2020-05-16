@@ -48,16 +48,6 @@ sys.path.append(vendor_dir)
 ui_icons = {}
 pcoll = None
 
-pcoll = bpy.utils.previews.new()
-
-icons_dir = os.path.join(os.path.dirname(__file__), "icons")
-
-for file in os.listdir(icons_dir):
-    pcoll.load(os.path.splitext(file)[0].upper(), os.path.join(icons_dir, file), 'IMAGE')
-
-for name, icon_file in pcoll.items():
-    ui_icons[name] = icon_file.icon_id
-
 
 class WMOPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
@@ -97,9 +87,22 @@ class WMOPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "project_dir_path")
 
 
-auto_load.init()
-
 def register():
+    global pcoll
+    global ui_icons
+
+    pcoll = bpy.utils.previews.new()
+
+    icons_dir = os.path.join(os.path.dirname(__file__), "icons")
+
+    for file in os.listdir(icons_dir):
+        pcoll.load(os.path.splitext(file)[0].upper(), os.path.join(icons_dir, file), 'IMAGE')
+
+    for name, icon_file in pcoll.items():
+        ui_icons[name] = icon_file.icon_id
+
+    auto_load.init()
+
     bpy.utils.register_class(WMOPreferences)
 
     try:
@@ -112,13 +115,17 @@ def register():
 def unregister():
     try:
         auto_load.unregister()
-        print("Registered WoW Blender Studio")
+        print("Unregistered WoW Blender Studio")
 
     except:
         traceback.print_exc()
 
     global pcoll
     bpy.utils.previews.remove(pcoll)
+
+    global ui_icons
+    ui_icons = {}
+
     bpy.utils.unregister_class(WMOPreferences)
 
 

@@ -66,7 +66,7 @@ def import_m2(version, filepath, is_local_file=False):
 
     bl_m2.load_armature()
     bl_m2.load_animations()
-    #bl_m2.load_colors()
+    bl_m2.load_colors()
     bl_m2.load_transparency()
     bl_m2.load_materials()
     bl_m2.load_geosets()

@@ -4,6 +4,7 @@ import gpu
 from enum import IntEnum
 from ctypes import c_uint, c_uint8
 from collections import namedtuple
+from typing import Dict, Tuple
 from tqdm import tqdm
 
 from ...utils.misc import singleton, Sequence
@@ -12,6 +13,7 @@ from bgl import *
 
 class M2PixelShader(IntEnum):
     # Wotlk deprecated shaders
+    '''
     Combiners_Decal = -1
     Combiners_Add = -2
     Combiners_Mod2x = -3
@@ -20,6 +22,7 @@ class M2PixelShader(IntEnum):
     Combiners_Opaque_AddNA = -6
     Combiners_Add_Mod = -7
     Combiners_Mod2x_Mod2x = -8
+    '''
 
     # Legion modern shaders
     Combiners_Opaque = 0
@@ -83,25 +86,25 @@ class M2VertexShader(IntEnum):
 
 
 EGxBlendRecord = namedtuple('EGxBlendRecord',
-                            ['blending_enabled', 'src_color', 'dest_color', 'src_alpha', 'dest_alpha'])
+                            ['blending_enabled', 'src_color', 'dest_color', 'src_alpha', 'dest_alpha', 'index'])
 
 
 class EGxBLend(metaclass=Sequence):
-    Opaque = EGxBlendRecord(False, GL_ONE, GL_ZERO, GL_ONE, GL_ZERO)
-    AlphaKey = EGxBlendRecord(False, GL_ONE, GL_ZERO, GL_ONE, GL_ZERO)
-    Alpha = EGxBlendRecord(True, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
-    Add = EGxBlendRecord(True, GL_SRC_ALPHA, GL_ONE, GL_ZERO, GL_ONE)
-    Mod = EGxBlendRecord(True, GL_DST_COLOR, GL_ZERO, GL_DST_ALPHA, GL_ZERO)
-    Mod2x = EGxBlendRecord(True, GL_DST_COLOR, GL_SRC_COLOR, GL_DST_ALPHA, GL_SRC_ALPHA)
-    ModAdd = EGxBlendRecord(True, GL_DST_COLOR, GL_ONE, GL_DST_ALPHA, GL_ONE)
-    InvSrcAlphaAdd = EGxBlendRecord(True, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE)
-    InvSrcAlphaOpaque = EGxBlendRecord(True, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO)
-    SrcAlphaOpaque = EGxBlendRecord(True, GL_SRC_ALPHA, GL_ZERO, GL_SRC_ALPHA, GL_ZERO)
-    NoAlphaAdd = EGxBlendRecord(True, GL_ONE, GL_ONE, GL_ZERO, GL_ONE)
+    Opaque = EGxBlendRecord(False, GL_ONE, GL_ZERO, GL_ONE, GL_ZERO, 0)
+    AlphaKey = EGxBlendRecord(False, GL_ONE, GL_ZERO, GL_ONE, GL_ZERO, 1)
+    Alpha = EGxBlendRecord(True, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, 2)
+    Add = EGxBlendRecord(True, GL_SRC_ALPHA, GL_ONE, GL_ZERO, GL_ONE, 3)
+    Mod = EGxBlendRecord(True, GL_DST_COLOR, GL_ZERO, GL_DST_ALPHA, GL_ZERO, 4)
+    Mod2x = EGxBlendRecord(True, GL_DST_COLOR, GL_SRC_COLOR, GL_DST_ALPHA, GL_SRC_ALPHA, 5)
+    ModAdd = EGxBlendRecord(True, GL_DST_COLOR, GL_ONE, GL_DST_ALPHA, GL_ONE, 6)
+    InvSrcAlphaAdd = EGxBlendRecord(True, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, 7)
+    InvSrcAlphaOpaque = EGxBlendRecord(True, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, 8)
+    SrcAlphaOpaque = EGxBlendRecord(True, GL_SRC_ALPHA, GL_ZERO, GL_SRC_ALPHA, GL_ZERO, 9)
+    NoAlphaAdd = EGxBlendRecord(True, GL_ONE, GL_ONE, GL_ZERO, GL_ONE, 10)
     ConstantAlpha = EGxBlendRecord(True, GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA, GL_CONSTANT_ALPHA,
-                                   GL_ONE_MINUS_CONSTANT_ALPHA)
-    Screen = EGxBlendRecord(True, GL_ONE_MINUS_DST_COLOR, GL_ONE, GL_ONE, GL_ZERO)
-    BlendAdd = EGxBlendRecord(True, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
+                                   GL_ONE_MINUS_CONSTANT_ALPHA, 11)
+    Screen = EGxBlendRecord(True, GL_ONE_MINUS_DST_COLOR, GL_ONE, GL_ONE, GL_ZERO, 12)
+    BlendAdd = EGxBlendRecord(True, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, 13)
 
 
 class M2BlendingModeToEGxBlend(metaclass=Sequence):
@@ -116,7 +119,7 @@ class M2BlendingModeToEGxBlend(metaclass=Sequence):
     Blend_BlendAdd = EGxBLend.BlendAdd
 
 
-M2ShaderTableRecord = namedtuple('M2ShaderTableRecord',['pixel_shader', 'vertex_shader'])
+M2ShaderTableRecord = namedtuple('M2ShaderTableRecord', ['pixel_shader', 'vertex_shader'])
 
 
 class M2ShaderTable(metaclass=Sequence):
@@ -228,50 +231,56 @@ class M2ShaderPermutations:
 
     def __init__(self):
         self.shader_permutations: Dict[Tuple[int, int, int], gpu.types.GPUShader] = {}
+        self.shader_source: str
 
         rel_path = 'shaders\\glsl330\\m2_shader.glsl' if os.name == 'nt' else 'shaders/glsl330/m2_shader.glsl'
 
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', rel_path)) as f:
-            shader_string = "".join(f.readlines())
+            self.shader_source = "".join(f.readlines())
 
+        '''
         for record in tqdm(M2ShaderTable, desc='Compiling M2 shader permutations'):
 
             for i in range(5):
-                vert_shader_string_perm = "#define COMPILING_VS {}\n" \
-                                          "#define BONEINFLUENCES {}\n" \
-                                          "#define VERTEXSHADER {}\n" \
-                                          "{}".format(1, i, record.value.vertex_shader, shader_string)
-                frag_shader_string_perm = "#define COMPILING_FS {}\n" \
-                                          "#define BONEINFLUENCES {}\n" \
-                                          "#define FRAGMENTSHADER {}\n" \
-                                          "{}".format(1, i, record.value.pixel_shader, shader_string)
+                self._compile_shader_permutation(record.value.vertex_shader, record.value.pixel_shader, i)
+                
+        '''
 
-                self.shader_permutations[record.value.vertex_shader, record.value.pixel_shader, i] = \
-                    gpu.types.GPUShader(vert_shader_string_perm, frag_shader_string_perm)
+    def _compile_shader_permutation(self
+                                    , vert_shader_id: int
+                                    , frag_shader_id: int
+                                    , bone_influences: int) -> gpu.types.GPUShader:
+
+        vert_shader_string_perm = "#define COMPILING_VS {}\n" \
+                                  "#define BONEINFLUENCES {}\n" \
+                                  "#define VERTEXSHADER {}\n" \
+                                  "{}".format(1, bone_influences, vert_shader_id, self.shader_source)
+        frag_shader_string_perm = "#define COMPILING_FS {}\n" \
+                                  "#define BONEINFLUENCES {}\n" \
+                                  "#define FRAGMENTSHADER {}\n" \
+                                  "{}".format(1, bone_influences, frag_shader_id, self.shader_source)
+
+        shader = gpu.types.GPUShader(vert_shader_string_perm, frag_shader_string_perm)
+        self.shader_permutations[vert_shader_id, frag_shader_id, bone_influences] = shader
+
+        return shader
 
     def get_shader_by_id(self
                          , vert_shader_id: int
                          , frag_shader_id: int
                          , bone_influences: int) -> gpu.types.GPUShader:
 
-        return self.shader_permutations[vert_shader_id, frag_shader_id, bone_influences]
+        shader = self.shader_permutations.get((vert_shader_id, frag_shader_id, bone_influences))
 
-    def get_shader_by_m2_id(self
-                            , texture_count: int
-                            , m2_batch_shader_id: int
-                            , bone_influences: int) -> gpu.types.GPUShader:
+        if not shader:
+            shader = self._compile_shader_permutation(vert_shader_id, frag_shader_id, bone_influences)
 
-        vert_shader_id = self._get_vertex_shader_id(texture_count, m2_batch_shader_id)
-        frag_shader_id = self._get_pixel_shader_id(texture_count, m2_batch_shader_id)
-
-        #print(vert_shader_id, frag_shader_id)
-
-        return self.shader_permutations[vert_shader_id, frag_shader_id, bone_influences]
+        return shader
 
     @staticmethod
-    def _get_vertex_shader_id(texture_count: int, shader_id: int) -> int:
+    def get_vertex_shader_id(texture_count: int, shader_id: int) -> int:
 
-        if shader_id < 0:
+        if shader_id < 0:  # all shaders with negative shader id
             vertex_shader_id = shader_id & 0x7FFF
 
             if c_uint(vertex_shader_id).value >= 0x22:
@@ -279,7 +288,9 @@ class M2ShaderPermutations:
 
             result = c_uint(M2ShaderTable[vertex_shader_id].vertex_shader).value
 
-        elif texture_count == 1:
+            # reverse: vertex_shader_id | 0x80000000 for int32) (do with ctypes)
+
+        elif texture_count == 1:  # 0, 1, 10
             if (shader_id & 0x80) != 0:
                 result = 1
             else:
@@ -287,10 +298,10 @@ class M2ShaderPermutations:
                 if not (shader_id & 0x4000):
                     result = 0
 
-        elif (shader_id & 0x80) != 0:
+        elif (shader_id & 0x80) != 0:  # 4, 5
             result = ((shader_id & 8) >> 3) | 4
 
-        else:
+        else:  # 3, 7, 8
             result = 3
             if not (shader_id & 8):
                 result = 5 * c_uint((shader_id & 0x4000) == 0).value + 2
@@ -298,7 +309,7 @@ class M2ShaderPermutations:
         return result
 
     @staticmethod
-    def _get_pixel_shader_id(texture_count: int, shader_id: int):
+    def get_pixel_shader_id(texture_count: int, shader_id: int):
 
         array1 = [
             M2PixelShader.Combiners_Mod_Mod2x,
@@ -322,15 +333,17 @@ class M2ShaderPermutations:
             M2PixelShader.Combiners_Opaque_AddAlpha_Alpha
         ]
 
-        if shader_id < 0:
+        if shader_id < 0:  # all shaders with negative shader id
 
             pixel_shader_id = shader_id & 0x7FFF
             if c_uint(pixel_shader_id).value >= 0x22:
                 raise ValueError("Wrong shader ID for pixel shader")
 
-            result = c_uint(M2ShaderTable[shader_id & 0x7FFF].pixel_shader).value
+            result = c_uint(M2ShaderTable[pixel_shader_id].pixel_shader).value
 
-        elif texture_count == 1:
+            # reverse: pixel_shader_id | 0x80000000 for int32) (do with ctypes)
+
+        elif texture_count == 1:  # 0, 1
 
             result = int((shader_id & 0x70) != 0)
         else:
@@ -339,6 +352,14 @@ class M2ShaderPermutations:
             if shader_id & 0x70:
                 cur_array = array1
 
-            result = cur_array[(c_uint8(shader_id).value ^ 4) & 7]
+            result = cur_array[(c_uint8(shader_id).value ^ 4) & 7].value
 
         return result
+
+    @staticmethod
+    def get_shader_combo_index(vertex_shader_id: int, pixel_shader_id: int):
+
+        for record in M2ShaderTable:
+            if record.value.vertex_shader == vertex_shader_id and record.value.pixel_shader == pixel_shader_id:
+                return record.index
+

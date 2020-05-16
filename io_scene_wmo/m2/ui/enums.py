@@ -8,13 +8,104 @@ __reload_order_index__ = -1
 ## Enumerated constants
 ###############################
 
+VERTEX_SHADERS = [
+    ("0", "Diffuse_T1", ""),
+    ("1", "Diffuse_Env", ""),
+    ("2", "Diffuse_T1_T2", ""),
+    ("3", "Diffuse_T1_Env", ""),
+    ("4", "Diffuse_Env_T1", ""),
+    ("5", "Diffuse_Env_Env", ""),
+    ("6", "Diffuse_T1_Env_T1", ""),
+    ("7", "Diffuse_T1_T1", ""),
+    ("8", "Diffuse_T1_T1_T1", ""),
+    ("9", "Diffuse_EdgeFade_T1", ""),
+    ("10", "Diffuse_T2", ""),
+    ("11", "Diffuse_T1_Env_T2", ""),
+    ("12", "Diffuse_EdgeFade_T1_T2", ""),
+    ("13", "Diffuse_EdgeFade_Env", ""),
+    ("14", "Diffuse_T1_T2_T1", ""),
+    ("15", "Diffuse_T1_T2_T3", ""),
+    ("16", "Color_T1_T2_T3", ""),
+    ("17", "BW_Diffuse_T1", ""),
+    ("18", "BW_Diffuse_T1_T2", "")
+]
+
+
+FRAGMENT_SHADERS = [
+    ("0", "Combiners_Opaque", ""),
+    ("1", "Combiners_Mod", ""),
+    ("2", "Combiners_Opaque_Mod", ""),
+    ("3", "Combiners_Opaque_Mod2x", ""),
+    ("4", "Combiners_Opaque_Mod2xNA", ""),
+    ("5", "Combiners_Opaque_Opaque", ""),
+    ("6", "Combiners_Mod_Mod", ""),
+    ("7", "Combiners_Mod_Mod2x", ""),
+    ("8", "Combiners_Mod_Add", ""),
+    ("9", "Combiners_Mod_Mod2xNA", ""),
+    ("10", "Combiners_Mod_AddNA", ""),
+    ("11", "Combiners_Mod_Opaque", ""),
+    ("12", "Combiners_Opaque_Mod2xNA_Alpha", ""),
+    ("13", "Combiners_Opaque_AddAlpha", ""),
+    ("14", "Combiners_Opaque_AddAlpha_Alpha", ""),
+    ("15", "Combiners_Opaque_Mod2xNA_Alpha_Add", ""),
+    ("16", "Combiners_Mod_AddAlpha", ""),
+    ("17", "Combiners_Mod_AddAlpha_Alpha", ""),
+    ("18", "Combiners_Opaque_Alpha_Alpha", ""),
+    ("19", "Combiners_Opaque_Mod2xNA_Alpha_3s", ""),
+    ("20", "Combiners_Opaque_AddAlpha_Wgt", ""),
+    ("21", "Combiners_Mod_Add_Alpha", ""),
+    ("22", "Combiners_Opaque_ModNA_Alpha", ""),
+    ("23", "Combiners_Mod_AddAlpha_Wgt", ""),
+    ("24", "Combiners_Opaque_Mod_Add_Wgt", ""),
+    ("25", "Combiners_Opaque_Mod2xNA_Alpha_UnshAlpha", ""),
+    ("26", "Combiners_Mod_Dual_Crossfade", ""),
+    ("27", "Combiners_Opaque_Mod2xNA_Alpha_Alpha", ""),
+    ("28", "Combiners_Mod_Masked_Dual_Crossfade", ""),
+    ("29", "Combiners_Opaque_Alpha", ""),
+    ("30", "Guild", ""),
+    ("31", "Guild_NoBorder", ""),
+    ("32", "Guild_Opaque", ""),
+    ("33", "Combiners_Mod_Depth", ""),
+    ("34", "Illum", ""),
+    ("35", "Combiners_Mod_Mod_Mod_Const", "")
+]
+
+
 SHADERS = [
-    ('-1', "No shader", ""),('0', "Diffuse", ""), ('1', "Specular", ""), ('2', "Metal", ""),
-    ('3', "Env", ""), ('4', "Opaque", ""), ('5', "EnvMetal", ""),
-    ('6', "TwoLayerDiffuse", ""), ('7', "TwoLayerEnvMetal", ""), ('8', "TwoLayerTerrain", ""),
-    ('9', "DiffuseEmissive", ""), ('10', "Tangent", ""), ('11', "MaskedEnvMetal", ""),
-    ('12', "EnvMetalEmissive", ""), ('13', "TwoLayerDiffuseOpaque", ""), ('14', "TwoLayerDiffuseEmissive", ""),
-    ('15', "Unknown", ""), ('16', "Unknown", "")
+    ('0', 'Combiners_Opaque_Mod2xNA_Alpha_Diffuse_T1_Env', ''),
+    ('1', 'Combiners_Opaque_AddAlpha_Diffuse_T1_Env', ''),
+    ('2', 'Combiners_Opaque_AddAlpha_Alpha_Diffuse_T1_Env', ''),
+    ('3', 'Combiners_Opaque_Mod2xNA_Alpha_Add_Diffuse_T1_Env_T1', ''),
+    ('4', 'Combiners_Mod_AddAlpha_Diffuse_T1_Env', ''),
+    ('5', 'Combiners_Opaque_AddAlpha_Diffuse_T1_T1', ''),
+    ('6', 'Combiners_Mod_AddAlpha_Diffuse_T1_T1', ''),
+    ('7', 'Combiners_Mod_AddAlpha_Alpha_Diffuse_T1_Env', ''),
+    ('8', 'Combiners_Opaque_Alpha_Alpha_Diffuse_T1_Env', ''),
+    ('9', 'Combiners_Opaque_Mod2xNA_Alpha_3s_Diffuse_T1_Env_T1', ''),
+    ('10', 'Combiners_Opaque_AddAlpha_Wgt_Diffuse_T1_T1', ''),
+    ('11', 'Combiners_Mod_Add_Alpha_Diffuse_T1_Env', ''),
+    ('12', 'Combiners_Opaque_ModNA_Alpha_Diffuse_T1_Env', ''),
+    ('13', 'Combiners_Mod_AddAlpha_Wgt_Diffuse_T1_Env', ''),
+    ('14', 'Combiners_Mod_AddAlpha_Wgt_Diffuse_T1_T1', ''),
+    ('15', 'Combiners_Opaque_AddAlpha_Wgt_Diffuse_T1_T2', ''),
+    ('16', 'Combiners_Opaque_Mod_Add_Wgt_Diffuse_T1_Env', ''),
+    ('17', 'Combiners_Opaque_Mod2xNA_Alpha_UnshAlpha1', ''),
+    ('18', 'Combiners_Mod_Dual_Crossfade_Diffuse_T1', ''),
+    ('19', 'Combiners_Mod_Depth_Diffuse_EdgeFade_T1', ''),
+    ('20', 'Combiners_Opaque_Mod2xNA_Alpha_Alpha_Diffuse_T1_Env_T2', ''),
+    ('21', 'Combiners_Mod_Mod_Diffuse_EdgeFade_T1_T2', ''),
+    ('22', 'Combiners_Mod_Masked_Dual_Crossfade_Diffuse_T1_T2', ''),
+    ('23', 'Combiners_Opaque_Alpha_Diffuse_T1_T1', ''),
+    ('24', 'Combiners_Opaque_Mod2xNA_Alpha_UnshAlpha2', ''),
+    ('25', 'Combiners_Mod_Depth_Diffuse_EdgeFade_Env', ''),
+    ('26', 'Guild_Diffuse_T1_T2_T1', ''),
+    ('27', 'Guild_NoBorder_Diffuse_T1_T2', ''),
+    ('28', 'Guild_Opaque_Diffuse_T1_T2_T1', ''),
+    ('29', 'Illum_Diffuse_T1_T1', ''),
+    ('30', 'Combiners_Mod_Mod_Mod_Const_Diffuse_T1_T2_T3', ''),
+    ('31', 'Combiners_Mod_Mod_Mod_Const_Color_T1_T2_T3', ''),
+    ('32', 'Combiners_Opaque_Diffuse_T1', ''),
+    ('33', 'Combiners_Mod_Mod2x_Diffuse_EdgeFade_T1_T2', ''),
 ]
 
 TEX_UNIT_FLAGS = [
@@ -280,3 +371,6 @@ def get_particle_flags(self, context):
 
 def get_event_names(self, context):
     return [(field.value, field.name, "") for field in M2EventTokens]
+
+
+

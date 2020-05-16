@@ -2,9 +2,11 @@ import traceback
 import bpy
 import numpy as np
 
+from copy import copy
 from typing import List
 
 from .drawing_batch import M2DrawingBatch
+from ..utils import render_debug
 
 
 class M2DrawingObject:
@@ -37,39 +39,23 @@ class M2DrawingObject:
         # uniform data
         self.bone_matrices = np.empty((len(rig.pose.bones), 16), 'f')
 
-        self.create_batches_from_armature(rig)
         self.update_bone_matrices()
+        self.create_batches_from_armature(rig)
+
+        render_debug('Instantiated drawing object \"{}\"'.format(self.bl_rig_name))
 
     @property
     def bl_rig(self):
-        return bpy.data.objects[self.bl_rig_name]
+
+        try:
+            return bpy.data.objects[self.bl_rig_name]
+        except KeyError:
+            self.free()
 
     def update_bone_matrices(self):
         rig = self.bl_rig
         for i, pbone in enumerate(rig.pose.bones):
-            self.bone_matrices[i] = \
-                [j[i] for i in range(4) for j in rig.convert_space(pose_bone=pbone,
-                                                                   matrix=pbone.matrix_channel,
-                                                                   from_space='POSE',
-                                                                   to_space='WORLD')]
-
-    '''
-    def draw(self):
-        broken_batches = []
-
-        for batch in self.batches:
-
-            try:
-                batch.draw()
-            except:
-                broken_batches.append(batch)
-                traceback.print_exc()
-
-        for batch in broken_batches:
-            batch.free_textures()
-            self.batches.remove(batch)
-            
-    '''
+            self.bone_matrices[i] = [j[i] for i in range(4) for j in pbone.matrix_channel]
 
     def create_batches_from_armature(self, rig: bpy.types.Object):
 
@@ -89,3 +75,13 @@ class M2DrawingObject:
 
     def _create_batch_from_object(self, obj: bpy.types.Object):
         self.batches.append(M2DrawingBatch(obj, self, self.context))
+
+    def free(self):
+
+        for batch in copy(self.batches):
+            batch.free()
+
+        del self.batches
+        del self.drawing_mgr.m2_objects[self.bl_rig_name]
+
+        render_debug('Freed drawing object \"{}\"'.format(self.bl_rig_name))

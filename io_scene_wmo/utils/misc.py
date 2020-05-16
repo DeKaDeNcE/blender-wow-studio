@@ -31,11 +31,17 @@ class Sequence(type):
     def __next__(self):
 
         if self._iter == len(self.__fields__):
+            self._iter = 0
             raise StopIteration
         
         item = SequenceRecord(self.__fields__[self._iter], getattr(self, self.__fields__[self._iter]), self._iter)
         self._iter += 1
         return item
+
+    def index(self, item):
+        return self.__fields__.index(item)
+
+
 
 def singleton(class_):
     instances = {}

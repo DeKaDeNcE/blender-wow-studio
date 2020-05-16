@@ -29,26 +29,30 @@ class M2_PT_geoset_panel(bpy.types.Panel):
 
 
 def update_geoset_uv_transform(self, context):
-    c_obj = context.object.wow_m2_geoset.uv_transform
+    c_obj = context.object.wow_m2_geoset.uv_transform_1
+    c_obj_1 = context.object.wow_m2_geoset.uv_transform_2
 
-    uv_transform = context.object.modifiers.get('M2TexTransform')
+    for c_obj, uv_transform_name, uv_name in ((c_obj, 'M2TexTransform_1', 'UVMap'),
+                                              (c_obj_1, 'M2TexTransform_2', 'UVMap.001')):
 
-    if c_obj:
-        if not c_obj.wow_m2_uv_transform.enabled:
-            context.object.wow_m2_geoset.uv_transform = None
+        uv_transform = context.object.modifiers.get(uv_transform_name)
 
-        if not uv_transform:
-            bpy.ops.object.modifier_add(type='UV_WARP')
-            uv_transform = context.object.modifiers[-1]
-            uv_transform.name = 'M2TexTransform'
-            uv_transform.object_from = context.object
-            uv_transform.object_to = c_obj
-            uv_transform.uv_layer = 'UVMap'
-        else:
-            uv_transform.object_to = c_obj
+        if c_obj:
+            if not c_obj.wow_m2_uv_transform.enabled:
+                context.object.wow_m2_geoset.uv_transform = None
 
-    elif uv_transform:
-        context.object.modifiers.remove(uv_transform)
+            if not uv_transform:
+                bpy.ops.object.modifier_add(type='UV_WARP')
+                uv_transform = context.object.modifiers[-1]
+                uv_transform.name = uv_transform_name
+                uv_transform.object_from = context.object
+                uv_transform.object_to = c_obj
+                uv_transform.uv_layer = uv_name
+            else:
+                uv_transform.object_to = c_obj
+
+        elif uv_transform:
+            context.object.modifiers.remove(uv_transform)
 
 
 class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
@@ -69,8 +73,15 @@ class WowM2GeosetPropertyGroup(bpy.types.PropertyGroup):
         items=mesh_part_id_menu
     )
 
-    uv_transform:  bpy.props.PointerProperty(
-        name="UV Transform",
+    uv_transform_1:  bpy.props.PointerProperty(
+        name="UV Transform 1",
+        type=bpy.types.Object,
+        poll=lambda self, obj: obj.wow_m2_uv_transform.enabled,
+        update=update_geoset_uv_transform
+    )
+
+    uv_transform_2:  bpy.props.PointerProperty(
+        name="UV Transform 2",
         type=bpy.types.Object,
         poll=lambda self, obj: obj.wow_m2_uv_transform.enabled,
         update=update_geoset_uv_transform

@@ -7,6 +7,7 @@ import bpy
 from mathutils import Vector
 
 from .bl_render import update_m2_mat_node_tree
+from ..render.m2.shaders import M2ShaderPermutations
 from ..utils.misc import parse_bitfield, construct_bitfield, load_game_data
 from ..utils.misc import resolve_texture_path, get_origin_position, get_objs_boundbox_world, get_obj_boundbox_center, \
     get_obj_radius
@@ -216,45 +217,61 @@ class BlenderM2Scene:
 
     def load_materials(self):
 
-        # TODO: multitexturing
-        skin = self.m2.skins[0]  # assuming first skin is the most detailed one
+        skin = self.m2.skins[0]
 
         loaded_textures = {}
 
         for tex_unit in skin.texture_units:
-            texture = self.m2.root.textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index]]
-
-            tex_path_png = ""
-
-            if not texture.type:
-                tex_path_blp = self.m2.texture_path_map[texture.txid] \
-                    if texture.txid else self.m2.texture_path_map[texture.filename.value]
-
-                tex_path_png = os.path.splitext(tex_path_blp)[0] + '.png'
-
             m2_mat = self.m2.root.materials[tex_unit.material_index]
 
-            # creating material
-            blender_mat = bpy.data.materials.new(os.path.basename(tex_path_png))
+            blender_mat = bpy.data.materials.new(name='Unknown')
             blender_mat.wow_m2_material.live_update = True
 
-            tex1 = loaded_textures.get(self.m2.root.texture_lookup_table[tex_unit.texture_combo_index])
-            if tex_path_png and not tex1:
-                try:
-                    tex1 = bpy.data.images.load(tex_path_png)
-                    loaded_textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index]] = tex1
-                except RuntimeError:
-                    print("\nWarning: failed to load texture \"{}\".".format(tex_path_png))
+            for i in range(tex_unit.texture_count):
 
-            if not tex1:
-                tex1 = bpy.data.images.new('Failed Loading', 256, 256)
+                texture = self.m2.root.textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index + i]]
+                tex = loaded_textures.get(self.m2.root.texture_lookup_table[tex_unit.texture_combo_index + i])
 
-            loaded_textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index]] = tex1
-            blender_mat.wow_m2_material.texture = tex1
-            tex1.wow_m2_texture.flags = parse_bitfield(texture.flags, 0x2)
-            tex1.wow_m2_texture.texture_type = str(texture.type)
-            tex1.wow_m2_texture.path = texture.filename.value
+                if not tex:
 
+                    tex_path_png = ""
+
+                    if not texture.type:  # check if texture is hardcoded
+                        tex_path_blp = self.m2.texture_path_map[texture.txid] \
+                            if texture.txid else self.m2.texture_path_map[texture.filename.value]
+
+                        tex_path_png = os.path.splitext(tex_path_blp)[0] + '.png'
+
+                    if tex_path_png:
+                        try:
+                            tex = bpy.data.images.load(tex_path_png)
+                        except RuntimeError:
+                            print("\nWarning: failed to load texture \"{}\".".format(tex_path_png))
+
+                    if not tex:
+                        tex = bpy.data.images.new('Failed Loading', 256, 256)
+
+                    loaded_textures[self.m2.root.texture_lookup_table[tex_unit.texture_combo_index + i]] = tex
+
+                setattr(blender_mat.wow_m2_material, "texture_{}".format(i + 1), tex)
+                tex.wow_m2_texture.flags = parse_bitfield(texture.flags, 0x2)
+                tex.wow_m2_texture.texture_type = str(texture.type)
+                tex.wow_m2_texture.path = texture.filename.value
+
+            # bind transparency to material
+            if tex_unit.texture_weight_combo_index >= 0:
+                real_tw_index = self.m2.root.transparency_lookup_table[tex_unit.texture_weight_combo_index]
+                transparency = bpy.context.scene.wow_m2_transparency[real_tw_index]
+                blender_mat.wow_m2_material.transparency = transparency.name
+
+            '''
+            # bind color to material
+            if tex_unit.color_index >= 0:
+                color = bpy.context.scene.wow_m2_colors[tex_unit.color_index]
+                blender_mat.wow_m2_material.color = color.name
+            '''
+
+            blender_mat.name = blender_mat.wow_m2_material.texture_1.name
             update_m2_mat_node_tree(blender_mat)
 
             '''
@@ -359,11 +376,6 @@ class BlenderM2Scene:
                 
             '''
 
-            # bind transparency to texture
-            real_tw_index = self.m2.root.transparency_lookup_table[tex_unit.texture_weight_combo_index]
-            transparency = bpy.context.scene.wow_m2_transparency[real_tw_index]
-            tex1.wow_m2_texture.transparency = transparency.name
-
             # filling material settings
             blender_mat.wow_m2_material.flags = parse_bitfield(tex_unit.flags, 0x80)  # texture unit flags
             blender_mat.wow_m2_material.render_flags = parse_bitfield(m2_mat.flags, 0x800)  # render flags
@@ -373,10 +385,15 @@ class BlenderM2Scene:
             blender_mat.wow_m2_material.layer = tex_unit.material_layer
             blender_mat.wow_m2_material.priority_plane = tex_unit.priority_plane
 
+            vertex_shader = M2ShaderPermutations().get_vertex_shader_id(tex_unit.texture_count, tex_unit.shader_id)
+            pixel_shader = M2ShaderPermutations().get_pixel_shader_id(tex_unit.texture_count, tex_unit.shader_id)
+
             try:
-                blender_mat.wow_m2_material.shader = tex_unit.shader_id
+                blender_mat.wow_m2_material.vertex_shader = str(vertex_shader)
+                blender_mat.wow_m2_material.fragment_shader = str(pixel_shader)
             except TypeError:
-                print('\"Failed to set shader ID ({}) to material \"{}\".'.format(tex_unit.shader_id, blender_mat.name))
+                print('\"Error: Failed to set shader ID ({}) to material \"{}\".'.format(tex_unit.shader_id,
+                                                                                         blender_mat.name))
 
             # TODO: other settings
 
@@ -699,6 +716,9 @@ class BlenderM2Scene:
             tex_coords = [self.m2.root.vertices[skin.vertex_indices[i]].tex_coords
                           for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
 
+            tex_coords2 = [self.m2.root.vertices[skin.vertex_indices[i]].tex_coords2
+                          for i in range(smesh.vertex_start, smesh.vertex_start + smesh.vertex_count)]
+
             triangles = [[skin.triangle_indices[i + j] - smesh.vertex_start for j in range(3)]
                          for i in range(smesh.index_start, smesh.index_start + smesh.index_count, 3)]
 
@@ -714,18 +734,24 @@ class BlenderM2Scene:
                 vertex.normal = normals[index]
 
             # set uv
-            uv1 = mesh.uv_layers.new(name="UVMap")
+            mesh.uv_layers.new(name="UVMap")
             uv_layer1 = mesh.uv_layers[0]
             for i in range(len(uv_layer1.data)):
                 uv = tex_coords[mesh.loops[i].vertex_index]
                 uv_layer1.data[i].uv = (uv[0], 1 - uv[1])
+
+            mesh.uv_layers.new(name="UVMap.001")
+            uv_layer2 = mesh.uv_layers[1]
+            for i in range(len(uv_layer2.data)):
+                uv = tex_coords2[mesh.loops[i].vertex_index]
+                uv_layer2.data[i].uv = (uv[0], 1 - uv[1])
 
             # set textures and materials
             material, tex_unit = self.materials[smesh_i]
             mesh.materials.append(material)
 
             for i, poly in enumerate(mesh.polygons):
-                poly.material_index = 0  # ???
+                poly.material_index = 0  # TODO: excuse me wtf?
 
             # get object name
             name = M2SkinMeshPartID.get_mesh_part_name(smesh.skin_section_id)
@@ -785,111 +811,121 @@ class BlenderM2Scene:
             smesh_i, smesh = smesh_pair
 
             _, tex_unit = self.materials[smesh_i]
-            tex_tranform_index = self.m2.root.texture_transforms_lookup_table[tex_unit.texture_transform_combo_index]
 
-            if tex_tranform_index >= 0:
+            for i in range(2 if tex_unit.texture_count > 1 else 1):
 
-                c_obj = self.uv_transforms.get(tex_tranform_index)
-                tex_transform = self.m2.root.texture_transforms[tex_tranform_index]
-                seq_name_table = M2SequenceNames()
-                n_global_sequences = len(self.global_sequences)
+                combo_index = tex_unit.texture_transform_combo_index + i
 
-                if not c_obj:
-                    bpy.ops.object.empty_add(type='SINGLE_ARROW', location=(0, 0, 0))
-                    c_obj = bpy.context.view_layer.objects.active
-                    c_obj.name = "TT_Controller"
-                    c_obj.wow_m2_uv_transform.enabled = True
-                    c_obj = bpy.context.view_layer.objects.active
-                    c_obj.rotation_mode = 'QUATERNION'
-                    c_obj.empty_display_size = 0.5
-                    c_obj.animation_data_create()
-                    c_obj.animation_data.action_blend_type = 'ADD'
+                if combo_index >= self.m2.root.texture_lookup_table.n_elements:
+                    break
 
-                    self.uv_transforms[tex_tranform_index] = c_obj
+                tex_tranform_index = self.m2.root.texture_transforms_lookup_table[combo_index]
 
-                bpy.context.view_layer.objects.active = obj
-                bpy.ops.object.modifier_add(type='UV_WARP')
-                uv_transform = bpy.context.object.modifiers[-1]
-                uv_transform.name = 'M2TexTransform'
-                uv_transform.object_from = obj
-                uv_transform.object_to = c_obj
-                uv_transform.uv_layer = 'UVMap'
+                if tex_tranform_index >= 0:
 
-                obj.wow_m2_geoset.uv_transform = c_obj
+                    c_obj = self.uv_transforms.get(tex_tranform_index)
+                    tex_transform = self.m2.root.texture_transforms[tex_tranform_index]
+                    seq_name_table = M2SequenceNames()
+                    n_global_sequences = len(self.global_sequences)
 
-                # load global sequences
-                for j, seq_index in enumerate(self.global_sequences):
-                    anim = bpy.context.scene.wow_m2_animations[seq_index]
+                    if not c_obj:
+                        bpy.ops.object.empty_add(type='SINGLE_ARROW', location=(0, 0, 0))
+                        c_obj = bpy.context.view_layer.objects.active
+                        c_obj.name = "TT_Controller"
+                        c_obj.wow_m2_uv_transform.enabled = True
+                        c_obj = bpy.context.view_layer.objects.active
+                        c_obj.rotation_mode = 'QUATERNION'
+                        c_obj.empty_display_size = 0.5
+                        c_obj.animation_data_create()
+                        c_obj.animation_data.action_blend_type = 'ADD'
 
-                    name = "TT_{}_{}_Global_Sequence_{}".format(tex_tranform_index, obj.name, str(j).zfill(3))
+                        self.uv_transforms[tex_tranform_index] = c_obj
 
-                    cur_index = len(anim.anim_pairs)
-                    anim_pair = anim.anim_pairs.add()
-                    anim_pair.type = 'OBJECT'
-                    anim_pair.object = c_obj
+                    bpy.context.view_layer.objects.active = obj
+                    bpy.ops.object.modifier_add(type='UV_WARP')
+                    uv_transform = bpy.context.object.modifiers[-1]
+                    uv_transform.name = 'M2TexTransform_{}'.format(i + 1)
+                    uv_transform.object_from = obj
+                    uv_transform.object_to = c_obj
+                    uv_transform.uv_layer = 'UVMap' if not i else 'UVMap.001'
 
-                    if tex_transform.translation.global_sequence == j \
-                    and tex_transform.translation.timestamps.n_elements:
-                        action = self._bl_create_action(anim_pair, name)
-                        self._bl_create_fcurves(action, obj.name, bl_convert_trans_track, 3, 0, 'location',
-                                                tex_transform.translation)
+                    setattr(obj.wow_m2_geoset, 'uv_transform_{}'.format(i + 1), c_obj)
 
-                    if tex_transform.rotation.global_sequence == j \
-                    and tex_transform.rotation.timestamps.n_elements:
-                        action = self._bl_create_action(anim_pair, name)
-                        self._bl_create_fcurves(action, obj.name, bl_convert_rot_track, 4, 0, 'rotation_quaternion',
-                                                tex_transform.rotation)
+                    # load global sequences
+                    for j, seq_index in enumerate(self.global_sequences):
+                        anim = bpy.context.scene.wow_m2_animations[seq_index]
 
-                    if tex_transform.scaling.global_sequence == j \
-                    and tex_transform.scaling.timestamps.n_elements:
-                        action = self._bl_create_action(anim_pair, name)
-                        self._bl_create_fcurves(action, obj.name, self._bl_convert_track_dummy, 3, 0, 'scale',
-                                                tex_transform.scaling)
+                        name = "TT_{}_{}_Global_Sequence_{}".format(tex_tranform_index, obj.name, str(j).zfill(3))
 
-                    if not anim_pair.action:
+                        cur_index = len(anim.anim_pairs)
+                        anim_pair = anim.anim_pairs.add()
+                        anim_pair.type = 'OBJECT'
+                        anim_pair.object = c_obj
+
+                        if tex_transform.translation.global_sequence == j \
+                        and tex_transform.translation.timestamps.n_elements:
+                            action = self._bl_create_action(anim_pair, name)
+                            self._bl_create_fcurves(action, obj.name, bl_convert_trans_track, 3, 0, 'location',
+                                                    tex_transform.translation)
+
+                        if tex_transform.rotation.global_sequence == j \
+                        and tex_transform.rotation.timestamps.n_elements:
+                            action = self._bl_create_action(anim_pair, name)
+                            self._bl_create_fcurves(action, obj.name, bl_convert_rot_track, 4, 0, 'rotation_quaternion',
+                                                    tex_transform.rotation)
+
+                        if tex_transform.scaling.global_sequence == j \
+                        and tex_transform.scaling.timestamps.n_elements:
+                            action = self._bl_create_action(anim_pair, name)
+                            self._bl_create_fcurves(action, obj.name, self._bl_convert_track_dummy, 3, 0, 'scale',
+                                                    tex_transform.scaling)
+
+                        if not anim_pair.action:
+                                anim.anim_pairs.remove(cur_index)
+
+                    # load animations
+                    for j, anim_index in enumerate(self.animations):
+
+                        # skip alias
+                        if self.alias_animation_lookup.get(j):
+                            continue
+
+                        anim = bpy.context.scene.wow_m2_animations[j + n_global_sequences]
+                        sequence = self.m2.root.sequences[anim_index]
+
+                        field_name = seq_name_table.get_sequence_name(sequence.id)
+                        name = 'TT_{}_{}_{}_UnkAnim'.format(tex_tranform_index, obj.name, str(j).zfill(3)) \
+                             if not field_name else "TT_{}_{}_{}_{}_({})".format(tex_tranform_index,
+                                                                                 obj.name,
+                                                                                 str(j).zfill(3),
+                                                                                 field_name,
+                                                                                 sequence.variation_index)
+
+                        cur_index = len(anim.anim_pairs)
+                        anim_pair = anim.anim_pairs.add()
+                        anim_pair.type = 'OBJECT'
+                        anim_pair.object = c_obj
+
+                        if tex_transform.translation.global_sequence < 0 \
+                        and tex_transform.translation.timestamps.n_elements > j:
+                            action = self._bl_create_action(anim_pair, name)
+                            self._bl_create_fcurves(action, obj.name, bl_convert_trans_track, 3, j, 'location',
+                                                    tex_transform.translation)
+
+                        if tex_transform.rotation.global_sequence < 0 \
+                                and tex_transform.rotation.timestamps.n_elements > j:
+                            action = self._bl_create_action(anim_pair, name)
+                            self._bl_create_fcurves(action, obj.name, bl_convert_rot_track, 4, j, 'rotation_quaternion',
+                                                    tex_transform.rotation)
+
+                        if tex_transform.scaling.global_sequence < 0 \
+                                and tex_transform.scaling.timestamps.n_elements > j:
+                            action = self._bl_create_action(anim_pair, name)
+                            self._bl_create_fcurves(action, obj.name, self._bl_convert_track_dummy, 4, j,
+                                                    'rotation_quaternion', tex_transform.rotation)
+
+                        if not anim_pair.action:
                             anim.anim_pairs.remove(cur_index)
-
-                # load animations
-                for j, anim_index in enumerate(self.animations):
-
-                    # skip alias
-                    if self.alias_animation_lookup.get(j):
-                        continue
-
-                    anim = bpy.context.scene.wow_m2_animations[j + n_global_sequences]
-                    sequence = self.m2.root.sequences[anim_index]
-
-                    field_name = seq_name_table.get_sequence_name(sequence.id)
-                    name = 'TT_{}_{}_{}_UnkAnim'.format(tex_tranform_index, obj.name, str(j).zfill(3)) \
-                         if not field_name else "TT_{}_{}_{}_{}_({})".format(tex_tranform_index,
-                                                                             obj.name,
-                                                                             str(j).zfill(3),
-                                                                             field_name,
-                                                                             sequence.variation_index)
-
-                    cur_index = len(anim.anim_pairs)
-                    anim_pair = anim.anim_pairs.add()
-                    anim_pair.type = 'OBJECT'
-                    anim_pair.object = c_obj
-
-                    if tex_transform.translation.global_sequence < 0 \
-                    and tex_transform.translation.timestamps.n_elements > j:
-                        action = self._bl_create_action(anim_pair, name)
-                        self._bl_create_fcurves(action, obj.name, bl_convert_trans_track, 3, j, 'location',
-                                                tex_transform.translation)
-
-                    if tex_transform.rotation.global_sequence < 0 and tex_transform.rotation.timestamps.n_elements > j:
-                        action = self._bl_create_action(anim_pair, name)
-                        self._bl_create_fcurves(action, obj.name, bl_convert_rot_track, 4, j, 'rotation_quaternion',
-                                                tex_transform.rotation)
-
-                    if tex_transform.scaling.global_sequence < 0 and tex_transform.scaling.timestamps.n_elements > j:
-                        action = self._bl_create_action(anim_pair, name)
-                        self._bl_create_fcurves(action, obj.name, self._bl_convert_track_dummy, 4, j,
-                                                'rotation_quaternion', tex_transform.rotation)
-
-                    if not anim_pair.action:
-                        anim.anim_pairs.remove(cur_index)
 
     def load_attachments(self):
         # TODO: unknown field

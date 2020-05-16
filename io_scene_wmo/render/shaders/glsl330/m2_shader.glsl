@@ -43,6 +43,7 @@ in vec4 aBoneWeights;
 // Whole model
 uniform mat4 uViewProjectionMatrix;
 uniform mat4 uPlacementMatrix;
+uniform mat4 uPlacementMatrixLocal;
 uniform mat4 uBoneMatrices[220];
 
 //Individual meshes
@@ -85,7 +86,7 @@ void main() {
     vec4 combinedColorHalved = combinedColor * 0.5;
 
     mat3 viewModelMatTransposed = mat3(uViewProjectionMatrix) * mat3(uPlacementMatrix) * mat3(boneTransformMat);
-    mat4 cameraMatrix = uViewProjectionMatrix * uPlacementMatrix * boneTransformMat;
+    mat4 cameraMatrix = uViewProjectionMatrix * (uPlacementMatrix * (boneTransformMat * uPlacementMatrixLocal));
     vec4 cameraPoint = cameraMatrix * aPositionVec4;
 
     // Handle normals
@@ -145,7 +146,7 @@ void main() {
         vTexCoord2 = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
         vTexCoord3 = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
     #endif
-    #if VERTEXSHADER == 9 //Diffuse_EdgeFade_T1
+    #if VERTEXSHADER == 9 //Diffuse_EdgeFade_T1+
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a * edgeScanVal);
         vTexCoord = ((uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy).xy;
     #endif
@@ -304,13 +305,18 @@ void main() {
     vec2 texCoord2 = vTexCoord2.xy;
     vec2 texCoord3 = vTexCoord3.xy;
 
-    vec4 gamma = vec4(0.454);
+    vec3 gamma = vec3(0.454);
 
     /* Get color from texture */
-    vec4 tex = pow(texture(uTexture, texCoord).rgba, gamma);
+    vec4 tex = texture(uTexture, texCoord).rgba;
+    tex = vec4(pow(tex.rgb, gamma), tex.a);
 
-    vec4 tex2 = pow(texture(uTexture2, texCoord2).rgba, gamma);
-    vec4 tex3 = pow(texture(uTexture3, texCoord3).rgba, gamma);
+    vec4 tex2 = texture(uTexture2, texCoord2).rgba;
+    tex2 = vec4(pow(tex2.rgb, gamma), tex2.a);
+
+    vec4 tex3 = texture(uTexture3, texCoord3).rgba;
+    tex3 = vec4(pow(tex3.rgb, gamma), tex3.a);
+
 
     vec4 tex2WithTextCoord1 = texture(uTexture2,texCoord);
     vec4 tex3WithTextCoord1 = texture(uTexture3,texCoord);

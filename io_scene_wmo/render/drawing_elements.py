@@ -1,8 +1,9 @@
-import bpy
-from enum import IntEnum
-from functools import cmp_to_key
+import traceback
 
-from ..utils.misc import singleton
+from enum import IntEnum
+from copy import copy
+from typing import List
+from functools import cmp_to_key, partial
 
 
 class ElementTypes(IntEnum):
@@ -14,27 +15,52 @@ class ElementTypes(IntEnum):
     ParticleMesh = 5
 
 
-@singleton
 class DrawingElements:
 
     def __init__(self):
-        self.batches = []
+        self.batches: List['M2DrawingBatch'] = []
 
     def add_batch(self, batch):
         self.batches.append(batch)
 
-    def draw(self):
+    def remove_batch(self, batch):
+        self.batches.remove(batch)
 
-        for batch_index in sorted(list(range(len(self.batches))), key=cmp_to_key(self.sort_elements)):
-            self.batches[batch_index].draw()
+    def draw(self):
+        batches = copy(self.batches)
+
+        try:
+            sorted_indices = sorted(list(range(len(self.batches))), key=cmp_to_key(partial(self.sort_elements, self)))
+        except IndexError:
+            print('Skipping frame! Iterator invalidated!')
+            self.draw()
+            #traceback.print_exc()
+            return
+
+        for batch_index in sorted_indices:
+            batch = batches[batch_index]
+            try:
+                batch.draw()
+            except:
+                batch.free()
+                print('Debug: Freeing batch from DrawingElements!')
+                traceback.print_exc()
+                self.draw()
 
     @staticmethod
-    def sort_elements(a, b):
+    def sort_elements(self, a, b):
 
-        drawing_elements = DrawingElements()
+        batch_a = self.batches[a]
+        batch_b = self.batches[b]
 
-        batch_a = drawing_elements.batches[a]
-        batch_b = drawing_elements.batches[b]
+        tag_a = batch_a.ensure_context()
+        tag_b = batch_b.ensure_context()
+
+        if tag_a:
+            return 1
+
+        if tag_b:
+            return -1
 
         if batch_a.is_transparent > batch_b.is_transparent:
             return -1
@@ -120,6 +146,6 @@ class DrawingElements:
 
         """
 
-        return a > b
+        return 1 if a > b else -1
 
 

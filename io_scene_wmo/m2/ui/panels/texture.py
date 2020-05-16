@@ -16,11 +16,6 @@ class M2_PT_texture_panel(bpy.types.Panel):
         col.prop(context.edit_image.wow_m2_texture, "texture_type")
         col.separator()
         col.prop(context.edit_image.wow_m2_texture, "path", text='Path')
-        col.separator()
-        col.prop_search(context.edit_image.wow_m2_texture, "color",
-                        context.scene, "wow_m2_colors", text='Color', icon='COLOR')
-        col.prop_search(context.edit_image.wow_m2_texture, "transparency",
-                        context.scene, "wow_m2_transparency", text='Transparency', icon='RESTRICT_VIEW_OFF')
 
     @classmethod
     def poll(cls, context):
@@ -49,17 +44,6 @@ class WowM2TexturePropertyGroup(bpy.types.PropertyGroup):
         name='Path',
         description='Path to .blp file in wow file system.'
     )
-
-    color:  bpy.props.StringProperty(
-        name='Color',
-        description='Color track linked to this texture.'
-    )
-
-    transparency:  bpy.props.StringProperty(
-        name='Transparency',
-        description='Transparency track linked to this texture.'
-    )
-
 
 def register():
     bpy.types.Image.wow_m2_texture = bpy.props.PointerProperty(type=WowM2TexturePropertyGroup)

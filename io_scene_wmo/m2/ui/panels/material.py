@@ -20,13 +20,25 @@ class M2_PT_material_panel(bpy.types.Panel):
         col.label(text='Render flags:')
         col.prop(context.material.wow_m2_material, "render_flags")
         col.separator()
+        col.label(text='Shader control:')
         col.prop(context.material.wow_m2_material, "blending_mode")
-        col.prop(context.material.wow_m2_material, "shader")
-        col.prop(context.material.wow_m2_material, "texture")
-
+        col.prop(context.material.wow_m2_material, "vertex_shader")
+        col.prop(context.material.wow_m2_material, "fragment_shader")
+        col.separator()
+        col.label(text='Sorting control:')
         col.prop(context.material.wow_m2_material, "priority_plane")
         col.prop(context.material.wow_m2_material, "layer")
-
+        col.separator()
+        col.label(text='Textures')
+        col.prop(context.material.wow_m2_material, "texture_1")
+        col.prop(context.material.wow_m2_material, "texture_2")
+        col.prop(context.material.wow_m2_material, "texture_3")
+        col.prop(context.material.wow_m2_material, "texture_4")
+        col.separator()
+        col.prop_search(context.material.wow_m2_material, "color",
+                        context.scene, "wow_m2_colors", text='Color', icon='COLOR')
+        col.prop_search(context.material.wow_m2_material, "transparency",
+                        context.scene, "wow_m2_transparency", text='Transparency', icon='RESTRICT_VIEW_OFF')
 
     @classmethod
     def poll(cls, context):
@@ -51,15 +63,21 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         options={"ENUM_FLAG"}
         )
 
-    '''
-    shader:  bpy.props.EnumProperty(
-        items=SHADERS,
-        name="shader",
-        description="WoW shader assigned to this material"
+    vertex_shader:  bpy.props.EnumProperty(
+        items=VERTEX_SHADERS,
+        name="Vertex Shader",
+        description="WoW vertex shader assigned to this material",
+        default='0'
         )
-        
-    '''
-    shader: bpy.props.IntProperty(name='Shader')
+
+    fragment_shader:  bpy.props.EnumProperty(
+        items=FRAGMENT_SHADERS,
+        name="Fragment Shader",
+        description="WoW fragment shader assigned to this material",
+        default='0'
+        )
+
+    #shader: bpy.props.IntProperty(name='Shader')
 
     blending_mode:  bpy.props.EnumProperty(
         items=BLENDING_MODES,
@@ -67,7 +85,19 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
         description="WoW material blending mode"
         )
 
-    texture: bpy.props.PointerProperty(
+    texture_1: bpy.props.PointerProperty(
+        type=bpy.types.Image
+    )
+
+    texture_2: bpy.props.PointerProperty(
+        type=bpy.types.Image
+    )
+
+    texture_3: bpy.props.PointerProperty(
+        type=bpy.types.Image
+    )
+
+    texture_4: bpy.props.PointerProperty(
         type=bpy.types.Image
     )
 
@@ -77,6 +107,16 @@ class WowM2MaterialPropertyGroup(bpy.types.PropertyGroup):
     )
 
     priority_plane: bpy.props.IntProperty()
+
+    color: bpy.props.StringProperty(
+        name='Color',
+        description='Color track linked to this texture.'
+    )
+
+    transparency: bpy.props.StringProperty(
+        name='Transparency',
+        description='Transparency track linked to this texture.'
+    )
 
     # Blender animation playback settings
 
