@@ -1,7 +1,7 @@
 import bpy
 import gpu
 import traceback
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Union
 from mathutils import Vector
 
 from .m2.shaders import M2ShaderPermutations
@@ -27,7 +27,7 @@ class DrawingManager:
         self.context: bpy.types.Context = context
         self.shaders = M2ShaderPermutations()
         self.m2_objects: Dict[str, M2DrawingObject] = {}
-        self.bound_textures: Dict[str, Tuple[int, List[M2DrawingBatch]]] = {}
+        self.bound_textures: Dict[str, Tuple[int, List[M2DrawingMaterial]]] = {}
         self.drawing_materials: Dict[str, Tuple[M2DrawingMaterial, List[M2DrawingBatch]]] = {}
         self.drawing_elements = DrawingElements()
         self.batch_cache: Dict[str, Tuple[gpu.types.GPUBatch, List[M2DrawingBatch]]] = {}
@@ -72,33 +72,92 @@ class DrawingManager:
                 elif isinstance(update.id, bpy.types.Object):
 
                     if update.id.type == 'ARMATURE':
-                        render_debug('Detected update for armature \"{}\"'.format(update.id.name))
+                        self._m2_handle_armature_update(update)
 
-                        draw_obj = self.m2_objects.get(update.id.name)
-
-                        if not draw_obj:
-                            draw_obj = self.queue_for_drawing(update.id.original)
-
-                        if update.is_updated_geometry:
-                            draw_obj.update_bone_matrices()
+                    elif update.id.type == 'MESH':
+                        self._m2_handle_mesh_update(update)
 
                 elif isinstance(update.id, bpy.types.Material):
 
                     render_debug('Detected update for material \"{}\"'.format(update.id.name))
-                    draw_mat = self.drawing_materials.get(update.id.name)
+                    draw_mat, _ = self.drawing_materials.get(update.id.name, (None, None))
 
                     if draw_mat:
                         draw_mat.update_uniform_data()
+
+            self._m2_remove_invalid_children()
 
         except:
             render_debug('Exception occured on depsgraph update of render data. Traceback is below.')
             traceback.print_exc()  # DEBUG
 
-    def queue_for_drawing(self, obj: bpy.types.Object) -> M2DrawingObject:
-        if obj.type != 'ARMATURE':
-            raise Exception('Error: M2 should be represented as armature object. Failed to queue for drawing.')
+    def _m2_handle_armature_update(self, update: bpy.types.DepsgraphUpdate):
+        render_debug('Detected update for armature \"{}\"'.format(update.id.name))
 
-        draw_obj = M2DrawingObject(obj, self, self.context)
+        draw_obj = self.m2_objects.get(update.id.name)
+
+        if not draw_obj:
+            draw_obj = self.queue_for_drawing(update.id.original)
+
+        if update.is_updated_geometry and update.id.original.children:
+            draw_obj.update_bone_matrices()
+
+    def _m2_handle_mesh_update(self, update: bpy.types.DepsgraphUpdate):
+        render_debug('Detected update for mesh \"{}\"'.format(update.id.name))
+
+        if update.id.original.parent and update.id.original.parent.type == 'ARMATURE':
+
+            draw_obj = self.m2_objects.get(update.id.original.parent.name)
+
+            if draw_obj and update.id.original.name not in draw_obj:
+                draw_obj.create_batch_from_object(update.id.original)
+
+                old_draw_obj = self.m2_objects.get(update.id.original.name)
+
+                if old_draw_obj:
+                    old_draw_obj.free()
+
+        elif not update.id.original.parent or (update.id.original.parent
+                                               and update.id.original.parent.type not in {'ARMATURE', 'EMPTY'}):
+
+            self.queue_for_drawing(update.id.original, is_armature=False)
+
+    def _m2_remove_invalid_children(self):
+
+        for m2 in self.m2_objects.values():
+            for batch in list(m2.batches.values()):
+                rig = m2.bl_rig
+                if batch.bl_obj not in self.recurse_children(rig) and not batch.bl_obj == rig:
+                    batch.free()
+
+    @staticmethod
+    def recurse_children(obj: bpy.types.Object) -> List[bpy.types.Object]:
+        children = []
+
+        for child in obj.children:
+            children.append(child)
+            children.extend(DrawingManager.recurse_children(child))
+
+        return children
+
+    def queue_for_drawing(self, obj: bpy.types.Object, is_armature: bool = True) -> Union[M2DrawingObject, None]:
+        try:
+
+            if is_armature:
+
+                if obj.type != 'ARMATURE':
+                    raise Exception('Error: M2 should be represented as armature object. Failed to queue for drawing.')
+
+                draw_obj = M2DrawingObject(obj, self, self.context)
+                draw_obj.create_batches_from_armature(obj)
+            else:
+                draw_obj = M2DrawingObject(obj, self, self.context, has_bones=False)
+                draw_obj.create_batch_from_object(obj)
+
+        except IndexError:
+            traceback.print_exc()  # DEBUG
+            return None
+
         self.m2_objects[obj.name] = draw_obj
 
         return draw_obj
@@ -175,7 +234,7 @@ class DrawingManager:
         self.draw()
 
     def free(self):
-        for draw_obj in self.m2_objects.values():
+        for draw_obj in list(self.m2_objects.values()):
             draw_obj.free()
 
         render_debug('Freed drawing manager.')

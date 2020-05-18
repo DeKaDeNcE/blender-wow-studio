@@ -5,7 +5,7 @@ from .drawing_manager import DrawingManager
 from .utils import render_debug
 
 
-class CustomRenderEngine(bpy.types.RenderEngine):
+class WoWRenderEngine(bpy.types.RenderEngine):
     # These three members are used by blender to set up the
     # RenderEngine; define its internal name, visible name and capabilities.
     bl_idname = "WOW"
@@ -26,7 +26,6 @@ class CustomRenderEngine(bpy.types.RenderEngine):
     # When the render engine instance is destroy, this is called. Clean up any
     # render engine data here, for example stopping running render threads.
     def __del__(self):
-        self.draw_manager.free()
         render_debug('Freed render engine.')
 
     # This is the method called by Blender for both final renders (F12) and

@@ -1,10 +1,12 @@
 import bpy
 
+from typing import List, Union
 from .shaders import EGxBlendRecord, M2BlendingModeToEGxBlend
 
 
 class M2DrawingMaterial:
     __slots__ = (
+        'draw_mgr',
         'bl_material_name',
         'blend_mode',
         'depth_write',
@@ -14,7 +16,6 @@ class M2DrawingMaterial:
         'is_unfogged',
         'is_inverted',
         'is_transformed',
-        'texture_count'
     )
 
     blend_mode: EGxBlendRecord
@@ -25,10 +26,14 @@ class M2DrawingMaterial:
     is_unfogged: bool
     is_inverted: bool
     is_transformed: bool
-    texture_count: int
 
-    def __init__(self, material: bpy.types.Material):
+    textures: List[Union[str, None]]
+    texture_names: List[str]
+
+    def __init__(self, material: bpy.types.Material, draw_mgr: 'DrawingManager'):
+        self.draw_mgr = draw_mgr
         self.bl_material_name = material.name
+
         self.update_uniform_data()
 
     @property
@@ -36,7 +41,27 @@ class M2DrawingMaterial:
         try:
             return bpy.data.materials[self.bl_material_name]
         except KeyError:
+            print('TEST')
             return None
+
+    def get_texture(self, tex_index: int):
+        mat = self.bl_material
+
+        if mat:
+            return getattr(mat.wow_m2_material, 'texture_{}'.format(tex_index + 1))
+
+    @property
+    def texture_count(self):
+        mat = self.bl_material
+        counter = 0
+
+        if mat:
+            for i in range(4):
+                tex = getattr(mat.wow_m2_material, 'texture_{}'.format(i + 1))
+                if tex:
+                    counter += 1
+
+        return counter
 
     def update_uniform_data(self):
 
@@ -45,26 +70,24 @@ class M2DrawingMaterial:
         if not bl_material:
             return
 
-        self.blend_mode =       M2BlendingModeToEGxBlend[int(self.bl_material.wow_m2_material.blending_mode)]
-        self.depth_write =      '16' not in bl_material.wow_m2_material.render_flags
-        self.depth_culling =    '8' not in bl_material.wow_m2_material.render_flags
+        self.blend_mode = M2BlendingModeToEGxBlend[int(self.bl_material.wow_m2_material.blending_mode)]
+        self.depth_write = '16' not in bl_material.wow_m2_material.render_flags
+        self.depth_culling = '8' not in bl_material.wow_m2_material.render_flags
         self.backface_culling = '4' not in bl_material.wow_m2_material.render_flags
-        self.is_unlit =         '1' in bl_material.wow_m2_material.render_flags
-        self.is_unfogged =      '2' in bl_material.wow_m2_material.render_flags
+        self.is_unlit = '1' in bl_material.wow_m2_material.render_flags
+        self.is_unfogged = '2' in bl_material.wow_m2_material.render_flags
 
-        self.is_inverted =      '1' in bl_material.wow_m2_material.flags
-        self.is_transformed =   '2' in bl_material.wow_m2_material.flags
+        self.is_inverted = '1' in bl_material.wow_m2_material.flags
+        self.is_transformed = '2' in bl_material.wow_m2_material.flags
 
-        self.texture_count = 0
+    def get_bindcode(self, tex_index: int) -> int:
 
-        if bl_material.wow_m2_material.texture_1:
-            self.texture_count += 1
+        texture = self.get_texture(tex_index)
 
-        if bl_material.wow_m2_material.texture_2:
-            self.texture_count += 1
+        if texture:
+            if not texture.bindcode:
+                texture.gl_load()
 
-        if bl_material.wow_m2_material.texture_3:
-            self.texture_count += 1
+            return texture.bindcode
 
-        if bl_material.wow_m2_material.texture_4:
-            self.texture_count += 1
+        return 0

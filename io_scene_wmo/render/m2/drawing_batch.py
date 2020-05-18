@@ -1,10 +1,13 @@
 import bpy
+import sys
+import bmesh
+import inspect
 import gpu
 import struct
 import numpy as np
 import mathutils
 
-from typing import Tuple, List
+from typing import Tuple, List, Set
 from bgl import *
 from gpu_extras.batch import batch_for_shader
 
@@ -85,13 +88,8 @@ class M2DrawingBatch:
         else:
             # TODO: default material
 
-            self.draw_material = M2DrawingMaterial(self.bl_obj.active_material)
+            self.draw_material = M2DrawingMaterial(self.bl_obj.active_material, self.draw_obj.drawing_mgr)
             self.draw_obj.drawing_mgr.drawing_materials[self.bl_obj.active_material.name] = self.draw_material, [self, ]
-
-        self.texture_1: bpy.types.Image = None
-        self.texture_2: bpy.types.Image = None
-        self.texture_3: bpy.types.Image = None
-        self.texture_4: bpy.types.Image = None
 
         # prepare batch
         batch, users = self.draw_obj.drawing_mgr.batch_cache.get(self.bl_mesh_name, (None, None))
@@ -102,16 +100,11 @@ class M2DrawingBatch:
             self.bone_influences = other_draw_batch.bone_influences
             self.sort_radius = other_draw_batch.sort_radius
             self.shader = other_draw_batch.shader
-            self.texture_1: bpy.types.Image = other_draw_batch.texture_1
-            self.texture_2: bpy.types.Image = other_draw_batch.texture_2
-            self.texture_3: bpy.types.Image = other_draw_batch.texture_3
-            self.texture_4: bpy.types.Image = other_draw_batch.texture_4
             users.append(self)
         else:
             self._update_batch_geometry(self.bl_obj)
             self.shader = self.determine_valid_shader()
             self.batch = self._create_batch()
-            self.bind_textures()
             self.draw_obj.drawing_mgr.batch_cache[self.bl_mesh_name] = batch, [self, ]
             self._free_batch_geometry()
 
@@ -156,7 +149,7 @@ class M2DrawingBatch:
     def sort_distance(self):
 
         perspective_mat = self.draw_obj.drawing_mgr.region_3d.perspective_matrix
-        bb_center = self.draw_obj.bl_rig.matrix_world @ self.bl_obj.matrix_local @ self.bb_center
+        bb_center = self.bl_obj.matrix_world @ self.bb_center
 
         value = (perspective_mat.to_translation() - bb_center).length
 
@@ -181,95 +174,21 @@ class M2DrawingBatch:
 
         return self.tag_free
 
-    def bind_textures(self):
-
-        for i in range(self.draw_material.texture_count):
-            self._bind_texture(i)
-
-    def _bind_texture(self, tex_index: int, rebind=False):
-
-        texture_attr = 'texture_{}'.format(tex_index + 1)
-        texture = getattr(self.draw_material.bl_material.wow_m2_material, texture_attr)
-        setattr(self, texture_attr, texture)
-
-        if not texture:
-            return
-
-        bind_code, users = self.draw_obj.drawing_mgr.bound_textures.get(texture.name, (None, None))
-
-        if rebind:
-
-            if bind_code is not None and texture:
-                texture.gl_load()
-                bind_code = texture.bindcode
-                self.draw_obj.drawing_mgr.bound_textures[texture.name] = bind_code, [self, ]
-            elif self not in users:
-
-                texture.gl_load()
-                bind_code = texture.bindcode
-                users.append(self)
-                self.draw_obj.drawing_mgr.bound_textures[texture.name] = bind_code, users
-
-        if bind_code is None and texture:
-            texture.gl_load()
-            bind_code = texture.bindcode
-            self.draw_obj.drawing_mgr.bound_textures[texture.name] = bind_code, [self, ]
-
-        elif self not in users:
-            users.append(self)
-
     def _set_active_textures(self):
 
-        try:
+        gl_texture_slots = (
+            GL_TEXTURE0,
+            GL_TEXTURE1,
+            GL_TEXTURE2,
+            GL_TEXTURE3
+        )
 
-            if self.texture_1:
-                if self.texture_1.bindcode == 0:
-                    self._bind_texture(0, rebind=True)
-
-                glActiveTexture(GL_TEXTURE0)
-                glBindTexture(GL_TEXTURE_2D, self.texture_1.bindcode)
-
-            if self.texture_2:
-                if self.texture_2.bindcode == 0:
-                    self._bind_texture(1, rebind=True)
-
-                glActiveTexture(GL_TEXTURE1)
-                glBindTexture(GL_TEXTURE_2D, self.texture_2.bindcode)
-
-            if self.texture_3:
-                if self.texture_3.bindcode == 0:
-                    self._bind_texture(2, rebind=True)
-
-                glActiveTexture(GL_TEXTURE2)
-                glBindTexture(GL_TEXTURE_2D, self.texture_3.bindcode)
-
-            if self.texture_4:
-                if self.texture_3.bindcode == 0:
-                    self._bind_texture(3, rebind=True)
-
-                glActiveTexture(GL_TEXTURE3)
-                glBindTexture(GL_TEXTURE_2D, self.texture_4.bindcode)
-
-        except ReferenceError:
-            self.texture_1, self.texture_2, self.texture_3, self.texture_4 = None, None, None, None
-            render_debug('Texture reference lost. It is okay on reloading scenes.')
-
-    def free_textures(self):
-
-        for i in range(4):
-            texture = getattr(self, 'texture_{}'.format(i + 1))
-
-            if not texture:
-                continue
-
-            bind_code, users = self.draw_obj.drawing_mgr.bound_textures.get(texture.name, (None, None))
+        for i, gl_slot in enumerate(gl_texture_slots):
+            bind_code = self.draw_material.get_bindcode(i)
 
             if bind_code:
-                if len(users) == 1:
-                    texture.gl_free()
-                    del self.draw_obj.drawing_mgr.bound_textures[texture.name]
-                else:
-                    users.remove(self)
+                glActiveTexture(gl_slot)
+                glBindTexture(GL_TEXTURE_2D, bind_code)
 
     def recreate_batch(self):
         self.free_textures()
@@ -288,13 +207,6 @@ class M2DrawingBatch:
                                                        self.bone_influences)
 
     def draw(self):
-
-        try:
-            self._draw()
-        except AttributeError:
-            self.free()
-
-    def _draw(self):
 
         if self.tag_free:
             return
@@ -342,8 +254,12 @@ class M2DrawingBatch:
                                 else [j[i] for i in range(4) for j in mathutils.Matrix.Identity(4)]
 
         self.shader.uniform_float('uViewProjectionMatrix', self.draw_obj.drawing_mgr.region_3d.perspective_matrix)
-        self.shader.uniform_float('uPlacementMatrix', self.draw_obj.bl_rig.matrix_world)
-        self.shader.uniform_float('uPlacementMatrixLocal', self.bl_obj.matrix_local)
+
+        self.shader.uniform_float('uPlacementMatrix',
+                                  self.draw_obj.bl_rig.matrix_world if self.draw_obj.has_bones
+                                                                    else mathutils.Matrix.Identity(4))
+
+        self.shader.uniform_float('uPlacementMatrixLocal', self.bl_obj.matrix_world)
         self.shader.uniform_float('uSunDirAndFogStart', self.draw_obj.drawing_mgr.sun_dir_and_fog_start)
         self.shader.uniform_float('uSunColorAndFogEnd', self.draw_obj.drawing_mgr.sun_color_and_fog_end)
         self.shader.uniform_float('uAmbientLight', self.draw_obj.drawing_mgr.ambient_light)
@@ -383,8 +299,130 @@ class M2DrawingBatch:
         gpu.shader.unbind()
         #glCheckError('draw')
 
-    def _update_batch_geometry(self, obj: bpy.types.Object):
+    def _update_batch_geometry_editable(self, obj: bpy.types.Object):
+        mesh = obj.data
 
+        # create bmesh
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+
+        # triangulate bmesh
+        bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method='BEAUTY', ngon_method='BEAUTY')
+
+        vertices = bm.verts
+        edges = bm.edges
+        faces = bm.faces
+
+        vertices.ensure_lookup_table()
+        edges.ensure_lookup_table()
+        faces.ensure_lookup_table()
+
+        # untag faces
+        for face in faces:
+            face.tag = False
+
+        # handle texture coordinates
+        uv = bm.loops.layers.uv.get('UVMap')
+
+        if not uv:
+            raise Exception('Error: no UV Layer named "UVMap" is found. Failed rendering model.')
+
+        uv2 = bm.loops.layers.uv.get('UVMap.001') if self.draw_material.texture_count >= 2 else None
+
+        faces_set = set(faces)
+        batches = {}
+
+        len_vertex_array = 0
+        while faces_set:
+            face = next(iter(faces_set))
+
+            linked_faces, vertex_index_set = self.get_linked_faces(face, uv, uv2)
+            len_vertex_array += len(vertex_index_set)
+
+            batches.setdefault(face.material_index, []).append(linked_faces)
+            faces_set -= set(linked_faces)
+
+        # create vertex attribute arrays
+        self.normals = np.empty((len_vertex_array, 3), 'f')
+        self.vertices = np.empty((len_vertex_array, 3), 'f')
+        self.indices = np.empty((len(faces), 3), 'i')
+        self.tex_coords = np.empty((len_vertex_array, 2), 'f')
+        self.tex_coords2 = np.zeros((len_vertex_array, 2), 'f')
+        self.bones = np.zeros((len_vertex_array, 4), 'f')
+        self.bone_weights = np.zeros((len_vertex_array, 4), 'f')
+
+        bb_center = self.bb_center
+        vert_base_index = 0
+        face_base_index = 0
+        for mat_index, batch_groups in batches.items():
+
+            for batch_group in batch_groups:
+                vertex_map = {}
+                vertex_index_counter = 0
+
+                for i, face in enumerate(batch_group):
+                    face_indices = [0, 0, 0]
+
+                    for j, vertex in enumerate(face.verts):
+
+                        # vertex attributes
+                        local_v_index = vertex_map.get(vertex.index)
+
+                        if local_v_index is None:
+                            vertex_map[vertex.index] = vertex_index_counter
+                            local_v_index = vertex_index_counter
+                            vertex_index_counter += 1
+
+                        global_v_index = vert_base_index + local_v_index
+                        self.vertices[global_v_index] = vertex.co.to_tuple()
+                        self.normals[global_v_index] = vertex.normal.to_tuple()
+                        self.tex_coords[global_v_index] = face.loops[j][uv].uv
+
+                        if uv2:
+                            self.tex_coords2[global_v_index] = face.loops[j][uv2].uv
+
+                        # bones
+                        self.bone_influences = 0
+                        if self.draw_obj.has_bones:
+
+                            mesh_vertex = mesh.vertices[vertex.index]
+
+                            v_bone_influences = 0
+                            counter = 0
+                            for group_info in mesh_vertex.groups:
+                                bone_id = self.draw_obj.bl_rig.pose.bones.find(
+                                    obj.vertex_groups[group_info.group].name)
+                                weight = group_info.weight
+
+                                if bone_id < 0 or not weight:
+                                    continue
+
+                                v_bone_influences += 1
+
+                                self.bones[global_v_index][counter] = bone_id
+                                self.bone_weights[global_v_index][counter] = weight
+
+                                counter += 1
+
+                            assert counter < 5
+
+                            if not counter:
+                                self.bone_weights[global_v_index][0] = 1.0
+
+                            self.bone_influences = max(self.bone_influences, v_bone_influences)
+
+                        # calc sort radius
+                        self.sort_radius = max(self.sort_radius, (vertex.co - bb_center).length)
+
+                        # save face indices
+                        face_indices[j] = global_v_index
+
+                    self.indices[face_base_index + i] = face_indices
+
+                face_base_index += len(batch_group)
+                vert_base_index += vertex_index_counter
+
+    def _update_batch_geometry(self, obj: bpy.types.Object):
         mesh = obj.data
         mesh.calc_loop_triangles()
 
@@ -420,35 +458,91 @@ class M2DrawingBatch:
 
         # handle bone data
         bb_center = self.bb_center
+
         self.bone_influences = 0
 
-        for vertex in mesh.vertices:
+        if self.draw_obj.has_bones:
+            for vertex in mesh.vertices:
 
-            v_bone_influences = 0
-            counter = 0
-            for group_info in vertex.groups:
-                bone_id = self.draw_obj.bl_rig.pose.bones.find(obj.vertex_groups[group_info.group].name)
-                weight = group_info.weight
+                v_bone_influences = 0
+                counter = 0
+                for group_info in vertex.groups:
+                    bone_id = self.draw_obj.bl_rig.pose.bones.find(obj.vertex_groups[group_info.group].name)
+                    weight = group_info.weight
 
-                if bone_id < 0 or not weight:
-                    continue
+                    if bone_id < 0 or not weight:
+                        continue
 
-                v_bone_influences += 1
+                    v_bone_influences += 1
 
-                self.bones[vertex.index][counter] = bone_id
-                self.bone_weights[vertex.index][counter] = weight
+                    self.bones[vertex.index][counter] = bone_id
+                    self.bone_weights[vertex.index][counter] = weight
 
-                counter += 1
+                    counter += 1
 
-            assert counter < 5
+                assert counter < 5
 
-            if not counter:
-                self.bone_weights[vertex.index][0] = 1.0
+                if not counter:
+                    self.bone_weights[vertex.index][0] = 1.0
 
-            self.bone_influences = max(self.bone_influences, v_bone_influences)
+                self.bone_influences = max(self.bone_influences, v_bone_influences)
 
             # calc sort radius
             self.sort_radius = max(self.sort_radius, (vertex.co - bb_center).length)
+
+    @staticmethod
+    def get_linked_faces(b_face
+                         , uv
+                         , uv2
+                         , stack=len(inspect.stack())
+                         , vert_index_set=set()) -> Tuple[List[bmesh.types.BMFace], Set[int]]:
+        # check if face was already processed
+        if b_face.tag:
+            return [], vert_index_set
+
+        f_linked = [b_face]
+        mat_idx = b_face.material_index
+        b_face.tag = True
+
+        # store vertex indices used by that face
+        for vert in b_face.verts:
+            vert_index_set.add(vert.index)
+
+        # Select edges that link two faces
+        for link_edge in b_face.edges:
+            # check if edge is shared with another face
+            if not len(link_edge.link_faces) == 2:
+                continue
+
+            # prevent recursion stack overflow
+            if stack >= sys.getrecursionlimit() - 1:
+                break
+
+            for link_face in link_edge.link_faces:
+                # check if face was already processed and if it shares the same material
+                if link_face.tag or link_face.material_index != mat_idx:
+                    continue
+
+                # check if face is located within same UV island.
+                linked_uvs = 0
+                for loop in b_face.loops:
+
+                    for l_loop in loop.vert.link_loops:
+                        if l_loop.face is link_face:
+                            if l_loop[uv].uv == loop[uv].uv:
+                                linked_uvs += 1
+                            if uv2 and l_loop[uv2].uv == loop[uv2].uv:
+                                linked_uvs += 1
+
+                if (not uv2 and linked_uvs < 2) or (uv2 and linked_uvs < 4):
+                    continue
+
+                # call this function recursively on this face if all checks are passed
+                linked, vert_index_set = M2DrawingBatch.get_linked_faces(link_face, uv, uv2,
+                                                                         stack=stack + 1, vert_index_set=vert_index_set)
+                f_linked.extend(linked)
+
+        return f_linked, vert_index_set
 
     def _get_valid_attributes(self) -> dict:
 
@@ -484,7 +578,6 @@ class M2DrawingBatch:
             return
 
         self.tag_free = True
-        self.free_textures()
 
         batch, users = self.draw_obj.drawing_mgr.batch_cache.get(self.bl_mesh_name)
 
@@ -500,9 +593,8 @@ class M2DrawingBatch:
         else:
             users.remove(self)
 
-        self.draw_obj.batches.remove(self)
+        del self.draw_obj.batches[self.bl_obj_name]
         self.draw_obj.drawing_mgr.drawing_elements.remove_batch(self)
-        self.tag_free = True
 
         render_debug('Freed drawing batch for object \"{}\" and mesh \"{}\"'.format(self.bl_obj_name,
                                                                                     self.bl_mesh_name))

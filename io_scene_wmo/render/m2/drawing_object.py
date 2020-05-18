@@ -2,8 +2,8 @@ import traceback
 import bpy
 import numpy as np
 
-from copy import copy
-from typing import List
+from mathutils import Matrix
+from typing import Dict
 
 from .drawing_batch import M2DrawingBatch
 from ..utils import render_debug
@@ -17,30 +17,31 @@ class M2DrawingObject:
         'bone_matrices',
         'placement_matrix',
         'context',
-        'is_skybox'
+        'is_skybox',
+        'has_bones'
     )
 
     def __init__(self
                  , rig: bpy.types.Object
                  , drawing_mgr: 'M2DrawingManager'
                  , context: bpy.types.Context
-                 , is_skybox: bool = False):
+                 , is_skybox: bool = False
+                 , has_bones: bool = True):
 
         self.context = context
-
-        if rig.type != 'ARMATURE':
-            raise Exception('Error: object \"{}\" is not an armature object.'.format(rig.name))
-
         self.drawing_mgr = drawing_mgr
         self.bl_rig_name = rig.name
         self.is_skybox = is_skybox
-        self.batches: List[M2DrawingBatch] = []
+        self.batches: Dict[str, M2DrawingBatch] = {}
+        self.has_bones = has_bones
 
         # uniform data
-        self.bone_matrices = np.empty((len(rig.pose.bones), 16), 'f')
-
-        self.update_bone_matrices()
-        self.create_batches_from_armature(rig)
+        if has_bones:
+            self.bone_matrices = np.empty((len(rig.pose.bones), 16), 'f')
+            self.update_bone_matrices()
+        else:
+            self.bone_matrices = np.zeros((1, 16), 'f')
+            self.bone_matrices[0] = [j[i] for i in range(4) for j in Matrix.Identity(4)]
 
         render_debug('Instantiated drawing object \"{}\"'.format(self.bl_rig_name))
 
@@ -71,17 +72,22 @@ class M2DrawingObject:
                 
             '''
 
-            self._create_batch_from_object(obj)
+            self.create_batch_from_object(obj)
 
-    def _create_batch_from_object(self, obj: bpy.types.Object):
-        self.batches.append(M2DrawingBatch(obj, self, self.context))
+    def create_batch_from_object(self, obj: bpy.types.Object):
+        self.batches[obj.name] = M2DrawingBatch(obj, self, self.context)
 
     def free(self):
 
-        for batch in copy(self.batches):
+        for batch in list(self.batches.values()):
             batch.free()
 
         del self.batches
         del self.drawing_mgr.m2_objects[self.bl_rig_name]
 
         render_debug('Freed drawing object \"{}\"'.format(self.bl_rig_name))
+
+    def __contains__(self, item):
+        return item in self.batches
+
+

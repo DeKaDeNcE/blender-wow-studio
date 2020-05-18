@@ -43,7 +43,7 @@ in vec4 aBoneWeights;
 // Whole model
 uniform mat4 uViewProjectionMatrix;
 uniform mat4 uPlacementMatrix;
-uniform mat4 uPlacementMatrixLocal;
+uniform mat4 uPlacementMatrixLocal; // Despite its name, is a world matrix of a batch
 uniform mat4 uBoneMatrices[220];
 
 //Individual meshes
@@ -85,12 +85,16 @@ void main() {
     vec4 combinedColor = clamp(lDiffuseColor /*+ vc_matEmissive*/, 0.000000, 1.000000);
     vec4 combinedColorHalved = combinedColor * 0.5;
 
-    mat3 viewModelMatTransposed = mat3(uViewProjectionMatrix) * mat3(uPlacementMatrix) * mat3(boneTransformMat);
-    mat4 cameraMatrix = uViewProjectionMatrix * (uPlacementMatrix * (boneTransformMat * uPlacementMatrixLocal));
-    vec4 cameraPoint = cameraMatrix * aPositionVec4;
+    // The order of matrix operations is like that because boneTransformMat is relative to a rig's worldmatrix
+    mat4 placementMatrixInverse = inverse(uPlacementMatrix);
+    mat3 viewModelMatTransposed = mat3(uViewProjectionMatrix) * (mat3(uPlacementMatrix) * mat3(boneTransformMat));
+    mat4 cameraMatrix = uViewProjectionMatrix * uPlacementMatrix * boneTransformMat;
+    vec4 cameraPoint = cameraMatrix * placementMatrixInverse * (uPlacementMatrixLocal * aPositionVec4);
 
     // Handle normals
-    vec3 normal = normalize(viewModelMatTransposed * aNormal);
+    vec3 normal = normalize(viewModelMatTransposed * mat3(placementMatrixInverse)
+                            * (mat3(uPlacementMatrixLocal) * aNormal));
+
     vec2 envCoord = posToTexCoord(cameraPoint.xyz, normal);
     float edgeScanVal = edgeScan(cameraPoint.xyz, normal);
 
