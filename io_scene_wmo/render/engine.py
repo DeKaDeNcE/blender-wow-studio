@@ -139,14 +139,14 @@ def get_panels():
 
 def register():
     # Register the RenderEngine
-    bpy.utils.register_class(CustomRenderEngine)
+    bpy.utils.register_class(WoWRenderEngine)
 
     for panel in get_panels():
         panel.COMPAT_ENGINES.add('CUSTOM')
 
 
 def unregister():
-    bpy.utils.unregister_class(CustomRenderEngine)
+    bpy.utils.unregister_class(WoWRenderEngine)
 
     for panel in get_panels():
         if 'CUSTOM' in panel.COMPAT_ENGINES:
