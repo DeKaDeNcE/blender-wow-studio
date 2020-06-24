@@ -40,6 +40,6 @@ def create_fog_object(name='Fog', radius=1.0, location=None, color=(1.0, 1.0, 1.
 
     fog.hide_set(False if "3" in bpy.context.scene.wow_visibility else True)
 
-    bpy.context.scene.collection.objects.unlink(fog)
+    bpy.context.view_layer.active_layer_collection.collection.objects.unlink(fog)
 
     return fog
