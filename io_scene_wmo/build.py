@@ -25,7 +25,9 @@ def build_project():
         "pywowlib/archives/casc/",
         "pywowlib/archives/mpq/native/",
         "pywowlib/blp/BLP2PNG/",
-        "pywowlib/blp/PNG2BLP/"
+        "pywowlib/blp/PNG2BLP/",
+        "wbs_kernel/",
+        "bpy_boost/"
 
     )
 
@@ -33,12 +35,14 @@ def build_project():
     try:
         for module_relpath in extension_dirs:
             os.chdir(os.path.join(addon_root_path, module_relpath))
-            run_setup('setup.py', script_args=['build_ext', '--inplace'])
+            run_setup('setup.py', script_args=['build_clib', 'build_ext', '--inplace'])
 
     except PermissionError:
         raise PermissionError("\nThis build script may need to be called with admin (root) rights.")
 
     os.chdir(addon_root_path)
+
+    #return  # TEMP
 
     print('\nInstalling third-party modules.')
 

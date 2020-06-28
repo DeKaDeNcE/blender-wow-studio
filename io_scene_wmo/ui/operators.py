@@ -462,3 +462,61 @@ class M2DrawingTest(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
+class TestBPYBoost(bpy.types.Operator):
+    bl_idname = "wm.bpy_boost_test"
+    bl_label = "BPY Boost Test"
+
+    def execute(self, context):
+
+        from ..wbs_kernel.wbs_kernel.bpy_boost import BMesh, Window, create_ui_popup
+
+        ds = bpy.context.evaluated_depsgraph_get()
+        obj = bpy.context.view_layer.objects.active
+
+        '''
+        object_eval = obj.evaluated_get(ds)
+        if object_eval:
+            mesh = object_eval.to_mesh()
+
+            if mesh:
+                # TODO test if this makes sense
+                # If negative scaling, we have to invert the normals
+                # if not mesh.has_custom_normals and object_eval.matrix_world.determinant() < 0.0:
+                #     # Does not handle custom normals
+                #     mesh.flip_normals()
+
+                mesh.calc_loop_triangles()
+                if not mesh.loop_triangles:
+                    object_eval.to_mesh_clear()
+                    mesh = None
+
+            if mesh:
+                if mesh.use_auto_smooth:
+                    if not mesh.has_custom_normals:
+                        mesh.calc_normals()
+                    mesh.split_faces()
+
+                mesh.calc_loop_triangles()
+
+                if mesh.has_custom_normals:
+                    mesh.calc_normals_split()
+
+            ptr = mesh.loop_triangles[0].as_pointer()
+
+        '''
+        ptr = obj.data.as_pointer()
+        bl_mesh = BMesh(ptr)
+        bl_mesh.get_mesh_geometry_batches_raw()
+
+        print('window')
+
+        ptr = context.as_pointer()
+
+        #Window(ptr, 1, "WoW Render Preview")
+        create_ui_popup(ptr)
+
+        return {'FINISHED'}
+
+
+

@@ -37,10 +37,16 @@ class DrawingElements:
             #traceback.print_exc()
             return
 
+        print("Began drawing")
         for batch_index in sorted_indices:
             batch = batches[batch_index]
+
+            if batch.tag_free:
+                continue
+
             try:
                 batch.draw()
+                #print(batch.draw_obj.bl_obj_name, batch.sort_distance)
             except:
                 batch.free()
                 print('Debug: Freeing batch from DrawingElements!')
@@ -53,26 +59,25 @@ class DrawingElements:
         batch_a = self.batches[a]
         batch_b = self.batches[b]
 
-        tag_a = batch_a.ensure_context()
-        tag_b = batch_b.ensure_context()
+        print("Comparing:", batch_a.draw_obj.bl_obj_name, batch_b.draw_obj.bl_obj_name)
 
-        if tag_a:
-            return 1
-
-        if tag_b:
+        if not batch_a.draw_material:
             return -1
+
+        if not batch_b.draw_material:
+            return 1
 
         if batch_a.is_transparent > batch_b.is_transparent:
-            return -1
+            return 1
 
         if batch_a.is_transparent < batch_b.is_transparent:
-            return 1
-
-        if batch_a.mesh_type > batch_b.mesh_type:
             return -1
 
-        if batch_a.mesh_type < batch_b.mesh_type:
+        if batch_a.mesh_type > batch_b.mesh_type:
             return 1
+
+        if batch_a.mesh_type < batch_b.mesh_type:
+            return -1
 
         '''
         if batch_a.render_order != batch_b.render_order:
@@ -84,38 +89,38 @@ class DrawingElements:
         '''
 
         if batch_a.is_skybox > batch_b.is_skybox:
-            return 1
+            return -1
 
         if batch_a.is_skybox < batch_b.is_skybox:
-            return -1
+            return 1
 
         if batch_a.mesh_type == ElementTypes.M2Mesh and batch_a.is_transparent and batch_b.is_transparent:
             if batch_a.priority_plane != batch_b.priority_plane:
-                return batch_b.priority_plane > batch_a.priority_plane
+                return -1 if batch_b.priority_plane > batch_a.priority_plane else 1
 
             if batch_a.sort_distance > batch_b.sort_distance:
-                return 1
+                return -1
 
             if batch_a.sort_distance < batch_b.sort_distance:
-                return -1
-
-            if batch_a.m2_draw_obj_idx > batch_b.m2_draw_obj_idx:
                 return 1
 
-            if batch_a.m2_draw_obj_idx < batch_b.m2_draw_obj_idx:
+            if batch_a.m2_draw_obj_idx > batch_b.m2_draw_obj_idx:
                 return -1
 
+            if batch_a.m2_draw_obj_idx < batch_b.m2_draw_obj_idx:
+                return 1
+
             if batch_b.layer != batch_a.layer:
-                return batch_b.layer < batch_a.layer
+                return -1 if batch_b.layer < batch_a.layer else 1
 
         if batch_a.mesh_type == ElementTypes.ParticleMesh and batch_b.mesh_type == ElementTypes.ParticleMesh:
             if batch_a.priority_plane != batch_b.priority_plane:
-                return batch_b.priority_plane > batch_a.priority_plane
+                return -1 if batch_b.priority_plane > batch_a.priority_plane else 1
 
             if batch_a.sort_distance > batch_b.sort_distance:
-                return 1
-            if batch_a.sort_distance < batch_b.sort_distance:
                 return -1
+            if batch_a.sort_distance < batch_b.sort_distance:
+                return 1
 
         '''
         if batch_a.m_bindings != batch_b.m_bindings:
@@ -124,7 +129,7 @@ class DrawingElements:
         '''
 
         if batch_a.draw_material.blend_mode.index != batch_b.draw_material.blend_mode.index:
-            return batch_a.draw_material.blend_mode.index < batch_b.draw_material.blend_mode.index
+            return -1 if batch_a.draw_material.blend_mode.index < batch_b.draw_material.blend_mode.index else 1
 
         '''
         min_tex_count = min(batch_a.texture_count, batch_b.texture_count)

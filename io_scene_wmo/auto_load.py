@@ -18,7 +18,8 @@ MODULES_TO_IGNORE = (
     "third_party",
     "test",
     "developer_utils",
-    "pywowlib"
+    "pywowlib",
+    "wbs_kernel"
 )
 
 modules = None
@@ -38,6 +39,7 @@ def register():
         bpy.utils.register_class(cls)
 
     for module in modules:
+
         if module.__name__ == __name__:
             continue
         if hasattr(module, "register"):

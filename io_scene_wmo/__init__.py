@@ -44,6 +44,8 @@ vendor_dir = os.path.join(parent_dir, 'third_party')
 
 sys.path.append(vendor_dir)
 
+from . import bqt
+
 # load custom icons
 ui_icons = {}
 pcoll = None
@@ -112,6 +114,9 @@ def register():
     except:
         traceback.print_exc()
 
+    bqt.register()
+
+
 def unregister():
     try:
         auto_load.unregister()
@@ -127,6 +132,8 @@ def unregister():
     ui_icons = {}
 
     bpy.utils.unregister_class(WMOPreferences)
+
+    bqt.unregister()
 
 
 if __name__ == "__main__":

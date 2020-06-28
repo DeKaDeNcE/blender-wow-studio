@@ -3,6 +3,8 @@ import bgl
 
 from .drawing_manager import DrawingManager
 from .utils import render_debug
+from .bgl_ext import create_framebuffer, glCheckError
+from ..wbs_kernel.wbs_kernel import OpenGLUtils
 
 
 class WoWRenderEngine(bpy.types.RenderEngine):
@@ -11,14 +13,15 @@ class WoWRenderEngine(bpy.types.RenderEngine):
     bl_idname = "WOW"
     bl_label = "WoW"
     bl_use_preview = True
+    bl_use_eevee_viewport = True
 
     # Init is called whenever a new render engine instance is created. Multiple
     # instances may exist at the same time, for example for a viewport and final
     # render.
     def __init__(self):
-        self.first_time = True
-        self.draw_data = None
 
+        self.glew_init = False
+        self.first_time = True
         self.draw_manager = DrawingManager(bpy.context)
 
         render_debug('Instantiated render engine.')
@@ -60,6 +63,10 @@ class WoWRenderEngine(bpy.types.RenderEngine):
     def view_update(self, context, depsgraph):
         # depsgraph = context.evaluated_depsgraph_get()
 
+        if not self.glew_init:
+            OpenGLUtils.init_glew()
+            self.glew_init = True
+
         region = context.region
         view3d = context.space_data
         scene = depsgraph.scene
@@ -68,14 +75,8 @@ class WoWRenderEngine(bpy.types.RenderEngine):
         dimensions = region.width, region.height
 
         if self.first_time:
-            # First time initialization
             self.first_time = False
-
-            # Loop over all datablocks used in the scene.
-            for datablock in depsgraph.ids:
-                if isinstance(datablock, bpy.types.Object) and datablock.type == 'ARMATURE':
-                    self.draw_manager.queue_for_drawing(context.scene.objects[datablock.name])
-
+            self.draw_manager.init_datablocks(depsgraph)
         else:
             self.draw_manager.update_render_data(depsgraph)
 
@@ -89,12 +90,10 @@ class WoWRenderEngine(bpy.types.RenderEngine):
 
         render_debug('Num unfreed materials: {}\n'
                      'Num unfreed drawing objects: {}\n'
-                     'Num unfreed batches: {}\n'
-                     'Num unfreed textures: {}\n'.format(
-            len(self.draw_manager.drawing_materials),
+                     'Num unfreed batches: {}\n'.format(
+            len(self.draw_manager.draw_materials),
             len(self.draw_manager.m2_objects),
-            len(self.draw_manager.drawing_elements.batches),
-            len(self.draw_manager.bound_textures))
+            len(self.draw_manager.draw_elements.batches))
         )
 
     # For viewport renders, this method is called whenever Blender redraws
@@ -105,17 +104,52 @@ class WoWRenderEngine(bpy.types.RenderEngine):
 
     def view_draw(self, context, depsgraph):
 
+        # buf = bgl.Buffer(bgl.GL_INT, 1)
+        # bgl.glGetIntegerv(bgl.GL_FRAMEBUFFER_BINDING, buf)
+        # cur_fbo = buf.to_list()[0]
+        # del buf
+        #
+        # region = context.region
+        # view3d = context.space_data
+        # scene = depsgraph.scene
+        #
+        # # Get viewport dimensions
+        # width, height = region.width, region.height
+        #
+        # bgl.glBindFramebuffer(bgl.GL_FRAMEBUFFER, self.fbo_id)
+
         #bgl.glEnable(bgl.GL_BLEND)
         #bgl.glBlendFunc(bgl.GL_ONE, bgl.GL_ONE_MINUS_SRC_ALPHA)
         #self.bind_display_space_shader(context.scene)
 
         self.draw_manager.draw()
 
+        bgl.glColorMask(False, False, False, True)
+        bgl.glClearColor(0, 0, 0, 1.0)
+        bgl.glClear(bgl.GL_COLOR_BUFFER_BIT)
 
         #self.unbind_display_space_shader()
         #bgl.glDisable(bgl.GL_BLEND)
 
-        return
+        # glCheckError('post-draw-all')
+        #
+        # bgl.glBindFramebuffer(bgl.GL_DRAW_FRAMEBUFFER, cur_fbo)
+        # bgl.glDrawBuffer(bgl.GL_BACK)
+        #
+        # bgl.glBindFramebuffer(bgl.GL_READ_FRAMEBUFFER, self.fbo_id)
+        # bgl.glReadBuffer(bgl.GL_COLOR_ATTACHMENT0)
+        #
+        # glCheckError('bind fbos')
+        #
+        # bgl.glBlitFramebuffer(
+        #                   0, 0, width, height,
+        #                   0, 0, width, height,
+        #                   bgl.GL_COLOR_BUFFER_BIT | bgl.GL_DEPTH_BUFFER_BIT,
+        #                   bgl.GL_NEAREST)
+        #
+        # glCheckError('blit')
+        #
+        # bgl.glBindFramebuffer(bgl.GL_FRAMEBUFFER, cur_fbo)
 
 
 # RenderEngines also need to tell UI Panels that they are compatible with.
@@ -124,13 +158,11 @@ class WoWRenderEngine(bpy.types.RenderEngine):
 # render engine, or that are not supported.
 def get_panels():
     exclude_panels = {
-        'VIEWLAYER_PT_filter',
-        'VIEWLAYER_PT_layer_passes',
     }
 
     panels = []
     for panel in bpy.types.Panel.__subclasses__():
-        if hasattr(panel, 'COMPAT_ENGINES') and 'BLENDER_RENDER' in panel.COMPAT_ENGINES:
+        if hasattr(panel, 'COMPAT_ENGINES'): # and 'BLENDER_RENDER' in panel.COMPAT_ENGINES:
             if panel.__name__ not in exclude_panels:
                 panels.append(panel)
 
@@ -142,15 +174,15 @@ def register():
     bpy.utils.register_class(WoWRenderEngine)
 
     for panel in get_panels():
-        panel.COMPAT_ENGINES.add('CUSTOM')
+        panel.COMPAT_ENGINES.add('WOW')
 
 
 def unregister():
     bpy.utils.unregister_class(WoWRenderEngine)
 
     for panel in get_panels():
-        if 'CUSTOM' in panel.COMPAT_ENGINES:
-            panel.COMPAT_ENGINES.remove('CUSTOM')
+        if 'WOW' in panel.COMPAT_ENGINES:
+            panel.COMPAT_ENGINES.remove('WOW')
 
 
 if __name__ == "__main__":

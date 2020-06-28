@@ -1,6 +1,5 @@
 import bpy
 
-from typing import List, Union
 from .shaders import EGxBlendRecord, M2BlendingModeToEGxBlend
 
 
@@ -27,11 +26,7 @@ class M2DrawingMaterial:
     is_inverted: bool
     is_transformed: bool
 
-    textures: List[Union[str, None]]
-    texture_names: List[str]
-
-    def __init__(self, material: bpy.types.Material, draw_mgr: 'DrawingManager'):
-        self.draw_mgr = draw_mgr
+    def __init__(self, material: bpy.types.Material):
         self.bl_material_name = material.name
 
         self.update_uniform_data()
@@ -41,7 +36,6 @@ class M2DrawingMaterial:
         try:
             return bpy.data.materials[self.bl_material_name]
         except KeyError:
-            print('TEST')
             return None
 
     def get_texture(self, tex_index: int):

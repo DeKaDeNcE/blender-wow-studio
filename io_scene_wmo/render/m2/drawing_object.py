@@ -3,38 +3,41 @@ import bpy
 import numpy as np
 
 from mathutils import Matrix
-from typing import Dict
+from typing import List
 
 from .drawing_batch import M2DrawingBatch
 from ..utils import render_debug
+from ...wbs_kernel.wbs_kernel import CM2DrawingMesh, CM2DrawingBatch
+from ..bgl_ext import glCheckError
 
 
 class M2DrawingObject:
-    __slots__ = (
-        'drawing_mgr',
-        'bl_rig_name',
-        'batches',
-        'bone_matrices',
-        'placement_matrix',
-        'context',
-        'is_skybox',
-        'has_bones'
-    )
+
+    batches: List[CM2DrawingBatch]
 
     def __init__(self
-                 , rig: bpy.types.Object
+                 , bl_obj: bpy.types.Object
                  , drawing_mgr: 'M2DrawingManager'
                  , context: bpy.types.Context
-                 , is_skybox: bool = False
-                 , has_bones: bool = True):
+                 , is_skybox: bool = False):
 
         self.context = context
-        self.drawing_mgr = drawing_mgr
-        self.bl_rig_name = rig.name
+        self.draw_mgr = drawing_mgr
+        self.bl_obj_name = bl_obj.name
         self.is_skybox = is_skybox
-        self.batches: Dict[str, M2DrawingBatch] = {}
-        self.has_bones = has_bones
 
+        glCheckError('start')
+        self.mesh_ptr = bl_obj.data.as_pointer()
+        self.c_mesh = CM2DrawingMesh(self.mesh_ptr)
+        glCheckError('init draw mesh')
+        self.batches = []
+
+        bl_obj.data.calc_loop_triangles()
+        self.update_geometry()
+
+        glCheckError('update geometry init')
+
+        '''
         # uniform data
         if has_bones:
             self.bone_matrices = np.empty((len(rig.pose.bones), 16), 'f')
@@ -42,17 +45,44 @@ class M2DrawingObject:
         else:
             self.bone_matrices = np.zeros((1, 16), 'f')
             self.bone_matrices[0] = [j[i] for i in range(4) for j in Matrix.Identity(4)]
+            
+        '''
 
-        render_debug('Instantiated drawing object \"{}\"'.format(self.bl_rig_name))
+        render_debug('Instantiated drawing object \"{}\"'.format(self.bl_obj_name))
+
+    def update_geometry(self, bl_obj: bpy.types.Object = None):
+        if bl_obj:
+            self.c_mesh.update_mesh_pointer(bl_obj.data.as_pointer())
+            bl_obj.data.calc_loop_triangles()
+
+        is_batching_valid = self.c_mesh.update_geometry(not(self.context.screen.is_animation_playing or self.bl_obj.mode != 'OBJECT'))
+
+        if not is_batching_valid:
+
+            for batch in self.batches:
+                batch.free()
+
+            self.batches = \
+                [M2DrawingBatch(c_batch, self, self.context) for c_batch in self.c_mesh.get_drawing_batches()]
 
     @property
-    def bl_rig(self):
+    def bl_obj(self):
 
         try:
-            return bpy.data.objects[self.bl_rig_name]
+            return bpy.data.objects[self.bl_obj_name]
         except KeyError:
             self.free()
 
+    def free(self):
+
+        for batch in self.batches:
+            batch.free()
+
+        del self.draw_mgr.m2_objects[self.bl_obj_name]
+
+        render_debug('Freed drawing object \"{}\"'.format(self.bl_obj_name))
+
+    '''
     def update_bone_matrices(self):
         rig = self.bl_rig
         for i, pbone in enumerate(rig.pose.bones):
@@ -63,31 +93,22 @@ class M2DrawingObject:
         for obj in filter(lambda x: x.type == 'MESH', rig.children):
 
             # Limit bone influences to 4. TODO: rework to be non-destructive!
-            '''
+            """
             if obj.vertex_groups:
                 active_obj = bpy.context.view_layer.objects.active
                 bpy.context.view_layer.objects.active = obj
                 bpy.ops.object.vertex_group_limit_total()
                 bpy.context.view_layer.objects.active = active_obj
                 
-            '''
+            """
 
             self.create_batch_from_object(obj)
 
     def create_batch_from_object(self, obj: bpy.types.Object):
         self.batches[obj.name] = M2DrawingBatch(obj, self, self.context)
+        
+    '''
 
-    def free(self):
 
-        for batch in list(self.batches.values()):
-            batch.free()
-
-        del self.batches
-        del self.drawing_mgr.m2_objects[self.bl_rig_name]
-
-        render_debug('Freed drawing object \"{}\"'.format(self.bl_rig_name))
-
-    def __contains__(self, item):
-        return item in self.batches
 
 

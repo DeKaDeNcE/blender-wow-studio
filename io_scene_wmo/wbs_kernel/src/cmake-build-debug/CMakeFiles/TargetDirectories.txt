@@ -1,0 +1,3 @@
+/Users/sshumakov/Documents/WoW Modding/Software Projects/wow_blender_studio/io_scene_wmo/wbs_kernel/src/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/sshumakov/Documents/WoW Modding/Software Projects/wow_blender_studio/io_scene_wmo/wbs_kernel/src/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/sshumakov/Documents/WoW Modding/Software Projects/wow_blender_studio/io_scene_wmo/wbs_kernel/src/cmake-build-debug/CMakeFiles/wbs_kernel.dir

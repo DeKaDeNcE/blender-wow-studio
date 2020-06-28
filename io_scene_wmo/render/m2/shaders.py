@@ -232,19 +232,24 @@ class M2ShaderPermutations:
     def __init__(self):
         self.shader_permutations: Dict[Tuple[int, int, int], gpu.types.GPUShader] = {}
         self.shader_source: str
+        self.default_shader: gpu.types.GPUShader
 
         rel_path = 'shaders\\glsl330\\m2_shader.glsl' if os.name == 'nt' else 'shaders/glsl330/m2_shader.glsl'
 
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', rel_path)) as f:
             self.shader_source = "".join(f.readlines())
 
-        '''
-        for record in tqdm(M2ShaderTable, desc='Compiling M2 shader permutations'):
+        rel_path = 'shaders\\glsl330\\default.glsl' if os.name == 'nt' else 'shaders/glsl330/default.glsl'
 
-            for i in range(5):
-                self._compile_shader_permutation(record.value.vertex_shader, record.value.pixel_shader, i)
-                
-        '''
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', rel_path)) as f:
+            shader_source_fallback = "".join(f.readlines())
+
+            vert_shader_string_perm = "#define COMPILING_VS {}\n" \
+                                      "{}".format(1, shader_source_fallback)
+            frag_shader_string_perm = "#define COMPILING_FS {}\n" \
+                                      "{}".format(1, shader_source_fallback)
+
+            self.default_shader = gpu.types.GPUShader(vert_shader_string_perm, frag_shader_string_perm)
 
     def _compile_shader_permutation(self
                                     , vert_shader_id: int

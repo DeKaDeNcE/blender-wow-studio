@@ -173,7 +173,7 @@ static inline bool sortMeshes(const HGMesh a, const HGMesh b) {
 
             if (pA->m_sortDistance > pB->m_sortDistance) {
                 return true;
-            }0
+            }
             if (pA->m_sortDistance < pB->m_sortDistance) {
                 return false;
             }

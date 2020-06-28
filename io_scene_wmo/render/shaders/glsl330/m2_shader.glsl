@@ -36,20 +36,14 @@ in vec3 aPosition;
 in vec3 aNormal;
 in vec2 aTexCoord;
 in vec2 aTexCoord2;
-in vec4 aBones;
-in vec4 aBoneWeights;
 
 
 // Whole model
 uniform mat4 uViewProjectionMatrix;
 uniform mat4 uPlacementMatrix;
-uniform mat4 uPlacementMatrixLocal; // Despite its name, is a world matrix of a batch
-uniform mat4 uBoneMatrices[220];
 
 //Individual meshes
 uniform vec4 color_Transparency;
-uniform mat4 uTextureTransformMatrix[2];
-uniform mat4 uTextMat[2];
 
 //Shader output
 out vec3 vPosition;
@@ -62,38 +56,18 @@ out vec4 vDiffuseColor;
 
 void main() {
 
-    // Handle bone transforms
-    mat4 boneTransformMat = mat4(1.0); // static vertex
-
-    #if BONEINFLUENCES>0
-        boneTransformMat = mat4(0.0);
-        boneTransformMat += (aBoneWeights.x ) * uBoneMatrices[int(aBones.x)];
-    #endif
-    #if BONEINFLUENCES>1
-        boneTransformMat += (aBoneWeights.y ) * uBoneMatrices[int(aBones.y)];
-    #endif
-    #if BONEINFLUENCES>2
-        boneTransformMat += (aBoneWeights.z ) * uBoneMatrices[int(aBones.z)];
-    #endif
-    #if BONEINFLUENCES>3
-        boneTransformMat += (aBoneWeights.w ) * uBoneMatrices[int(aBones.w)];
-    #endif
-
     vec4 aPositionVec4 = vec4(aPosition, 1.0f);
 
     vec4 lDiffuseColor = color_Transparency;
     vec4 combinedColor = clamp(lDiffuseColor /*+ vc_matEmissive*/, 0.000000, 1.000000);
     vec4 combinedColorHalved = combinedColor * 0.5;
 
-    // The order of matrix operations is like that because boneTransformMat is relative to a rig's worldmatrix
-    mat4 placementMatrixInverse = inverse(uPlacementMatrix);
-    mat3 viewModelMatTransposed = mat3(uViewProjectionMatrix) * (mat3(uPlacementMatrix) * mat3(boneTransformMat));
-    mat4 cameraMatrix = uViewProjectionMatrix * uPlacementMatrix * boneTransformMat;
-    vec4 cameraPoint = cameraMatrix * placementMatrixInverse * (uPlacementMatrixLocal * aPositionVec4);
+    mat3 viewModelMatTransposed = mat3(uViewProjectionMatrix);
+    mat4 cameraMatrix = uViewProjectionMatrix;
+    vec4 cameraPoint = cameraMatrix * (uPlacementMatrix * aPositionVec4);
 
     // Handle normals
-    vec3 normal = normalize(viewModelMatTransposed * mat3(placementMatrixInverse)
-                            * (mat3(uPlacementMatrixLocal) * aNormal));
+    vec3 normal = normalize(viewModelMatTransposed * (mat3(uPlacementMatrix) * aNormal));
 
     vec2 envCoord = posToTexCoord(cameraPoint.xyz, normal);
     float edgeScanVal = edgeScan(cameraPoint.xyz, normal);
@@ -105,7 +79,7 @@ void main() {
     //Diffuse_T1
     #if VERTEXSHADER == 0
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a);
-        vTexCoord = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord;
     #endif
     //Diffuse_Env
     #if VERTEXSHADER == 1
@@ -115,18 +89,18 @@ void main() {
     //Diffuse_T1_T2
     #if VERTEXSHADER == 2
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a);
-        vTexCoord = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
-        vTexCoord2 = (uTextMat[1] * vec4(aTexCoord2, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord;
+        vTexCoord2 = aTexCoord2;
     #endif
     #if VERTEXSHADER == 3 //Diffuse_T1_Env
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a);
-        vTexCoord = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord;
         vTexCoord2 = envCoord;
     #endif
     #if VERTEXSHADER == 4 //Diffuse_Env_T1
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a);
         vTexCoord = envCoord;
-        vTexCoord2 = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
+        vTexCoord2 = aTexCoord;
     #endif
     #if VERTEXSHADER == 5 //Diffuse_Env_Env
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a);
@@ -135,40 +109,40 @@ void main() {
     #endif
     #if VERTEXSHADER == 6 //Diffuse_T1_Env_T1
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a);
-        vTexCoord = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000) ).xy;
+        vTexCoord = aTexCoord;
         vTexCoord2 = envCoord;
-        vTexCoord3 = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
+        vTexCoord3 = aTexCoord;
     #endif
     #if VERTEXSHADER == 7 //Diffuse_T1_T1
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a);
-        vTexCoord = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
-        vTexCoord2 = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord;
+        vTexCoord2 = aTexCoord;
     #endif
     #if VERTEXSHADER == 8 //Diffuse_T1_T1_T1
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a);
-        vTexCoord = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
-        vTexCoord2 = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
-        vTexCoord3 = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord;
+        vTexCoord2 = aTexCoord;
+        vTexCoord3 = aTexCoord;
     #endif
     #if VERTEXSHADER == 9 //Diffuse_EdgeFade_T1+
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a * edgeScanVal);
-        vTexCoord = ((uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy).xy;
+        vTexCoord = aTexCoord;
     #endif
     #if VERTEXSHADER == 10 //Diffuse_T2
 
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a);
-        vTexCoord = (uTextMat[1] * vec4(aTexCoord2, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord2;
     #endif
     #if VERTEXSHADER == 11 //Diffuse_T1_Env_T2
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a);
-        vTexCoord = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord;
         vTexCoord2 = envCoord;
-        vTexCoord3 = (uTextMat[1] * vec4(aTexCoord2, 0.000000, 1.000000)).xy;
+        vTexCoord3 = aTexCoord2;
     #endif
     #if VERTEXSHADER == 12 //Diffuse_EdgeFade_T1_T2
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a * edgeScanVal);
-        vTexCoord = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
-        vTexCoord2 = (uTextMat[1] * vec4(aTexCoord2, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord;
+        vTexCoord2 = aTexCoord2;
     #endif
     #if VERTEXSHADER == 13 //Diffuse_EdgeFade_Env
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a * edgeScanVal);
@@ -176,30 +150,30 @@ void main() {
     #endif
     #if VERTEXSHADER == 14 //Diffuse_T1_T2_T1
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a);
-        vTexCoord = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
-        vTexCoord2 = (uTextMat[1] * vec4(aTexCoord2, 0.000000, 1.000000)).xy;
-        vTexCoord3 = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord;
+        vTexCoord2 = aTexCoord2;
+        vTexCoord3 = aTexCoord;
     #endif
     #if VERTEXSHADER == 15 //Diffuse_T1_T2_T3
         vDiffuseColor = vec4(combinedColorHalved.r, combinedColorHalved.g, combinedColorHalved.b, combinedColor.a);
-        vTexCoord = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
-        vTexCoord2 = (uTextMat[1] * vec4(aTexCoord2, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord;
+        vTexCoord2 = aTexCoord2;
         vTexCoord3 = vTexCoord3;
     #endif
     #if VERTEXSHADER == 16 //Color_T1_T2_T3
         vec4 in_col0 = vec4(1.0, 1.0, 1.0, 1.0);
         vDiffuseColor = vec4((in_col0.rgb * 0.500000).r, (in_col0.rgb * 0.500000).g, (in_col0.rgb * 0.500000).b, in_col0.a);
-        vTexCoord = (uTextMat[1] * vec4(aTexCoord2, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord2;
         vTexCoord2 = vec2(0.000000, 0.000000);
         vTexCoord3 = vTexCoord3;
     #endif
     #if VERTEXSHADER == 17 //BW_Diffuse_T1
         vDiffuseColor = vec4(combinedColor.rgb * 0.500000, combinedColor.a);
-        vTexCoord = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord;
     #endif
     #if VERTEXSHADER == 18 //BW_Diffuse_T1_T2
         vDiffuseColor = vec4(combinedColor.rgb * 0.500000, combinedColor.a);
-        vTexCoord = (uTextMat[0] * vec4(aTexCoord, 0.000000, 1.000000)).xy;
+        vTexCoord = aTexCoord;
     #endif
 
     vNormal = normal;
@@ -236,8 +210,6 @@ uniform sampler2D uTexture2;
 uniform sampler2D uTexture3;
 uniform sampler2D uTexture4;
 
-uniform sampler2D uTextureDepth;
-uniform vec2 uResolution;
 
 out vec4 outputColor;
 
@@ -249,7 +221,7 @@ uniform vec4 uSunColorAndFogEnd;
 uniform vec4 uAmbientLight;
 
 
-//Individual meshes
+
 uniform ivec3 UnFogged_IsAffectedByLight_LightCount;
 uniform vec4 uFogColorAndAlphaTest;
 uniform LocalLight pc_lights[4];
@@ -313,13 +285,13 @@ void main() {
 
     /* Get color from texture */
     vec4 tex = texture(uTexture, texCoord).rgba;
-    tex = vec4(pow(tex.rgb, gamma), tex.a);
+    //tex = vec4(pow(tex.rgb, gamma), tex.a);
 
     vec4 tex2 = texture(uTexture2, texCoord2).rgba;
-    tex2 = vec4(pow(tex2.rgb, gamma), tex2.a);
+    //tex2 = vec4(pow(tex2.rgb, gamma), tex2.a);
 
     vec4 tex3 = texture(uTexture3, texCoord3).rgba;
-    tex3 = vec4(pow(tex3.rgb, gamma), tex3.a);
+    //tex3 = vec4(pow(tex3.rgb, gamma), tex3.a);
 
 
     vec4 tex2WithTextCoord1 = texture(uTexture2,texCoord);
@@ -591,7 +563,9 @@ void main() {
         finalColor.rgba = vec4(mix(fogColor.rgb, finalColor.rgb, vec3(fog_out)), finalColor.a);
     }
 
-    outputColor = finalColor;
+    //outputColor = blender_srgb_to_framebuffer_space(finalColor);
+    finalColor.a = clamp(finalColor.a, 0.0, 1.0);
+    outputColor = vec4(finalColor.rgb, finalColor.a);
 
 }
 

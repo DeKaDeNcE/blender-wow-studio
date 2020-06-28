@@ -4,3 +4,7 @@
 [submodule "io_scene_wmo/pywowlib"]
 	path = io_scene_wmo/pywowlib
 	url = https://github.com/WowDevTools/pywowlib.git
+[submodule "io_scene_wmo/wbs_kernel/src/bl_src"]
+	path = io_scene_wmo/wbs_kernel/src/bl_src
+	url = https://github.com/blender/blender
+	branch = blender-v2.83-release

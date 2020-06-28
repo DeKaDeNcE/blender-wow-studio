@@ -264,12 +264,10 @@ class BlenderM2Scene:
                 transparency = bpy.context.scene.wow_m2_transparency[real_tw_index]
                 blender_mat.wow_m2_material.transparency = transparency.name
 
-            '''
             # bind color to material
             if tex_unit.color_index >= 0:
                 color = bpy.context.scene.wow_m2_colors[tex_unit.color_index]
                 blender_mat.wow_m2_material.color = color.name
-            '''
 
             blender_mat.name = blender_mat.wow_m2_material.texture_1.name
             update_m2_mat_node_tree(blender_mat)
