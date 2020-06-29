@@ -223,7 +223,14 @@ class BlenderWMOSceneGroup:
 
         # set mesh location
         obj.location = pos
-        bpy.context.collection.objects.link(obj)
+
+        scn = bpy.context.scene
+        liquid_collection = bpy.data.collections.get("Collision")
+        if not liquid_collection:
+            liquid_collection = bpy.data.collections.new("Collision")
+            scn.collection.children.link(liquid_collection)
+
+        liquid_collection.objects.link(obj)
 
         bpy.context.view_layer.objects.active = obj
 
@@ -477,20 +484,6 @@ class BlenderWMOSceneGroup:
         nobj.wow_wmo_group.fog3 = self.wmo_scene.bl_fogs[group.mogp.fog_indices[2]]
         nobj.wow_wmo_group.fog4 = self.wmo_scene.bl_fogs[group.mogp.fog_indices[3]]
 
-        if group.mogp.flags & MOGPFlags.HasWater:
-            self.load_liquids(nobj.name, nobj.location)
-
-        else:
-            # getting Liquid Type ID
-
-            if self.wmo_scene.wmo.mohd.flags & 0x4:
-                real_liquid_type = group.mogp.liquid_type
-            else:
-                real_liquid_type = self.from_wmo_liquid_type(group.mogp.liquid_type)
-                real_liquid_type = 0 if real_liquid_type == 17 else real_liquid_type
-
-            nobj.wow_wmo_group.liquid_type = str(real_liquid_type)
-
         if group.mogp.flags & MOGPFlags.Indoor:
             nobj.wow_wmo_group.place_type = str(0x2000)
             pass_index |= BlenderWMOObjectRenderFlags.IsIndoor
@@ -592,6 +585,21 @@ class BlenderWMOSceneGroup:
         if nobj.wow_wmo_group.collision_mesh:
             mat = bpy.data.materials.get("WowMaterial_ghost")
             nobj.wow_wmo_group.collision_mesh.data.materials.append(mat)
+
+        # handle liquids
+        if group.mogp.flags & MOGPFlags.HasWater:
+            self.load_liquids(nobj.name, nobj.location)
+
+        else:
+            # getting Liquid Type ID
+
+            if self.wmo_scene.wmo.mohd.flags & 0x4:
+                real_liquid_type = group.mogp.liquid_type
+            else:
+                real_liquid_type = self.from_wmo_liquid_type(group.mogp.liquid_type)
+                real_liquid_type = 0 if real_liquid_type == 17 else real_liquid_type
+
+            nobj.wow_wmo_group.liquid_type = str(real_liquid_type)
 
     def get_portal_direction(self, portal_obj, group_obj):
         """ Get the direction of MOPR portal relation given a portal object and a target group """

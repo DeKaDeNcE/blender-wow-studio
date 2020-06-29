@@ -175,10 +175,12 @@ class BlenderWMOScene:
             scn = bpy.context.scene
 
             light_collection = bpy.data.collections.get("Lights")
+
             if not light_collection:
                 light_collection = bpy.data.collections.new("Lights")
                 scn.collection.children.link(light_collection)
-                light_collection.objects.link(obj)
+
+            light_collection.objects.link(obj)
 
     def load_fogs(self):
         """ Load fogs from WMO Root File"""
@@ -195,8 +197,18 @@ class BlenderWMOScene:
                                                 )
                                         )
 
-            # applying object properties
+            # move fogs to collection
+            scn = bpy.context.scene
 
+            fog_collection = bpy.data.collections.get("Fogs")
+            if not fog_collection:
+                fog_collection = bpy.data.collections.new("Fogs")
+                scn.collection.children.link(fog_collection)
+
+            fog_collection.objects.link(fog_obj)
+            bpy.context.view_layer.objects.active = fog_obj
+
+            # applying object properties
             fog_obj.wow_wmo_fog.enabled = True
             fog_obj.wow_wmo_fog.ignore_radius = wmo_fog.flags & 0x01
             fog_obj.wow_wmo_fog.unknown = wmo_fog.flags & 0x10
@@ -214,15 +226,6 @@ class BlenderWMOScene:
             fog_obj.wow_wmo_fog.color2 = (wmo_fog.color2[2] / 255, wmo_fog.color2[1] / 255, wmo_fog.color2[0] / 255)
 
             self.bl_fogs.append(fog_obj)
-
-            # move fogs to collection
-            scn = bpy.context.scene
-
-            fog_collection = bpy.data.collections.get("Fogs")
-            if not fog_collection:
-                fog_collection = bpy.data.collections.new("Fogs")
-                scn.collection.children.link(fog_collection)
-                fog_collection.objects.link(fog_obj)
 
     def load_doodads(self):
 
@@ -374,7 +377,8 @@ class BlenderWMOScene:
             if not portal_collection:
                 portal_collection = bpy.data.collections.new("Portals")
                 scn.collection.children.link(portal_collection)
-                portal_collection.objects.link(obj)
+
+            portal_collection.objects.link(obj)
 
     def load_properties(self):
         """ Load global WoW WMO properties """
