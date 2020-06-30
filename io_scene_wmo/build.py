@@ -26,8 +26,7 @@ def build_project():
         "pywowlib/archives/mpq/native/",
         "pywowlib/blp/BLP2PNG/",
         "pywowlib/blp/PNG2BLP/",
-        "wbs_kernel/",
-        "bpy_boost/"
+        "wbs_kernel/"
 
     )
 
