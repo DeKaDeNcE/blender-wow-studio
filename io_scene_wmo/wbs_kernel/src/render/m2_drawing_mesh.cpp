@@ -15,7 +15,7 @@ extern "C"
 #include <cstring>
 #include <limits>
 
-#include <glm/glm.hpp>
+#include "glm/glm.hpp"
 
 
 using namespace wbs_kernel;

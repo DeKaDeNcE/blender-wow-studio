@@ -33,6 +33,7 @@ setup(
             "src/bpy_boost/src/",
             "src/extern/glew/include/GL/",
             "src/extern/glm/",
+            "src/extern/",
             "src/bl_src",
             "src/bl_src/source",
             "src/bl_src/source/blender",
