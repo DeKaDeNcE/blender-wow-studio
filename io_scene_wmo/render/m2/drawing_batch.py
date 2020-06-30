@@ -244,10 +244,26 @@ class M2DrawingBatch:
         self.shader.uniform_float('uFogColorAndAlphaTest', (*self.draw_obj.draw_mgr.fog_color, u_alpha_test))
         self.shader.uniform_int('UnFogged_IsAffectedByLight_LightCount', (self.draw_material.is_unfogged,
                                                                           not self.draw_material.is_unlit, 0))
-        self.shader.uniform_int('uTexture', 0)
-        self.shader.uniform_int('uTexture2', 1)
-        self.shader.uniform_int('uTexture3', 2)
-        self.shader.uniform_int('uTexture4', 3)
+
+        try:
+            self.shader.uniform_int('uTexture', 0)
+        except ValueError:
+            pass
+
+        try:
+            self.shader.uniform_int('uTexture2', 1)
+        except ValueError:
+            pass
+
+        try:
+            self.shader.uniform_int('uTexture3', 2)
+        except ValueError:
+            pass
+
+        try:
+            self.shader.uniform_int('uTexture4', 3)
+        except ValueError:
+            pass
 
         self.shader.uniform_float('color_Transparency', combined_color)
 
