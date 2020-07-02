@@ -61,12 +61,15 @@ namespace wbs_kernel
     int bl_n_materials = 0;
 
     bool is_indexed;
+    bool is_initialized = false;
+    bool is_batching_valid;
 
   // Methods
   public:
     M2DrawingMesh(uintptr_t mesh_pointer);
     void update_mesh_pointer(uintptr_t mesh_pointer);
     bool update_geometry(bool use_indexed);
+    void run_buffer_updates();
     std::vector<M2DrawingBatch*>* get_drawing_batches();
     ~M2DrawingMesh();
 
@@ -77,6 +80,7 @@ namespace wbs_kernel
     void init_looptris();
     bool validate_batches(int n_vertices_new);
     void allocate_buffers(uint32_t n_vertices_new, uint32_t n_triangles_new);
+    void generate_opengl_buffers();
     void init_opengl_buffers();
     void update_opengl_buffers();
 

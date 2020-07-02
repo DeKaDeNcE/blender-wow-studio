@@ -24,6 +24,9 @@ cdef class CM2DrawingMesh:
 
         return batches
 
+    def update_buffers(self):
+        self.draw_mesh.run_buffer_updates()
+
     def __dealloc__(self):
        del self.draw_mesh
 

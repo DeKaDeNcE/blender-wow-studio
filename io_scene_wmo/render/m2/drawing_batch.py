@@ -149,6 +149,9 @@ class M2DrawingBatch:
             return shaders.default_shader
 
     def draw(self):
+
+        render_debug('Drawing batch for object \"{}\"'.format(self.draw_obj.bl_obj.name))
+
         bl_obj = self.draw_obj.bl_obj
 
         if not bl_obj.visible_get():
@@ -163,6 +166,8 @@ class M2DrawingBatch:
             self.draw_fallback()
 
     def draw_fallback(self):
+
+        glCheckError('drawfallback pre')
 
         self.shader = self.determine_valid_shader()
         self.shader.bind()
@@ -184,6 +189,8 @@ class M2DrawingBatch:
         glDisable(GL_DEPTH_TEST)
 
         gpu.shader.unbind()
+
+        glCheckError('draw fallback post')
 
     def draw_m2_batch(self):
 
@@ -229,11 +236,11 @@ class M2DrawingBatch:
         if self.is_skybox:
             glDepthRange(0.998, 1.0)
 
-        #glBlendFunc(self.draw_material.blend_mode.src_color, self.draw_material.blend_mode.dest_color)
-        OpenGLUtils.glBlendFuncSeparate(self.draw_material.blend_mode.src_color,
-                                        self.draw_material.blend_mode.dest_color,
-                                        self.draw_material.blend_mode.src_alpha,
-                                        self.draw_material.blend_mode.dest_alpha)
+        glBlendFunc(self.draw_material.blend_mode.src_color, self.draw_material.blend_mode.dest_color)
+        # OpenGLUtils.glBlendFuncSeparate(self.draw_material.blend_mode.src_color,
+        #                                 self.draw_material.blend_mode.dest_color,
+        #                                 self.draw_material.blend_mode.src_alpha,
+        #                                 self.draw_material.blend_mode.dest_alpha)
 
         self.shader.uniform_float('uViewProjectionMatrix', self.draw_obj.draw_mgr.region_3d.perspective_matrix)
 

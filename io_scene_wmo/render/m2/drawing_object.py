@@ -25,45 +25,39 @@ class M2DrawingObject:
         self.draw_mgr = drawing_mgr
         self.bl_obj_name = bl_obj.name
         self.is_skybox = is_skybox
+        self.is_dirty = True
+        self.is_batching_valid = False
 
-        glCheckError('start')
         self.mesh_ptr = bl_obj.data.as_pointer()
         self.c_mesh = CM2DrawingMesh(self.mesh_ptr)
-        glCheckError('init draw mesh')
         self.batches = []
-
         bl_obj.data.calc_loop_triangles()
+        render_debug('Initialized drawing object \"{}\"'.format(self.bl_obj_name))
+
         self.update_geometry()
-
-        glCheckError('update geometry init')
-
-        '''
-        # uniform data
-        if has_bones:
-            self.bone_matrices = np.empty((len(rig.pose.bones), 16), 'f')
-            self.update_bone_matrices()
-        else:
-            self.bone_matrices = np.zeros((1, 16), 'f')
-            self.bone_matrices[0] = [j[i] for i in range(4) for j in Matrix.Identity(4)]
-            
-        '''
-
-        render_debug('Instantiated drawing object \"{}\"'.format(self.bl_obj_name))
 
     def update_geometry(self, bl_obj: bpy.types.Object = None):
         if bl_obj:
             self.c_mesh.update_mesh_pointer(bl_obj.data.as_pointer())
             bl_obj.data.calc_loop_triangles()
 
-        is_batching_valid = self.c_mesh.update_geometry(not(self.context.screen.is_animation_playing or self.bl_obj.mode != 'OBJECT'))
+        self.is_batching_valid = self.c_mesh.update_geometry(not(self.context.screen.is_animation_playing or self.bl_obj.mode != 'OBJECT'))
 
-        if not is_batching_valid:
+        self.is_dirty = True
+
+    def update_geometry_opengl(self, bl_obj: bpy.types.Object = None):
+
+        self.c_mesh.update_buffers()
+
+        if not self.is_batching_valid:
 
             for batch in self.batches:
                 batch.free()
 
             self.batches = \
                 [M2DrawingBatch(c_batch, self, self.context) for c_batch in self.c_mesh.get_drawing_batches()]
+
+        self.is_dirty = False
 
     @property
     def bl_obj(self):

@@ -21,6 +21,7 @@ void M2DrawingBatch::set_tri_start(int triangle_start)
 void M2DrawingBatch::create_vao()
 {
   glGenVertexArrays(1, &this->vao);
+  std::cout << "vao created: " << this->vao << std::endl;
   glBindVertexArray(this->vao);
 
   int vertices_co_pos = glGetAttribLocation(this->shader_program, "aPosition");
@@ -69,6 +70,7 @@ void M2DrawingBatch::draw()
 
   glUseProgram(this->shader_program);
 
+  std::cout << this->vao << std::endl;
   glBindVertexArray(this->vao);
 
   if (this->is_nonindexed)

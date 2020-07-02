@@ -59,7 +59,7 @@ class DrawingElements:
         batch_a = self.batches[a]
         batch_b = self.batches[b]
 
-        print("Comparing:", batch_a.draw_obj.bl_obj_name, batch_b.draw_obj.bl_obj_name)
+        #print("Comparing:", batch_a.draw_obj.bl_obj_name, batch_b.draw_obj.bl_obj_name)
 
         if not batch_a.draw_material:
             return -1

@@ -23,13 +23,6 @@ using namespace wbs_kernel;
 M2DrawingMesh::M2DrawingMesh(uintptr_t mesh_pointer)
 {
   this->mesh = reinterpret_cast<Mesh*>(mesh_pointer);
-
-  // generate VBO and IBO
-  glGenBuffers(1, &this->vbo);
-  glGenBuffers(1, &this->ibo);
-  glGenBuffers(1, &this->vbo_normals);
-  glGenBuffers(1, &this->vbo_tex_coords);
-  glGenBuffers(1, &this->vbo_tex_coords2);
 }
 
 // Simplified version for UVs only
@@ -378,7 +371,7 @@ bool M2DrawingMesh::update_geometry(bool use_indexed)
 bool M2DrawingMesh::update_geometry_indexed()
 {
   int n_vertices_new = this->create_vertex_map();
-  bool is_batching_valid = this->is_indexed ? this->validate_batches(n_vertices_new) : false;
+  this->is_batching_valid = this->is_indexed ? this->validate_batches(n_vertices_new) : false;
   this->is_indexed = true;
 
   this->bl_n_materials = this->mesh->totcol;
@@ -388,7 +381,7 @@ bool M2DrawingMesh::update_geometry_indexed()
   int mat_idx = -1;
   int global_tri_index = 0;
 
-  if (!is_batching_valid)
+  if (!this->is_batching_valid)
   {
     for (auto batch_ptr : this->drawing_batches)
     {
@@ -486,7 +479,7 @@ bool M2DrawingMesh::update_geometry_indexed()
 
   // handle last batch
 
-  if (!is_batching_valid)
+  if (!this->is_batching_valid)
   {
     if (cur_batch != nullptr)
     {
@@ -499,15 +492,22 @@ bool M2DrawingMesh::update_geometry_indexed()
 
       this->drawing_batches.push_back(cur_batch);
     }
+  }
 
+  return is_batching_valid;
+}
+
+void M2DrawingMesh::run_buffer_updates()
+{
+
+  if (!this->is_batching_valid)
+  {
     this->init_opengl_buffers();
   }
   else
   {
-    this->update_opengl_buffers();
+     this->update_opengl_buffers();
   }
-
-  return is_batching_valid;
 }
 
 void M2DrawingMesh::allocate_buffers(uint32_t n_vertices_new, uint32_t n_triangles_new)
@@ -562,8 +562,24 @@ void M2DrawingMesh::allocate_buffers(uint32_t n_vertices_new, uint32_t n_triangl
 
 }
 
+void M2DrawingMesh::generate_opengl_buffers()
+{
+  // generate VBO and IBO
+  glGenBuffers(1, &this->vbo);
+  glGenBuffers(1, &this->ibo);
+  glGenBuffers(1, &this->vbo_normals);
+  glGenBuffers(1, &this->vbo_tex_coords);
+  glGenBuffers(1, &this->vbo_tex_coords2);
+}
+
 void M2DrawingMesh::init_opengl_buffers()
 {
+  if (!this->is_initialized)
+  {
+    this->generate_opengl_buffers();
+    this->is_initialized = true;
+  }
+
   glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
   glBufferData(GL_ARRAY_BUFFER, this->n_vertices * 3 * sizeof(float), this->vertices_co, GL_DYNAMIC_DRAW);
 
@@ -579,7 +595,7 @@ void M2DrawingMesh::init_opengl_buffers()
   if (this->is_indexed)
   {
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->n_triangles * 3 * sizeof(int), this->tri_indices, GL_DYNAMIC_DRAW);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->n_triangles * 3 * sizeof(int), this->tri_indices, GL_DYNAMIC_DRAW);
   }
 
 }

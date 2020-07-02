@@ -10,6 +10,7 @@ from .m2.drawing_object import M2DrawingObject
 from .m2.drawing_material import M2DrawingMaterial
 from .drawing_elements import DrawingElements
 from .utils import render_debug
+from .bgl_ext import glCheckError
 
 from profilehooks import profile
 
@@ -24,12 +25,14 @@ class DrawingManager:
     fog_color: Tuple[float, float, float]
 
     def __init__(self, context):
+        glCheckError("draw mgr init pre")
         self.context: bpy.types.Context = context
         self.shaders = M2ShaderPermutations()
         self.m2_objects: Dict[str, M2DrawingObject] = {}
         self.draw_materials: Dict[str, M2DrawingMaterial] = {}
         self.draw_elements = DrawingElements()
         self.update_handlers = {'MESH': self._m2_handle_mesh_update}
+        self.is_dirty = True
 
         self.editable_context = context.scene.wow_scene.type
 
@@ -37,15 +40,19 @@ class DrawingManager:
         self.region_3d: bpy.types.SpaceView3D = bpy.context.space_data.region_3d
         self.region: bpy.types.Region = self._get_active_region()
 
+        '''
         # depth pass
         self.depth_tex_id_buf = Buffer(GL_INT, 1)
         glGenTextures(1, self.depth_tex_id_buf)
         self.depth_tex_bindcode = self.depth_tex_id_buf.to_list()[0]
         self.depth_buf = Buffer(GL_FLOAT, self.region.width * self.region.height)
+        
+        '''
 
         # uniform data
         self._update_global_uniforms()
 
+        glCheckError("draw mgr init post")
         render_debug('Instantiated drawing manager.')
 
     def _update_global_uniforms(self):
@@ -59,6 +66,8 @@ class DrawingManager:
 
     @profile
     def update_render_data(self, depsgraph: bpy.types.Depsgraph):
+
+        glCheckError("update render data pre")
 
         try:
 
@@ -104,6 +113,8 @@ class DrawingManager:
     def _m2_handle_mesh_update(self, depsgraph: bpy.types.Depsgraph, update: bpy.types.DepsgraphUpdate):
         render_debug('Detected update for mesh \"{}\"'.format(update.id.name))
 
+        glCheckError("mesh update pre")
+
         draw_obj = self.m2_objects.get(update.id.name)
 
         if draw_obj:
@@ -112,11 +123,17 @@ class DrawingManager:
         else:
             self.m2_objects[update.id.name] = M2DrawingObject(update.id.original.evaluated_get(depsgraph), self, self.context)
 
+        glCheckError("mesh update post")
+
     @profile
     def draw(self):
 
         self.region_3d = bpy.context.space_data.region_3d
         self.region = self._get_active_region()
+
+        for draw_obj in self.m2_objects.values():
+            if draw_obj.is_dirty:
+                draw_obj.update_geometry_opengl()
 
         self.draw_elements.draw()
 

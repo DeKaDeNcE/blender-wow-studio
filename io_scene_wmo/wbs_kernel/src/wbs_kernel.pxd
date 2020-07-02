@@ -10,6 +10,7 @@ cdef extern from "render/m2_drawing_mesh.hpp" namespace "wbs_kernel":
         bool update_geometry(bool is_indexed) except +
         void allocate_buffers(uint32_t n_vertices_new, uint32_t n_triangles_new) except +
         void init_opengl_buffers() except +
+        void run_buffer_updates() except +
         vector[M2DrawingBatch*]* get_drawing_batches() except +
 
 
