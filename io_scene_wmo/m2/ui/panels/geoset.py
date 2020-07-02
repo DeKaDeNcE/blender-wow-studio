@@ -16,8 +16,14 @@ class M2_PT_geoset_panel(bpy.types.Panel):
             self.layout.prop(context.object.wow_m2_geoset, "mesh_part_id")
 
             row = self.layout.row(align=True)
-            row.prop(context.object.wow_m2_geoset, "uv_transform")
-            row.operator("scene.wow_m2_geoset_add_texture_transform", text='', icon='RNA_ADD')
+            row.prop(context.object.wow_m2_geoset, "uv_transform_1")
+            op = row.operator("scene.wow_m2_geoset_add_texture_transform", text='', icon='RNA_ADD')
+            op.channel = 1
+
+            row = self.layout.row(align=True)
+            row.prop(context.object.wow_m2_geoset, "uv_transform_2")
+            op = row.operator("scene.wow_m2_geoset_add_texture_transform", text='', icon='RNA_ADD')
+            op.channel = 2
 
     @classmethod
     def poll(cls, context):
@@ -94,6 +100,7 @@ class M2_OT_add_texture_transform(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     anim_index:  bpy.props.IntProperty()
+    channel:  bpy.props.IntProperty(min=1, max=2)
 
     def execute(self, context):
         obj = context.object
@@ -107,7 +114,11 @@ class M2_OT_add_texture_transform(bpy.types.Operator):
         c_obj.animation_data_create()
         c_obj.animation_data.action_blend_type = 'ADD'
 
-        obj.wow_m2_geoset.uv_transform = c_obj
+        if self.channel == 1:
+            obj.wow_m2_geoset.uv_transform_1 = c_obj
+        else:
+            obj.wow_m2_geoset.uv_transform_2 = c_obj
+
         bpy.context.view_layer.objects.active = obj
 
         return {'FINISHED'}
