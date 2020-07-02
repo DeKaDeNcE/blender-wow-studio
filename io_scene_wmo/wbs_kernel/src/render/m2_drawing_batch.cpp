@@ -21,7 +21,6 @@ void M2DrawingBatch::set_tri_start(int triangle_start)
 void M2DrawingBatch::create_vao()
 {
   glGenVertexArrays(1, &this->vao);
-  std::cout << "vao created: " << this->vao << std::endl;
   glBindVertexArray(this->vao);
 
   int vertices_co_pos = glGetAttribLocation(this->shader_program, "aPosition");
@@ -69,8 +68,6 @@ void M2DrawingBatch::draw()
   glDisable(GL_PRIMITIVE_RESTART);
 
   glUseProgram(this->shader_program);
-
-  std::cout << this->vao << std::endl;
   glBindVertexArray(this->vao);
 
   if (this->is_nonindexed)
@@ -112,7 +109,7 @@ int M2DrawingBatch::get_tri_start()
 
 M2DrawingBatch::~M2DrawingBatch()
 {
-  std::cout << "Destroyed CM2DrawingBatch from C++" << std::endl;
+  //std::cout << "Destroyed CM2DrawingBatch from C++" << std::endl;
   glDeleteVertexArrays(1, &this->vao);
 }
 

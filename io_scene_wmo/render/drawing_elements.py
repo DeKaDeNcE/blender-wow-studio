@@ -37,7 +37,7 @@ class DrawingElements:
             #traceback.print_exc()
             return
 
-        print("Began drawing")
+        #print("Began drawing")
         for batch_index in sorted_indices:
             batch = batches[batch_index]
 

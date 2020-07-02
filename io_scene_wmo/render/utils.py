@@ -1,4 +1,4 @@
-RENDER_ENGINE_DEBUG = True
+RENDER_ENGINE_DEBUG = False
 
 
 def render_debug(message: str):

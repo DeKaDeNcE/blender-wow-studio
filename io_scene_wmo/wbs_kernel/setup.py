@@ -649,9 +649,7 @@ setup(
         language="c++",
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args,
-        libraries=['opengl32'] if platform.system() == 'Windows' else [],
-        #extra_objects=["src/libglew.a"],
-        #library_dirs=['src']
+        libraries=['opengl32'] if platform.system() == 'Windows' else []
     )]
     ),
     libraries=[glew],
