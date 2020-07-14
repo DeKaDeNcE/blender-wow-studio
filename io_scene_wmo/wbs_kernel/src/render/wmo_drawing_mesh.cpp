@@ -1,9 +1,8 @@
-#include <render/m2_drawing_mesh.hpp>
+#include <render/wmo_drawing_mesh.hpp>
 
 extern "C"
 {
 #include <BKE_mesh.h>
-#include <DNA_meshdata_types.h>
 #include <BKE_mesh_mapping.h>
 #include <BKE_mesh_runtime.h>
 }
@@ -20,13 +19,18 @@ extern "C"
 
 using namespace wbs_kernel;
 
-M2DrawingMesh::M2DrawingMesh(uintptr_t mesh_pointer)
+std::unordered_map<int, int> WMODrawingMesh::cd_sizemap = {
+                                                            { 16, sizeof(MLoopUV) },
+                                                            { 17, sizeof(MLoopCol) }
+                                                          };
+
+WMODrawingMesh::WMODrawingMesh(uintptr_t mesh_pointer)
 {
   this->mesh = reinterpret_cast<Mesh*>(mesh_pointer);
 }
 
-// Simplified version for UVs only
-void* M2DrawingMesh::CustomData_get_n(const CustomData* data, int type, int index, int n)
+// Simplified version for UVs and vertex colors only
+void* WMODrawingMesh::CustomData_get_n(const CustomData* data, int type, int index, int n)
 {
   int layer_index;
 
@@ -38,11 +42,11 @@ void* M2DrawingMesh::CustomData_get_n(const CustomData* data, int type, int inde
     return nullptr;
   }
 
-  const size_t offset = (size_t)index * sizeof(MLoopUV);
+  const size_t offset = (size_t)index * WMODrawingMesh::cd_sizemap[type];
   return POINTER_OFFSET(data->layers[layer_index + n].data, offset);
 }
 
-int M2DrawingMesh::CustomData_get_named_layer_index(const CustomData *data, int type, const char *name)
+int WMODrawingMesh::CustomData_get_named_layer_index(const CustomData *data, int type, const char *name)
 {
   int i;
 
@@ -57,34 +61,133 @@ int M2DrawingMesh::CustomData_get_named_layer_index(const CustomData *data, int 
   return -1;
 }
 
-void M2DrawingMesh::init_looptris()
+void WMODrawingMesh::init_looptris()
 {
-  this->batch_length = std::vector<int>(this->mesh->totcol ? this->mesh->totcol : 1, 0);
   this->loop_tris = std::vector<MLoopTri*>(this->mesh->runtime.looptris.len);
+
+  std::vector<int> color_layers = this->get_color_layers();
 
   for (int i = 0; i < this->mesh->runtime.looptris.len; ++i)
   {
     MLoopTri* loop_tri = this->mesh->runtime.looptris.array + i;
     this->loop_tris[i] = loop_tri;
-    this->batch_length[this->mesh->mpoly[loop_tri->poly].mat_nr]++;
+
+    WMOBatchTypes batch_type = this->get_batch_type(loop_tri, color_layers);
+
+    std::pair<int, int> batch_length_key = {static_cast<int>(batch_type), this->mesh->mpoly[loop_tri->poly].mat_nr};
+    this->batch_length[batch_length_key]++;
+    this->batch_map[loop_tri] = batch_type;
   }
 
-  std::sort(loop_tris.begin(), loop_tris.end(), [this](MLoopTri* p_a, MLoopTri* p_b)
+  std::sort(loop_tris.begin(), loop_tris.end(), [this, color_layers](MLoopTri* p_a, MLoopTri* p_b)
   {
+    WMOBatchTypes batch_type_a = this->batch_map[p_a];
+    WMOBatchTypes batch_type_b = this->batch_map[p_b];
+
+    if (batch_type_a != batch_type_b)
+    {
+      return batch_type_a < batch_type_b;
+    }
+
     return this->mesh->mpoly[p_a->poly].mat_nr < this->mesh->mpoly[p_b->poly].mat_nr;
   });
 }
 
-int M2DrawingMesh::create_vertex_map()
+std::vector<int> WMODrawingMesh::get_uv_layers()
+{
+  return std::vector<int>  (WMODrawingMesh::CustomData_get_named_layer_index(&this->mesh->ldata,
+                                                             CustomDataType::CD_MLOOPUV, "UVMap"),
+                            WMODrawingMesh::CustomData_get_named_layer_index(&this->mesh->ldata,
+                                                             CustomDataType::CD_MLOOPUV, "UVMap.001"));
+}
+
+std::vector<int> WMODrawingMesh::get_color_layers()
+{
+   auto color_layers = std::vector<int> {WMODrawingMesh::CustomData_get_named_layer_index(&this->mesh->ldata,
+                                                         CustomDataType::CD_MLOOPCOL, "Col"),
+                                         WMODrawingMesh::CustomData_get_named_layer_index(&this->mesh->ldata,
+                                                         CustomDataType::CD_MLOOPCOL, "BatchmapTrans"),
+                                         WMODrawingMesh::CustomData_get_named_layer_index(&this->mesh->ldata,
+                                                         CustomDataType::CD_MLOOPCOL, "BatchmapInt"),
+                                         WMODrawingMesh::CustomData_get_named_layer_index(&this->mesh->ldata,
+                                                         CustomDataType::CD_MLOOPCOL, "Blendmap"),
+                                         WMODrawingMesh::CustomData_get_named_layer_index(&this->mesh->ldata,
+                                                         CustomDataType::CD_MLOOPCOL, "Lightmap")};
+
+   return color_layers;
+}
+
+WMOBatchTypes WMODrawingMesh::get_batch_type(MLoopTri* loop_tri, std::vector<int>& color_layers)
+{
+  // determine alleged tri batch type, batch trans overrides batch int. If not these, consider batch ext.
+  int color_layer_index;
+  bool is_batch_trans = true;
+  bool is_batch_int = true;
+
+  for (unsigned int loop_index : loop_tri->tri)
+  {
+    // check trans batch
+    color_layer_index = color_layers[1];
+
+    if (color_layer_index >= 0)
+    {
+      auto color_loop = static_cast<MLoopCol*>(WMODrawingMesh::CustomData_get_n(&this->mesh->ldata, CD_MLOOPCOL,
+                                                                                loop_index, color_layer_index));
+      if (color_loop->r > 0 || color_loop->g > 0 || color_loop->b > 0)
+      {
+        is_batch_trans = false;
+      }
+
+    }
+    else
+    {
+      is_batch_trans = false;
+    }
+
+    // check int batch
+    color_layer_index = color_layers[2];
+
+    if (color_layer_index >= 0)
+    {
+      auto color_loop = static_cast<MLoopCol*>(WMODrawingMesh::CustomData_get_n(&this->mesh->ldata, CD_MLOOPCOL,
+                                                                                loop_index, color_layer_index));
+      if (color_loop->r > 0 || color_loop->g > 0 || color_loop->b > 0)
+      {
+        is_batch_int = false;
+      }
+
+    }
+    else
+    {
+      is_batch_int = false;
+    }
+
+  }
+
+  // determine final batch type
+  WMOBatchTypes batch_type = WMOBatchTypes::Exterior;
+
+  if (is_batch_trans)
+  {
+    batch_type = WMOBatchTypes::Transitional;
+  }
+  else if (is_batch_int)
+  {
+     batch_type = WMOBatchTypes::Interior;
+  }
+
+  return batch_type;
+}
+
+int WMODrawingMesh::create_vertex_map()
 {
   this->init_looptris();
   this->vertex_map.clear();
   this->vertex_map.reserve(this->mesh->totvert);
 
-  std::vector<int> uv_layers = {M2DrawingMesh::CustomData_get_named_layer_index(&this->mesh->ldata,
-                                                                 CustomDataType::CD_MLOOPUV, "UVMap"),
-                                M2DrawingMesh::CustomData_get_named_layer_index(&this->mesh->ldata,
-                                                                 CustomDataType::CD_MLOOPUV, "UVMap.001")};
+  std::vector<int> uv_layers = this->get_uv_layers();
+  std::vector<int> color_layers = this->get_color_layers();
+  std::vector<int> data_color_layers = {0, 3, 4};
 
   int v_index_global_counter = 0;
 
@@ -92,7 +195,7 @@ int M2DrawingMesh::create_vertex_map()
   int cur_mat_id = -1;
 
   int loop_tri_counter = 0;
-  for (auto& loop_tri : loop_tris)
+  for (auto& loop_tri : this->loop_tris)
   {
     MPoly* poly = &this->mesh->mpoly[loop_tri->poly];
 
@@ -102,6 +205,9 @@ int M2DrawingMesh::create_vertex_map()
       this->n_materials++;
     }
 
+    WMOBatchTypes batch_type = this->get_batch_type(loop_tri, color_layers);
+
+    // process triangle loops
     for (unsigned int loop_index : loop_tri->tri)
     {
       MLoop* loop = &this->mesh->mloop[loop_index];
@@ -116,10 +222,14 @@ int M2DrawingMesh::create_vertex_map()
         for (auto & iter : it->second)
         {
           auto& uv_layers_data = std::get<2>(iter);
+          auto& color_layers_data = std::get<3>(iter);
 
           if (std::get<1>(iter) == poly->mat_nr)
           {
             bool is_uv_shared = true;
+            bool is_color_shared = true;
+
+            // compare UVs
             for (int j = 0; j < 2; ++j)
             {
               int uv_layer_index = uv_layers[j];
@@ -129,7 +239,7 @@ int M2DrawingMesh::create_vertex_map()
                 continue;
               }
 
-              auto uv_loop = static_cast<MLoopUV *>(M2DrawingMesh::CustomData_get_n(&this->mesh->ldata, CD_MLOOPUV,
+              auto uv_loop = static_cast<MLoopUV*>(WMODrawingMesh::CustomData_get_n(&this->mesh->ldata, CD_MLOOPUV,
                                                                                     loop_index, uv_layer_index));
 
               float uv_diff[2];
@@ -144,9 +254,34 @@ int M2DrawingMesh::create_vertex_map()
 
             }
 
-            if (is_uv_shared)
+            // compare colors
+            for (auto layer_index : data_color_layers)
             {
-              auto& loop_tri_users = std::get<3>(iter);
+              int color_layer_index = color_layers[layer_index];
+
+              if (color_layer_index < 0)
+              {
+                continue;
+              }
+
+              auto color_loop = static_cast<MLoopCol*>(WMODrawingMesh::CustomData_get_n(&this->mesh->ldata, CD_MLOOPCOL,
+                                                                                        loop_index, color_layer_index));
+
+              std::array<unsigned char, 3> cur_color = {color_loop->r, color_loop->g, color_loop->b};
+              for (int k = 0; k < 3; ++k)
+              {
+                if (color_layers_data[layer_index][k] != cur_color[k])
+                {
+                    is_color_shared = false;
+                    break;
+                }
+              }
+
+            }
+
+            if (is_uv_shared && is_color_shared && static_cast<int>(batch_type) == std::get<5>(iter))
+            {
+              auto& loop_tri_users = std::get<4>(iter);
               loop_tri_users.push_back(loop_tri_counter);
               has_matching_dupli = true;
               break;
@@ -162,12 +297,15 @@ int M2DrawingMesh::create_vertex_map()
       }
 
       // handle registering new duplicate vertex
-      std::tuple<int, int, std::vector<std::pair<float, float>>, std::vector<int>> vertex_dupli =
-          {0, 0, std::vector<std::pair<float, float>>{static_cast<size_t>(2)}, std::vector<int>{}};
+      std::tuple<int, int, std::vector<std::pair<float, float>>, std::vector<std::array<unsigned char, 3>>,
+                 std::vector<int>, int> vertex_dupli =
+          {0, 0, std::vector<std::pair<float, float>>{static_cast<size_t>(2)}, {{0, 0, 0}}, std::vector<int>{}, 0};
 
       std::get<0>(vertex_dupli) = v_index_global_counter;
       std::get<1>(vertex_dupli) = poly->mat_nr;
+      std::get<5>(vertex_dupli) = static_cast<int>(batch_type);
 
+      // handle UVs
       auto& uv_layers_data = std::get<2>(vertex_dupli);
 
       for (int j = 0; j < 2; ++j)
@@ -180,14 +318,34 @@ int M2DrawingMesh::create_vertex_map()
         }
         else
         {
-          auto uv_loop = static_cast<MLoopUV*>(M2DrawingMesh::CustomData_get_n(&this->mesh->ldata, CD_MLOOPUV,
-                                                                               loop_index, j));
+          auto uv_loop = static_cast<MLoopUV*>(WMODrawingMesh::CustomData_get_n(&this->mesh->ldata, CD_MLOOPUV,
+                                                                                loop_index, j));
           uv_layers_data[j] = std::pair<float, float>(uv_loop->uv[0], uv_loop->uv[1]);
         }
 
       }
 
-      auto& loop_tri_users = std::get<3>(vertex_dupli);
+      // handle colors
+      auto& color_layers_data = std::get<3>(vertex_dupli);
+
+      for (int j = 0; j < 6; ++j)
+      {
+        int color_layer_index = color_layers[j];
+
+        if (color_layer_index < 0)
+        {
+          color_layers_data[j] = std::array<unsigned char, 3>{{0, 0, 0}};
+        }
+        else
+        {
+          auto color_loop = static_cast<MLoopCol*>(WMODrawingMesh::CustomData_get_n(&this->mesh->ldata, CD_MLOOPCOL,
+                                                                                    loop_index, j));
+          color_layers_data[j] = std::array<unsigned char, 3>{{color_loop->r, color_loop->g, color_loop->b}};
+        }
+
+      }
+
+      auto& loop_tri_users = std::get<4>(vertex_dupli);
       loop_tri_users.push_back(loop_tri_counter);
 
       v_index_global_counter++;
@@ -203,12 +361,12 @@ int M2DrawingMesh::create_vertex_map()
 
 }
 
-void M2DrawingMesh::update_mesh_pointer(uintptr_t mesh_pointer)
+void WMODrawingMesh::update_mesh_pointer(uintptr_t mesh_pointer)
 {
   this->mesh = reinterpret_cast<Mesh*>(mesh_pointer);
 }
 
-bool M2DrawingMesh::validate_batches(int n_vertices_new)
+bool WMODrawingMesh::validate_batches(int n_vertices_new)
 {
   if (this->drawing_batches.size()
       && (this->n_vertices == n_vertices_new
@@ -217,7 +375,8 @@ bool M2DrawingMesh::validate_batches(int n_vertices_new)
   {
     for (auto& batch : this->drawing_batches)
     {
-      if (this->batch_length[batch->get_mat_id()] != batch->get_n_tris())
+      std::pair<int, int> batch_length_key = {static_cast<int>(batch->type), batch->get_mat_id()};
+      if (this->batch_length[batch_length_key] != batch->get_n_tris())
       {
         return false;
       }
@@ -233,7 +392,7 @@ bool M2DrawingMesh::validate_batches(int n_vertices_new)
 }
 
 
-bool M2DrawingMesh::update_geometry_nonindexed()
+bool WMODrawingMesh::update_geometry_nonindexed()
 {
   this->init_looptris();
 
@@ -257,12 +416,12 @@ bool M2DrawingMesh::update_geometry_nonindexed()
 
   int mat_idx = -1;
   int batch_counter = 0;
-  M2DrawingBatch* cur_batch = nullptr;
+  WMODrawingBatch* cur_batch = nullptr;
 
-  std::vector<int> uv_layers = {M2DrawingMesh::CustomData_get_named_layer_index(&this->mesh->ldata,
-                                                                 CustomDataType::CD_MLOOPUV, "UVMap"),
-                                M2DrawingMesh::CustomData_get_named_layer_index(&this->mesh->ldata,
-                                                                 CustomDataType::CD_MLOOPUV, "UVMap.001")};
+  std::vector<int> uv_layers = this->get_uv_layers();
+  std::vector<int> color_layers = this->get_color_layers();
+
+
 
   std::vector<float*> uv_buffers = {this->tex_coords, this->tex_coords2};
 
@@ -273,6 +432,8 @@ bool M2DrawingMesh::update_geometry_nonindexed()
   for (auto loop_tri : this->loop_tris)
   {
     MPoly *poly = &this->mesh->mpoly[loop_tri->poly];
+
+    WMOBatchTypes batch_type = this->batch_map[loop_tri];
 
     if (!is_batching_valid && mat_idx != poly->mat_nr)
     {
@@ -290,7 +451,7 @@ bool M2DrawingMesh::update_geometry_nonindexed()
         batch_counter++;
       }
 
-      cur_batch = new M2DrawingBatch(this, poly->mat_nr, true);
+      cur_batch = new WMODrawingBatch(this, poly->mat_nr, true, batch_type);
       cur_batch->set_tri_start(global_tri_index);
       mat_idx = poly->mat_nr;
 
@@ -309,16 +470,37 @@ bool M2DrawingMesh::update_geometry_nonindexed()
         this->normals[global_vertex_index * 3 + j] = this->mesh->mvert[loop->v].no[j];
       }
 
+      // UVs
       for (int j = 0; j < 2; ++j)
       {
         for (int k = 0; k < 2; ++k)
         {
           uv_buffers[j][global_vertex_index * 2 + k] =
-              uv_layers[j] < 0 ? 0.0f : static_cast<MLoopUV*>(M2DrawingMesh::CustomData_get_n(&this->mesh->ldata,
+              uv_layers[j] < 0 ? 0.0f : static_cast<MLoopUV*>(WMODrawingMesh::CustomData_get_n(&this->mesh->ldata,
                                                                               CD_MLOOPUV, loop_index, j))->uv[k];
         }
 
       }
+
+      /*
+      // Colors
+      auto& colors = std::get<3>(*dupli_vertex_params);
+
+      // vertex color
+      for (int j = 0; j < 3; ++j)
+      {
+       this->mccv[global_vertex_index * 3 + j] = static_cast<float>(colors[0][j]) / 255.0f;
+      }
+
+      // lightmap
+      this->mccv[global_vertex_index * 3 + 3] =
+        static_cast<float>(WMODrawingMesh::color_get_avg(colors[5][0], colors[5][1], colors[5][2])) / 255.0f;
+
+      // blendmap
+      this->mccv2[global_vertex_index * 3 + 3] =
+        static_cast<float>(WMODrawingMesh::color_get_avg(colors[4][0], colors[4][1], colors4][2])) / 255.0f
+
+      */
 
       tri_index_counter++;
 
@@ -356,7 +538,7 @@ bool M2DrawingMesh::update_geometry_nonindexed()
   return is_batching_valid;
 }
 
-bool M2DrawingMesh::update_geometry(bool use_indexed)
+bool WMODrawingMesh::update_geometry(bool use_indexed)
 {
   if (use_indexed)
   {
@@ -368,7 +550,7 @@ bool M2DrawingMesh::update_geometry(bool use_indexed)
   }
 }
 
-bool M2DrawingMesh::update_geometry_indexed()
+bool WMODrawingMesh::update_geometry_indexed()
 {
   int n_vertices_new = this->create_vertex_map();
   this->is_batching_valid = this->is_indexed ? this->validate_batches(n_vertices_new) : false;
@@ -379,6 +561,7 @@ bool M2DrawingMesh::update_geometry_indexed()
   this->allocate_buffers(n_vertices_new, static_cast<uint32_t>(this->mesh->runtime.looptris.len));
 
   int mat_idx = -1;
+  int cur_batch_type = -1;
   int global_tri_index = 0;
 
   if (!this->is_batching_valid)
@@ -395,13 +578,15 @@ bool M2DrawingMesh::update_geometry_indexed()
   glm::vec3 bound_box[2];
 
   int batch_counter = 0;
-  M2DrawingBatch* cur_batch = nullptr;
+  WMODrawingBatch* cur_batch = nullptr;
 
   for (auto loop_tri : this->loop_tris)
   {
     MPoly *poly = &this->mesh->mpoly[loop_tri->poly];
 
-    if (!is_batching_valid && mat_idx != poly->mat_nr)
+    WMOBatchTypes batch_type = this->batch_map[loop_tri];
+
+    if (!is_batching_valid && mat_idx != poly->mat_nr && cur_batch_type != static_cast<int>(batch_type))
     {
       if (cur_batch != nullptr)
       {
@@ -416,9 +601,10 @@ bool M2DrawingMesh::update_geometry_indexed()
         batch_counter++;
       }
 
-      cur_batch = new M2DrawingBatch(this, poly->mat_nr);
+      cur_batch = new WMODrawingBatch(this, poly->mat_nr, false, batch_type);
       cur_batch->set_tri_start(global_tri_index);
       mat_idx = poly->mat_nr;
+      cur_batch_type = static_cast<int>(batch_type);
 
       bound_box[0] = glm::vec3(std::numeric_limits<float>::max());
       bound_box[1] = glm::vec3(std::numeric_limits<float>::min());
@@ -432,10 +618,10 @@ bool M2DrawingMesh::update_geometry_indexed()
       // find vertex duplis using this blender vertex, and find the dupli using this loop
       auto vertex_duplis = this->vertex_map[loop->v];
 
-      std::tuple<int, int, std::vector<std::pair<float, float>>, std::vector<int>>* dupli_vertex_params = nullptr;
+      std::tuple<int, int, std::vector<std::pair<float, float>>, std::vector<std::array<unsigned char, 3>>, std::vector<int>, int>* dupli_vertex_params = nullptr;
       for (auto& vertex_dupli : vertex_duplis)
       {
-        for (int dupli_tri_user : std::get<3>(vertex_dupli))
+        for (int dupli_tri_user : std::get<4>(vertex_dupli))
         {
           if (dupli_tri_user == global_tri_index)
           {
@@ -471,6 +657,22 @@ bool M2DrawingMesh::update_geometry_indexed()
       this->tex_coords2[global_vertex_index * 2] = uv1.first;
       this->tex_coords2[global_vertex_index * 2 + 1] = uv1.second;
 
+      auto& colors = std::get<3>(*dupli_vertex_params);
+
+      // vertex color
+      for (int j = 0; j < 3; ++j)
+      {
+       this->mccv[global_vertex_index * 3 + j] = static_cast<float>(colors[0][j]) / 255.0f;
+      }
+
+      // lightmap
+      this->mccv[global_vertex_index * 3 + 3] =
+        static_cast<float>(WMODrawingMesh::color_get_avg(colors[4][0], colors[4][1], colors[4][2])) / 255.0f;
+
+      // blendmap
+      this->mccv2[global_vertex_index * 3 + 3] =
+        static_cast<float>(WMODrawingMesh::color_get_avg(colors[3][0], colors[3][1], colors[3][2])) / 255.0f;
+
       tri_index_counter++;
     }
 
@@ -497,7 +699,7 @@ bool M2DrawingMesh::update_geometry_indexed()
   return is_batching_valid;
 }
 
-void M2DrawingMesh::run_buffer_updates()
+void WMODrawingMesh::run_buffer_updates()
 {
 
   if (!this->is_batching_valid)
@@ -510,7 +712,7 @@ void M2DrawingMesh::run_buffer_updates()
   }
 }
 
-void M2DrawingMesh::allocate_buffers(uint32_t n_vertices_new, uint32_t n_triangles_new)
+void WMODrawingMesh::allocate_buffers(uint32_t n_vertices_new, uint32_t n_triangles_new)
 {
   // vertex attributes
   // note: we always allocate twice more than needed on each realloc, to avoid reallocating too often
@@ -521,8 +723,8 @@ void M2DrawingMesh::allocate_buffers(uint32_t n_vertices_new, uint32_t n_triangl
     this->normals = new float[n_vertices_new * 3];
     this->tex_coords = new float[n_vertices_new * 2];
     this->tex_coords2 = new float[n_vertices_new * 2];
-    //this->weights = new float[n_vertices_new * 4 * 2];
-    //this->bone_indices = new int[n_vertices_new * 4 * 2];
+    this->mccv = new float[n_vertices_new * 3];
+    this->mccv2 = new float[n_vertices_new * 3];
   }
   else if (this->n_vertices < n_vertices_new)
   {
@@ -531,15 +733,15 @@ void M2DrawingMesh::allocate_buffers(uint32_t n_vertices_new, uint32_t n_triangl
     delete[] this->normals;
     delete[] this->tex_coords;
     delete[] this->tex_coords2;
-    //delete[] this->weights;
-    //delete[] this->bone_indices;
+    delete[] this->mccv;
+    delete[] this->mccv2;
 
     this->vertices_co = new float[n_vertices_new * 3];
     this->normals = new float[n_vertices_new * 3];
     this->tex_coords = new float[n_vertices_new * 2];
     this->tex_coords2 = new float[n_vertices_new * 2];
-    //this->weights = new float[n_vertices_new * 4 * 2];
-    //this->bone_indices = new int[n_vertices_new * 4 * 2];
+    this->mccv = new float[n_vertices_new * 3];
+    this->mccv2 = new float[n_vertices_new * 3];
   }
 
   this->n_vertices = n_vertices_new;
@@ -562,7 +764,7 @@ void M2DrawingMesh::allocate_buffers(uint32_t n_vertices_new, uint32_t n_triangl
 
 }
 
-void M2DrawingMesh::generate_opengl_buffers()
+void WMODrawingMesh::generate_opengl_buffers()
 {
   // generate VBO and IBO
   glGenBuffers(1, &this->vbo);
@@ -570,9 +772,11 @@ void M2DrawingMesh::generate_opengl_buffers()
   glGenBuffers(1, &this->vbo_normals);
   glGenBuffers(1, &this->vbo_tex_coords);
   glGenBuffers(1, &this->vbo_tex_coords2);
+  glGenBuffers(1, &this->vbo_mccv);
+  glGenBuffers(1, &this->vbo_mccv2);
 }
 
-void M2DrawingMesh::init_opengl_buffers()
+void WMODrawingMesh::init_opengl_buffers()
 {
   if (!this->is_initialized)
   {
@@ -592,6 +796,12 @@ void M2DrawingMesh::init_opengl_buffers()
   glBindBuffer(GL_ARRAY_BUFFER, this->vbo_tex_coords2);
   glBufferData(GL_ARRAY_BUFFER, this->n_vertices * 2 * sizeof(float), this->tex_coords2, GL_DYNAMIC_DRAW);
 
+  glBindBuffer(GL_ARRAY_BUFFER, this->vbo_mccv);
+  glBufferData(GL_ARRAY_BUFFER, this->n_vertices * 3 * sizeof(float), this->mccv, GL_DYNAMIC_DRAW);
+
+  glBindBuffer(GL_ARRAY_BUFFER, this->vbo_mccv2);
+  glBufferData(GL_ARRAY_BUFFER, this->n_vertices * 3 * sizeof(float), this->mccv2, GL_DYNAMIC_DRAW);
+
   if (this->is_indexed)
   {
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ibo);
@@ -600,7 +810,7 @@ void M2DrawingMesh::init_opengl_buffers()
 
 }
 
-void M2DrawingMesh::update_opengl_buffers()
+void WMODrawingMesh::update_opengl_buffers()
 {
   glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
   glBufferSubData(GL_ARRAY_BUFFER, 0, this->n_vertices * 3 * sizeof(float), this->vertices_co);
@@ -613,25 +823,41 @@ void M2DrawingMesh::update_opengl_buffers()
 
   glBindBuffer(GL_ARRAY_BUFFER, this->vbo_tex_coords2);
   glBufferSubData(GL_ARRAY_BUFFER, 0, this->n_vertices * 2 * sizeof(float), this->tex_coords2);
+
+  glBindBuffer(GL_ARRAY_BUFFER, this->vbo_mccv);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, this->n_vertices * 3 * sizeof(float), this->mccv);
+
+  glBindBuffer(GL_ARRAY_BUFFER, this->vbo_mccv2);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, this->n_vertices * 3 * sizeof(float), this->mccv2);
+
 }
 
-std::vector<M2DrawingBatch*>* M2DrawingMesh::get_drawing_batches()
+std::vector<WMODrawingBatch*>* WMODrawingMesh::get_drawing_batches()
 {
   return &this->drawing_batches;
 }
 
-M2DrawingMesh::~M2DrawingMesh()
+unsigned char WMODrawingMesh::color_get_avg(unsigned char r, unsigned char g, unsigned char b)
+{
+    return (r + g + b) / 3;
+}
+
+WMODrawingMesh::~WMODrawingMesh()
 {
   glDeleteBuffers(1, &this->vbo);
   glDeleteBuffers(1, &this->vbo_normals);
   glDeleteBuffers(1, &this->vbo_tex_coords);
   glDeleteBuffers(1, &this->vbo_tex_coords2);
+  glDeleteBuffers(1, &this->vbo_mccv);
+  glDeleteBuffers(1, &this->vbo_mccv2);
 
   delete[] this->vertices_co;
   delete[] this->tri_indices;
   delete[] this->normals;
   delete[] this->tex_coords;
   delete[] this->tex_coords2;
+  delete[] this->mccv;
+  delete[] this->mccv2;
 
   for (auto batch_ptr : this->drawing_batches)
   {

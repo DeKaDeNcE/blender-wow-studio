@@ -143,7 +143,8 @@ class M2DrawingBatch:
             self.bl_batch_frag_shader_id = int(self.draw_material.bl_material.wow_m2_material.fragment_shader)
 
             return shaders.get_shader_by_id(self.bl_batch_vert_shader_id,
-                                            self.bl_batch_frag_shader_id)
+                                            self.bl_batch_frag_shader_id,
+                                            0)
         else:
             return shaders.default_shader
 

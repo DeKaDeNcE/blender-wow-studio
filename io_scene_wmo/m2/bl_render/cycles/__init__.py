@@ -6,7 +6,7 @@ from ....utils.node_builder import NodeTreeBuilder
 def update_m2_mat_node_tree_cycles(bl_mat):
 
     # get textures
-    img_1 = bl_mat.wow_m2_material.texture if bl_mat.wow_m2_material.texture else None
+    img_1 = bl_mat.wow_m2_material.texture_1 if bl_mat.wow_m2_material.texture_1 else None
 
     bl_mat.use_nodes = True
     uv = bl_mat.node_tree.nodes.new('ShaderNodeUVMap')

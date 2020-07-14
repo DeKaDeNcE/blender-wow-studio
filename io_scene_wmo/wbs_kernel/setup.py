@@ -24,6 +24,8 @@ setup(
             "src/wbs_kernel.pyx",
             "src/render/m2_drawing_batch.cpp",
             "src/render/m2_drawing_mesh.cpp",
+            "src/render/wmo_drawing_mesh.cpp",
+            "src/render/wmo_drawing_batch.cpp",
             "src/render/opengl_utils.cpp"
         ],
 

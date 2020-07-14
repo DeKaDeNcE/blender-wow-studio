@@ -5,9 +5,9 @@ from enum import IntEnum
 from ctypes import c_uint, c_uint8
 from collections import namedtuple
 from typing import Dict, Tuple
-from tqdm import tqdm
 
 from ...utils.misc import singleton, Sequence
+from ..shaders import ShaderPermutationsManager
 from bgl import *
 
 
@@ -227,60 +227,9 @@ class M2ShaderTable(metaclass=Sequence):
 
 
 @singleton
-class M2ShaderPermutations:
+class M2ShaderPermutations(ShaderPermutationsManager):
 
-    def __init__(self):
-        self.shader_permutations: Dict[Tuple[int, int, int], gpu.types.GPUShader] = {}
-        self.shader_source: str
-        self.default_shader: gpu.types.GPUShader
-
-        rel_path = 'shaders\\glsl330\\m2_shader.glsl' if os.name == 'nt' else 'shaders/glsl330/m2_shader.glsl'
-
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', rel_path)) as f:
-            self.shader_source = "".join(f.readlines())
-
-        rel_path = 'shaders\\glsl330\\default.glsl' if os.name == 'nt' else 'shaders/glsl330/default.glsl'
-
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', rel_path)) as f:
-            shader_source_fallback = "".join(f.readlines())
-
-            vert_shader_string_perm = "#define COMPILING_VS {}\n" \
-                                      "{}".format(1, shader_source_fallback)
-            frag_shader_string_perm = "#define COMPILING_FS {}\n" \
-                                      "{}".format(1, shader_source_fallback)
-
-            self.default_shader = gpu.types.GPUShader(vert_shader_string_perm, frag_shader_string_perm)
-
-    def _compile_shader_permutation(self
-                                    , vert_shader_id: int
-                                    , frag_shader_id: int
-                                    , bone_influences: int) -> gpu.types.GPUShader:
-
-        vert_shader_string_perm = "#define COMPILING_VS {}\n" \
-                                  "#define BONEINFLUENCES {}\n" \
-                                  "#define VERTEXSHADER {}\n" \
-                                  "{}".format(1, bone_influences, vert_shader_id, self.shader_source)
-        frag_shader_string_perm = "#define COMPILING_FS {}\n" \
-                                  "#define BONEINFLUENCES {}\n" \
-                                  "#define FRAGMENTSHADER {}\n" \
-                                  "{}".format(1, bone_influences, frag_shader_id, self.shader_source)
-
-        shader = gpu.types.GPUShader(vert_shader_string_perm, frag_shader_string_perm)
-        self.shader_permutations[vert_shader_id, frag_shader_id, bone_influences] = shader
-
-        return shader
-
-    def get_shader_by_id(self
-                         , vert_shader_id: int
-                         , frag_shader_id: int
-                         , bone_influences: int) -> gpu.types.GPUShader:
-
-        shader = self.shader_permutations.get((vert_shader_id, frag_shader_id, bone_influences))
-
-        if not shader:
-            shader = self._compile_shader_permutation(vert_shader_id, frag_shader_id, bone_influences)
-
-        return shader
+    shader_source_path = 'm2_shader'
 
     @staticmethod
     def get_vertex_shader_id(texture_count: int, shader_id: int) -> int:

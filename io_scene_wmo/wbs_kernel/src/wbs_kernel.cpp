@@ -6,7 +6,9 @@
         "depends": [
             "src\\render\\m2_drawing_batch.hpp",
             "src\\render\\m2_drawing_mesh.hpp",
-            "src\\render\\opengl_utils.hpp"
+            "src\\render\\opengl_utils.hpp",
+            "src\\render\\wmo_drawing_batch.hpp",
+            "src\\render\\wmo_drawing_mesh.hpp"
         ],
         "extra_compile_args": [
             "-O3",
@@ -270,6 +272,8 @@
             "src/wbs_kernel.pyx",
             "src/render/m2_drawing_batch.cpp",
             "src/render/m2_drawing_mesh.cpp",
+            "src/render/wmo_drawing_mesh.cpp",
+            "src/render/wmo_drawing_batch.cpp",
             "src/render/opengl_utils.cpp"
         ]
     },
@@ -900,6 +904,8 @@ static CYTHON_INLINE float __PYX_NAN() {
 #include <vector>
 #include "render/m2_drawing_mesh.hpp"
 #include "render/m2_drawing_batch.hpp"
+#include "render/wmo_drawing_mesh.hpp"
+#include "render/wmo_drawing_batch.hpp"
 #include "render/opengl_utils.hpp"
 #ifdef _OPENMP
 #include <omp.h>

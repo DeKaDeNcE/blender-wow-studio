@@ -237,10 +237,14 @@ class BlenderM2Scene:
                     tex_path_png = ""
 
                     if not texture.type:  # check if texture is hardcoded
-                        tex_path_blp = self.m2.texture_path_map[texture.txid] \
-                            if texture.txid else self.m2.texture_path_map[texture.filename.value]
 
-                        tex_path_png = os.path.splitext(tex_path_blp)[0] + '.png'
+                        try:
+                            tex_path_blp = self.m2.texture_path_map[texture.fdid] \
+                                if texture.fdid else self.m2.texture_path_map[texture.filename.value]
+
+                            tex_path_png = os.path.splitext(tex_path_blp)[0] + '.png'
+                        except KeyError:
+                            pass
 
                     if tex_path_png:
                         try:
