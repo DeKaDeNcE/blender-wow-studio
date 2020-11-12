@@ -79,15 +79,6 @@ class DrawingElements:
         if batch_a.mesh_type < batch_b.mesh_type:
             return -1
 
-        '''
-        if batch_a.render_order != batch_b.render_order:
-            if not batch_a.is_transparent:
-                return batch_a.render_order < batch_b.render_order
-            else:
-                return batch_a.render_order > batch_b.render_order
-                
-        '''
-
         if batch_a.is_skybox > batch_b.is_skybox:
             return -1
 
@@ -104,12 +95,6 @@ class DrawingElements:
             if batch_a.sort_distance < batch_b.sort_distance:
                 return 1
 
-            if batch_a.m2_draw_obj_idx > batch_b.m2_draw_obj_idx:
-                return -1
-
-            if batch_a.m2_draw_obj_idx < batch_b.m2_draw_obj_idx:
-                return 1
-
             if batch_b.layer != batch_a.layer:
                 return -1 if batch_b.layer < batch_a.layer else 1
 
@@ -121,12 +106,6 @@ class DrawingElements:
                 return -1
             if batch_a.sort_distance < batch_b.sort_distance:
                 return 1
-
-        '''
-        if batch_a.m_bindings != batch_b.m_bindings:
-            return batch_a.m_bindings > batch_b.m_bindings
-
-        '''
 
         if batch_a.draw_material.blend_mode.index != batch_b.draw_material.blend_mode.index:
             return -1 if batch_a.draw_material.blend_mode.index < batch_b.draw_material.blend_mode.index else 1

@@ -160,3 +160,14 @@ class WMOShaderPermutations(ShaderPermutationsManager):
             if record.value.vertex_shader == vertex_shader_id and record.value.pixel_shader == pixel_shader_id:
                 return record.index
 
+    def get_shader_combo(self, id: int):
+        # TODO: ugly
+
+        count = 0
+        for i, record in enumerate(WMOShaderTable):
+
+            if i == count:
+                return record
+
+            count += 1
+

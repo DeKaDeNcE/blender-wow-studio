@@ -12,7 +12,7 @@ class WoWRenderEngine(bpy.types.RenderEngine):
     # RenderEngine; define its internal name, visible name and capabilities.
     bl_idname = "WOW"
     bl_label = "WoW"
-    bl_use_preview = True
+    bl_use_preview = False
     bl_use_eevee_viewport = True
 
     # Init is called whenever a new render engine instance is created. Multiple

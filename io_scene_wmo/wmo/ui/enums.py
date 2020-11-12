@@ -6,8 +6,12 @@ shader_enum = [
     ('0', "Diffuse", ""), ('1', "Specular", ""), ('2', "Metal", ""),
     ('3', "Env", ""), ('4', "Opaque", ""), ('5', "EnvMetal", ""),
     ('6', "TwoLayerDiffuse", ""), ('7', "TwoLayerEnvMetal", ""), ('8', "TwoLayerTerrain", ""),
-    ('9', "DiffuseEmissive", ""), ('10', "Tangent", ""), ('11', "MaskedEnvMetal", ""),
-    ('12', "EnvMetalEmissive", ""), ('13', "TwoLayerDiffuseOpaque", ""), ('14', "TwoLayerDiffuseEmissive", "")
+    ('9', "DiffuseEmissive", ""), ('10', "waterWindow", ""), ('11', "MaskedEnvMetal", ""),
+    ('12', "EnvMetalEmissive", ""), ('13', "TwoLayerDiffuseOpaque", ""), ('14', "submarineWindow", ""),
+    ('15', "TwoLayerDiffuseEmissive", ""), ('16', "DiffuseTerrain", ""), ('17', "AdditiveMaskedEnvMetal", ""),
+    ('18', "TwoLayerDiffuseMod2x", ""), ('19', "TwoLayerDiffuseMod2xNA", ""), ('20', "TwoLayerDiffuseAlpha", ""),
+    ('21', "MapObjLod", ""), ('22', "MapObjParallax", "")
+
 ]
 
 terrain_type_enum = [

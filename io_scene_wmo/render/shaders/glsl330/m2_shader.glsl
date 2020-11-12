@@ -302,7 +302,8 @@ void main() {
     vec4 meshResColor = vDiffuseColor;
 
     vec3 accumLight;
-    if ((UnFogged_IsAffectedByLight_LightCount.y == 1)) {
+    if ((UnFogged_IsAffectedByLight_LightCount.y == 1))
+    {
         vec3 vPos3 = vPosition.xyz;
         vec3 vNormal3 = normalize(vNormal.xyz);
         vec3 lightColor = vec3(0.0);

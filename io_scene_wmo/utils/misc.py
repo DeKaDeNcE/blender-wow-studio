@@ -41,8 +41,6 @@ class Sequence(type):
     def index(self, item):
         return self.__fields__.index(item)
 
-
-
 def singleton(class_):
     instances = {}
 

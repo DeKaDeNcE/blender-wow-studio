@@ -6,6 +6,7 @@ import mathutils
 from typing import Union
 from bgl import *
 
+from ..drawing_batch import DrawingBatch
 from ...wbs_kernel.wbs_kernel import CM2DrawingBatch
 from ...wbs_kernel.wbs_kernel import OpenGLUtils
 from .shaders import M2ShaderPermutations, EGxBLend
@@ -15,7 +16,7 @@ from ..utils import render_debug
 from ..bgl_ext import glCheckError
 
 
-class M2DrawingBatch:
+class M2DrawingBatch(DrawingBatch):
     c_batch: CM2DrawingBatch
 
     # control
@@ -23,6 +24,13 @@ class M2DrawingBatch:
     shader: gpu.types.GPUShader
     bl_batch_vert_shader_id: int
     bl_batch_frag_shader_id: int
+
+    gl_texture_slots = (
+        GL_TEXTURE0,
+        GL_TEXTURE1,
+        GL_TEXTURE2,
+        GL_TEXTURE3
+    )
 
     # uniform data
     draw_material: Union[M2DrawingMaterial, None]
@@ -71,67 +79,12 @@ class M2DrawingBatch:
         return self.draw_obj.is_skybox
 
     @property
-    def m2_draw_obj_idx(self) -> int:
-        return list(self.draw_obj.draw_mgr.m2_objects.keys()).index(self.draw_obj.bl_obj_name)
-
-    @property
     def bb_center(self) -> mathutils.Vector:
-        # return 0.125 * sum((mathutils.Vector(b) for b in self.bl_obj.bound_box), mathutils.Vector())
         return mathutils.Vector(self.c_batch.bb_center)
 
     @property
     def sort_radius(self) -> float:
         return self.c_batch.sort_radius
-
-    @property
-    def sort_distance(self):
-
-        perspective_mat = self.draw_obj.draw_mgr.region_3d.perspective_matrix
-        bb_center = self.draw_obj.bl_obj.matrix_world @ self.bb_center
-
-        value = (perspective_mat.to_translation() - bb_center).length
-
-        if self.draw_material.is_inverted or self.draw_material.is_transformed:
-            result_point = bb_center * (1.0 / value) if value > 0.00000023841858 else bb_center
-
-            sort_dist = perspective_mat.to_translation().length * self.sort_radius
-
-            result_point *= sort_dist
-
-            value = (bb_center - result_point).length \
-                if self.draw_material.is_inverted else (bb_center + result_point).length
-
-        return value
-
-    def create_vao(self):
-        self.shader = self.determine_valid_shader()
-        self.c_batch.set_program(self.shader.program)
-        self.c_batch.create_vao()
-        glCheckError('Create VAO')
-
-    def ensure_context(self):
-        mat_test = self.draw_material.bl_material
-
-        if not mat_test:
-            self.tag_free = True
-
-        return self.tag_free
-
-    def _set_active_textures(self):
-
-        gl_texture_slots = (
-            GL_TEXTURE0,
-            GL_TEXTURE1,
-            GL_TEXTURE2,
-            GL_TEXTURE3
-        )
-
-        for i, gl_slot in enumerate(gl_texture_slots):
-            bind_code = self.draw_material.get_bindcode(i)
-
-            if bind_code:
-                glActiveTexture(gl_slot)
-                glBindTexture(GL_TEXTURE_2D, bind_code)
 
     def determine_valid_shader(self) -> gpu.types.GPUShader:
 
@@ -147,51 +100,7 @@ class M2DrawingBatch:
         else:
             return shaders.default_shader
 
-    def draw(self):
-
-        render_debug('Drawing batch for object \"{}\"'.format(self.draw_obj.bl_obj.name))
-
-        bl_obj = self.draw_obj.bl_obj
-
-        if not bl_obj.visible_get():
-            return
-
-        if self.tag_free:
-            return
-
-        if self.draw_material:
-            self.draw_m2_batch()
-        else:
-            self.draw_fallback()
-
-    def draw_fallback(self):
-
-        glCheckError('drawfallback pre')
-
-        self.shader = self.determine_valid_shader()
-        self.shader.bind()
-        self.c_batch.set_program(self.shader.program)
-
-        self.shader.uniform_float('uViewProjectionMatrix', self.draw_obj.draw_mgr.region_3d.perspective_matrix)
-
-        self.shader.uniform_float('uPlacementMatrix', self.draw_obj.bl_obj.matrix_world)
-        self.shader.uniform_float('uSunDirAndFogStart', self.draw_obj.draw_mgr.sun_dir_and_fog_start)
-        self.shader.uniform_float('uSunColorAndFogEnd', self.draw_obj.draw_mgr.sun_color_and_fog_end)
-        self.shader.uniform_float('uAmbientLight', self.draw_obj.draw_mgr.ambient_light)
-        self.shader.uniform_float('uFogColorAndAlphaTest', (*self.draw_obj.draw_mgr.fog_color, 1.0 / 255.0))
-        self.shader.uniform_int('UnFogged_IsAffectedByLight_LightCount', (False, True, 0))
-
-        glEnable(GL_DEPTH_TEST)
-
-        self.c_batch.draw()
-
-        glDisable(GL_DEPTH_TEST)
-
-        gpu.shader.unbind()
-
-        glCheckError('draw fallback post')
-
-    def draw_m2_batch(self):
+    def draw_batch(self):
 
         glCheckError('draw')
 
@@ -292,11 +201,3 @@ class M2DrawingBatch:
         gpu.shader.unbind()
 
         glCheckError('draw end')
-
-    def free(self):
-
-        if self.tag_free:
-            return
-
-        self.tag_free = True
-        self.draw_obj.draw_mgr.draw_elements.remove_batch(self)

@@ -1,16 +1,4 @@
-/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" "/Users/sshumakov/Documents/WoW Modding/Software Projects/wow_blender_studio/io_scene_wmo/wbs_kernel/src"
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/g++ -G "CodeBlocks - Unix Makefiles" "/Users/sshumakov/Documents/WoW Modding/Software Projects/wow_blender_studio/io_scene_wmo/wbs_kernel/src"
 -- Configuring done
-CMake Error at CMakeLists.txt:8 (add_library):
-  Cannot find source file:
-
-    /Users/sshumakov/Documents/WoW Modding/Software Projects/wow_blender_studio/io_scene_wmo/wbs_kernel/src/bpy_boost/src/cmake-build-debug/CMakeFiles/3.15.3/CompilerIdC/CMakeCCompilerId.c
-
-  Tried extensions .c .C .c++ .cc .cpp .cxx .cu .m .M .mm .h .hh .h++ .hm
-  .hpp .hxx .in .txx
-
-
-CMake Error at CMakeLists.txt:8 (add_library):
-  No SOURCES given to target: wbs_kernel
-
-
-CMake Generate step failed.  Build files cannot be regenerated correctly.
+-- Generating done
+-- Build files have been written to: /Users/sshumakov/Documents/WoW Modding/Software Projects/wow_blender_studio/io_scene_wmo/wbs_kernel/src/cmake-build-debug

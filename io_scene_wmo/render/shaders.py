@@ -1,7 +1,7 @@
 import os
 import gpu
 
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Any
 
 from ..utils.misc import singleton, Sequence
 
@@ -15,9 +15,10 @@ class ShaderPermutationsFormat:
 class ShaderPermutationsManager:
 
     shader_source_path: str
+    extra_defines: Dict[str, Any]
 
     def __init__(self):
-        self.shader_permutations: Dict[Tuple[int, int], gpu.types.GPUShader] = {}
+        self.shader_permutations: Dict = {}
         self.shader_source: str
         self.default_shader: gpu.types.GPUShader
 

@@ -6,30 +6,30 @@ import mathutils
 from typing import Union
 from bgl import *
 
-from ...wbs_kernel.wbs_kernel import CM2DrawingBatch
+from ...wbs_kernel.wbs_kernel import CWMODrawingBatch
 from ...wbs_kernel.wbs_kernel import OpenGLUtils
-from .shaders import M2ShaderPermutations, EGxBLend
-from .drawing_material import M2DrawingMaterial
+from .shaders import WMOShaderPermutations, EGxBLend
+from .drawing_material import WMODrawingMaterial
 from ..drawing_elements import ElementTypes
 from ..utils import render_debug
 from ..bgl_ext import glCheckError
 
 
-class M2DrawingBatch:
-    c_batch: CM2DrawingBatch
+class WMODrawingBatch:
+    c_batch: CWMODrawingBatch
 
     # control
-    mesh_type: int = ElementTypes.M2Mesh
+    mesh_type: int = ElementTypes.WmoMesh
     shader: gpu.types.GPUShader
     bl_batch_vert_shader_id: int
     bl_batch_frag_shader_id: int
 
     # uniform data
-    draw_material: Union[M2DrawingMaterial, None]
+    draw_material: Union[CWMODrawingBatch, None]
 
     def __init__(self
-                 , c_batch: 'CM2DrawingBatch'
-                 , draw_obj: 'M2DrawingObject'
+                 , c_batch: 'CWMODrawingBatch'
+                 , draw_obj: 'WMODrawingObject'
                  , context: bpy.types.Context):
 
         self.c_batch = c_batch
@@ -55,28 +55,22 @@ class M2DrawingBatch:
 
     @property
     def is_transparent(self) -> bool:
-        return (self.draw_material.blend_mode.index > EGxBLend.AlphaKey.index) \
-               or not self.draw_material.depth_write
+        return False
 
     @property
     def priority_plane(self) -> int:
-        return self.draw_material.bl_material.wow_m2_material.priority_plane
+        return 0
 
     @property
     def layer(self) -> int:
-        return self.draw_material.bl_material.wow_m2_material.layer
+        return 0
 
     @property
     def is_skybox(self) -> bool:
-        return self.draw_obj.is_skybox
-
-    @property
-    def m2_draw_obj_idx(self) -> int:
-        return list(self.draw_obj.draw_mgr.m2_objects.keys()).index(self.draw_obj.bl_obj_name)
+        return False
 
     @property
     def bb_center(self) -> mathutils.Vector:
-        # return 0.125 * sum((mathutils.Vector(b) for b in self.bl_obj.bound_box), mathutils.Vector())
         return mathutils.Vector(self.c_batch.bb_center)
 
     @property
@@ -135,16 +129,16 @@ class M2DrawingBatch:
 
     def determine_valid_shader(self) -> gpu.types.GPUShader:
 
-        shaders = M2ShaderPermutations()
+        shaders = WMOShaderPermutations()
 
         if self.draw_material:
 
-            self.bl_batch_vert_shader_id = int(self.draw_material.bl_material.wow_m2_material.vertex_shader)
-            self.bl_batch_frag_shader_id = int(self.draw_material.bl_material.wow_m2_material.fragment_shader)
+            shader_rec = WMOShaderPermutations.get_shader_combo(int(self.draw_material.bl_material.wow_wmo_material.shader))
+            self.bl_batch_vert_shader_id = shader_rec.vertex_shader
+            self.bl_batch_frag_shader_id = shader_rec.pixel_shader
 
             return shaders.get_shader_by_id(self.bl_batch_vert_shader_id,
-                                            self.bl_batch_frag_shader_id,
-                                            0)
+                                            self.bl_batch_frag_shader_id)
         else:
             return shaders.default_shader
 
@@ -161,7 +155,7 @@ class M2DrawingBatch:
             return
 
         if self.draw_material:
-            self.draw_m2_batch()
+            self.draw_wmo_batch()
         else:
             self.draw_fallback()
 
@@ -192,7 +186,7 @@ class M2DrawingBatch:
 
         glCheckError('draw fallback post')
 
-    def draw_m2_batch(self):
+    def draw_wmo_batch(self):
 
         glCheckError('draw')
 
