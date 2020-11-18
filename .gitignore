@@ -3,3 +3,7 @@ io_scene_wmo/.idea/
 io_scene_wmo/third_party/
 .idea/
 io_scene_wmo/bpy_boost/
+io_scene_wmo/wbs_kernel/build/
+io_scene_wmo/wbs_kernel/src/wbs_kernel.cpp
+
+*.pyd
