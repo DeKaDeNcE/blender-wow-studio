@@ -162,7 +162,13 @@ TEXTURE_TYPES = [
     ("15", "Guild Background Color", "", 'PMARKER', 16),
     ("16", "Guild Emblem Color", "", 'PMARKER', 17),
     ("17", "Guild Border Color", "", 'PMARKER', 18),
-    ("18", "Guild Emblem", "", 'PMARKER', 19)
+    ("18", "Guild Emblem", "", 'PMARKER', 19),
+    ("19", "Eyes", "", 'PMARKER', 20),
+    ("20", "Accessory", "", 'PMARKER', 21),
+    ("21", "Secondary Skin", "", 'PMARKER', 22),
+    ("22", "Secondary Hair", "", 'PMARKER', 23),
+    ("23", "Unknown: 23", "", 'PMARKER', 24),
+    ("24", "Unknown: 24", "", 'PMARKER', 25)
 
 ]
 
